@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.gamedata
+package com.mjaruijs.fischersplayground.gamedata.pieces
 
 import android.content.Context
 import com.mjaruijs.fischersplayground.R
@@ -22,7 +22,12 @@ enum class PieceType(val value: Int) {
 
     lateinit var texture: Texture
 
+    fun getPossibleMoves() {
+
+    }
+
     companion object {
+
         fun init(context: Context) {
             for (pieceType in values()) {
                 pieceType.texture = when (pieceType) {

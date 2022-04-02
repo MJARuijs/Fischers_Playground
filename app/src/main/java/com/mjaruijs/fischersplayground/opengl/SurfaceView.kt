@@ -25,6 +25,7 @@ class SurfaceView(context: Context) : GLSurfaceView(context) {
 
         if (event.action == MotionEvent.ACTION_DOWN) {
             renderer.onTouch(event.x, event.y)
+            requestRender()
         }
 
         return true

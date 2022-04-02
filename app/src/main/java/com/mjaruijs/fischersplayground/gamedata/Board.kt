@@ -1,87 +1,93 @@
 package com.mjaruijs.fischersplayground.gamedata
 
-import com.mjaruijs.fischersplayground.opengl.Mesh
+import com.mjaruijs.fischersplayground.math.Color
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 
-class Board {
+class Board(private val boardProgram: ShaderProgram) {
 
-    private val mesh: Mesh
+    private val model = BoardModel()
 
-    init {
-        var vertices = FloatArray(0)
+    private var selectedSquare = Vector2(-1f, -1f)
 
-        val scaleFactor = 1.0f / 4.0f
-        val offset = 1.0f
+    fun processAction(action: Action) {
+        if (action.type == ActionType.SQUARE_SELECTED) {
+            selectedSquare = action.position
+        } else if (action.type == ActionType.SQUARE_DESELECTED) {
+            selectedSquare = Vector2(-1f, -1f)
+        }
+    }
 
-        for (x in 0 until 8) {
-            for (y in 0 until 8) {
-                val whiteTiles = (x + y) % 2 != 0
+    fun render(aspectRatio: Float) {
+        boardProgram.start()
+        boardProgram.set("aspectRatio", aspectRatio)
+        boardProgram.set("outColor", Color(0.25f, 0.25f, 1.0f, 1.0f))
+        boardProgram.set("scale", Vector2(aspectRatio, aspectRatio))
+        boardProgram.set("selectedSquareCoordinates", (selectedSquare / 8.0f) * 2.0f - 1.0f)
+        model.draw()
+        boardProgram.stop()
+    }
 
-                vertices += x * scaleFactor - offset            // x = 0
-                vertices += y * scaleFactor - offset            // y = 0
+    fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Action {
+//        if (selectedSquare == Vector2(-1f, -1f)) {
+//            val selection = determineSelectedSquare(x, y, displayWidth, displayHeight)
+//
+//            if (selection == Vector2(-1f, -1f)) {
+//                return Action(selection, ActionType.NOOP)
+//            }
+//
+//            return Action(selection, ActionType.SQUARE_SELECTED)
+//        } else {
+            val selection = determineSelectedSquare(x, y, displayWidth, displayHeight)
 
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+            if (selection == Vector2(-1f, -1f)) {
+                return Action(selection, ActionType.SQUARE_DESELECTED)
+            }
 
-                vertices += (x + 1) * scaleFactor - offset      // x = 1
-                vertices += y * scaleFactor - offset            // y = 0
+            return Action(selection, ActionType.SQUARE_SELECTED)
+//        }
+    }
 
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+    private fun determineSelectedSquare(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Vector2 {
+        val scaledX = x / displayWidth
+        val scaledY = (y / displayHeight) * 2.0f - 1.0f
 
-                vertices += (x + 1) * scaleFactor - offset      // x = 1
-                vertices += (y + 1) * scaleFactor - offset      // y = 1
+        val aspectRatio = displayWidth.toFloat() / displayHeight.toFloat()
 
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+        val scaleX = 1.0f / 8.0f
+        val scaleY = aspectRatio / 4.0f
+        var selectedX = -1
+        var selectedY = -1
 
-                vertices += (x + 1) * scaleFactor - offset      // x = 1
-                vertices += (y + 1) * scaleFactor - offset      // y = 1
+        for (i in 0 until 8) {
+            val minX = scaleX * i
+            val maxX = scaleX * (i + 1)
 
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
-
-                vertices += x * scaleFactor - offset            // x = 0
-                vertices += (y + 1) * scaleFactor - offset      // y = 1
-
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
-
-                vertices += x * scaleFactor - offset            // x = 0
-                vertices += y * scaleFactor - offset            // y = 0
-
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+            if (scaledX >= minX && scaledX < maxX) {
+                selectedX = i
+                break
             }
         }
 
-        mesh = Mesh(vertices)
-    }
+        for (i in -4 until 4) {
+            val minY = scaleY * i
+            val maxY = scaleY * (i + 1)
 
-    fun draw() {
-        mesh.draw()
+            if (scaledY >= minY && scaledY < maxY) {
+                selectedY = (i - 3) * -1
+                break
+            }
+        }
+
+        return if (selectedX != -1 && selectedY != -1) {
+            Vector2(selectedX, selectedY)
+        } else {
+            Vector2(-1f, -1f)
+        }
     }
 
     fun destroy() {
-        mesh.destroy()
+        model.destroy()
     }
 
 }

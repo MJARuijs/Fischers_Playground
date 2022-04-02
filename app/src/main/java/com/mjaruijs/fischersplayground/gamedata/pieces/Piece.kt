@@ -1,10 +1,9 @@
-package com.mjaruijs.fischersplayground.gamedata
+package com.mjaruijs.fischersplayground.gamedata.pieces
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.Quad
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
-import java.text.FieldPosition
 
 class Piece(val type: PieceType, var position: Vector2, var scale: Vector2 = defaultScale) {
 

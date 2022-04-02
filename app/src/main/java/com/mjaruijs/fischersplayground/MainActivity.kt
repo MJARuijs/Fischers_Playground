@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
 
-//        supportActionBar?.hide()
+        supportActionBar?.hide()
     }
 
     override fun onDestroy() {

@@ -37,6 +37,8 @@ data class Vector2(var x: Float = 0.0f, var y: Float = 0.0f): Vector<Vector2> {
 
     override operator fun div(factor: Float) = Vector2(x / factor, y / factor)
 
+    operator fun minus(factor: Float) = Vector2(x - factor, y - factor)
+
     override infix fun dot(other: Vector2) = (x * other.x) + (y * other.y)
 
     /**
