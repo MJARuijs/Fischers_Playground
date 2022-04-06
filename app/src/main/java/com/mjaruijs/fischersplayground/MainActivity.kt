@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
         glView = SurfaceView(this)
         setContentView(glView)
 
-        hideActivityDecorations()
+//        hideActivityDecorations()
     }
 
     private fun hideActivityDecorations() {

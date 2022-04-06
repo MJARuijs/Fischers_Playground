@@ -4,17 +4,48 @@ import com.mjaruijs.fischersplayground.math.Color
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 
-class Board(private val boardProgram: ShaderProgram) {
+class Board(private val boardProgram: ShaderProgram, private val requestPossibleMoves: (Vector2) -> Unit) {
 
     private val model = BoardModel()
 
     private var selectedSquare = Vector2(-1f, -1f)
+    private val possibleSquaresForMove = ArrayList<Vector2>()
+
+    init {
+        for (i in 0 until MAX_NUMBER_OF_POSSIBLE_MOVES) {
+            possibleSquaresForMove += Vector2(-1, -1)
+        }
+    }
+
+    fun updatePossibleMoves(possibleMoves: ArrayList<Vector2>) {
+        clearPossibleMoves()
+
+        for (i in 0 until possibleMoves.size) {
+            possibleSquaresForMove[i] = possibleMoves[i]
+        }
+    }
+
+    private fun clearPossibleMoves() {
+        for (i in 0 until MAX_NUMBER_OF_POSSIBLE_MOVES) {
+            possibleSquaresForMove[i] = Vector2(-1f, -1f)
+        }
+    }
 
     fun processAction(action: Action) {
-        if (action.type == ActionType.SQUARE_SELECTED) {
-            selectedSquare = action.position
-        } else if (action.type == ActionType.SQUARE_DESELECTED) {
-            selectedSquare = Vector2(-1f, -1f)
+        when (action.type) {
+            ActionType.SQUARE_SELECTED -> {
+                selectedSquare = action.clickedPosition
+                requestPossibleMoves(selectedSquare)
+            }
+            ActionType.SQUARE_DESELECTED -> {
+                selectedSquare = Vector2(-1f, -1f)
+                clearPossibleMoves()
+            }
+            ActionType.PIECE_MOVED -> {
+                clearPossibleMoves()
+                selectedSquare = Vector2(-1f, -1f)
+            }
+            ActionType.NO_OP -> {}
         }
     }
 
@@ -24,28 +55,23 @@ class Board(private val boardProgram: ShaderProgram) {
         boardProgram.set("outColor", Color(0.25f, 0.25f, 1.0f, 1.0f))
         boardProgram.set("scale", Vector2(aspectRatio, aspectRatio))
         boardProgram.set("selectedSquareCoordinates", (selectedSquare / 8.0f) * 2.0f - 1.0f)
+
+        for ((i, possibleSquare) in possibleSquaresForMove.withIndex()) {
+            boardProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
+        }
+
         model.draw()
         boardProgram.stop()
     }
 
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Action {
-//        if (selectedSquare == Vector2(-1f, -1f)) {
-//            val selection = determineSelectedSquare(x, y, displayWidth, displayHeight)
-//
-//            if (selection == Vector2(-1f, -1f)) {
-//                return Action(selection, ActionType.NOOP)
-//            }
-//
-//            return Action(selection, ActionType.SQUARE_SELECTED)
-//        } else {
-            val selection = determineSelectedSquare(x, y, displayWidth, displayHeight)
+        val selection = determineSelectedSquare(x, y, displayWidth, displayHeight)
 
-            if (selection == Vector2(-1f, -1f)) {
-                return Action(selection, ActionType.SQUARE_DESELECTED)
-            }
+        if (selection == Vector2(-1f, -1f)) {
+            return Action(selection, ActionType.SQUARE_DESELECTED, selectedSquare)
+        }
 
-            return Action(selection, ActionType.SQUARE_SELECTED)
-//        }
+        return Action(selection, ActionType.SQUARE_SELECTED, selectedSquare)
     }
 
     private fun determineSelectedSquare(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Vector2 {
@@ -88,6 +114,10 @@ class Board(private val boardProgram: ShaderProgram) {
 
     fun destroy() {
         model.destroy()
+    }
+
+    companion object {
+        private const val MAX_NUMBER_OF_POSSIBLE_MOVES = 27
     }
 
 }

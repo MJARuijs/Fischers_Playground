@@ -6,7 +6,8 @@ import android.opengl.GLSurfaceView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.gamedata.Board
 import com.mjaruijs.fischersplayground.gamedata.GameState
-import com.mjaruijs.fischersplayground.gamedata.pieces.PieceType
+import com.mjaruijs.fischersplayground.gamedata.pieces.PieceTextures
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
@@ -40,10 +41,15 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
             ShaderLoader.load(R.raw.piece_fragment, ShaderType.FRAGMENT, context)
         )
 
-        PieceType.init(context)
+        PieceTextures.init(context)
 
-        board = Board(boardProgram)
+        board = Board(boardProgram, ::requestPossibleMoves)
         gameState = GameState()
+    }
+
+    private fun requestPossibleMoves(square: Vector2) {
+        val possibleMoves = gameState.determinePossibleMoves(square)
+        board.updatePossibleMoves(possibleMoves)
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {

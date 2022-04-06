@@ -21,5 +21,7 @@ void main() {
 
     if (squareSelected == 1) {
         outColor = vec4(0, 0, 1, 1);
+    } else if (squareSelected == 2) {
+        outColor = vec4(0.5, 0, 0, 1);
     }
 }

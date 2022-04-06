@@ -2,4 +2,4 @@ package com.mjaruijs.fischersplayground.gamedata
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Action(val position: Vector2, val type: ActionType)
+data class Action(val clickedPosition: Vector2, val type: ActionType, val previouslySelectedPosition: Vector2? = null)
