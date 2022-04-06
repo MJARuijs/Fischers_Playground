@@ -39,11 +39,7 @@ class GameState {
             take(newPositionPiece, !teamToMove)
         }
 
-        teamToMove = if (teamToMove == Team.WHITE) {
-            Team.BLACK
-        } else {
-            Team.WHITE
-        }
+        teamToMove = !teamToMove
 
         possibleMoves.clear()
     }
@@ -131,33 +127,26 @@ class GameState {
             }
         }
 
-//        state[0][0] = Piece(PieceType.ROOK, Team.WHITE)
+        state[0][0] = Piece(PieceType.ROOK, Team.WHITE)
 //        state[1][0] = Piece(PieceType.KNIGHT, Team.WHITE)
 //        state[2][0] = Piece(PieceType.BISHOP, Team.WHITE)
 //        state[3][0] = Piece(PieceType.QUEEN, Team.WHITE)
-//        state[4][0] = Piece(PieceType.KING, Team.WHITE)
+        state[4][0] = Piece(PieceType.KING, Team.WHITE)
 //        state[5][0] = Piece(PieceType.BISHOP, Team.WHITE)
 //        state[6][0] = Piece(PieceType.KNIGHT, Team.WHITE)
-//        state[7][0] = Piece(PieceType.ROOK, Team.WHITE)
-//        state[0][7] = Piece(PieceType.ROOK, Team.BLACK)
-//        state[1][7] = Piece(PieceType.KNIGHT, Team.BLACK)
-//        state[2][7] = Piece(PieceType.BISHOP, Team.BLACK)
-//        state[3][7] = Piece(PieceType.QUEEN, Team.BLACK)
-//        state[4][7] = Piece(PieceType.KING, Team.BLACK)
-//        state[5][7] = Piece(PieceType.BISHOP, Team.BLACK)
-//        state[6][7] = Piece(PieceType.KNIGHT, Team.BLACK)
-//        state[7][7] = Piece(PieceType.ROOK, Team.BLACK)
-//
-//        for (i in 0 until 4) {
-//            state[i][1] = Piece(PieceType.PAWN, Team.WHITE)
-//            state[i][6] = Piece(PieceType.PAWN, Team.BLACK)
-//        }
-//
-//        state[2][2] = Piece(PieceType.PAWN, Team.BLACK)
-//        state[4][5] = Piece(PieceType.PAWN, Team.WHITE)
+        state[7][0] = Piece(PieceType.ROOK, Team.WHITE)
+        state[0][7] = Piece(PieceType.ROOK, Team.BLACK)
+        state[1][7] = Piece(PieceType.KNIGHT, Team.BLACK)
+        state[2][7] = Piece(PieceType.BISHOP, Team.BLACK)
+        state[3][7] = Piece(PieceType.QUEEN, Team.BLACK)
+        state[4][7] = Piece(PieceType.KING, Team.BLACK)
+        state[5][7] = Piece(PieceType.BISHOP, Team.BLACK)
+        state[6][7] = Piece(PieceType.KNIGHT, Team.BLACK)
+        state[7][7] = Piece(PieceType.ROOK, Team.BLACK)
 
-        state[4][4] = Piece(PieceType.ROOK, Team.WHITE)
-        state[2][4] = Piece(PieceType.PAWN, Team.BLACK)
-        state[6][4] = Piece(PieceType.PAWN, Team.BLACK)
+        for (i in 0 until 8) {
+            state[i][1] = Piece(PieceType.PAWN, Team.WHITE)
+            state[i][6] = Piece(PieceType.PAWN, Team.BLACK)
+        }
     }
 }

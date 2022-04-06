@@ -20,13 +20,16 @@ enum class PieceType(val value: Int) {
                 QUEEN -> getPossibleMovesForQueen(piece, square, gameState)
                 ROOK -> getPossibleMovesForRook(piece, square, gameState)
                 BISHOP -> getPossibleMovesForBishop(piece, square, gameState)
-                KNIGHT -> getPossibleMovesForKnight(piece, square, gameState)
+                KNIGHT -> getPossibleMovesForKnight(square)
                 PAWN -> getPossibleMovesForPawn(piece, square, gameState)
             }
         }
 
         private fun getPossibleMovesForQueen(piece: Piece, square: Vector2, gameState: ArrayList<ArrayList<Piece?>>): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
+
+            possibleMoves += getStraightMoves(piece, square, gameState)
+            possibleMoves += getDiagonalMoves(piece, square, gameState)
 
             return possibleMoves
         }
@@ -36,15 +39,32 @@ enum class PieceType(val value: Int) {
         }
 
         private fun getPossibleMovesForBishop(piece: Piece, square: Vector2, gameState: ArrayList<ArrayList<Piece?>>): ArrayList<Vector2> {
-            val possibleMoves = ArrayList<Vector2>()
-
-
-
-            return possibleMoves
+            return getDiagonalMoves(piece, square, gameState)
         }
 
-        private fun getPossibleMovesForKnight(piece: Piece, square: Vector2, gameState: ArrayList<ArrayList<Piece?>>): ArrayList<Vector2> {
+        private fun getPossibleMovesForKnight(square: Vector2): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
+
+            val x = square.x.roundToInt()
+            val y = square.y.roundToInt()
+
+            val positions = ArrayList<Vector2>()
+            positions += Vector2(x + 1, y + 2)
+            positions += Vector2(x + 2, y + 1)
+            positions += Vector2(x - 1, y + 2)
+            positions += Vector2(x - 2, y + 1)
+            positions += Vector2(x - 1, y - 2)
+            positions += Vector2(x - 2, y - 1)
+            positions += Vector2(x + 1, y - 2)
+            positions += Vector2(x + 2, y - 1)
+
+            for (position in positions) {
+                if (position.x < 0 || position.x > 7 || position.y < 0 || position.y > 7) {
+                    continue
+                }
+
+                possibleMoves += position
+            }
 
             return possibleMoves
         }
@@ -114,6 +134,86 @@ enum class PieceType(val value: Int) {
 
         private fun getDiagonalMoves(piece: Piece, square: Vector2, gameState: ArrayList<ArrayList<Piece?>>): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
+
+            for (i in 1 until 8) {
+                val x = square.x.roundToInt() - i
+                val y = square.y.roundToInt() + i
+
+                if (x < 0 || x > 7 || y < 0 || y > 7) {
+                    break
+                }
+
+                val pieceAtSquare = gameState[x][y]
+
+                if (pieceAtSquare == null) {
+                    possibleMoves += Vector2(x, y)
+                } else if (pieceAtSquare.team != piece.team) {
+                    possibleMoves += Vector2(x, y)
+                    break
+                } else {
+                    break
+                }
+            }
+
+            for (i in 1 until 8) {
+                val x = square.x.roundToInt() + i
+                val y = square.y.roundToInt() + i
+
+                if (x < 0 || x > 7 || y < 0 || y > 7) {
+                    break
+                }
+
+                val pieceAtSquare = gameState[x][y]
+
+                if (pieceAtSquare == null) {
+                    possibleMoves += Vector2(x, y)
+                } else if (pieceAtSquare.team != piece.team) {
+                    possibleMoves += Vector2(x, y)
+                    break
+                } else {
+                    break
+                }
+            }
+
+            for (i in 1 until 8) {
+                val x = square.x.roundToInt() - i
+                val y = square.y.roundToInt() - i
+
+                if (x < 0 || x > 7 || y < 0 || y > 7) {
+                    break
+                }
+
+                val pieceAtSquare = gameState[x][y]
+
+                if (pieceAtSquare == null) {
+                    possibleMoves += Vector2(x, y)
+                } else if (pieceAtSquare.team != piece.team) {
+                    possibleMoves += Vector2(x, y)
+                    break
+                } else {
+                    break
+                }
+            }
+
+            for (i in 1 until 8) {
+                val x = square.x.roundToInt() + i
+                val y = square.y.roundToInt() - i
+
+                if (x < 0 || x > 7 || y < 0 || y > 7) {
+                    break
+                }
+
+                val pieceAtSquare = gameState[x][y]
+
+                if (pieceAtSquare == null) {
+                    possibleMoves += Vector2(x, y)
+                } else if (pieceAtSquare.team != piece.team) {
+                    possibleMoves += Vector2(x, y)
+                    break
+                } else {
+                    break
+                }
+            }
 
             return possibleMoves
         }
