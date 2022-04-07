@@ -20,7 +20,7 @@ enum class PieceType(val value: Int) {
                 QUEEN -> getPossibleMovesForQueen(piece, square, gameState)
                 ROOK -> getPossibleMovesForRook(piece, square, gameState)
                 BISHOP -> getPossibleMovesForBishop(piece, square, gameState)
-                KNIGHT -> getPossibleMovesForKnight(square)
+                KNIGHT -> getPossibleMovesForKnight(piece, square, gameState)
                 PAWN -> getPossibleMovesForPawn(piece, square, gameState)
             }
         }
@@ -42,7 +42,7 @@ enum class PieceType(val value: Int) {
             return getDiagonalMoves(piece, square, gameState)
         }
 
-        private fun getPossibleMovesForKnight(square: Vector2): ArrayList<Vector2> {
+        private fun getPossibleMovesForKnight(piece: Piece, square: Vector2, gameState: ArrayList<ArrayList<Piece?>>): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             val x = square.x.roundToInt()
@@ -63,7 +63,11 @@ enum class PieceType(val value: Int) {
                     continue
                 }
 
-                possibleMoves += position
+                val pieceAtPosition = gameState[position.x.roundToInt()][position.y.roundToInt()]
+
+                if (pieceAtPosition == null || pieceAtPosition.team != piece.team) {
+                    possibleMoves += position
+                }
             }
 
             return possibleMoves
@@ -72,6 +76,9 @@ enum class PieceType(val value: Int) {
         private fun getPossibleMovesForPawn(piece: Piece, square: Vector2, gameState: ArrayList<ArrayList<Piece?>>): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
+            val x = square.x.roundToInt()
+            val y = square.y.roundToInt()
+
             val direction = if (piece.team == Team.WHITE) {
                 1
             } else {
@@ -79,25 +86,28 @@ enum class PieceType(val value: Int) {
             }
 
             var firstSquareEmpty = false
-            if (gameState[square.x.roundToInt()][square.y.roundToInt() + direction] == null) {
-                possibleMoves += Vector2(square.x, square.y + direction)
+            if (gameState[x][y + direction] == null) {
+                possibleMoves += Vector2(x, y + direction)
                 firstSquareEmpty = true
             }
 
-            val pawnAtStartingSquare = (square.y == 1.0f && piece.team == Team.WHITE) || (square.y == 6.0f && piece.team == Team.BLACK)
+            val pawnAtStartingSquare = (y == 1 && piece.team == Team.WHITE) || (y == 6 && piece.team == Team.BLACK)
 
             if (pawnAtStartingSquare && firstSquareEmpty) {
-                if (gameState[square.x.roundToInt()][square.y.roundToInt() + direction * 2] == null) {
-                    possibleMoves += Vector2(square.x, square.y + direction * 2)
+                if (gameState[x][y + direction * 2] == null) {
+                    possibleMoves += Vector2(x, y + direction * 2)
                 }
             }
 
-            if (gameState[square.x.roundToInt() - 1][square.y.roundToInt() + direction] != null && gameState[square.x.roundToInt() - 1][square.y.roundToInt() + direction]?.team != piece.team) {
-                possibleMoves += Vector2(square.x - 1, square.y + direction)
+            if (x != 0) {
+                if (gameState[x - 1][y + direction] != null && gameState[x - 1][y + direction]?.team != piece.team) {
+                    possibleMoves += Vector2(x - 1, y + direction)
+                }
             }
-
-            if (gameState[square.x.roundToInt() + 1][square.y.roundToInt() + direction] != null && gameState[square.x.roundToInt() + 1][square.y.roundToInt() + direction]?.team != piece.team) {
-                possibleMoves += Vector2(square.x + 1, square.y + direction)
+            if (x != 7) {
+                if (gameState[x + 1][y + direction] != null && gameState[x + 1][y + direction]?.team != piece.team) {
+                    possibleMoves += Vector2(x + 1, y + direction)
+                }
             }
 
             return possibleMoves

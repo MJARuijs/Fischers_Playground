@@ -24,7 +24,7 @@ class GameState {
         initBoard()
     }
 
-    fun move(fromPosition: Vector2, toPosition: Vector2) {
+    private fun move(fromPosition: Vector2, toPosition: Vector2) {
 
         val currentPositionPiece = state[fromPosition.x.roundToInt()][fromPosition.y.roundToInt()] ?: return
         val newPositionPiece = state[toPosition.x.roundToInt()][toPosition.y.roundToInt()]
@@ -39,8 +39,19 @@ class GameState {
             take(newPositionPiece, !teamToMove)
         }
 
+        if (currentPositionPiece.type == PieceType.PAWN) {
+            if (currentPositionPiece.team == Team.WHITE && toPosition.y == 7.0f) {
+                state[toPosition.x.roundToInt()][toPosition.y.roundToInt()] = Piece(PieceType.QUEEN, Team.WHITE)
+            }
+
+            if (currentPositionPiece.team == Team.BLACK && toPosition.y == 0.0f) {
+                state[toPosition.x.roundToInt()][toPosition.y.roundToInt()] = Piece(PieceType.QUEEN, Team.BLACK)
+            }
+        }
+
         teamToMove = !teamToMove
 
+        isPlayerChecked(teamToMove)
         possibleMoves.clear()
     }
 
@@ -56,31 +67,27 @@ class GameState {
         println(action)
 
         if (action.type == ActionType.SQUARE_DESELECTED) {
-            return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
+            return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED) // Square deselected
         }
 
-        if (action.previouslySelectedPosition == null || action.previouslySelectedPosition.x == -1.0f || action.previouslySelectedPosition.y == -1.0f) {
-            val piece = state[action.clickedPosition.x.roundToInt()][action.clickedPosition.y.roundToInt()] ?: return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
+        if (action.type == ActionType.SQUARE_SELECTED) {
+            // No piece has been selected yet
+            if (action.previouslySelectedPosition == null || action.previouslySelectedPosition.x == -1.0f || action.previouslySelectedPosition.y == -1.0f) {
+                val piece = state[action.clickedPosition.x.roundToInt()][action.clickedPosition.y.roundToInt()] ?: return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
 
-            if (action.type == ActionType.SQUARE_SELECTED) {
+                // Select a piece now, if the piece belongs to the team who's turn it is
                 if (piece.team == teamToMove) {
                     return Action(action.clickedPosition, ActionType.SQUARE_SELECTED)
                 }
-            }
-        } else {
-            val previouslySelectedPiece = state[action.previouslySelectedPosition.x.roundToInt()][action.previouslySelectedPosition.y.roundToInt()]
+            } else { // A piece is already selected
 
-            if (action.type == ActionType.SQUARE_SELECTED) {
-                if (previouslySelectedPiece == null) {
-                    return Action(action.clickedPosition, ActionType.NO_OP)
-                }
-
+                // If the newly selected square belongs to the possible moves of the selected piece, we can move to that new square
                 if (possibleMoves.contains(action.clickedPosition)) {
                     move(action.previouslySelectedPosition, action.clickedPosition)
                     return Action(action.clickedPosition, ActionType.PIECE_MOVED)
                 }
 
-                val currentlySelectedPiece = state[action.clickedPosition.x.roundToInt()][action.clickedPosition.y.roundToInt()] ?: return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
+                val currentlySelectedPiece = state[action.clickedPosition.x.roundToInt()][action.clickedPosition.y.roundToInt()] ?: return Action(action.clickedPosition, ActionType.NO_OP)
 
                 if (currentlySelectedPiece.team == teamToMove) {
                     if (FloatUtils.compare(action.clickedPosition, action.previouslySelectedPosition)) {
@@ -94,6 +101,45 @@ class GameState {
         }
 
         return Action(action.clickedPosition, ActionType.NO_OP)
+    }
+
+    fun isPlayerChecked(team: Team): Boolean {
+        val kingsPosition = Vector2(-1f, -1f)
+        var king: Piece? = null
+
+        for (x in 0 until 8) {
+            for (y in 0 until 8) {
+                val piece = state[x][y] ?: continue
+                if (piece.type == PieceType.KING && piece.team == team) {
+                    king = piece
+                    kingsPosition.x = x.toFloat()
+                    kingsPosition.y = y.toFloat()
+                    break
+                }
+            }
+        }
+
+        val possibleMovesForOpponent = ArrayList<Vector2>()
+
+        for (x in 0 until 8) {
+            for (y in 0 until 8) {
+                val piece = state[x][y] ?: continue
+
+                if (piece.team != team) {
+                    possibleMovesForOpponent += PieceType.getPossibleMoves(piece, Vector2(x, y), state)
+                }
+            }
+        }
+
+        if (possibleMovesForOpponent.contains(kingsPosition)) {
+            println("CHECKED")
+        } else {
+            println("NOT CHECKED")
+        }
+
+        val possibleMovesForKing = PieceType.getPossibleMoves(king!!, kingsPosition, state)
+
+        return false
     }
 
     fun determinePossibleMoves(square: Vector2): ArrayList<Vector2> {
@@ -128,12 +174,12 @@ class GameState {
         }
 
         state[0][0] = Piece(PieceType.ROOK, Team.WHITE)
-//        state[1][0] = Piece(PieceType.KNIGHT, Team.WHITE)
-//        state[2][0] = Piece(PieceType.BISHOP, Team.WHITE)
-//        state[3][0] = Piece(PieceType.QUEEN, Team.WHITE)
+        state[1][0] = Piece(PieceType.KNIGHT, Team.WHITE)
+        state[2][0] = Piece(PieceType.BISHOP, Team.WHITE)
+        state[3][0] = Piece(PieceType.QUEEN, Team.WHITE)
         state[4][0] = Piece(PieceType.KING, Team.WHITE)
-//        state[5][0] = Piece(PieceType.BISHOP, Team.WHITE)
-//        state[6][0] = Piece(PieceType.KNIGHT, Team.WHITE)
+        state[5][0] = Piece(PieceType.BISHOP, Team.WHITE)
+        state[6][0] = Piece(PieceType.KNIGHT, Team.WHITE)
         state[7][0] = Piece(PieceType.ROOK, Team.WHITE)
         state[0][7] = Piece(PieceType.ROOK, Team.BLACK)
         state[1][7] = Piece(PieceType.KNIGHT, Team.BLACK)
