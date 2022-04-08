@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.SurfaceView
 
 class MainActivity : AppCompatActivity() {
@@ -17,6 +18,7 @@ class MainActivity : AppCompatActivity() {
         glView = SurfaceView(this)
         setContentView(glView)
 
+        NetworkManager.run()
 //        hideActivityDecorations()
     }
 

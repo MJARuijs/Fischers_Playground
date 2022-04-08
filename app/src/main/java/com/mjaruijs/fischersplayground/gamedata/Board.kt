@@ -85,6 +85,8 @@ class Board(private val boardProgram: ShaderProgram, private val requestPossible
         var selectedX = -1
         var selectedY = -1
 
+        println("$scaledX, $scaledY")
+
         for (i in 0 until 8) {
             val minX = scaleX * i
             val maxX = scaleX * (i + 1)

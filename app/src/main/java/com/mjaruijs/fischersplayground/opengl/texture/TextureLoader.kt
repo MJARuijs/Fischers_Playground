@@ -31,7 +31,7 @@ object TextureLoader {
 
             val pixelData = ByteBuffer.allocateDirect(bitmap.byteCount)
             bitmap.copyPixelsToBuffer(pixelData)
-            bitmap.recycle()
+//            bitmap.recycle()
 
             pixelData.rewind()
 
