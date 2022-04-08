@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.networking
 
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
 import com.mjaruijs.fischersplayground.networking.nio.Manager
+import com.mjaruijs.fischersplayground.util.Logger
 import java.net.ConnectException
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -16,6 +17,8 @@ object NetworkManager {
     private val manager = Manager("Client")
 
     private lateinit var client: EncodedClient
+
+    private var
 
     fun run() {
         if (initialized.get()) {
@@ -35,6 +38,7 @@ object NetworkManager {
             }
 
             if (initialized.get()) {
+                Logger.debug("Starting manager!")
                 Thread(manager).start()
                 manager.register(client)
             }
@@ -50,7 +54,10 @@ object NetworkManager {
     }
 
     private fun onRead(message: String, address: String) {
-        println("Received message from: $address: $message")
+        Logger.debug("Received message from: $address: $message")
+        if (message == "user_name") {
+            sendMessage("Marc's Phone")
+        }
     }
 
 }
