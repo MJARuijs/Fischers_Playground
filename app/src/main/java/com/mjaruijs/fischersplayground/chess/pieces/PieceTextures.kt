@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.gamedata.pieces
+package com.mjaruijs.fischersplayground.chess.pieces
 
 import android.content.Context
 import com.mjaruijs.fischersplayground.R

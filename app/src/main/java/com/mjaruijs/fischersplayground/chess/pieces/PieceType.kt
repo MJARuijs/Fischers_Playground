@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.gamedata.pieces
+package com.mjaruijs.fischersplayground.chess.pieces
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import kotlin.math.roundToInt
@@ -82,7 +82,7 @@ enum class PieceType(val value: Int) {
             val direction = if (piece.team == Team.WHITE) {
                 1
             } else {
-                -1
+                1
             }
 
             var firstSquareEmpty = false
@@ -91,7 +91,8 @@ enum class PieceType(val value: Int) {
                 firstSquareEmpty = true
             }
 
-            val pawnAtStartingSquare = (y == 1 && piece.team == Team.WHITE) || (y == 6 && piece.team == Team.BLACK)
+            val pawnAtStartingSquare = (y == 1 )
+//            val pawnAtStartingSquare = (y == 1 && piece.team == Team.WHITE) || (y == 6 && piece.team == Team.BLACK)
 
             if (pawnAtStartingSquare && firstSquareEmpty) {
                 if (gameState[x][y + direction * 2] == null) {
@@ -104,6 +105,7 @@ enum class PieceType(val value: Int) {
                     possibleMoves += Vector2(x - 1, y + direction)
                 }
             }
+
             if (x != 7) {
                 if (gameState[x + 1][y + direction] != null && gameState[x + 1][y + direction]?.team != piece.team) {
                     possibleMoves += Vector2(x + 1, y + direction)

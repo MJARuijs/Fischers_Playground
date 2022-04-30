@@ -4,9 +4,9 @@ import android.content.Context
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.gamedata.Board
-import com.mjaruijs.fischersplayground.gamedata.GameState
-import com.mjaruijs.fischersplayground.gamedata.pieces.PieceTextures
+import com.mjaruijs.fischersplayground.chess.Board
+import com.mjaruijs.fischersplayground.chess.GameState
+import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
@@ -14,13 +14,13 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
+class OpenGLRenderer(private val context: Context, private val gameId: String, private val isPlayingWhite: Boolean, private var onContextCreated: () -> Unit) : GLSurfaceView.Renderer {
 
     private lateinit var board: Board
     private lateinit var gameState: GameState
 
-    private lateinit var boardProgram: ShaderProgram
-    private lateinit var pieceProgram: ShaderProgram
+    private lateinit var gameStateRenderer: GameStateRenderer
+//    private lateinit var pieceProgram: ShaderProgram
 
     private var aspectRatio = 1.0f
     private var displayWidth = 0
@@ -31,25 +31,32 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        boardProgram = ShaderProgram(
-            ShaderLoader.load(R.raw.board_vertex, ShaderType.VERTEX, context),
-            ShaderLoader.load(R.raw.board_fragment, ShaderType.FRAGMENT, context)
-        )
-
-        pieceProgram = ShaderProgram(
-            ShaderLoader.load(R.raw.piece_vertex, ShaderType.VERTEX, context),
-            ShaderLoader.load(R.raw.piece_fragment, ShaderType.FRAGMENT, context)
-        )
+//        pieceProgram = ShaderProgram(
+//            ShaderLoader.load(R.raw.piece_vertex, ShaderType.VERTEX, context),
+//            ShaderLoader.load(R.raw.piece_fragment, ShaderType.FRAGMENT, context)
+//        )
 
         PieceTextures.init(context)
 
-        board = Board(boardProgram, ::requestPossibleMoves)
-        gameState = GameState()
+        board = Board(context, ::requestPossibleMoves)
+        gameState = GameState(gameId, isPlayingWhite)
+        gameStateRenderer = GameStateRenderer(context)
+
+        onContextCreated()
+    }
+
+    fun move(fromPosition: Vector2, toPosition: Vector2) {
+        gameState.moveOpponent(fromPosition, toPosition)
     }
 
     private fun requestPossibleMoves(square: Vector2) {
         val possibleMoves = gameState.determinePossibleMoves(square)
         board.updatePossibleMoves(possibleMoves)
+    }
+
+    fun update(delta: Float): Boolean {
+        return gameStateRenderer.update(delta)
+//        return gameState.update(delta)
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
@@ -70,17 +77,12 @@ class OpenGLRenderer(private val context: Context) : GLSurfaceView.Renderer {
         glClear(GL_COLOR_BUFFER_BIT)
 
         board.render(aspectRatio)
-
-        pieceProgram.start()
-        pieceProgram.set("aspectRatio", aspectRatio)
-
-        gameState.draw(pieceProgram, aspectRatio)
-        pieceProgram.stop()
+        gameStateRenderer.render(gameState, aspectRatio)
+//        gameState.draw(pieceProgram, aspectRatio)
     }
 
     fun destroy() {
-        boardProgram.destroy()
-        pieceProgram.destroy()
+//        pieceProgram.destroy()
 
         board.destroy()
     }

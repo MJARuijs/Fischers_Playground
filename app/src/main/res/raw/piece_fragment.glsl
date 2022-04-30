@@ -1,8 +1,10 @@
 #version 300 es
 
+precision highp float;
+
 in vec2 textureCoordinates;
 
-uniform sampler2DArray textureMaps;
+uniform highp sampler2DArray textureMaps;
 uniform float textureId;
 
 out vec4 outColor;

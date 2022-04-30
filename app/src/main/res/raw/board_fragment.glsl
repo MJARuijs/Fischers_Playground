@@ -1,5 +1,7 @@
 #version 300 es
 
+precision highp float;
+
 const vec3 whiteTile = vec3(0.75f, 0.75f, 0.75f);
 const vec3 darkTile = vec3(0.25f, 0.25f, 0.25f);
 

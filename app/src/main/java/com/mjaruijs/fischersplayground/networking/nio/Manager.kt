@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.networking.nio
 
+import android.content.Context
 import com.mjaruijs.fischersplayground.networking.client.ClientException
 import com.mjaruijs.fischersplayground.util.Logger
 import java.nio.channels.Selector
@@ -10,6 +11,8 @@ class Manager(private val name: String) : Runnable {
     private val selector = Selector.open()
     private val running = AtomicBoolean(true)
     private val registering = AtomicBoolean(false)
+
+    lateinit var context: Context
 
     private lateinit var onClientDisconnect: (String) -> Unit
 
@@ -47,7 +50,7 @@ class Manager(private val name: String) : Runnable {
                         if (key.isReadable) {
                             val client = key.attachment() as NonBlockingClient
                             try {
-                                client.onRead()
+                                client.onRead(context)
                             } catch (exception: ClientException) {
                                 if (::onClientDisconnect.isInitialized) {
                                     val clientInfo = client.channel.remoteAddress.toString()

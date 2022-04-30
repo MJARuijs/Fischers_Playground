@@ -68,4 +68,22 @@ data class Vector2(var x: Float = 0.0f, var y: Float = 0.0f): Vector<Vector2> {
 
     override fun toArray() = floatArrayOf(x, y)
 
+    companion object {
+
+        fun fromString(content: String): Vector2 {
+            try {
+                val startIndex = content.indexOf('<') + 1
+                val separatorIndex = content.indexOf(',')
+                val endIndex = content.indexOf('>')
+
+                val x = content.substring(startIndex, separatorIndex).toFloat()
+                val y = content.substring(separatorIndex + 2, endIndex).toFloat()
+                return Vector2(x, y)
+            } catch (e: Exception) {
+                throw IllegalArgumentException("Failed to parse the following string into a Vector2: $content")
+            }
+
+        }
+    }
+
 }

@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.gamedata
+package com.mjaruijs.fischersplayground.chess
 
 enum class ActionType {
 

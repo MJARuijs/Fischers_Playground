@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.networking.nio
 
+import android.content.Context
 import com.mjaruijs.fischersplayground.networking.client.Client
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
@@ -17,7 +18,7 @@ abstract class NonBlockingClient(internal val channel: SocketChannel) : Client, 
         key = channel.register(selector, SelectionKey.OP_READ, this)
     }
 
-    abstract fun onRead()
+    abstract fun onRead(context: Context)
 
     override fun close() {
         key.cancel()

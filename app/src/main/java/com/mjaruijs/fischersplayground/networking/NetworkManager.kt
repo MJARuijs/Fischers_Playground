@@ -1,6 +1,10 @@
 package com.mjaruijs.fischersplayground.networking
 
+import android.content.Context
+import android.content.Intent
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
+import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.util.Logger
 import java.net.ConnectException
@@ -18,12 +22,19 @@ object NetworkManager {
 
     private lateinit var client: EncodedClient
 
-    private var
+    fun isRunning(): Boolean {
+        if (initialized.get()) {
+            return true
+        }
+        return false
+    }
 
-    fun run() {
+    fun run(context: Context) {
         if (initialized.get()) {
             return
         }
+
+        manager.context = context
 
         Thread {
             try {
@@ -38,25 +49,33 @@ object NetworkManager {
             }
 
             if (initialized.get()) {
-                Logger.debug("Starting manager!")
                 Thread(manager).start()
                 manager.register(client)
             }
         }.start()
     }
 
-    fun sendMessage(message: String) {
+    fun sendMessage(message: Message) {
         Thread {
             while (clientInitializing.get()) {}
 
-            client.write(message)
+            client.write(message.toString())
         }.start()
     }
 
-    private fun onRead(message: String, address: String) {
-        Logger.debug("Received message from: $address: $message")
-        if (message == "user_name") {
-            sendMessage("Marc's Phone")
+    private fun onRead(message: Message, context: Context) {
+        Logger.debug("Received message from: ${message.sender}: ${message.content}")
+
+        val startIndex = message.content.indexOf(':')
+        val category = message.content.substring(0, startIndex)
+        val content = message.content.substring(startIndex + 1)
+
+        if (message.topic == Topic.INFO) {
+            val intent = Intent("mjaruijs.fischers_playground.INFO").putExtra(category, content)
+            context.sendBroadcast(intent)
+        } else if (message.topic == Topic.GAME_UPDATE) {
+            val intent = Intent("mjaruijs.fischers_playground.GAME_UPDATE").putExtra(category, content)
+            context.sendBroadcast(intent)
         }
     }
 
