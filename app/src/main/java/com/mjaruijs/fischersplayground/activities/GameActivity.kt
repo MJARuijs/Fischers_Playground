@@ -6,8 +6,11 @@ import android.os.Bundle
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.mjaruijs.fischersplayground.chess.Board
+import com.mjaruijs.fischersplayground.chess.GameState
+import com.mjaruijs.fischersplayground.chess.SavedGames
+import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
-import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.SurfaceView
 
 class GameActivity : AppCompatActivity() {
@@ -18,6 +21,16 @@ class GameActivity : AppCompatActivity() {
 
     private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
+
+    private var displayWidth = 0
+    private var displayHeight = 0
+
+    private var isPlayingWhite = false
+    private lateinit var gameId: String
+    private lateinit var opponentName: String
+
+    private lateinit var board: Board
+    private lateinit var gameState: GameState
 
     private lateinit var glView: SurfaceView
 
@@ -31,12 +44,36 @@ class GameActivity : AppCompatActivity() {
             throw IllegalArgumentException("Missing essential information: is_player_white")
         }
 
-        val isPlayingWhite = intent.getBooleanExtra("is_playing_white", false)
-        val opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information: opponent_name")
-        val gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
+        isPlayingWhite = intent.getBooleanExtra("is_playing_white", false)
+        opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information: opponent_name")
+        gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
 
-        glView = SurfaceView(this, gameId, isPlayingWhite)
+        glView = SurfaceView(this, ::onContextCreated, ::onClick, ::onDisplaySizeChanged)
         setContentView(glView)
+    }
+
+    private fun onContextCreated() {
+        gameState = SavedGames.get(gameId) ?: GameState(gameId, isPlayingWhite)
+        gameState.init()
+        board = Board { square ->
+            val possibleMoves = gameState.determinePossibleMoves(square)
+            board.updatePossibleMoves(possibleMoves)
+        }
+
+        glView.setGameState(gameState)
+        glView.setBoard(board)
+    }
+
+    private fun onDisplaySizeChanged(width: Int, height: Int) {
+        displayWidth = width
+        displayHeight = height
+    }
+
+    private fun onClick(x: Float, y: Float) {
+        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
+        val boardAction = gameState.processAction(clickAction)
+
+        board.processAction(boardAction)
     }
 
     private fun onGameUpdate(content: String) {
@@ -44,10 +81,11 @@ class GameActivity : AppCompatActivity() {
         val secondSeparatorIndex = content.indexOf('|', firstSeparatorIndex + 1)
 
         val gameId = content.substring(0, firstSeparatorIndex)
-        val fromPosition = content.substring(firstSeparatorIndex + 1, secondSeparatorIndex)
-        val toPosition = content.substring(secondSeparatorIndex + 1)
+        val moveNotation = content.substring(firstSeparatorIndex + 1)
+        val move = Move.fromChessNotation(moveNotation)
 
-        glView.move(Vector2.fromString(fromPosition), Vector2.fromString(toPosition))
+        gameState.moveOpponent(move)
+        glView.requestRender()
     }
 
     private fun onIncomingInvite(content: String) {
@@ -70,7 +108,7 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun saveGame() {
-
+        SavedGames.put(gameId, gameState)
     }
 
     override fun onRestart() {
@@ -88,6 +126,7 @@ class GameActivity : AppCompatActivity() {
     override fun onStop() {
         unregisterReceiver(inviteReceiver)
         unregisterReceiver(gameUpdateReceiver)
+        saveGame()
         super.onStop()
     }
 

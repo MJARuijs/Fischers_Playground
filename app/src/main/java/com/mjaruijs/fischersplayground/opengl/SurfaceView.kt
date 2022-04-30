@@ -3,23 +3,22 @@ package com.mjaruijs.fischersplayground.opengl
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.view.MotionEvent
-import com.mjaruijs.fischersplayground.math.vectors.Vector2
+import com.mjaruijs.fischersplayground.chess.Board
+import com.mjaruijs.fischersplayground.chess.GameState
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
 import com.mjaruijs.fischersplayground.util.FixedRateThread
 
-class SurfaceView(context: Context, gameId: String, isPlayingWhite: Boolean) : GLSurfaceView(context) {
+class SurfaceView(context: Context, private val onSurfaceCreated: () -> Unit, private val onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit) : GLSurfaceView(context) {
 
     private val tickRate = 60.0f
 
     private val renderer: OpenGLRenderer
     private val fixedRateThread = FixedRateThread(tickRate, ::update)
 
-    private var animating = false
-
     init {
         setEGLContextClientVersion(3)
 
-        renderer = OpenGLRenderer(context, gameId, isPlayingWhite, ::onContextCreated)
+        renderer = OpenGLRenderer(context, ::onContextCreated, onDisplaySizeChanged)
         setRenderer(renderer)
 
         renderMode = RENDERMODE_WHEN_DIRTY
@@ -27,15 +26,19 @@ class SurfaceView(context: Context, gameId: String, isPlayingWhite: Boolean) : G
 
     private fun onContextCreated() {
         fixedRateThread.run()
+        onSurfaceCreated()
     }
 
-    fun move(fromPosition: Vector2, toPosition: Vector2) {
-        renderer.move(fromPosition, toPosition)
-        requestRender()
+    fun setBoard(board: Board) {
+        renderer.setBoard(board)
+    }
+
+    fun setGameState(gameState: GameState) {
+        renderer.setGameState(gameState)
     }
 
     private fun update() {
-        animating = renderer.update(1.0f / tickRate)
+        val animating = renderer.update(1.0f / tickRate)
 
         if (animating) {
             requestRender()
@@ -48,15 +51,11 @@ class SurfaceView(context: Context, gameId: String, isPlayingWhite: Boolean) : G
         }
 
         if (event.action == MotionEvent.ACTION_DOWN) {
-            renderer.onTouch(event.x, event.y)
+            onClick(event.x, event.y)
             requestRender()
         }
 
         return true
-    }
-
-    fun saveGame() {
-
     }
 
     fun destroy() {

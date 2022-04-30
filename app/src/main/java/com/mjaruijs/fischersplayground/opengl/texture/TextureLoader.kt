@@ -20,6 +20,7 @@ object TextureLoader {
             bitmapOptions.outConfig = Bitmap.Config.ARGB_8888
 
             val bitmap = BitmapFactory.decodeResource(context.resources, resourceId, bitmapOptions)
+
             glBindTexture(GL_TEXTURE_2D, textureHandle[0])
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)

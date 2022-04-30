@@ -1,43 +1,32 @@
 package com.mjaruijs.fischersplayground.chess
 
 import com.mjaruijs.fischersplayground.Preferences
+import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
+import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
-import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.opengl.Quad
 import com.mjaruijs.fischersplayground.opengl.renderer.AnimationData
-import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
-import com.mjaruijs.fischersplayground.opengl.texture.Sampler
 import com.mjaruijs.fischersplayground.util.FloatUtils
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GameState(private val gameId: String, private val isPlayingWhite: Boolean) {
 
-//    private val quad = Quad()
-//    private val sampler = Sampler(0)
-
-    val state = ArrayList<ArrayList<Piece?>>()
+    private val moves = ArrayList<Move>()
+    private val state = ArrayList<ArrayList<Piece?>>()
     private var possibleMoves = ArrayList<Vector2>()
 
     private val team = if (isPlayingWhite) Team.WHITE else Team.BLACK
     private val id = Preferences.get("id")
 
-    private var currentlyMyMove = isPlayingWhite
-
     private var animationData: AnimationData? = null
 
-//    private var translationOffset = Vector2()
-//    private var transitionDistance = Vector2()
-//    private var animatingCol = -1
-//    private var animatingRow = -1
-//
-//    private var stopAnimating = false
+    var status = if (isPlayingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
+        private set
 
     init {
         initBoard()
@@ -53,93 +42,79 @@ class GameState(private val gameId: String, private val isPlayingWhite: Boolean)
         animationData = null
     }
 
-    fun moveOpponent(fromPosition: Vector2, toPosition: Vector2) {
-        if (currentlyMyMove) {
+    fun moveOpponent(move: Move) {
+        val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
+        val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
+
+        moveOpponent(fromPosition, toPosition)
+
+    }
+
+    private fun moveOpponent(fromPosition: Vector2, toPosition: Vector2) {
+        if (status != GameStatus.OPPONENT_MOVE) {
             return
         }
 
-        val invertedFromPosition = Vector2(7, 7) - fromPosition
-        val invertedToPosition = Vector2(7, 7) - toPosition
+        val move = move(!team, fromPosition, toPosition)
 
-        val pieceType = move(invertedFromPosition, invertedToPosition)
-
-        if (pieceType == PieceType.PAWN) {
-            if (invertedToPosition.y == 0.0f) {
-                state[invertedToPosition.x.roundToInt()][invertedToPosition.y.roundToInt()] = Piece(PieceType.QUEEN, !team)
+        if (move.movedPiece == PieceType.PAWN) {
+            if (toPosition.y == 0.0f) {
+                state[toPosition.x.roundToInt()][toPosition.y.roundToInt()] = Piece(PieceType.QUEEN, !team)
             }
         }
 
-        currentlyMyMove = !currentlyMyMove
+        status = GameStatus.PLAYER_MOVE
     }
 
     private fun movePlayer(fromPosition: Vector2, toPosition: Vector2) {
-        if (!currentlyMyMove) {
+        if (status != GameStatus.PLAYER_MOVE) {
             return
         }
 
-        val pieceType = move(fromPosition, toPosition)
+        val move = move(team, fromPosition, toPosition)
 
-        if (pieceType == PieceType.PAWN) {
+        if (move.movedPiece == PieceType.PAWN) {
             if (toPosition.y == 7.0f) {
                 state[toPosition.x.roundToInt()][toPosition.y.roundToInt()] = Piece(PieceType.QUEEN, team)
             }
         }
 
-        val positionUpdateMessage = "$gameId|$id|$fromPosition|$toPosition"
+        val positionUpdateMessage = "$gameId|$id|${move.toChessNotation()}"
         val message = Message(Topic.GAME_UPDATE, positionUpdateMessage)
 
         println("SENDING MOVE: $message")
 
         NetworkManager.sendMessage(message)
 
-        currentlyMyMove = !currentlyMyMove
+        status = GameStatus.OPPONENT_MOVE
     }
 
-    private fun move(fromPosition: Vector2, toPosition: Vector2): PieceType {
+    private fun move(team: Team, fromPosition: Vector2, toPosition: Vector2): Move {
         val currentPositionPiece = state[fromPosition.x.roundToInt()][fromPosition.y.roundToInt()] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
-        val newPositionPiece = state[toPosition.x.roundToInt()][toPosition.y.roundToInt()]
+        val pieceAtNewPosition = state[toPosition.x.roundToInt()][toPosition.y.roundToInt()]
 
         state[toPosition.x.roundToInt()][toPosition.y.roundToInt()] = currentPositionPiece
         state[fromPosition.x.roundToInt()][fromPosition.y.roundToInt()] = null
 
         setAnimationData(fromPosition, toPosition)
-//        animateMove(fromPosition, toPosition)
 
 //        isPlayerChecked(teamToMove)
         possibleMoves.clear()
 
-        return currentPositionPiece.type
+        val isCheckMate = false
+        val isCheck = false
+
+        val move = Move(team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
+        moves += move
+        return move
     }
 
     private fun setAnimationData(fromPosition: Vector2, toPosition: Vector2) {
         animationData = AnimationData(fromPosition, toPosition)
     }
 
-//    fun animateMove(fromPosition: Vector2, toPosition: Vector2) {
-//        animatingRow = toPosition.x.roundToInt()
-//        animatingCol = toPosition.y.roundToInt()
-//
-//        translationOffset = Vector2(fromPosition - toPosition)
-//
-//        transitionDistance = toPosition - fromPosition
-//        println("ANIMATING: $fromPosition $toPosition ::: ${translationOffset} ${transitionDistance}")
-//    }
-//
-//    fun update(delta: Float): Boolean {
-//        val increment = transitionDistance * delta * 5.0f
-//
-//        translationOffset += increment
-//
-//        if (abs(translationOffset.x) < abs(increment.x / 5.0f) || abs(translationOffset.y) < abs(increment.y / 5.0f)) {
-//            println("DONE ANIMATING")
-//            stopAnimating = true
-//        }
-//
-//        return animatingCol != -1
-//    }
-
     fun processAction(action: Action): Action {
-        if (!currentlyMyMove) {
+        if (status != GameStatus.PLAYER_MOVE) {
             return Action(action.clickedPosition, ActionType.NO_OP)
         }
 
@@ -226,40 +201,6 @@ class GameState(private val gameId: String, private val isPlayingWhite: Boolean)
         possibleMoves = PieceType.getPossibleMoves(piece, square, state)
         return possibleMoves
     }
-
-//    fun draw(shaderProgram: ShaderProgram, aspectRatio: Float) {
-//        shaderProgram.start()
-//        shaderProgram.set("aspectRatio", aspectRatio)
-//        sampler.bind(PieceTextures.getTextureArray())
-//
-//        for (row in 0 until 8) {
-//            for (col in 0 until 8) {
-//                val piece = state[row][col] ?: continue
-//
-//                val translation = if (row == animatingRow && col == animatingCol) {
-//                    (Vector2((row + translationOffset.x) * aspectRatio * 2.0f, (col + translationOffset.y) * aspectRatio * 2.0f) / 8.0f) + Vector2(-aspectRatio, aspectRatio / 4.0f - aspectRatio)
-//                } else {
-//                    (Vector2(row * aspectRatio * 2.0f, col * aspectRatio * 2.0f) / 8.0f) + Vector2(-aspectRatio, aspectRatio / 4.0f - aspectRatio)
-//                }
-//
-//                shaderProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 4.0f)
-//                shaderProgram.set("textureId", piece.textureId.toFloat())
-//                shaderProgram.set("textureMaps", sampler.index)
-//                shaderProgram.set("translation", translation)
-//                quad.draw()
-//            }
-//        }
-//
-//        if (stopAnimating) {
-//            animatingRow = -1
-//            animatingCol = -1
-//            translationOffset = Vector2()
-//            transitionDistance = Vector2()
-//            stopAnimating = false
-//        }
-//
-//        shaderProgram.stop()
-//    }
 
     private fun initBoard() {
         for (row in 0 until 8) {

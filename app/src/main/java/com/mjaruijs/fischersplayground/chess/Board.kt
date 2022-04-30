@@ -1,26 +1,15 @@
 package com.mjaruijs.fischersplayground.chess
 
-import android.content.Context
-import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.math.Color
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
-import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
-import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 
-class Board(context: Context, private val requestPossibleMoves: (Vector2) -> Unit) {
+class Board(private val requestPossibleMoves: (Vector2) -> Unit) {
 
-    private val model = BoardModel()
-    private val boardProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.board_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.board_fragment, ShaderType.FRAGMENT, context)
-    )
+    val possibleSquaresForMove = ArrayList<Vector2>()
 
-    private val possibleSquaresForMove = ArrayList<Vector2>()
-    private var selectedSquare = Vector2(-1f, -1f)
+    var selectedSquare = Vector2(-1f, -1f)
+        private set
 
     init {
-
         for (i in 0 until MAX_NUMBER_OF_POSSIBLE_MOVES) {
             possibleSquaresForMove += Vector2(-1, -1)
         }
@@ -58,21 +47,6 @@ class Board(context: Context, private val requestPossibleMoves: (Vector2) -> Uni
         }
     }
 
-    fun render(aspectRatio: Float) {
-        boardProgram.start()
-        boardProgram.set("aspectRatio", aspectRatio)
-        boardProgram.set("outColor", Color(0.25f, 0.25f, 1.0f, 1.0f))
-        boardProgram.set("scale", Vector2(aspectRatio, aspectRatio))
-        boardProgram.set("selectedSquareCoordinates", (selectedSquare / 8.0f) * 2.0f - 1.0f)
-
-        for ((i, possibleSquare) in possibleSquaresForMove.withIndex()) {
-            boardProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
-        }
-
-        model.draw()
-        boardProgram.stop()
-    }
-
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Action {
         val selection = determineSelectedSquare(x, y, displayWidth, displayHeight)
 
@@ -93,8 +67,6 @@ class Board(context: Context, private val requestPossibleMoves: (Vector2) -> Uni
         val scaleY = aspectRatio / 4.0f
         var selectedX = -1
         var selectedY = -1
-
-//        println("$scaledX, $scaledY")
 
         for (i in 0 until 8) {
             val minX = scaleX * i
@@ -121,11 +93,6 @@ class Board(context: Context, private val requestPossibleMoves: (Vector2) -> Uni
         } else {
             Vector2(-1f, -1f)
         }
-    }
-
-    fun destroy() {
-        model.destroy()
-        boardProgram.destroy()
     }
 
     companion object {

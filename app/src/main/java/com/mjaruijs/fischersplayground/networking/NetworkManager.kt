@@ -59,7 +59,10 @@ object NetworkManager {
         Thread {
             while (clientInitializing.get()) {}
 
-            client.write(message.toString())
+            if (initialized.get()) {
+                client.write(message.toString())
+            }
+
         }.start()
     }
 

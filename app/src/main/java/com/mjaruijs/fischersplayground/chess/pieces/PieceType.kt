@@ -3,16 +3,26 @@ package com.mjaruijs.fischersplayground.chess.pieces
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import kotlin.math.roundToInt
 
-enum class PieceType(val value: Int) {
+enum class PieceType(val value: Int, val sign: Char) {
 
-    PAWN(1),
-    KNIGHT(3),
-    BISHOP(3),
-    ROOK(5),
-    QUEEN(9),
-    KING(900);
+    PAWN(1, 'P'),
+    KNIGHT(3, 'N'),
+    BISHOP(3, 'B'),
+    ROOK(5, 'R'),
+    QUEEN(9, 'Q'),
+    KING(900, 'K');
 
     companion object {
+
+        fun getBySign(sign: Char): PieceType {
+            for (piece in values()) {
+                if (sign.uppercase() == piece.sign.uppercase()) {
+                    return piece
+                }
+            }
+
+            throw IllegalArgumentException("Could not find a PieceType with sign: $sign")
+        }
 
         fun getPossibleMoves(piece: Piece, square: Vector2, gameState: ArrayList<ArrayList<Piece?>>): ArrayList<Vector2> {
             return when (piece.type) {
