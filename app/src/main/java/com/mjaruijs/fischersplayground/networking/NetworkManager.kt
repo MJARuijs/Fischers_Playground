@@ -67,17 +67,13 @@ object NetworkManager {
     }
 
     private fun onRead(message: Message, context: Context) {
-        Logger.debug("Received message from: ${message.sender}: ${message.content}")
-
-        val startIndex = message.content.indexOf(':')
-        val category = message.content.substring(0, startIndex)
-        val content = message.content.substring(startIndex + 1)
+        Logger.debug("Received message from: ${message.senderAddress}: $message")
 
         if (message.topic == Topic.INFO) {
-            val intent = Intent("mjaruijs.fischers_playground.INFO").putExtra(category, content)
+            val intent = Intent("mjaruijs.fischers_playground.INFO").putExtra(message.category, message.content)
             context.sendBroadcast(intent)
         } else if (message.topic == Topic.GAME_UPDATE) {
-            val intent = Intent("mjaruijs.fischers_playground.GAME_UPDATE").putExtra(category, content)
+            val intent = Intent("mjaruijs.fischers_playground.GAME_UPDATE").putExtra(message.category, message.content)
             context.sendBroadcast(intent)
         }
     }

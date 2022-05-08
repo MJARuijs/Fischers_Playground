@@ -4,6 +4,74 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#3F3F3F"
     tools:context=".activities.GameActivity">
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/forward_button"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/back_button"
+        app:srcCompat="@drawable/forward_arrow" />
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/back_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#3F3F3F"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/forward_button"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/request_redo_button"
+        app:layout_constraintTop_toTopOf="@+id/forward_button"
+        app:srcCompat="@drawable/back_arrow" />
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/request_redo_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#3F3F3F"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/back_button"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/offer_draw_button"
+        app:layout_constraintTop_toTopOf="@+id/back_button"
+        app:srcCompat="@drawable/rewind" />
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/resign_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#3F3F3F"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/offer_draw_button"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/offer_draw_button"
+        app:srcCompat="@drawable/resign" />
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/offer_draw_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/request_redo_button"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/resign_button"
+        app:layout_constraintTop_toTopOf="@+id/request_redo_button"
+        app:srcCompat="@drawable/handshake" />
+
+    <com.mjaruijs.fischersplayground.opengl.SurfaceView
+        android:id="@+id/opengl_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/forward_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

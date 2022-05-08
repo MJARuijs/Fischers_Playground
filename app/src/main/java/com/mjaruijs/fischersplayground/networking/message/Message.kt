@@ -1,23 +1,19 @@
 package com.mjaruijs.fischersplayground.networking.message
 
-class Message(val topic: Topic, val content: String, var sender: String = "") {
+class Message(val topic: Topic, val category: String, val content: String, var senderAddress: String = "") {
 
-    override fun toString() = "[$topic;$content;$sender]"
+    override fun toString() = "[$topic;$category;$content;$senderAddress]"
 
     companion object {
+
         fun fromString(input: String, sender: String): Message {
-            val topicStartIndex = 1
-            val topicEndIndex = input.indexOf(';')
-            val topicString = input.substring(topicStartIndex, topicEndIndex)
-            val topic = Topic.fromString(topicString)
+            val data = input.removePrefix("[").removeSuffix("]").split(';')
 
-            val messageEndIndex = input.lastIndexOf(';')
-            val messageContent = input.substring(topicEndIndex + 1, messageEndIndex)
-//
-//            val senderEndIndex = input.lastIndexOf(']')
-//            val senderString= input.substring()
+            val topic = Topic.fromString(data[0])
+            val category = data[1]
+            val content = data[2]
 
-            return Message(topic, messageContent, sender)
+            return Message(topic, category, content, sender)
         }
     }
 

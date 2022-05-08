@@ -4,31 +4,34 @@ import android.content.Context
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import com.mjaruijs.fischersplayground.chess.Board
-import com.mjaruijs.fischersplayground.chess.GameState
+import com.mjaruijs.fischersplayground.chess.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class OpenGLRenderer(private val context: Context, private val onContextCreated: () -> Unit, private val onDisplaySizeChanged: (Int, Int) -> Unit) : GLSurfaceView.Renderer {
+class OpenGLRenderer(private val context: Context, private val onContextCreated: () -> Unit) : GLSurfaceView.Renderer {
+
 
     private lateinit var board: Board
-    private lateinit var gameState: GameState
+    private lateinit var game: Game
 
-    private lateinit var gameStateRenderer: GameStateRenderer
+    private lateinit var gameRenderer: GameRenderer
     private lateinit var boardRenderer: BoardRenderer
 
     private var aspectRatio = 1.0f
     private var displayWidth = 0
     private var displayHeight = 0
 
+    lateinit var onDisplaySizeChanged: (Int, Int) -> Unit
+
     override fun onSurfaceCreated(p0: GL10?, config: EGLConfig?) {
         glClearColor(0.25f, 0.25f, 0.25f, 1f)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        PieceTextures.init(context)
+        PieceTextures.createTextureArray()
 
-        gameStateRenderer = GameStateRenderer(context)
+        gameRenderer = GameRenderer(context)
         boardRenderer = BoardRenderer(context)
 
         onContextCreated()
@@ -38,12 +41,12 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         this.board = board
     }
 
-    fun setGameState(gameState: GameState) {
-        this.gameState = gameState
+    fun setGameState(game: Game) {
+        this.game = game
     }
 
     fun update(delta: Float): Boolean {
-        return gameStateRenderer.update(delta)
+        return gameRenderer.update(delta)
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
@@ -59,11 +62,11 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         glClear(GL_COLOR_BUFFER_BIT)
 
         boardRenderer.render(board, aspectRatio)
-        gameStateRenderer.render(gameState, aspectRatio)
+        gameRenderer.render(game, aspectRatio)
     }
 
     fun destroy() {
-        gameStateRenderer.destroy()
+        gameRenderer.destroy()
         boardRenderer.destroy()
     }
 }

@@ -24,6 +24,12 @@ object PieceTextures {
         pieceTextures += Triple(PieceType.ROOK, Team.BLACK, TextureLoader.load(context, R.drawable.black_rook))
         pieceTextures += Triple(PieceType.KING, Team.BLACK, TextureLoader.load(context, R.drawable.black_king))
         pieceTextures += Triple(PieceType.QUEEN, Team.BLACK, TextureLoader.load(context, R.drawable.black_queen))
+    }
+
+    fun createTextureArray() {
+        for (texture in pieceTextures) {
+            texture.third.init()
+        }
 
         textureArray = TextureArray(pieceTextures.map { pieceTexture -> pieceTexture.third })
     }

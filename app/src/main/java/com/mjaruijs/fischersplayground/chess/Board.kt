@@ -4,7 +4,7 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
 class Board(private val requestPossibleMoves: (Vector2) -> Unit) {
 
-    val possibleSquaresForMove = ArrayList<Vector2>()
+    private val possibleSquaresForMove = ArrayList<Vector2>()
 
     var selectedSquare = Vector2(-1f, -1f)
         private set
@@ -15,6 +15,12 @@ class Board(private val requestPossibleMoves: (Vector2) -> Unit) {
         }
     }
 
+    fun getPossibleMoves() = possibleSquaresForMove
+
+    fun deselectSquare() {
+        selectedSquare = Vector2(-1, -1)
+    }
+
     fun updatePossibleMoves(possibleMoves: ArrayList<Vector2>) {
         clearPossibleMoves()
 
@@ -23,7 +29,7 @@ class Board(private val requestPossibleMoves: (Vector2) -> Unit) {
         }
     }
 
-    private fun clearPossibleMoves() {
+    fun clearPossibleMoves() {
         for (i in 0 until MAX_NUMBER_OF_POSSIBLE_MOVES) {
             possibleSquaresForMove[i] = Vector2(-1f, -1f)
         }
@@ -36,12 +42,12 @@ class Board(private val requestPossibleMoves: (Vector2) -> Unit) {
                 requestPossibleMoves(selectedSquare)
             }
             ActionType.SQUARE_DESELECTED -> {
-                selectedSquare = Vector2(-1f, -1f)
+                deselectSquare()
                 clearPossibleMoves()
             }
             ActionType.PIECE_MOVED -> {
+                deselectSquare()
                 clearPossibleMoves()
-                selectedSquare = Vector2(-1f, -1f)
             }
             ActionType.NO_OP -> {}
         }
