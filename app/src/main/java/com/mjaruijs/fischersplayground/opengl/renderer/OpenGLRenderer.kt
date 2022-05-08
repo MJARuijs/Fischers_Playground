@@ -4,13 +4,13 @@ import android.content.Context
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import com.mjaruijs.fischersplayground.chess.Board
-import com.mjaruijs.fischersplayground.chess.Game
+import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class OpenGLRenderer(private val context: Context, private val onContextCreated: () -> Unit) : GLSurfaceView.Renderer {
-
 
     private lateinit var board: Board
     private lateinit var game: Game

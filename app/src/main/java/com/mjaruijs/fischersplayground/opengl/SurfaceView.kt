@@ -5,7 +5,8 @@ import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.MotionEvent
 import com.mjaruijs.fischersplayground.chess.Board
-import com.mjaruijs.fischersplayground.chess.Game
+import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
 import com.mjaruijs.fischersplayground.util.FixedRateThread
 

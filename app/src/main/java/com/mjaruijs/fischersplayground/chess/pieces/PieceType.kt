@@ -1,6 +1,6 @@
 package com.mjaruijs.fischersplayground.chess.pieces
 
-import com.mjaruijs.fischersplayground.chess.GameState
+import com.mjaruijs.fischersplayground.chess.game.GameState
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -28,14 +28,14 @@ enum class PieceType(val value: Int, val sign: Char) {
 
 //        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, gameState: GameState, moves: ArrayList<Move>) = getPossibleMoves(team, piece, square, gameState, moves)
 
-        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, gameState: GameState, moves: ArrayList<Move>): ArrayList<Vector2> {
+        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, isSinglePlayer: Boolean, gameState: GameState, moves: ArrayList<Move>): ArrayList<Vector2> {
             return when (piece.type) {
-                KING -> getPossibleMovesForKing(piece, square, moves, gameState)
+                KING -> getPossibleMovesForKing(piece, square, moves, isSinglePlayer, gameState)
                 QUEEN -> getPossibleMovesForQueen(piece, square, gameState)
                 ROOK -> getPossibleMovesForRook(piece, square, gameState)
                 BISHOP -> getPossibleMovesForBishop(piece, square, gameState)
                 KNIGHT -> getPossibleMovesForKnight(piece, square, gameState)
-                PAWN -> getPossibleMovesForPawn(team, piece, square, moves, gameState)
+                PAWN -> getPossibleMovesForPawn(team, piece, square, moves, isSinglePlayer, gameState)
             }
         }
 
@@ -87,13 +87,15 @@ enum class PieceType(val value: Int, val sign: Char) {
             return possibleMoves
         }
 
-        private fun getPossibleMovesForPawn(team: Team, piece: Piece, square: Vector2, moves: ArrayList<Move>, gameState: GameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForPawn(team: Team, piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: GameState): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             val x = square.x.roundToInt()
             val y = square.y.roundToInt()
 
-            val direction = if (piece.team == team) 1 else -1
+            val direction = if (isSinglePlayer) {
+                if (piece.team == Team.WHITE) 1 else -1
+            } else if (piece.team == team) 1 else -1
 
             var firstSquareEmpty = false
             if (gameState[x, y + direction] == null) {
@@ -101,8 +103,11 @@ enum class PieceType(val value: Int, val sign: Char) {
                 firstSquareEmpty = true
             }
 
-            val pawnAtStartingSquare = y == 1
-//            val pawnAtStartingSquare = (y == 1 && piece.team == Team.WHITE) || (y == 6 && piece.team == Team.BLACK)
+            val pawnAtStartingSquare = if (isSinglePlayer) {
+                (piece.team == Team.WHITE && y == 1) || (piece.team == Team.BLACK && y == 6)
+            } else {
+                y == 1
+            }
 
             if (pawnAtStartingSquare && firstSquareEmpty) {
                 if (gameState[x, y + direction * 2] == null) {
@@ -129,13 +134,24 @@ enum class PieceType(val value: Int, val sign: Char) {
             }
 
             if (lastMove != null) {
-                if (y == 4) {
+
+                val isPawnAcrossCenter = if (isSinglePlayer) {
+                    (piece.team == Team.WHITE && y == 4) || (piece.team == Team.BLACK && y == 3)
+                } else y == 4
+
+                if (isPawnAcrossCenter) {
                     if (x != 7) {
                         val pieceRightToPawn = gameState[x + 1, y]
                         if (pieceRightToPawn != null) {
                             if (pieceRightToPawn.team != piece.team && pieceRightToPawn.type == PAWN) {
-                                if (lastMove.fromPosition.y.roundToInt() == 6) {
-                                    possibleMoves += Vector2(x + 1, y + direction)
+                                if (isSinglePlayer) {
+                                    if ((piece.team == Team.WHITE && lastMove.fromPosition.y.roundToInt() == 6) || (piece.team == Team.BLACK && lastMove.fromPosition.y.roundToInt() == 1)) {
+                                        possibleMoves += Vector2(x + 1, y + direction)
+                                    }
+                                } else {
+                                    if (lastMove.fromPosition.y.roundToInt() == 6) {
+                                        possibleMoves += Vector2(x + 1, y + direction)
+                                    }
                                 }
                             }
                         }
@@ -145,8 +161,14 @@ enum class PieceType(val value: Int, val sign: Char) {
                         val pieceLeftToPawn = gameState[x - 1, y]
                         if (pieceLeftToPawn != null) {
                             if (pieceLeftToPawn.team != piece.team && pieceLeftToPawn.type == PAWN) {
-                                if (lastMove.fromPosition.y.roundToInt() == 6) {
-                                    possibleMoves += Vector2(x - 1, y + direction)
+                                if (isSinglePlayer) {
+                                    if ((piece.team == Team.WHITE && lastMove.fromPosition.y.roundToInt() == 6) || (piece.team == Team.BLACK && lastMove.fromPosition.y.roundToInt() == 1)) {
+                                        possibleMoves += Vector2(x + 1, y + direction)
+                                    }
+                                } else {
+                                    if (lastMove.fromPosition.y.roundToInt() == 6) {
+                                        possibleMoves += Vector2(x + 1, y + direction)
+                                    }
                                 }
                             }
                         }
@@ -157,7 +179,7 @@ enum class PieceType(val value: Int, val sign: Char) {
             return possibleMoves
         }
 
-        private fun getPossibleMovesForKing(piece: Piece, square: Vector2, moves: ArrayList<Move>, gameState: GameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForKing(piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: GameState): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             for (i in -1 .. 1) {
@@ -183,14 +205,16 @@ enum class PieceType(val value: Int, val sign: Char) {
                 }
             }
 
-            val direction = if (piece.team == Team.WHITE) 1 else -1
+//            val direction = if (piece.team == Team.WHITE) 1 else -1
 
-            if (canShortCastle(piece.team, moves, gameState)) {
-                possibleMoves += square + Vector2(2 * direction, 0)
+            if (canShortCastle(piece.team, moves, isSinglePlayer, gameState)) {
+                possibleMoves += square + Vector2(2, 0)
+                println("Added short castle: ${square + Vector2(2, 0)}")
             }
 
-            if (canLongCastle(piece.team, moves, gameState)) {
-                possibleMoves += square - Vector2(2 * direction, 0)
+            if (canLongCastle(piece.team, moves, isSinglePlayer, gameState)) {
+                possibleMoves += square - Vector2(2 , 0)
+                println("Added long castle: ${square - Vector2(2 , 0)}")
             }
 
             return possibleMoves
@@ -338,9 +362,24 @@ enum class PieceType(val value: Int, val sign: Char) {
             return possibleMoves
         }
 
-        private fun canShortCastle(team: Team, moves: ArrayList<Move>, state: GameState): Boolean {
-            val kingX = if (team == Team.WHITE) 4 else 3
-            val direction = if (team == Team.WHITE) 1 else -1
+        private fun canShortCastle(team: Team, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
+            val kingX = if (isSinglePlayer) {
+                4
+            } else {
+                if (team == Team.WHITE) 4 else 3
+            }
+
+            val kingY = if (isSinglePlayer) {
+                if (team == Team.WHITE) 0 else 7
+            } else {
+                0
+            }
+
+            val direction = if (isSinglePlayer) {
+                1
+            } else {
+                if (team == Team.WHITE) 1 else -1
+            }
 
             var kingMoved = false
             var rookMoved = false
@@ -352,10 +391,10 @@ enum class PieceType(val value: Int, val sign: Char) {
                     }
 
                     if (move.movedPiece == ROOK) {
-                        if (team == Team.WHITE && move.fromPosition == Vector2(7, 0)) {
+                        if (team == Team.WHITE && move.fromPosition == Vector2(7, kingY)) {
                             rookMoved = true
                         }
-                        if (team == Team.BLACK && move.fromPosition == Vector2(0, 0)) {
+                        if (team == Team.BLACK && move.fromPosition == Vector2(0, kingY)) {
                             rookMoved = true
                         }
                     }
@@ -366,11 +405,10 @@ enum class PieceType(val value: Int, val sign: Char) {
                 return false
             }
 
-//            println(".")
-//            println(".")
-
             for (i in 1 until 3) {
-                val square = Vector2(kingX + i * direction, 0)
+                val square = Vector2(kingX + i * direction, kingY)
+
+                println("Short castle: $square")
 
                 if (state[square] != null) {
                     return false
@@ -378,10 +416,8 @@ enum class PieceType(val value: Int, val sign: Char) {
             }
 
             for (i in 0 until 3) {
-                val square = Vector2(kingX + i * direction, 0)
-                val attacked = isSquareAttacked(team, square, moves, state)
-
-//                println("$team $square : $attacked")
+                val square = Vector2(kingX + i * direction, kingY)
+                val attacked = isSquareAttacked(team, square, moves, isSinglePlayer, state)
 
                 if (attacked) {
                     return false
@@ -391,9 +427,24 @@ enum class PieceType(val value: Int, val sign: Char) {
             return true
         }
 
-        private fun canLongCastle(team: Team, moves: ArrayList<Move>, state: GameState): Boolean {
-            val kingX = if (team == Team.WHITE) 4 else 3
-            val direction = if (team == Team.WHITE) -1 else 1
+        private fun canLongCastle(team: Team, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
+            val kingX = if (isSinglePlayer) {
+                4
+            } else {
+                if (team == Team.WHITE) 4 else 3
+            }
+
+            val kingY = if (isSinglePlayer) {
+                if (team == Team.WHITE) 0 else 7
+            } else {
+                0
+            }
+
+            val direction = if (isSinglePlayer) {
+                -1
+            } else {
+                if (team == Team.WHITE) 1 else -1
+            }
 
             var kingMoved = false
             var rookMoved = false
@@ -405,10 +456,10 @@ enum class PieceType(val value: Int, val sign: Char) {
                     }
 
                     if (move.movedPiece == ROOK) {
-                        if (team == Team.WHITE && move.fromPosition == Vector2(0, 0)) {
+                        if (team == Team.WHITE && move.fromPosition == Vector2(0, kingY)) {
                             rookMoved = true
                         }
-                        if (team == Team.BLACK && move.fromPosition == Vector2(7, 0)) {
+                        if (team == Team.BLACK && move.fromPosition == Vector2(7, kingY)) {
                             rookMoved = true
                         }
                     }
@@ -419,8 +470,18 @@ enum class PieceType(val value: Int, val sign: Char) {
                 return false
             }
 
-            for (i in 0 until 4) {
-                val square = Vector2(kingX + i * direction, 0)
+            for (i in 1 until 3) {
+                val square = Vector2(kingX + i * direction, kingY)
+
+                println("Long castle $square ${state[square]?.type}")
+
+                if (state[square] != null) {
+                    return false
+                }
+            }
+
+            for (i in 0 until 3) {
+                val square = Vector2(kingX + i * direction, kingY)
 
                 if (i != 0) {
                     if (state[square] != null) {
@@ -428,7 +489,7 @@ enum class PieceType(val value: Int, val sign: Char) {
                     }
                 }
 
-                if (isSquareAttacked(team, square, moves, state)) {
+                if (isSquareAttacked(team, square, moves, isSinglePlayer, state)) {
                     return false
                 }
             }
@@ -436,12 +497,10 @@ enum class PieceType(val value: Int, val sign: Char) {
             return true
         }
 
-        private fun isSquareAttacked(team: Team, square: Vector2, moves: ArrayList<Move>, state: GameState): Boolean {
+        private fun isSquareAttacked(team: Team, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             for (x in 0 until 8) {
                 for (y in 0 until 8) {
                     val piece = state[x, y] ?: continue
-
-//                    println("PIECE: ${piece.type}")
 
                     if (piece.team == team) {
                         continue
@@ -449,22 +508,12 @@ enum class PieceType(val value: Int, val sign: Char) {
 
                     if (piece.type == KING) {
                         if (abs(x - square.x) < 1 && abs(y - square.y) < 1) {
-//                            println("$x $y KING IS TARGETING $square")
                             return true
                         }
                     } else {
-                        val possibleMoves = getPossibleMoves(piece.team, piece, Vector2(x, y), state, moves)
-
-//                        println("${piece.type} ")
-//                        for (m in possibleMoves) {
-//                            println(m)
-//                        }
-//                        println()
-//                        println()
-//                        println()
+                        val possibleMoves = getPossibleMoves(piece.team, piece, Vector2(x, y), isSinglePlayer, state, moves)
 
                         if (possibleMoves.contains(square)) {
-//                            println("${piece.type} is targetting $square")
                             return true
                         }
                     }

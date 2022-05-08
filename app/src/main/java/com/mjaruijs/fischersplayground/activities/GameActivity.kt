@@ -9,9 +9,11 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.Board
-import com.mjaruijs.fischersplayground.chess.Game
+import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.news.News
 import com.mjaruijs.fischersplayground.chess.SavedGames
+import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.dialogs.*
 import com.mjaruijs.fischersplayground.networking.NetworkManager
@@ -43,7 +45,6 @@ class GameActivity : AppCompatActivity() {
     private val opponentOfferedDrawDialog = OpponentOfferedDrawDialog()
     private val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
     private val opponentDeclinedDrawDialog = OpponentDeclinedDrawDialog()
-
 
     private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
@@ -95,30 +96,26 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun onContextCreated() {
-        val savedGame = SavedGames.get(gameId)
-        if (savedGame != null) {
-            game = savedGame
-
-            println("FOUND SAVED GAME")
+        if (isSinglePlayer) {
+            game = SinglePlayerGame()
         } else {
-            println("SAVED GAME DID NOT EXIST")
-            game = Game(gameId, id, opponentName, isPlayingWhite)
+            game = SavedGames.get(gameId) ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
+            (game as MultiPlayerGame).init()
         }
-        game.init()
-
-//            ?: Game(gameId, id, opponentName, isPlayingWhite, isSinglePlayer, status = if (isPlayingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE)
 
         board = Board { square ->
-            val possibleMoves = game.determinePossibleMoves(square, game.team)
+            val possibleMoves = game.determinePossibleMoves(square, game.getCurrentTeam())
             board.updatePossibleMoves(possibleMoves)
         }
 
         glView.setGameState(game)
         glView.setBoard(board)
 
-        runOnUiThread {
-            processNews(game.news)
-            game.news = News(NewsType.NO_NEWS)
+        if (game is MultiPlayerGame) {
+            runOnUiThread {
+                processNews((game as MultiPlayerGame).news)
+                (game as MultiPlayerGame).news = News(NewsType.NO_NEWS)
+            }
         }
     }
 
@@ -130,7 +127,7 @@ class GameActivity : AppCompatActivity() {
             NewsType.OPPONENT_DECLINED_DRAW -> opponentDeclinedDrawDialog.show(opponentName)
             NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
             NewsType.OPPONENT_ACCEPTED_UNDO -> {
-                game.reverseMoves(news.data)
+                (game as MultiPlayerGame).reverseMoves(news.data)
                 glView.requestRender()
             }
             NewsType.OPPONENT_REJECTED_UNDO -> undoRejectedDialog.show(opponentName)
@@ -166,7 +163,7 @@ class GameActivity : AppCompatActivity() {
             GameStatus.OPPONENT_MOVE
         }
 
-        SavedGames.put(inviteId, Game(inviteId, id, opponentName, playingWhite))
+        SavedGames.put(inviteId, MultiPlayerGame(inviteId, id, opponentName, playingWhite))
     }
 
     private fun onOpponentResigned(content: String) {
@@ -232,7 +229,7 @@ class GameActivity : AppCompatActivity() {
         val move = Move.fromChessNotation(moveNotation)
 
         if (this.gameId == gameId) {
-            game.moveOpponent(move, true)
+            (game as MultiPlayerGame).moveOpponent(move, true)
             glView.requestRender()
         } else {
             val game = SavedGames.get(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
@@ -271,7 +268,7 @@ class GameActivity : AppCompatActivity() {
         val numberOfMovesReversed = data[1].toInt()
 
         if (this.gameId == gameId) {
-            game.reverseMoves(numberOfMovesReversed)
+            (game as MultiPlayerGame).reverseMoves(numberOfMovesReversed)
             glView.requestRender()
         } else {
             SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed)
@@ -312,7 +309,7 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun saveGame() {
-        SavedGames.put(gameId, game)
+        SavedGames.put(gameId, game as MultiPlayerGame)
     }
 
     override fun onResume() {
@@ -340,7 +337,10 @@ class GameActivity : AppCompatActivity() {
         unregisterReceiver(opponentOfferedDrawReceiver)
         unregisterReceiver(opponentAcceptedDrawReceiver)
         unregisterReceiver(opponentDeclinedDrawReceiver)
-        saveGame()
+
+        if (game is MultiPlayerGame) {
+            saveGame()
+        }
         super.onStop()
     }
 
