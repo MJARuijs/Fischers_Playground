@@ -7,7 +7,6 @@ import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.util.Logger
-import java.net.ConnectException
 import java.util.concurrent.atomic.AtomicBoolean
 
 object NetworkManager {
@@ -41,7 +40,7 @@ object NetworkManager {
                 clientInitializing.set(true)
                 client = EncodedClient(SERVER_IP, SERVER_PORT, NetworkManager::onRead)
                 initialized.set(true)
-            } catch (e: ConnectException) {
+            } catch (e: Exception) {
                 println("Failed to connect to server..")
                 initialized.set(false)
             } finally {

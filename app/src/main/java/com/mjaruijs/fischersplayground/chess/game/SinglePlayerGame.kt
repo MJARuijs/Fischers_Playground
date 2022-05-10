@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.chess.Action
 import com.mjaruijs.fischersplayground.chess.ActionType
+import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
@@ -17,14 +18,38 @@ class SinglePlayerGame : Game(true) {
     override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState) = PieceType.getPossibleMoves(piece.team, piece, square, true, state, moves)
 
     override fun showPreviousMove(): Pair<Boolean, Boolean> {
-        teamToMove = !teamToMove
+        println("MOVE INDEX: $currentMoveIndex")
+        if (currentMoveIndex != -1) {
+            teamToMove = !teamToMove
+        }
         return super.showPreviousMove()
     }
 
     override fun showNextMove(): Pair<Boolean, Boolean> {
-        teamToMove = !teamToMove
-       return super.showNextMove()
+        if (!isShowingCurrentMove()) {
+            teamToMove = !teamToMove
+        }
+        return super.showNextMove()
     }
+
+    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move {
+        if (!isShowingCurrentMove()) {
+            println("Current move: $currentMoveIndex")
+            val moveCount = moves.size
+            println("MOVE COUNT: $moveCount")
+            for (i in currentMoveIndex until moveCount) {
+                if (i == -1) {
+                    continue
+                }
+                moves.removeLast()
+                println("Trying to remove $i")
+//                moves.removeAt(i)
+            }
+        }
+
+        return super.move(team, fromPosition, toPosition, shouldAnimate)
+    }
+
 
     override fun processAction(action: Action): Action {
         if (action.type == ActionType.SQUARE_DESELECTED) {

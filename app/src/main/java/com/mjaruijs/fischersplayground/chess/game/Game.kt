@@ -70,8 +70,8 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         return state[i, j]
     }
 
-    private fun setAnimationData(fromPosition: Vector2, toPosition: Vector2, onAnimationFinished: () -> Unit = {}) {
-        animationData += AnimationData(fromPosition, toPosition, onAnimationFinished)
+    private fun setAnimationData(pieceType: PieceType, fromPosition: Vector2, toPosition: Vector2, onAnimationFinished: () -> Unit = {}) {
+        animationData += AnimationData(pieceType, fromPosition, toPosition, onAnimationFinished)
     }
 
     fun getAnimationData() = animationData
@@ -89,15 +89,15 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         if (piece.type == PieceType.KING && abs(toPosition.x - fromPosition.x) == 2.0f) {
             performCastle(move.team, fromPosition, toPosition, true)
         } else {
-            setAnimationData(fromPosition, toPosition) {
-                state[toPosition] = piece
+            state[toPosition] = piece
 
-                if (move.pieceTaken == null) {
-                    state[fromPosition] = null
-                } else {
-                    state[fromPosition] = Piece(move.pieceTaken, !move.team)
-                }
+            if (move.pieceTaken == null) {
+                state[fromPosition] = null
+            } else {
+                state[fromPosition] = Piece(move.pieceTaken, !move.team)
             }
+
+            setAnimationData(piece.type, fromPosition, toPosition)
         }
     }
 
@@ -114,31 +114,29 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             val y = fromPosition.y.roundToInt()
             val oldRookPosition = Vector2(fromPosition.x.roundToInt() + direction, y)
             val newRookPosition = Vector2(newX, y)
-
-            setAnimationData(fromPosition, toPosition) {
-                state[toPosition] = state[fromPosition]
-                state[fromPosition] = null
-                setAnimationData(oldRookPosition, newRookPosition) {
-                    state[newRookPosition] = state[oldRookPosition]
-                    state[oldRookPosition] = null
-                }
+            state[toPosition] = state[fromPosition]
+            state[fromPosition] = null
+            setAnimationData(piece.type, fromPosition, toPosition) {
+                state[newRookPosition] = state[oldRookPosition]
+                state[oldRookPosition] = null
+                setAnimationData(piece.type, oldRookPosition, newRookPosition)
             }
         } else {
-            setAnimationData(fromPosition, toPosition) {
-                state[toPosition] = piece
+            state[toPosition] = piece
 
-                if (move.pieceTaken == null) {
-                    state[fromPosition] = null
-                } else {
-                    state[fromPosition] = Piece(move.pieceTaken, !move.team)
-                }
+            if (move.pieceTaken == null) {
+                state[fromPosition] = null
+            } else {
+                state[fromPosition] = Piece(move.pieceTaken, !move.team)
             }
+
+            setAnimationData(piece.type, fromPosition, toPosition)
         }
 
         currentMoveIndex--
     }
 
-    protected fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move {
+    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move {
         possibleMoves.clear()
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
@@ -157,27 +155,21 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(team, fromPosition, toPosition, shouldAnimate)
         } else {
+            state[fromPosition] = null
+            state[toPosition] = currentPositionPiece
+
             if (shouldAnimate) {
-                setAnimationData(fromPosition, toPosition) {
-                    state[fromPosition] = null
-                    state[toPosition] = currentPositionPiece
-                }
-            } else {
-                state[fromPosition] = null
-                state[toPosition] = currentPositionPiece
+                setAnimationData(currentPositionPiece.type, fromPosition, toPosition)
             }
         }
 
         val isCheck = isPlayerChecked(state, !team)
-        println("IsCheck: $isCheck ${!team}")
 
         val isCheckMate = if (!isCheck) {
             false
         } else {
             isPlayerCheckMate(state, !team)
         }
-
-        println("CHECKMATE: $isCheckMate")
 
         val move = Move(team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
         if (shouldAnimate) {
@@ -265,10 +257,6 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             }
         }
 
-//        for (m in possibleMovesForOpponent) {
-//            println(m)
-//        }
-
         return possibleMovesForOpponent.contains(kingsPosition)
     }
 
@@ -312,13 +300,16 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         val newRookPosition = toPosition + Vector2(rookDirection, 0)
 
         if (shouldAnimate) {
-            setAnimationData(fromPosition, toPosition) {
-                state[toPosition] = state[fromPosition]
-                state[fromPosition] = null
-                setAnimationData(oldRookPosition, newRookPosition) {
-                    state[newRookPosition] = state[oldRookPosition]
-                    state[oldRookPosition] = null
-                }
+            state[toPosition] = state[fromPosition]
+            state[fromPosition] = null
+
+            println("Moving King")
+            setAnimationData(PieceType.KING, fromPosition, toPosition) {
+                state[newRookPosition] = state[oldRookPosition]
+                state[oldRookPosition] = null
+
+                println("Moving Rook")
+                setAnimationData(PieceType.ROOK, oldRookPosition, newRookPosition)
             }
         }
     }

@@ -10,6 +10,7 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -18,6 +19,8 @@ class GameRenderer(context: Context) {
     private val quad = Quad()
     private val sampler = Sampler(0)
 
+    private val isLocked = AtomicBoolean(false)
+
     private val pieceProgram = ShaderProgram(
         ShaderLoader.load(R.raw.piece_vertex, ShaderType.VERTEX, context),
         ShaderLoader.load(R.raw.piece_fragment, ShaderType.FRAGMENT, context)
@@ -25,8 +28,10 @@ class GameRenderer(context: Context) {
 
     private val animations = ArrayList<AnimationValues>()
 
-    fun render(game: Game, aspectRatio: Float) {
+    fun startAnimations(game: Game) {
+        while (isLocked.get()) {}
 
+        isLocked.set(true)
         val animationData = game.getAnimationData()
 
         for (animation in animationData) {
@@ -34,6 +39,13 @@ class GameRenderer(context: Context) {
         }
 
         game.resetAnimationData()
+        isLocked.set(false)
+    }
+
+    fun render(game: Game, aspectRatio: Float) {
+//        Thread {
+            startAnimations(game)
+//        }.start()
 
         pieceProgram.start()
         pieceProgram.set("aspectRatio", aspectRatio)
@@ -61,9 +73,12 @@ class GameRenderer(context: Context) {
 
         for (animation in animations) {
             if (animation.stopAnimating) {
-                println("Animation data: ${animation.totalDistance} ${animation.translation}")
+//                println("End: ${Thread.currentThread().id} ${animation.piece} ${animation.totalDistance} ${animation.translation}")
+
+                animation.onFinish()
             }
         }
+
         animations.removeIf { animation -> animation.stopAnimating }
 
         pieceProgram.stop()
@@ -71,14 +86,16 @@ class GameRenderer(context: Context) {
 
     fun update(delta: Float): Boolean {
         for (animation in animations) {
-            val increment = animation.totalDistance * delta * 5.0f
+            val increment = animation.totalDistance * delta * 5f
 
-            if (abs(animation.translation.x - animation.totalDistance.x) < abs(increment.x) || abs(animation.translation.y - animation.totalDistance.y) < abs(increment.y)) {
-                animation.translation = animation.totalDistance
+//            println("Update: ${Thread.currentThread().id} ${animation.piece} ${animation.translation} ${animation.totalDistance} $increment")
+
+            if (abs(animation.translation.x) < abs(increment.x) || abs(animation.translation.y) < abs(increment.y)) {
+                animation.translation = Vector2()
                 animation.stopAnimating = true
-                animation.onFinish()
+//                animation.onFinish()
             } else {
-                animation.translation += increment
+                animation.translation -= increment
             }
         }
 
@@ -89,11 +106,14 @@ class GameRenderer(context: Context) {
         val toPosition = animationData.toPosition
         val fromPosition = animationData.fromPosition
 
-        val animatingRow = fromPosition.x.roundToInt()
-        val animatingCol = fromPosition.y.roundToInt()
-        val totalDistance = toPosition - fromPosition
+        val animatingRow = toPosition.x.roundToInt()
+        val animatingCol = toPosition.y.roundToInt()
+        val translation = fromPosition - toPosition
+        val totalDistance = fromPosition - toPosition
 
-        animations += AnimationValues(animatingRow, animatingCol, Vector2(), totalDistance, animationData.onAnimationFinished)
+//        println("Start: ${Thread.currentThread().id} ${animationData.pieceType} $fromPosition $toPosition $translation $totalDistance")
+
+        animations += AnimationValues(animationData.pieceType, animatingRow, animatingCol, translation, totalDistance, animationData.onAnimationFinished)
     }
 
     fun destroy() {

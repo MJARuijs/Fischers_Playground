@@ -25,30 +25,30 @@ class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayLi
 
             val queenOffset = if (isPlayingWhite) 0 else 1
 
-//            state[0][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
+            state[0][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
 //            state[1][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE)
 //            state[2][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE)
-            state[3 + queenOffset][whiteIndex] = Piece(PieceType.QUEEN, Team.WHITE)
+//            state[3 + queenOffset][whiteIndex] = Piece(PieceType.QUEEN, Team.WHITE)
             state[4 - queenOffset][whiteIndex] = Piece(PieceType.KING, Team.WHITE)
 //            state[5][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE)
 //            state[6][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE)
-//            state[7][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
+            state[7][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
 
-//            state[0][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
+            state[0][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
 //            state[1][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
 //            state[2][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
-            state[3 + queenOffset][blackIndex] = Piece(PieceType.QUEEN, Team.BLACK)
+//            state[3 + queenOffset][blackIndex] = Piece(PieceType.QUEEN, Team.BLACK)
             state[4 - queenOffset][blackIndex] = Piece(PieceType.KING, Team.BLACK)
-            state[5][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
+//            state[5][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
 //            state[6][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
             state[7][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
 
-            state[4][6] = Piece(PieceType.PAWN, Team.BLACK)
-            state[5][6] = Piece(PieceType.PAWN, Team.BLACK)
+//            state[4][6] = Piece(PieceType.PAWN, Team.BLACK)
+//            state[5][6] = Piece(PieceType.PAWN, Team.BLACK)
 
             for (i in 0 until 8) {
-//                state[i][whitePawnIndex] = Piece(PieceType.PAWN, Team.WHITE)
-//                state[i][blackPawnIndex] = Piece(PieceType.PAWN, Team.BLACK)
+                state[i][whitePawnIndex] = Piece(PieceType.PAWN, Team.WHITE)
+                state[i][blackPawnIndex] = Piece(PieceType.PAWN, Team.BLACK)
             }
         }
     }

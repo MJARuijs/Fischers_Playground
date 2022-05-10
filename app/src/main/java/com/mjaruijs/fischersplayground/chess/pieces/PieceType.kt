@@ -205,16 +205,12 @@ enum class PieceType(val value: Int, val sign: Char) {
                 }
             }
 
-//            val direction = if (piece.team == Team.WHITE) 1 else -1
-
             if (canShortCastle(piece.team, moves, isSinglePlayer, gameState)) {
                 possibleMoves += square + Vector2(2, 0)
-                println("Added short castle: ${square + Vector2(2, 0)}")
             }
 
             if (canLongCastle(piece.team, moves, isSinglePlayer, gameState)) {
                 possibleMoves += square - Vector2(2 , 0)
-                println("Added long castle: ${square - Vector2(2 , 0)}")
             }
 
             return possibleMoves
@@ -402,13 +398,11 @@ enum class PieceType(val value: Int, val sign: Char) {
             }
 
             if (kingMoved || rookMoved) {
-                return false
+//                return false
             }
 
             for (i in 1 until 3) {
                 val square = Vector2(kingX + i * direction, kingY)
-
-                println("Short castle: $square")
 
                 if (state[square] != null) {
                     return false
@@ -467,13 +461,11 @@ enum class PieceType(val value: Int, val sign: Char) {
             }
 
             if (kingMoved || rookMoved) {
-                return false
+//                return false
             }
 
             for (i in 1 until 3) {
                 val square = Vector2(kingX + i * direction, kingY)
-
-                println("Long castle $square ${state[square]?.type}")
 
                 if (state[square] != null) {
                     return false

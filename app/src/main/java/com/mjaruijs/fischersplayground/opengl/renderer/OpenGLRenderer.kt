@@ -5,7 +5,6 @@ import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
-import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -22,6 +21,8 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     private var displayWidth = 0
     private var displayHeight = 0
 
+    private var initialized = false
+
     lateinit var onDisplaySizeChanged: (Int, Int) -> Unit
 
     override fun onSurfaceCreated(p0: GL10?, config: EGLConfig?) {
@@ -35,6 +36,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         boardRenderer = BoardRenderer(context)
 
         onContextCreated()
+        initialized = true
     }
 
     fun setBoard(board: Board) {
@@ -46,7 +48,14 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun update(delta: Float): Boolean {
-        return gameRenderer.update(delta)
+        return if (initialized) {
+            Thread {
+                gameRenderer.startAnimations(game)
+            }.start()
+            gameRenderer.update(delta)
+        } else {
+            false
+        }
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
