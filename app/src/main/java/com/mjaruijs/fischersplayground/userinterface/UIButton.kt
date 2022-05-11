@@ -81,9 +81,8 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 //        drawable = resources.getDrawable(resourceId, null)
         drawable = ResourcesCompat.getDrawable(resources, resourceId, null)
 //        bitmap = Bitmap.createBitmap(drawable!!.intrinsicWidth, drawable!!.intrinsicHeight, Bitmap.Config.ARGB_8888)
-        bitmap = drawable!!.toBitmap(drawable!!.intrinsicWidth, drawable!!.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        bitmap = drawable!!.toBitmap(drawable!!.intrinsicWidth, drawable!!.intrinsicHeight, Bitmap.Config.ALPHA_8)
 //        drawableCanvas = Canvas(bitmap!!)
-
         println("Bitmap dimensions: $buttonText ${bitmap?.width} ${bitmap?.height}")
 
         drawable!!.setBounds(0, 0, bitmap!!.width, bitmap!!.height)
@@ -188,8 +187,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         }
 
         if (bitmap != null) {
-//            canvas.drawRect(rect, debugPaint)
-//            drawable!!.draw(canvas)
             canvas.drawBitmap(bitmap!!, null, rect, textPaint)
         }
 
