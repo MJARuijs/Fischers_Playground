@@ -18,7 +18,6 @@ class SinglePlayerGame : Game(true) {
     override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState) = PieceType.getPossibleMoves(piece.team, piece, square, true, state, moves)
 
     override fun showPreviousMove(): Pair<Boolean, Boolean> {
-        println("MOVE INDEX: $currentMoveIndex")
         if (currentMoveIndex != -1) {
             teamToMove = !teamToMove
         }
@@ -34,17 +33,14 @@ class SinglePlayerGame : Game(true) {
 
     override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move {
         if (!isShowingCurrentMove()) {
-            println("Current move: $currentMoveIndex")
             val moveCount = moves.size
-            println("MOVE COUNT: $moveCount")
-            for (i in currentMoveIndex until moveCount) {
+            for (i in currentMoveIndex + 1 until moveCount) {
                 if (i == -1) {
                     continue
                 }
                 moves.removeLast()
-                println("Trying to remove $i")
-//                moves.removeAt(i)
             }
+            currentMoveIndex = moves.size - 1
         }
 
         return super.move(team, fromPosition, toPosition, shouldAnimate)

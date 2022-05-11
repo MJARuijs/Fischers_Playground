@@ -24,11 +24,30 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     protected val team = if (isPlayingWhite) Team.WHITE else Team.BLACK
 
+    var enableBackButton: () -> Unit = {}
+    var enableForwardButton: () -> Unit = {}
+
     abstract fun getCurrentTeam(): Team
 
     abstract fun getPieceMoves(piece: Piece, square: Vector2, state: GameState): ArrayList<Vector2>
 
     abstract fun processAction(action: Action): Action
+
+    fun incrementMoveCounter(): Int {
+        currentMoveIndex++
+        if (currentMoveIndex == 0) {
+            enableBackButton()
+        }
+        return currentMoveIndex
+    }
+
+    fun decrementMoveCounter(): Int {
+        currentMoveIndex--
+        if (currentMoveIndex == moves.size - 2) {
+            enableForwardButton()
+        }
+        return currentMoveIndex
+    }
 
     open fun showPreviousMove(): Pair<Boolean, Boolean> {
         if (currentMoveIndex == -1) {
@@ -49,7 +68,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             return Pair(first = true, second = false)
         }
 
-        val nextMove = moves[++currentMoveIndex]
+        val nextMove = moves[incrementMoveCounter()]
         redoMove(nextMove)
 
         val shouldDisableForwardButton = currentMoveIndex == moves.size - 1
@@ -133,7 +152,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             setAnimationData(piece.type, fromPosition, toPosition)
         }
 
-        currentMoveIndex--
+        decrementMoveCounter()
     }
 
     open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move {
@@ -174,7 +193,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         val move = Move(team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
         if (shouldAnimate) {
             if (isShowingCurrentMove()) {
-                currentMoveIndex++
+                incrementMoveCounter()
             }
             moves += move
         }

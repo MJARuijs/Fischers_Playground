@@ -5,8 +5,8 @@ import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
-import android.widget.Button
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 import kotlin.math.roundToInt
 
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
@@ -20,6 +20,8 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     private var bitmap: Bitmap? = null
     private var drawableCanvas: Canvas? = null
 
+    var disabled = false
+
     var buttonText = ""
     var buttonTextSize = 200.0f
     var buttonTextColor = 0
@@ -30,17 +32,19 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     var cornerRadius = 0.0f
 
+    var rect = Rect()
+
     init {
         paint.isAntiAlias = true
-//        paint.color = Color.BLUE
         paint.color = Color.rgb(0.25f, 0.25f, 0.25f)
-        debugPaint.color = Color.GREEN
 
         textPaint.isAntiAlias = true
         textPaint.color = Color.WHITE
         textPaint.textSize = 200.0f
         textPaint.textAlign = Paint.Align.CENTER
         textPaint.isFakeBoldText = true
+
+        debugPaint.color = Color.GREEN
     }
 
     fun setCornerRadius(radius: Float): UIButton {
@@ -48,52 +52,83 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         return this
     }
 
-    fun isEnabled(enabled: Boolean): UIButton {
-        isEnabled = enabled
+    fun enable(): UIButton {
+        disabled = false
+//        drawable!!.colorFilter = BlendModeColorFilter(Color.WHITE, BlendMode.SRC_ATOP)
+        textPaint.color = Color.WHITE
+        invalidate()
         return this
     }
 
-    fun enable() {
-        println("Enabled")
-//        isEnabled = true
+    fun disable(): UIButton {
+        disabled = true
+//        drawable!!.colorFilter = BlendModeColorFilter(Color.GRAY, BlendMode.SRC_ATOP)
+        textPaint.color = Color.GRAY
+        invalidate()
+        return this
     }
 
-    fun disable() {
-//        isEnabled = false
-        println("Disabled")
-        drawable!!.colorFilter = BlendModeColorFilter(Color.GRAY, BlendMode.COLOR)
+    fun setDrawable(uri: String): UIButton {
+        val resourceId = resources.getIdentifier(uri, null, null)
+        val drawable = ResourcesCompat.getDrawable(resources, resourceId, null)
+//        setImageDrawable(drawable)
+        return this
     }
 
     fun setDrawable(resourceId: Int): UIButton {
-        bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+//        bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 
+//        drawable = resources.getDrawable(resourceId, null)
         drawable = ResourcesCompat.getDrawable(resources, resourceId, null)
+//        bitmap = Bitmap.createBitmap(drawable!!.intrinsicWidth, drawable!!.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        bitmap = drawable!!.toBitmap(drawable!!.intrinsicWidth, drawable!!.intrinsicHeight, Bitmap.Config.ARGB_8888)
+//        drawableCanvas = Canvas(bitmap!!)
 
-        bitmap = Bitmap.createBitmap(drawable!!.intrinsicWidth, drawable!!.intrinsicHeight, Bitmap.Config.ARGB_8888)
-//        println("INTRINSIC: ${drawable!!.intrinsicWidth}, ${drawable!!.intrinsicHeight}")
-        drawableCanvas = Canvas(bitmap!!)
-//        println("$text: $width, $height ${drawableCanvas!!.width} ${drawableCanvas!!.height}")
-        drawable!!.setBounds(0, 0, drawableCanvas!!.width, drawableCanvas!!.height)
+        println("Bitmap dimensions: $buttonText ${bitmap?.width} ${bitmap?.height}")
+
+        drawable!!.setBounds(0, 0, bitmap!!.width, bitmap!!.height)
+//        setImageDrawable(drawable)
 
         return this
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-//        println("$text: ONSIZE CHANGED: $w, $h")
 
-        if (drawableCanvas != null) {
-            val scale = 0.85f
+        if (bitmap != null) {
+            val scale = 0.6f
+
+//            val halfViewWidth = (w / 2)
+//            val halfDrawableWidth = (bitmap!!.width * scale / 2)
+//
+//            val left = ((halfViewWidth - halfDrawableWidth).roundToInt())
+//            val top = 0
+//            val right = ((bitmap!!.width * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
+//            val bottom = (bitmap!!.height * scale).roundToInt()
 
             val halfViewWidth = (w / 2)
-            val halfDrawableWidth = (drawableCanvas!!.width * scale / 2)
+            val halfDrawableWidth = (w * scale / 2)
+
+            val halfViewHeight = (h / 2)
+            val halfDrawableHeight = (h * scale / 2)
 
             val left = ((halfViewWidth - halfDrawableWidth).roundToInt())
+//            val top = ((halfViewHeight - halfDrawableHeight).roundToInt())
             val top = 0
-            val right = ((drawableCanvas!!.width * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
-            val bottom = (drawableCanvas!!.height * scale).roundToInt()
+            val right = ((w * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
+            val bottom = (h * scale).roundToInt()
+//            val bottom = ((h * scale + halfViewHeight - halfDrawableHeight)).roundToInt()
 
-            drawable!!.setBounds(left, top, right, bottom)
+//            val left = 0
+//            val top = 0
+//            val right = w
+//            val bottom = h
+
+            rect = Rect(left, top, right, bottom)
+//            rect = Rect(73, 0, 215, 143)
+            println("$buttonText $left $top $right $bottom :: $w $h")
+//            clipBounds = Rect(left, top, right, bottom)
+//            drawable!!.setBounds(left, top, right, bottom)
         }
     }
 
@@ -152,13 +187,13 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
             canvas.drawRoundRect(0f, 0f, width.toFloat(), height.toFloat(), cornerRadius, cornerRadius, paint)
         }
 
-        if (drawableCanvas != null) {
-//            canvas.drawRect(drawable!!.bounds, debugPaint)
-            drawable!!.draw(canvas)
+        if (bitmap != null) {
+//            canvas.drawRect(rect, debugPaint)
+//            drawable!!.draw(canvas)
+            canvas.drawBitmap(bitmap!!, null, rect, textPaint)
         }
 
         canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
-
     }
 
 }

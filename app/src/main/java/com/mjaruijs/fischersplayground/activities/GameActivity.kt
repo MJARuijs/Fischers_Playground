@@ -103,6 +103,9 @@ class GameActivity : AppCompatActivity() {
             (game as MultiPlayerGame).init()
         }
 
+        game.enableBackButton = ::enableBackButton
+        game.enableForwardButton = ::enableForwardButton
+
         board = Board { square ->
             val possibleMoves = game.determinePossibleMoves(square, game.getCurrentTeam())
             board.updatePossibleMoves(possibleMoves)
@@ -274,7 +277,6 @@ class GameActivity : AppCompatActivity() {
             SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed)
             SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
         }
-
     }
 
     private fun onUndoRejected(gameId: String) {
@@ -349,17 +351,23 @@ class GameActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    private fun enableBackButton() {
+        findViewById<UIButton>(R.id.back_button).enable()
+        glView.requestRender()
+    }
+
+    private fun enableForwardButton() {
+        findViewById<UIButton>(R.id.forward_button).enable()
+    }
+
     private fun initUIButtons() {
         val textOffset = 70
 
         val resignButton = findViewById<UIButton>(R.id.resign_button)
-//        resignButton.textSize = 5.0f
-
         resignButton
             .setTextYOffset(textOffset)
             .setText("Resign")
             .setDrawable(R.drawable.resign)
-//            .setColor(Color.RED)
             .setButtonTextSize(50f)
             .setButtonTextColor(Color.WHITE)
 
@@ -368,30 +376,24 @@ class GameActivity : AppCompatActivity() {
                     NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "resign", "$gameId|$id"))
                     SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
                     finish()
-//                    SavedGames.delete(gameId)
-//                    val intent = Intent(this, MainActivity::class.java)
-//                        .putExtra("game_id", gameId)
-//                    startActivity(intent)
                 }
-//                NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "resign", "$gameId|$id"))
             }
 
         val offerDrawButton = findViewById<UIButton>(R.id.offer_draw_button)
         offerDrawButton
             .setText("Offer Draw")
-//            .setDrawable(R.drawable.handshake)
+//            .setDrawable("@drawable/handshake_13359")
+            .setDrawable(R.drawable.handshake_13359)
             .setButtonTextSize(50f)
             .setButtonTextColor(Color.WHITE)
             .setTextYOffset(textOffset)
             .setOnClickListener {
                 offerDrawDialog.show(gameId, id)
             }
-//        offerDrawButton.textSize = 5.0f
 
         val redoButton = findViewById<UIButton>(R.id.request_redo_button)
         redoButton
             .setText("Undo")
-//            .setColor(Color.RED)
             .setDrawable(R.drawable.rewind)
             .setButtonTextSize(50f)
             .setButtonTextColor(Color.WHITE)
@@ -400,26 +402,27 @@ class GameActivity : AppCompatActivity() {
                 NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "request_undo", "$gameId|$id"))
             }
 
-//        redoButton.textSize = 5.0f
-
         findViewById<UIButton>(R.id.back_button)
             .setText("Back")
             .setDrawable(R.drawable.back_arrow)
             .setButtonTextSize(50f)
             .setButtonTextColor(Color.WHITE)
-//            .setColor(Color.rgb(0.25f, 0.25f, 0.25f))
             .setDrawablePadding(0)
             .setTextYOffset(textOffset)
-//            .isEnabled(false)
+            .disable()
             .setOnClickListener {
+                if ((it as UIButton).disabled) {
+                    return@setOnClickListener
+                }
+
                 val buttonStates = game.showPreviousMove()
                 if (buttonStates.first) {
-//                    (it as UIButton).disable()
+                    it.disable()
                 }
                 if (buttonStates.second) {
                     board.clearPossibleMoves()
                     board.deselectSquare()
-//                    findViewById<UIButton>(R.id.forward_button)?.enable()
+                    findViewById<UIButton>(R.id.forward_button)?.enable()
                 }
                 glView.requestRender()
             }
@@ -429,16 +432,19 @@ class GameActivity : AppCompatActivity() {
             .setDrawable(R.drawable.forward_arrow)
             .setButtonTextSize(50f)
             .setButtonTextColor(Color.WHITE)
-//            .setDrawablePadding(0)
             .setTextYOffset(textOffset)
-//            .isEnabled(false)
+            .disable()
             .setOnClickListener {
+                if ((it as UIButton).disabled) {
+                    return@setOnClickListener
+                }
+
                 val buttonStates = game.showNextMove()
                 if (buttonStates.first) {
-//                    (it as UIButton).disable()
+                    it.disable()
                 }
                 if (buttonStates.second) {
-//                    findViewById<UIButton>(R.id.back_button)?.enable()
+                    findViewById<UIButton>(R.id.back_button)?.enable()
                 }
                 glView.requestRender()
             }
