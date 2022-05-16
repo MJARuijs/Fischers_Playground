@@ -6,6 +6,7 @@ import android.opengl.GLSurfaceView
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -45,6 +46,10 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     fun setGameState(game: Game) {
         this.game = game
+    }
+
+    fun kingChecked(square: Vector2) {
+        board.checkedKingSquare = square
     }
 
     fun update(delta: Float): Boolean {

@@ -14,8 +14,9 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.news.News
 import com.mjaruijs.fischersplayground.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
+import com.mjaruijs.fischersplayground.util.Time
 
-class MultiPlayerGame(private val gameId: String, private val id: String, val opponentName: String, val isPlayingWhite: Boolean,  moves: ArrayList<Move> = ArrayList()) : Game(isPlayingWhite, moves) {
+class MultiPlayerGame(private val gameId: String, private val id: String, val opponentName: String, val isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList()) : Game(isPlayingWhite, moves) {
 
     var status: GameStatus
     var news = News(NewsType.NO_NEWS)
@@ -48,7 +49,7 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
             if (move.team == team) {
                 movePlayer(move)
             } else {
-                moveOpponent(move, false)
+                moveOpponent(move, true)
             }
         }
 
@@ -66,21 +67,21 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         }
     }
 
-    fun moveOpponent(move: Move, shouldAnimate: Boolean): Move? {
+    fun moveOpponent(move: Move, runInBackground: Boolean): Move? {
         val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
         val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
 
-        return moveOpponent(fromPosition, toPosition, shouldAnimate)
+        return moveOpponent(fromPosition, toPosition, runInBackground)
     }
 
-    private fun moveOpponent(fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move? {
-        if (shouldAnimate) {
+    private fun moveOpponent(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move? {
+        if (!runInBackground) {
             if (status != GameStatus.OPPONENT_MOVE) {
                 return null
             }
         }
 
-        val move = move(!team, fromPosition, toPosition, shouldAnimate)
+        val move = move(!team, fromPosition, toPosition, runInBackground)
 
         if (move.movedPiece == PieceType.PAWN) {
             if (toPosition.y == 0.0f) {
@@ -96,17 +97,17 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
         val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
 
-        return movePlayer(fromPosition, toPosition, false)
+        return movePlayer(fromPosition, toPosition, true)
     }
 
-    private fun movePlayer(fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move? {
-        if (shouldAnimate) {
+    private fun movePlayer(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move? {
+        if (!runInBackground) {
             if (status != GameStatus.PLAYER_MOVE) {
                 return null
             }
         }
 
-        val move = move(team, fromPosition, toPosition, shouldAnimate)
+        val move = move(team, fromPosition, toPosition, runInBackground)
 
         if (move.movedPiece == PieceType.PAWN) {
             if (toPosition.y == 7.0f) {
@@ -114,8 +115,9 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
             }
         }
 
-        if (shouldAnimate) {
-            val positionUpdateMessage = "$gameId|$id|${move.toChessNotation()}"
+        if (!runInBackground) {
+            val timeStamp = Time.getTimeStamp()
+            val positionUpdateMessage = "$gameId|$id|${move.toChessNotation()}|$timeStamp"
             val message = Message(Topic.GAME_UPDATE, "move", positionUpdateMessage)
 
             NetworkManager.sendMessage(message)
@@ -152,7 +154,7 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
 
                 // If the newly selected square belongs to the possible moves of the selected piece, we can move to that new square
                 if (possibleMoves.contains(action.clickedPosition)) {
-                    movePlayer(action.previouslySelectedPosition, action.clickedPosition, true)
+                    movePlayer(action.previouslySelectedPosition, action.clickedPosition, false)
                     return Action(action.clickedPosition, ActionType.PIECE_MOVED)
                 }
 

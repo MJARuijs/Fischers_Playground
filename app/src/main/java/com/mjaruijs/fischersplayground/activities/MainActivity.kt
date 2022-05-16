@@ -34,16 +34,20 @@ import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.news.NewsType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.util.Time
+import java.util.*
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
     private var id: String? = null
+    private var userName: String? = null
 
     private val idReceiver = MessageReceiver(Topic.INFO, "id", ::onIdReceived)
     private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
     private val playersReceiver = MessageReceiver(Topic.INFO, "search_players_result", ::onPlayersReceived)
     private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
-    private val activeGameReceiver = MessageReceiver(Topic.INFO, "active_games", ::onActiveGamesReceived)
+    private val activeGameReceiver = MessageReceiver(Topic.INFO, "user_data", ::onActiveGamesReceived)
     private val gameUpdateReceiver = MessageReceiver(Topic.GAME_UPDATE, "move", ::onOpponentMoved)
     private val requestUndoReceiver = MessageReceiver(Topic.GAME_UPDATE, "request_undo", ::onUndoRequested)
     private val undoAcceptedReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_undo", ::onUndoAccepted)
@@ -59,6 +63,8 @@ class MainActivity : AppCompatActivity() {
     private val invitePlayerDialog = InvitePlayerDialog(::onInvite)
     private val incomingInviteDialog = IncomingInviteDialog()
 
+    private val recentOpponents = Stack<Pair<String, String>>()
+
     private lateinit var gameAdapter: GameAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,9 +75,8 @@ class MainActivity : AppCompatActivity() {
         registerReceivers()
 
         val preferences = getPreferences(MODE_PRIVATE)
-        val userName = preferences.getString("USER_NAME", "")
-
         id = preferences.getString("ID", "")
+        userName = preferences.getString("USER_NAME", "")
 
         if (!isInitialized()) {
             PieceTextures.init(this)
@@ -83,28 +88,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (userName == null || userName.isBlank()) {
+        if (userName == null || userName!!.isBlank()) {
             showCreateUsernameDialog()
         } else {
             findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
         }
 
         incomingInviteDialog.create(this)
-
-        val settingsButton = findViewById<ImageView>(R.id.settings_button)
-        settingsButton.isFocusableInTouchMode = true
-        settingsButton.setOnClickListener { view ->
-            showKeyboard(view)
-        }
+        invitePlayerDialog.create(id!!, this)
 
         findViewById<ImageView>(R.id.settings_button)
             .setOnClickListener {
                 val intent = Intent(this, GameActivity::class.java)
                     .putExtra("id", id)
+                    .putExtra("user_name", userName)
                     .putExtra("is_single_player", true)
                     .putExtra("is_playing_white", true)
                     .putExtra("game_id", "test_game")
-                    .putExtra("opponent_name", "opponent")
+                    .putExtra("opponent_name", "Opponent")
                 startActivity(intent)
             }
 
@@ -114,10 +115,18 @@ class MainActivity : AppCompatActivity() {
             .setColor(Color.rgb(235, 186, 145))
             .setCornerRadius(45.0f)
             .setOnClickListener {
-                invitePlayerDialog.create(id!!, it)
+                invitePlayerDialog.show()
             }
 
         gameAdapter = GameAdapter(::onGameClicked)
+
+//        gameAdapter += GameCardItem("0", 0,  "Opponent 1", GameStatus.INVITE_RECEIVED)              // 2    7
+//        gameAdapter += GameCardItem("1", 0, "Opponent 2", GameStatus.PLAYER_MOVE)                   // 5    1
+//        gameAdapter += GameCardItem("2", 0, "Opponent 3", GameStatus.GAME_LOST)                     // 7    4
+//        gameAdapter += GameCardItem("3", 2, "Opponent 4", GameStatus.OPPONENT_MOVE)                 // 3    5
+//        gameAdapter += GameCardItem("4", 1,  "Opponent 5", GameStatus.PLAYER_MOVE)                  // 4    2
+//        gameAdapter += GameCardItem("5", 1, "Opponent 6", GameStatus.GAME_WON)                      // 6    6
+//        gameAdapter += GameCardItem("6", 1, "Opponent 7", GameStatus.INVITE_PENDING)                // 1    3
 
         val gameRecyclerView = findViewById<RecyclerView>(R.id.game_list)
         gameRecyclerView.layoutManager = LinearLayoutManager(this)
@@ -126,16 +135,46 @@ class MainActivity : AppCompatActivity() {
 
     private fun isInitialized() = NetworkManager.isRunning()
 
-    private fun onInvite(inviteId: String, name: String, id: String) {
-        gameAdapter += GameCardItem(inviteId, name, GameStatus.INVITE_PENDING)
+    private fun updateRecentOpponents(newOpponent: Pair<String, String>) {
+        val temp = Stack<Pair<String, String>>()
+
+        while (temp.size < 2 && recentOpponents.isNotEmpty()) {
+            val opponent = recentOpponents.pop()
+
+            if (opponent == newOpponent) {
+                continue
+            }
+
+            temp.push(opponent)
+        }
+
+        while (recentOpponents.isNotEmpty()) {
+            recentOpponents.pop()
+        }
+
+        for (i in 0 until temp.size) {
+            recentOpponents.push(temp.pop())
+        }
+
+        recentOpponents.push(newOpponent)
+
+        invitePlayerDialog.setRecentOpponents(recentOpponents)
+    }
+
+    private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
+        gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
+        updateRecentOpponents(Pair(opponentName, opponentId))
     }
 
     private fun onGameClicked(gameCard: GameCardItem) {
+        gameAdapter.clearUpdate(gameCard, id!!)
+
         if (gameCard.gameStatus == GameStatus.INVITE_RECEIVED) {
             incomingInviteDialog.showInvite(gameCard.opponentName, gameCard.id)
         } else if (gameCard.gameStatus != GameStatus.INVITE_PENDING) {
             val intent = Intent(this, GameActivity::class.java)
                 .putExtra("id", id)
+                .putExtra("user_name", userName)
                 .putExtra("is_playing_white", gameCard.isPlayingWhite)
                 .putExtra("game_id", gameCard.id)
                 .putExtra("opponent_name", gameCard.opponentName)
@@ -151,37 +190,43 @@ class MainActivity : AppCompatActivity() {
         val playingWhite = data[2].toBoolean()
 
         val underscoreIndex = inviteId.indexOf('_')
-        val invitingUserId = inviteId.substring(0, underscoreIndex)
+        val opponentId = inviteId.substring(0, underscoreIndex)
 
-        val newGameStatus = if (playingWhite) {
-            GameStatus.PLAYER_MOVE
-        } else {
-            GameStatus.OPPONENT_MOVE
-        }
+        val newGameStatus = if (playingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
 
         SavedGames.put(inviteId, MultiPlayerGame(inviteId, id!!, opponentName, playingWhite))
 
-        gameAdapter.updateGameCard(inviteId, opponentName, newGameStatus, playingWhite, true)
+        val timeStamp = Time.getTimeStamp()
+        gameAdapter.updateGameCard(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, createGameIfAbsent = true, hasUpdate = true)
+
+        updateRecentOpponents(Pair(opponentName, opponentId))
     }
 
     private fun onActiveGamesReceived(content: String) {
         val startIndex = content.indexOf('{') + 1
         val endIndex = content.indexOf('}')
-
         val activeGamesData = content.substring(startIndex, endIndex)
         parseActiveGameData(activeGamesData)
 
         val receivedInvitesStartIndex = content.indexOf('{', endIndex) + 1
         val receivedInvitesEndIndex = content.indexOf('}', receivedInvitesStartIndex)
-
         val receivedInvitesData = content.substring(receivedInvitesStartIndex, receivedInvitesEndIndex)
         parseReceivedInvitesData(receivedInvitesData)
 
         val pendingInvitesStartIndex = content.indexOf('{', receivedInvitesEndIndex) + 1
         val pendingInvitesEndIndex = content.indexOf('}', pendingInvitesStartIndex)
-
         val pendingInvitesData = content.substring(pendingInvitesStartIndex, pendingInvitesEndIndex)
         parsePendingInvitesData(pendingInvitesData)
+
+        val recentOpponentsStartIndex = content.indexOf('{', pendingInvitesEndIndex) + 1
+        val recentOpponentsEndIndex = content.indexOf('}', recentOpponentsStartIndex)
+        val recentOpponentsData = content.substring(recentOpponentsStartIndex, recentOpponentsEndIndex)
+        parseRecentOpponents(recentOpponentsData)
+
+        val updatedGameStartIndex = content.indexOf('{', recentOpponentsEndIndex) + 1
+        val updatedGameEndIndex = content.indexOf('}', updatedGameStartIndex)
+        val updatedGamesData = content.substring(updatedGameStartIndex, updatedGameEndIndex)
+        processUpdatedGames(updatedGamesData)
     }
 
     private fun onIncomingInvite(content: String) {
@@ -190,9 +235,10 @@ class MainActivity : AppCompatActivity() {
         val invitingUsername = data[0]
         val invitingUserId = data[1]
         val inviteId = data[2]
+        val timeStamp = data[3].toLong()
 
         incomingInviteDialog.showInvite(invitingUsername, inviteId)
-        gameAdapter += GameCardItem(inviteId, invitingUsername, GameStatus.INVITE_RECEIVED)
+        gameAdapter += GameCardItem(inviteId, timeStamp, invitingUsername, GameStatus.INVITE_RECEIVED, hasUpdate = true)
     }
 
     private fun showCreateUsernameDialog() {
@@ -212,6 +258,8 @@ class MainActivity : AppCompatActivity() {
                 apply()
             }
 
+            this.userName = userName
+
             findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
             NetworkManager.sendMessage(Message(Topic.INFO, "user_name", userName))
         }
@@ -221,6 +269,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun onPlayersReceived(content: String) {
         val playersData = content.split(')')
+
+        invitePlayerDialog.clearPlayers()
         for (playerData in playersData) {
             if (playerData.isBlank()) {
                 continue
@@ -278,7 +328,8 @@ class MainActivity : AppCompatActivity() {
         game.news = News(NewsType.OPPONENT_OFFERED_DRAW)
         SavedGames.put(gameId, game)
 
-        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
+        gameAdapter.hasUpdate(gameId)
+//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
     }
 
     private fun onOpponentAcceptedDraw(content: String) {
@@ -290,7 +341,8 @@ class MainActivity : AppCompatActivity() {
         game.news = News(NewsType.OPPONENT_ACCEPTED_DRAW)
         SavedGames.put(gameId, game)
 
-        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
+        gameAdapter.hasUpdate(gameId)
+//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
     }
 
     private fun onOpponentDeclinedDraw(content: String) {
@@ -302,7 +354,8 @@ class MainActivity : AppCompatActivity() {
         game.news = News(NewsType.OPPONENT_DECLINED_DRAW)
         SavedGames.put(gameId, game)
 
-        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
+        gameAdapter.hasUpdate(gameId)
+//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
     }
 
     private fun onUndoRequested(content: String) {
@@ -311,6 +364,7 @@ class MainActivity : AppCompatActivity() {
         val opponentUsername = data[1]
         val opponentUserId = data[2]
 
+        gameAdapter.hasUpdate(gameId)
         SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_REQUESTED_UNDO)
     }
 
@@ -319,11 +373,13 @@ class MainActivity : AppCompatActivity() {
         val gameId = data[0]
         val numberOfMovesReversed = data[1].toInt()
 
+        gameAdapter.hasUpdate(gameId)
         SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed)
         SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
     }
 
     private fun onUndoRejected(gameId: String) {
+        gameAdapter.hasUpdate(gameId)
         SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_REJECTED_UNDO)
     }
 
@@ -337,11 +393,12 @@ class MainActivity : AppCompatActivity() {
 
             val data = gameData.split('|')
             val gameId = data[0]
-            val opponentName = data[1]
-            val isPlayerWhite = data[2].toBoolean()
-            val currentPlayerToMove = data[3]
-            val moveList = data[4].removePrefix("[").removeSuffix("]").split(' ')
-            val winner = data[5]
+            val lastUpdated = data[1].toLong()
+            val opponentName = data[2]
+            val isPlayerWhite = data[3].toBoolean()
+            val currentPlayerToMove = data[4]
+            val moveList = data[5].removePrefix("[").removeSuffix("]").split(' ')
+            val winner = data[6]
 
             val moves = ArrayList<Move>()
 
@@ -366,7 +423,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             SavedGames.put(gameId, MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves))
-            gameAdapter += GameCardItem(gameId, opponentName, gameStatus, isPlayerWhite)
+            gameAdapter += GameCardItem(gameId, lastUpdated, opponentName, gameStatus, isPlayerWhite, hasUpdate = false)
         }
     }
 
@@ -380,9 +437,10 @@ class MainActivity : AppCompatActivity() {
 
             val data = inviteData.split('|')
             val gameId = data[0]
-            val invitingUsername = data[1]
+            val timeStamp = data[1].toLong()
+            val invitingUsername = data[2]
 
-            gameAdapter += GameCardItem(gameId, invitingUsername, GameStatus.INVITE_RECEIVED)
+            gameAdapter += GameCardItem(gameId, timeStamp, invitingUsername, GameStatus.INVITE_RECEIVED, hasUpdate = false)
         }
     }
 
@@ -396,9 +454,38 @@ class MainActivity : AppCompatActivity() {
 
             val data = inviteData.split('|')
             val gameId = data[0]
-            val invitingUsername = data[1]
+            val timeStamp = data[1].toLong()
+            val invitingUsername = data[2]
 
-            gameAdapter += GameCardItem(gameId, invitingUsername, GameStatus.INVITE_PENDING)
+            gameAdapter += GameCardItem(gameId, timeStamp, invitingUsername, GameStatus.INVITE_PENDING, hasUpdate = false)
+        }
+    }
+
+    private fun parseRecentOpponents(recentOpponentsData: String) {
+        val opponentsData = recentOpponentsData.split(',')
+
+        for (opponentData in opponentsData) {
+            if (opponentData.isBlank()) {
+                continue
+            }
+
+            val data = opponentData.split('|')
+            val opponentName = data[0]
+            val opponentId = data[1]
+
+            updateRecentOpponents(Pair(opponentName, opponentId))
+        }
+    }
+
+    private fun processUpdatedGames(updatedGameData: String) {
+        val updatedGameIds = updatedGameData.split(',')
+
+        for (gameId in updatedGameIds) {
+            if (gameId.isBlank()) {
+                continue
+            }
+
+            gameAdapter.hasUpdate(gameId)
         }
     }
 
@@ -420,16 +507,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        println("RESUME")
         val games = SavedGames.getAll()
         for (game in games) {
             val gameId = game.first
+            val lastUpdated = game.second.lastUpdated
             val opponentName = game.second.opponentName
             val status = game.second.status
             val isPlayerWhite = game.second.isPlayingWhite
-            println("Updating card: $gameId, $status")
-            gameAdapter.updateGameCard(gameId, opponentName, status, isPlayerWhite, true)
-//            gameAdapter.updateCardStatus(game.first, game.second.status)
+
+            gameAdapter.updateGameCard(gameId, lastUpdated, opponentName, status, isPlayerWhite, true, false)
         }
 
         registerReceivers()
@@ -449,7 +535,6 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(opponentOfferedDrawReceiver)
         unregisterReceiver(opponentAcceptedDrawReceiver)
         unregisterReceiver(opponentDeclinedDrawReceiver)
-        println("STOP")
         super.onStop()
     }
 

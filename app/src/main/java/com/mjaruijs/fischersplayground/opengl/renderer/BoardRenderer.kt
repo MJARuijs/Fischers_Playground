@@ -24,6 +24,7 @@ class BoardRenderer(context: Context) {
         boardProgram.set("outColor", Color(0.25f, 0.25f, 1.0f, 1.0f))
         boardProgram.set("scale", Vector2(aspectRatio, aspectRatio))
         boardProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
+        boardProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
 
         for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
             boardProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)

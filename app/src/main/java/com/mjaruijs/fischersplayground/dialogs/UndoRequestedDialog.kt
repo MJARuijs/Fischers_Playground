@@ -22,7 +22,7 @@ class UndoRequestedDialog {
             NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "accepted_undo", "$gameId|$id"))
         }
         dialogBuilder.setNegativeButton("Reject") { _, _ ->
-            NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "reject_undo", "$gameId|$id"))
+            NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "rejected_undo", "$gameId|$id"))
         }
 
         dialog = dialogBuilder.show()

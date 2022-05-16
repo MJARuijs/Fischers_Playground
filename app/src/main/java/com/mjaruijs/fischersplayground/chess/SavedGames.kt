@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.chess
 
+import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 
 object SavedGames {
@@ -8,6 +9,10 @@ object SavedGames {
 
     fun put(gameId: String, game: MultiPlayerGame) {
         games[gameId] = game
+    }
+
+    fun test(gameId: String): GameStatus? {
+        return games[gameId]?.status
     }
 
     fun get(gameId: String) = games[gameId]

@@ -7,6 +7,8 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.AnimationData
+import com.mjaruijs.fischersplayground.util.Time
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -24,8 +26,16 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     protected val team = if (isPlayingWhite) Team.WHITE else Team.BLACK
 
+    private var isChecked = false
+
+    var lastUpdated = 0L
+
     var enableBackButton: () -> Unit = {}
     var enableForwardButton: () -> Unit = {}
+    var onPieceTaken: (PieceType, Team) -> Unit = { _, _ -> }
+    var onCheck: (Vector2) -> Unit = {}
+    var onCheckCleared: () -> Unit = {}
+    var onCheckMate: (Team) -> Unit = {}
 
     abstract fun getCurrentTeam(): Team
 
@@ -33,15 +43,16 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     abstract fun processAction(action: Action): Action
 
-    fun incrementMoveCounter(): Int {
+    private fun incrementMoveCounter(): Int {
         currentMoveIndex++
+        println("CURRENT MOVE INDEX: $currentMoveIndex")
         if (currentMoveIndex == 0) {
             enableBackButton()
         }
         return currentMoveIndex
     }
 
-    fun decrementMoveCounter(): Int {
+    private fun decrementMoveCounter(): Int {
         currentMoveIndex--
         if (currentMoveIndex == moves.size - 2) {
             enableForwardButton()
@@ -109,15 +120,15 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             performCastle(move.team, fromPosition, toPosition, true)
         } else {
             state[toPosition] = piece
-
-            if (move.pieceTaken == null) {
-                state[fromPosition] = null
-            } else {
-                state[fromPosition] = Piece(move.pieceTaken, !move.team)
-            }
+            state[fromPosition] = null
 
             setAnimationData(piece.type, fromPosition, toPosition)
         }
+
+        val isCheck = isPlayerChecked(state, !move.team)
+        val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
+
+        updateCheckData(!move.team, isCheck, isCheckMate)
     }
 
     protected fun undoMove(move: Move) {
@@ -152,10 +163,14 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             setAnimationData(piece.type, fromPosition, toPosition)
         }
 
+        val isCheck = isPlayerChecked(state, move.team)
+        val isCheckMate = if (isCheck) isPlayerCheckMate(state, move.team) else false
+
+        updateCheckData(move.team, isCheck, isCheckMate)
         decrementMoveCounter()
     }
 
-    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move {
+    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
         possibleMoves.clear()
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
@@ -164,6 +179,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         val takenPiece = take(currentPositionPiece, fromPosition, toPosition)
 
         if (takenPiece != null) {
+            onPieceTaken(takenPiece.type, takenPiece.team)
             if (this.team == team) {
                 takenPieces += takenPiece
             } else {
@@ -172,26 +188,23 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         }
 
         if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
-            performCastle(team, fromPosition, toPosition, shouldAnimate)
+            performCastle(team, fromPosition, toPosition, runInBackground)
         } else {
             state[fromPosition] = null
             state[toPosition] = currentPositionPiece
 
-            if (shouldAnimate) {
+            if (!runInBackground) {
                 setAnimationData(currentPositionPiece.type, fromPosition, toPosition)
             }
         }
 
         val isCheck = isPlayerChecked(state, !team)
+        val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
 
-        val isCheckMate = if (!isCheck) {
-            false
-        } else {
-            isPlayerCheckMate(state, !team)
-        }
+        updateCheckData(!team, isCheck, isCheckMate)
 
-        val move = Move(team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
-        if (shouldAnimate) {
+        val move = Move(Time.getTimeStamp(), team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
+        if (!runInBackground) {
             if (isShowingCurrentMove()) {
                 incrementMoveCounter()
             }
@@ -251,19 +264,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     }
 
     private fun isPlayerChecked(state: GameState, team: Team): Boolean {
-        val kingsPosition = Vector2(-1f, -1f)
-
-        for (x in 0 until 8) {
-            for (y in 0 until 8) {
-                val piece = state[x, y] ?: continue
-                if (piece.type == PieceType.KING && piece.team == team) {
-                    kingsPosition.x = x.toFloat()
-                    kingsPosition.y = y.toFloat()
-                    break
-                }
-            }
-        }
-
+        val kingsPosition = findKingPosition(state, team)
         val possibleMovesForOpponent = ArrayList<Vector2>()
 
         for (x in 0 until 8) {
@@ -307,7 +308,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         return false
     }
 
-    private fun performCastle(team: Team, fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean) {
+    private fun performCastle(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
         val rookDirection = if (toPosition.x < fromPosition.x) 1 else -1
 
         val oldRookPosition = if (toPosition.x > fromPosition.x) {
@@ -318,19 +319,44 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
         val newRookPosition = toPosition + Vector2(rookDirection, 0)
 
-        if (shouldAnimate) {
+        if (!runInBackground) {
             state[toPosition] = state[fromPosition]
             state[fromPosition] = null
 
-            println("Moving King")
             setAnimationData(PieceType.KING, fromPosition, toPosition) {
                 state[newRookPosition] = state[oldRookPosition]
                 state[oldRookPosition] = null
 
-                println("Moving Rook")
                 setAnimationData(PieceType.ROOK, oldRookPosition, newRookPosition)
             }
         }
+    }
+
+    private fun updateCheckData(team: Team, isCheck: Boolean, isCheckMate: Boolean) {
+        when {
+            isCheckMate -> onCheckMate(team)
+            isCheck -> {
+                isChecked = true
+                onCheck(findKingPosition(state, team))
+            }
+            isChecked -> {
+                isChecked = false
+                onCheckCleared()
+            }
+        }
+    }
+
+    private fun findKingPosition(state: GameState, team: Team): Vector2 {
+        for (x in 0 until 8) {
+            for (y in 0 until 8) {
+                val piece = state[x, y] ?: continue
+                if (piece.type == PieceType.KING && piece.team == team) {
+                    return Vector2(x, y)
+                }
+            }
+        }
+
+        throw IllegalArgumentException("No king was found for team: $team")
     }
 
 }

@@ -2,11 +2,11 @@ package com.mjaruijs.fischersplayground.chess.pieces
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Move(val team: Team, val fromPosition: Vector2, val toPosition: Vector2, val movedPiece: PieceType, val isCheckMate: Boolean, val isCheck: Boolean, val pieceTaken: PieceType? = null) {
+class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val toPosition: Vector2, val movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null) {
 
     fun toChessNotation(): String {
+        var notation = "$timeStamp:"
         val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
-        var notation = ""
 
         notation += movedPieceSign
         notation += getRowSign(fromPosition)
@@ -64,7 +64,11 @@ class Move(val team: Team, val fromPosition: Vector2, val toPosition: Vector2, v
 
     companion object {
 
-        fun fromChessNotation(notation: String): Move {
+        fun fromChessNotation(moveContent: String): Move {
+            val separatorIndex = moveContent.indexOf(':')
+            val timeStamp = moveContent.substring(0, separatorIndex).toLong()
+            val notation = moveContent.substring(separatorIndex + 1)
+
             if (notation.length < 6) {
                 throw IllegalArgumentException("Received notation is too short to be a proper Chess notation: $notation")
             }
@@ -107,7 +111,7 @@ class Move(val team: Team, val fromPosition: Vector2, val toPosition: Vector2, v
                 }
             }
 
-            return Move(team, Vector2(fromX, fromY), Vector2(toX, toY), PieceType.getBySign(movedPieceSign), isCheckMate, isCheck, takenPiece)
+            return Move(timeStamp, team, Vector2(fromX, fromY), Vector2(toX, toY), PieceType.getBySign(movedPieceSign), isCheckMate, isCheck, takenPiece)
         }
 
         private fun colToNumber(col: Char): Int {

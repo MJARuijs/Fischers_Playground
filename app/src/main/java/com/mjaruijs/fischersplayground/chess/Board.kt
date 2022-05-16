@@ -6,7 +6,9 @@ class Board(private val requestPossibleMoves: (Vector2) -> Unit) {
 
     private val possibleSquaresForMove = ArrayList<Vector2>()
 
-    var selectedSquare = Vector2(-1f, -1f)
+    var checkedKingSquare = Vector2(-1, -1)
+
+    var selectedSquare = Vector2(-1, -1)
         private set
 
     init {

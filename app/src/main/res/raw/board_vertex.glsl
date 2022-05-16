@@ -7,6 +7,7 @@ layout (location = 0) in vec3 inPosition;
 uniform vec2 scale;
 uniform float aspectRatio;
 uniform vec2 selectedSquareCoordinates;
+uniform vec2 checkedKingSquare;
 uniform vec2 possibleSquares[MAX_NUMBER_OF_SQUARES];
 
 flat out int squareSelected;
@@ -21,6 +22,11 @@ void main() {
     vec2 position = inPosition.xy;
 
     squareSelected = 0;
+
+    if (position.x == checkedKingSquare.x && position.y == checkedKingSquare.y) {
+        squareSelected = 3;
+    }
+
     if (position.x == selectedSquareCoordinates.x && position.y == selectedSquareCoordinates.y) {
         squareSelected = 1;
     }

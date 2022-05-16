@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.dialogs
 
 import android.app.Dialog
+import android.content.Context
 import android.view.View
 import android.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,16 +13,17 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.OnSearchViewChangedListener
+import java.util.*
 
-class InvitePlayerDialog(private val onInvite: (String, String, String) -> Unit) {
+class InvitePlayerDialog(private val onInvite: (String, Long, String, String) -> Unit) {
 
     private lateinit var dialog: Dialog
     private lateinit var playerCardList: PlayerAdapter
 
     private var initialized = false
 
-    fun create(id: String, view: View) {
-        dialog = Dialog(view.context)
+    fun create(id: String, context: Context) {
+        dialog = Dialog(context)
         dialog.setContentView(R.layout.create_game_dialog)
 
         val searchBar = dialog.findViewById<SearchView>(R.id.search_bar) ?: return
@@ -41,26 +43,37 @@ class InvitePlayerDialog(private val onInvite: (String, String, String) -> Unit)
 
         val recyclerView = dialog.findViewById<RecyclerView>(R.id.available_players_list) ?: return
         recyclerView.adapter = playerCardList
-        recyclerView.layoutManager = LinearLayoutManager(view.context)
+        recyclerView.layoutManager = LinearLayoutManager(context)
 
         initialized = true
-        dialog.show()
     }
 
-    private fun onPlayerClicked(inviteId: String, opponentName: String, opponentId: String) {
+    fun setRecentOpponents(opponents: Stack<Pair<String, String>>) {
+        playerCardList.clear()
+        for (opponent in opponents.reversed()) {
+            playerCardList += PlayerCardItem(opponent.first, opponent.second)
+        }
+    }
+
+    private fun onPlayerClicked(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         dialog.hide()
-        onInvite(inviteId, opponentName, opponentId)
+        onInvite(inviteId, timeStamp, opponentName, opponentId)
     }
 
     fun show() {
-        if (!initialized) {
-            println("DIALOG IS NOT INITIALIZED YET")
-        } else {
+        if (initialized) {
+            val searchBar = dialog.findViewById<SearchView>(R.id.search_bar) ?: return
+            searchBar.setQuery("", false)
             dialog.show()
         }
     }
 
+    fun clearPlayers() {
+        playerCardList.clear()
+    }
+
     fun addPlayers(name: String, id: String) {
+        println("ADDING PLAYERS: $name $id")
         playerCardList += PlayerCardItem(name, id)
     }
 

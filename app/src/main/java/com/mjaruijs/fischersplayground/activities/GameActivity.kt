@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.Board
@@ -15,15 +16,19 @@ import com.mjaruijs.fischersplayground.chess.SavedGames
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.pieces.PieceType
+import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.*
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.news.NewsType
 import com.mjaruijs.fischersplayground.opengl.SurfaceView
+import com.mjaruijs.fischersplayground.userinterface.PlayerCardFragment
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class GameActivity : AppCompatActivity() {
+class GameActivity : AppCompatActivity(R.layout.activity_game) {
 
     private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
     private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
@@ -45,6 +50,7 @@ class GameActivity : AppCompatActivity() {
     private val opponentOfferedDrawDialog = OpponentOfferedDrawDialog()
     private val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
     private val opponentDeclinedDrawDialog = OpponentDeclinedDrawDialog()
+    private val checkMateDialog = CheckMateDialog()
 
     private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
@@ -56,8 +62,10 @@ class GameActivity : AppCompatActivity() {
     private var isPlayingWhite = false
 
     private lateinit var id: String
+    private lateinit var userName: String
     private lateinit var gameId: String
     private lateinit var opponentName: String
+//    private lateinit var opponentId: String
 
     private lateinit var board: Board
     private lateinit var game: Game
@@ -77,22 +85,39 @@ class GameActivity : AppCompatActivity() {
         opponentOfferedDrawDialog.create(this)
         opponentAcceptedDrawDialog.create(this)
         opponentDeclinedDrawDialog.create(this)
+        checkMateDialog.create(this)
 
         if (!intent.hasExtra("is_playing_white")) {
             throw IllegalArgumentException("Missing essential information: is_player_white")
         }
 
         id = intent.getStringExtra("id") ?: throw IllegalArgumentException("Missing essential information: id")
+        userName = intent.getStringExtra("user_name") ?: throw IllegalArgumentException("Missing essential information: user_name")
         opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information: opponent_name")
+//        opponentId = intent.getStringExtra("opponent_id") ?: throw IllegalArgumentException("Missing essential information: opponent_id")
         gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
         isSinglePlayer = intent.getBooleanExtra("is_single_player", false)
         isPlayingWhite = intent.getBooleanExtra("is_playing_white", false)
 
-        setContentView(R.layout.activity_game)
+//        setContentView(R.layout.activity_game)
         glView = findViewById(R.id.opengl_view)
         glView.init(::onContextCreated, ::onClick, ::onDisplaySizeChanged)
 
         initUIButtons()
+
+        if (savedInstanceState == null) {
+            val playerBundle = Bundle()
+            playerBundle.putString("player_name", userName)
+
+            val opponentBundle = Bundle()
+            opponentBundle.putString("player_name", opponentName)
+
+            supportFragmentManager.commit {
+                setReorderingAllowed(true)
+                replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
+                replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
+            }
+        }
     }
 
     private fun onContextCreated() {
@@ -105,6 +130,10 @@ class GameActivity : AppCompatActivity() {
 
         game.enableBackButton = ::enableBackButton
         game.enableForwardButton = ::enableForwardButton
+        game.onPieceTaken = ::onPieceTaken
+        game.onCheckMate = ::onCheckMate
+        game.onCheck = ::onCheck
+        game.onCheckCleared = ::onCheckCleared
 
         board = Board { square ->
             val possibleMoves = game.determinePossibleMoves(square, game.getCurrentTeam())
@@ -119,6 +148,54 @@ class GameActivity : AppCompatActivity() {
                 processNews((game as MultiPlayerGame).news)
                 (game as MultiPlayerGame).news = News(NewsType.NO_NEWS)
             }
+        }
+
+        val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
+        val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
+        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.WHITE)
+        (opponentFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.ROOK, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.ROOK, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.KNIGHT, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.KNIGHT, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.BISHOP, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.BISHOP, Team.BLACK)
+//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.QUEEN, Team.BLACK)
+
+//        findViewById<PlayerCardFragment>(R.id.player_card).test()
+    }
+
+    private fun onCheck(square: Vector2) {
+        board.checkedKingSquare = square
+//        glView.kingChecked(square)
+    }
+
+    private fun onCheckCleared() {
+        board.checkedKingSquare = Vector2(-1, 1)
+//        glView.kingChecked(Vector2(-1, -1))
+    }
+
+    private fun onCheckMate(team: Team) {
+        if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
+            checkMateDialog.show(userName, ::closeAndSaveGameAsWin)
+        } else {
+            checkMateDialog.show(opponentName, ::closeAndSaveGameAsLoss)
+        }
+    }
+
+    private fun onPieceTaken(pieceType: PieceType, team: Team) {
+        if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
+            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
+            (opponentFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
+        } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
+            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
+            (playerFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
         }
     }
 
@@ -232,7 +309,7 @@ class GameActivity : AppCompatActivity() {
         val move = Move.fromChessNotation(moveNotation)
 
         if (this.gameId == gameId) {
-            (game as MultiPlayerGame).moveOpponent(move, true)
+            (game as MultiPlayerGame).moveOpponent(move, false)
             glView.requestRender()
         } else {
             val game = SavedGames.get(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
@@ -292,14 +369,19 @@ class GameActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun acceptDraw() {
-        NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$id"))
-        closeAndSaveGameAsDraw()
-    }
-
     private fun closeAndSaveGameAsDraw() {
         SavedGames.get(gameId)?.status = GameStatus.GAME_DRAW
         finish()
+    }
+
+    private fun closeAndSaveGameAsLoss() {
+        SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
+        finish()
+    }
+
+    private fun acceptDraw() {
+        NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$id"))
+        closeAndSaveGameAsDraw()
     }
 
     private fun hideActivityDecorations() {
@@ -388,6 +470,8 @@ class GameActivity : AppCompatActivity() {
             .setButtonTextColor(Color.WHITE)
             .setTextYOffset(textOffset)
             .setOnClickListener {
+//                findViewById<PlayerCardFragment>(R.id.player_card).test()
+
                 offerDrawDialog.show(gameId, id)
             }
 

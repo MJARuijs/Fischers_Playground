@@ -31,7 +31,7 @@ class SinglePlayerGame : Game(true) {
         return super.showNextMove()
     }
 
-    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, shouldAnimate: Boolean): Move {
+    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
         if (!isShowingCurrentMove()) {
             val moveCount = moves.size
             for (i in currentMoveIndex + 1 until moveCount) {
@@ -43,9 +43,8 @@ class SinglePlayerGame : Game(true) {
             currentMoveIndex = moves.size - 1
         }
 
-        return super.move(team, fromPosition, toPosition, shouldAnimate)
+        return super.move(team, fromPosition, toPosition, runInBackground)
     }
-
 
     override fun processAction(action: Action): Action {
         if (action.type == ActionType.SQUARE_DESELECTED) {
@@ -65,7 +64,7 @@ class SinglePlayerGame : Game(true) {
 
                 // If the newly selected square belongs to the possible moves of the selected piece, we can move to that new square
                 if (possibleMoves.contains(action.clickedPosition)) {
-                    move(teamToMove, action.previouslySelectedPosition, action.clickedPosition, true)
+                    move(teamToMove, action.previouslySelectedPosition, action.clickedPosition, false)
                     teamToMove = !teamToMove
                     return Action(action.clickedPosition, ActionType.PIECE_MOVED)
                 }

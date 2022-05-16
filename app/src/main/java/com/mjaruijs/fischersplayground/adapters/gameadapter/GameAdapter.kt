@@ -1,12 +1,19 @@
 package com.mjaruijs.fischersplayground.adapters.gameadapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.INVISIBLE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import kotlin.IllegalArgumentException
 import kotlin.collections.ArrayList
 
@@ -14,49 +21,76 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
 
     private val games = ArrayList<GameCardItem>()
 
-    fun updateGameCard(gameId: String, opponentName: String, newStatus: GameStatus, isPlayerWhite: Boolean? = null, createGameIfAbsent: Boolean = false) {
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateGameCard(gameId: String, lastUpdated: Long, opponentName: String, newStatus: GameStatus, isPlayerWhite: Boolean? = null, createGameIfAbsent: Boolean = false, hasUpdate: Boolean) {
         val game = games.find { game -> game.id == gameId }
 
         if (game == null && !createGameIfAbsent) {
             throw IllegalArgumentException("Could not find game card with id: $gameId")
         } else if (game == null) {
-            val newGame = GameCardItem(gameId, opponentName, newStatus, isPlayerWhite)
+            val newGame = GameCardItem(gameId, lastUpdated, opponentName, newStatus, isPlayerWhite, true)
             plusAssign(newGame)
         } else {
             game.gameStatus = newStatus
             game.isPlayingWhite = isPlayerWhite
 
-//            sort()
-//            notifyDataSetChanged()
-            val gameIndex = games.indexOf(game)
-            notifyItemChanged(gameIndex)
+            if (hasUpdate) {
+                hasUpdate(gameId)
+            }
+
+            sort()
+            notifyDataSetChanged()
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun updateCardStatus(id: String, newStatus: GameStatus) {
-        val game = games.find { game -> game.id == id } ?: throw IllegalArgumentException("Could not update game card with id: $id, since it does not exist")
+        val game = games.find { game -> game.id == id } ?: throw IllegalArgumentException("Could not update game card with id: $id, since it does not exist..")
         game.gameStatus = newStatus
+        game.hasUpdate = true
 
-//        sort()
-//        notifyDataSetChanged()
-        val gameIndex = games.indexOf(game)
-        notifyItemChanged(gameIndex)
+        sort()
+        notifyDataSetChanged()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     operator fun plusAssign(gameCardItem: GameCardItem) {
         games += gameCardItem
 
-//        sort()
-//        notifyDataSetChanged()
-        notifyItemChanged(games.size - 1)
+        sort()
+        notifyDataSetChanged()
+    }
+
+    fun hasUpdate(gameId: String) {
+        val game = games.find { game -> game.id == gameId } ?: throw IllegalArgumentException("Could not set update-light for game with id: $gameId, since it does not exist..")
+        val gameIndex = games.indexOf(game)
+
+        games[gameIndex].hasUpdate = true
+        notifyItemChanged(gameIndex)
+    }
+
+    fun clearUpdate(gameCardItem: GameCardItem, userId: String) {
+        gameCardItem.hasUpdate = false
+        val gameIndex = games.indexOf(gameCardItem)
+        notifyItemChanged(gameIndex)
+
+        NetworkManager.sendMessage(Message(Topic.INFO, "clear_update", "$userId|${gameCardItem.id}"))
+    }
+
+    fun clearUpdate(gameId: String) {
+        val game = games.find { game -> game.id == gameId } ?: throw IllegalArgumentException("Could not set update-light for game with id: $gameId, since it does not exist..")
+        val gameIndex = games.indexOf(game)
+
+        games[gameIndex].hasUpdate = false
+        notifyItemChanged(gameIndex)
     }
 
     private fun sort() {
         games.sortWith { gameCard1: GameCardItem, gameCard2: GameCardItem ->
             if (gameCard1.gameStatus.sortingValue > gameCard2.gameStatus.sortingValue) {
-                1
+                -1
             } else if (gameCard1.gameStatus.sortingValue == gameCard2.gameStatus.sortingValue) {
-                0
+                if (gameCard1.lastUpdated > gameCard2.lastUpdated) -1 else 1
             } else {
                 1
             }
@@ -71,7 +105,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
         val gameCard = games[position]
         holder.gameStatusView.setBackgroundColor(gameCard.gameStatus.color)
         holder.opponentNameView.text = gameCard.opponentName
-
+        holder.updateIndicator.visibility = if (gameCard.hasUpdate) VISIBLE else INVISIBLE
         holder.gameLayout.setOnClickListener {
             onGameClicked(gameCard)
         }
@@ -83,6 +117,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
         val opponentNameView: TextView = view.findViewById(R.id.opponent_name)
         val gameStatusView: View = view.findViewById(R.id.game_status_view)
         val gameLayout: ConstraintLayout = view.findViewById(R.id.game_layout)
+        val updateIndicator: ImageView = view.findViewById(R.id.update_indicator)
     }
 
 }

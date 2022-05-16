@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
 import com.mjaruijs.fischersplayground.util.FixedRateThread
 
@@ -46,6 +47,10 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
     fun setGameState(game: Game) {
         renderer.setGameState(game)
+    }
+
+    fun kingChecked(square: Vector2) {
+        renderer.kingChecked(square)
     }
 
     private fun update() {
