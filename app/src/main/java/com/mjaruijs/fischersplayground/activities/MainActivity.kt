@@ -1,13 +1,10 @@
 package com.mjaruijs.fischersplayground.activities
 
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
-import android.view.View
-import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -18,25 +15,26 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.mjaruijs.fischersplayground.dialogs.InvitePlayerDialog
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
+import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameAdapter
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
-import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.news.News
 import com.mjaruijs.fischersplayground.chess.SavedGames
+import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
+import com.mjaruijs.fischersplayground.dialogs.InvitePlayerDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.news.News
 import com.mjaruijs.fischersplayground.news.NewsType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
-import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
@@ -56,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private val opponentOfferedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "opponent_offered_draw", ::onOpponentOfferedDraw)
     private val opponentAcceptedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_draw", ::onOpponentAcceptedDraw)
     private val opponentDeclinedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "declined_draw", ::onOpponentDeclinedDraw)
+
 
     private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
@@ -119,14 +118,6 @@ class MainActivity : AppCompatActivity() {
             }
 
         gameAdapter = GameAdapter(::onGameClicked)
-
-//        gameAdapter += GameCardItem("0", 0,  "Opponent 1", GameStatus.INVITE_RECEIVED)              // 2    7
-//        gameAdapter += GameCardItem("1", 0, "Opponent 2", GameStatus.PLAYER_MOVE)                   // 5    1
-//        gameAdapter += GameCardItem("2", 0, "Opponent 3", GameStatus.GAME_LOST)                     // 7    4
-//        gameAdapter += GameCardItem("3", 2, "Opponent 4", GameStatus.OPPONENT_MOVE)                 // 3    5
-//        gameAdapter += GameCardItem("4", 1,  "Opponent 5", GameStatus.PLAYER_MOVE)                  // 4    2
-//        gameAdapter += GameCardItem("5", 1, "Opponent 6", GameStatus.GAME_WON)                      // 6    6
-//        gameAdapter += GameCardItem("6", 1, "Opponent 7", GameStatus.INVITE_PENDING)                // 1    3
 
         val gameRecyclerView = findViewById<RecyclerView>(R.id.game_list)
         gameRecyclerView.layoutManager = LinearLayoutManager(this)
@@ -196,7 +187,7 @@ class MainActivity : AppCompatActivity() {
 
         SavedGames.put(inviteId, MultiPlayerGame(inviteId, id!!, opponentName, playingWhite))
 
-        val timeStamp = Time.getTimeStamp()
+        val timeStamp = Time.getFullTimeStamp()
         gameAdapter.updateGameCard(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, createGameIfAbsent = true, hasUpdate = true)
 
         updateRecentOpponents(Pair(opponentName, opponentId))
@@ -329,7 +320,6 @@ class MainActivity : AppCompatActivity() {
         SavedGames.put(gameId, game)
 
         gameAdapter.hasUpdate(gameId)
-//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
     }
 
     private fun onOpponentAcceptedDraw(content: String) {
@@ -342,7 +332,6 @@ class MainActivity : AppCompatActivity() {
         SavedGames.put(gameId, game)
 
         gameAdapter.hasUpdate(gameId)
-//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
     }
 
     private fun onOpponentDeclinedDraw(content: String) {
@@ -355,7 +344,6 @@ class MainActivity : AppCompatActivity() {
         SavedGames.put(gameId, game)
 
         gameAdapter.hasUpdate(gameId)
-//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
     }
 
     private fun onUndoRequested(content: String) {
@@ -392,19 +380,34 @@ class MainActivity : AppCompatActivity() {
             }
 
             val data = gameData.split('|')
+            println("PRINTING DATA $gameData")
+            for (d in data) {
+                println(d)
+            }
             val gameId = data[0]
             val lastUpdated = data[1].toLong()
             val opponentName = data[2]
             val isPlayerWhite = data[3].toBoolean()
             val currentPlayerToMove = data[4]
             val moveList = data[5].removePrefix("[").removeSuffix("]").split(' ')
-            val winner = data[6]
+            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split(' ')
+            val winner = data[7]
 
             val moves = ArrayList<Move>()
 
             for (move in moveList) {
                 if (move.isNotBlank()) {
                     moves += Move.fromChessNotation(move)
+                }
+            }
+
+            val messages = ArrayList<ChatMessage>()
+            for (message in chatMessages) {
+                if (message.isNotBlank()) {
+                    val messageData = message.split(',')
+                    val timeStamp = messageData[0]
+                    val messageContent = messageData[1]
+                    messages += ChatMessage(timeStamp, messageContent, MessageType.SENT)
                 }
             }
 
@@ -422,7 +425,7 @@ class MainActivity : AppCompatActivity() {
                 GameStatus.GAME_LOST
             }
 
-            SavedGames.put(gameId, MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves))
+            SavedGames.put(gameId, MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves, messages))
             gameAdapter += GameCardItem(gameId, lastUpdated, opponentName, gameStatus, isPlayerWhite, hasUpdate = false)
         }
     }
@@ -515,7 +518,7 @@ class MainActivity : AppCompatActivity() {
             val status = game.second.status
             val isPlayerWhite = game.second.isPlayingWhite
 
-            gameAdapter.updateGameCard(gameId, lastUpdated, opponentName, status, isPlayerWhite, true, false)
+            gameAdapter.updateGameCard(gameId, lastUpdated, opponentName, status, isPlayerWhite, createGameIfAbsent = true, hasUpdate = false)
         }
 
         registerReceivers()
@@ -536,13 +539,6 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(opponentAcceptedDrawReceiver)
         unregisterReceiver(opponentDeclinedDrawReceiver)
         super.onStop()
-    }
-
-    private fun showKeyboard(view: View) {
-        if (view.requestFocus()) {
-            val inputManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager? ?: return
-            inputManager.showSoftInput(view.findFocus(), 0)
-        }
     }
 
     private fun hideActivityDecorations() {

@@ -13,30 +13,30 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 class BoardRenderer(context: Context) {
 
     private val model = BoardModel()
-    private val boardProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.board_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.board_fragment, ShaderType.FRAGMENT, context)
+    private val board2DProgram = ShaderProgram(
+        ShaderLoader.load(R.raw.board_2d_vertex, ShaderType.VERTEX, context),
+        ShaderLoader.load(R.raw.board_2d_fragment, ShaderType.FRAGMENT, context)
     )
 
     fun render(board: Board, aspectRatio: Float) {
-        boardProgram.start()
-        boardProgram.set("aspectRatio", aspectRatio)
-        boardProgram.set("outColor", Color(0.25f, 0.25f, 1.0f, 1.0f))
-        boardProgram.set("scale", Vector2(aspectRatio, aspectRatio))
-        boardProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
-        boardProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
+        board2DProgram.start()
+        board2DProgram.set("aspectRatio", aspectRatio)
+        board2DProgram.set("outColor", Color(0.25f, 0.25f, 1.0f, 1.0f))
+        board2DProgram.set("scale", Vector2(aspectRatio, aspectRatio))
+        board2DProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
+        board2DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
 
         for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
-            boardProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
+            board2DProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
         }
 
         model.draw()
-        boardProgram.stop()
+        board2DProgram.stop()
     }
 
     fun destroy() {
         model.destroy()
-        boardProgram.destroy()
+        board2DProgram.destroy()
     }
 
 }

@@ -16,7 +16,6 @@ object SavedGames {
     }
 
     fun get(gameId: String) = games[gameId]
-//        ?: throw IllegalArgumentException("No saved game was found with id: $gameId")
 
     fun getAll(): ArrayList<Pair<String, MultiPlayerGame>> {
         val gameData = ArrayList<Pair<String, MultiPlayerGame>>()

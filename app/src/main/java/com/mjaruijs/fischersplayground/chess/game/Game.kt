@@ -203,7 +203,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
         updateCheckData(!team, isCheck, isCheckMate)
 
-        val move = Move(Time.getTimeStamp(), team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
+        val move = Move(Time.getFullTimeStamp(), team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
         if (!runInBackground) {
             if (isShowingCurrentMove()) {
                 incrementMoveCounter()

@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
+import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.chess.Action
 import com.mjaruijs.fischersplayground.chess.ActionType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
@@ -16,7 +17,7 @@ import com.mjaruijs.fischersplayground.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import com.mjaruijs.fischersplayground.util.Time
 
-class MultiPlayerGame(private val gameId: String, private val id: String, val opponentName: String, val isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList()) : Game(isPlayingWhite, moves) {
+class MultiPlayerGame(private val gameId: String, private val id: String, val opponentName: String, val isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf()) : Game(isPlayingWhite, moves) {
 
     var status: GameStatus
     var news = News(NewsType.NO_NEWS)
@@ -116,7 +117,7 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         }
 
         if (!runInBackground) {
-            val timeStamp = Time.getTimeStamp()
+            val timeStamp = Time.getFullTimeStamp()
             val positionUpdateMessage = "$gameId|$id|${move.toChessNotation()}|$timeStamp"
             val message = Message(Topic.GAME_UPDATE, "move", positionUpdateMessage)
 

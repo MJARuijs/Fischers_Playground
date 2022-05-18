@@ -20,59 +20,29 @@ class BoardModel {
 
                 vertices += (x + 1) * scaleFactor - offset      // x = 1
                 vertices += y * scaleFactor - offset            // y = 0
-
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+                vertices += if (whiteTiles) 1f else 0f
 
                 vertices += (x + 1) * scaleFactor - offset      // x = 1
                 vertices += (y + 1) * scaleFactor - offset      // y = 1
-
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+                vertices += if (whiteTiles) 1f else 0f
 
                 vertices += x * scaleFactor - offset            // x = 0
                 vertices += y * scaleFactor - offset            // y = 0
-
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+                vertices += if (whiteTiles) 1f else 0f
 
                 // Triangle 2:
 
                 vertices += (x + 1) * scaleFactor - offset      // x = 1
                 vertices += (y + 1) * scaleFactor - offset      // y = 1
-
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+                vertices += if (whiteTiles) 1f else 0f
 
                 vertices += x * scaleFactor - offset            // x = 0
                 vertices += (y + 1) * scaleFactor - offset      // y = 1
-
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+                vertices += if (whiteTiles) 1f else 0f
 
                 vertices += x * scaleFactor - offset            // x = 0
                 vertices += y * scaleFactor - offset            // y = 0
-
-                vertices += if (whiteTiles) {
-                    1f
-                } else {
-                    0f
-                }
+                vertices += if (whiteTiles) 1f else 0f
             }
         }
 

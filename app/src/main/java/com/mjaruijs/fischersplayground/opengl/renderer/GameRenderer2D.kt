@@ -14,20 +14,21 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class GameRenderer(context: Context) {
+class GameRenderer2D(context: Context) {
     
     private val quad = Quad()
     private val sampler = Sampler(0)
 
     private val isLocked = AtomicBoolean(false)
 
-    private val pieceProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.piece_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.piece_fragment, ShaderType.FRAGMENT, context)
+    private val piece2DProgram = ShaderProgram(
+        ShaderLoader.load(R.raw.piece_2d_vertex, ShaderType.VERTEX, context),
+        ShaderLoader.load(R.raw.piece_2d_fragment, ShaderType.FRAGMENT, context)
     )
 
     private val animations = ArrayList<AnimationValues>()
 
+    @Suppress("ControlFlowWithEmptyBody")
     fun startAnimations(game: Game) {
         while (isLocked.get()) {}
 
@@ -43,12 +44,10 @@ class GameRenderer(context: Context) {
     }
 
     fun render(game: Game, aspectRatio: Float) {
-//        Thread {
-            startAnimations(game)
-//        }.start()
+        startAnimations(game)
 
-        pieceProgram.start()
-        pieceProgram.set("aspectRatio", aspectRatio)
+        piece2DProgram.start()
+        piece2DProgram.set("aspectRatio", aspectRatio)
         sampler.bind(PieceTextures.getTextureArray())
 
         for (row in 0 until 8) {
@@ -63,37 +62,32 @@ class GameRenderer(context: Context) {
                     (Vector2((row + animation.translation.x) * aspectRatio * 2.0f, (col + animation.translation.y) * aspectRatio * 2.0f) / 8.0f) + Vector2(-aspectRatio, aspectRatio / 4.0f - aspectRatio)
                 }
 
-                pieceProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 4.0f)
-                pieceProgram.set("textureId", piece.textureId.toFloat())
-                pieceProgram.set("textureMaps", sampler.index)
-                pieceProgram.set("translation", translation)
+                piece2DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 4.0f)
+                piece2DProgram.set("textureId", piece.textureId.toFloat())
+                piece2DProgram.set("textureMaps", sampler.index)
+                piece2DProgram.set("translation", translation)
                 quad.draw()
             }
         }
 
         for (animation in animations) {
             if (animation.stopAnimating) {
-//                println("End: ${Thread.currentThread().id} ${animation.piece} ${animation.totalDistance} ${animation.translation}")
-
                 animation.onFinish()
             }
         }
 
         animations.removeIf { animation -> animation.stopAnimating }
 
-        pieceProgram.stop()
+        piece2DProgram.stop()
     }
 
     fun update(delta: Float): Boolean {
         for (animation in animations) {
             val increment = animation.totalDistance * delta * 5f
 
-//            println("Update: ${Thread.currentThread().id} ${animation.piece} ${animation.translation} ${animation.totalDistance} $increment")
-
             if (abs(animation.translation.x) < abs(increment.x) || abs(animation.translation.y) < abs(increment.y)) {
                 animation.translation = Vector2()
                 animation.stopAnimating = true
-//                animation.onFinish()
             } else {
                 animation.translation -= increment
             }
@@ -111,14 +105,12 @@ class GameRenderer(context: Context) {
         val translation = fromPosition - toPosition
         val totalDistance = fromPosition - toPosition
 
-//        println("Start: ${Thread.currentThread().id} ${animationData.pieceType} $fromPosition $toPosition $translation $totalDistance")
-
         animations += AnimationValues(animationData.pieceType, animatingRow, animatingCol, translation, totalDistance, animationData.onAnimationFinished)
     }
 
     fun destroy() {
         quad.destroy()
-        pieceProgram.destroy()
+        piece2DProgram.destroy()
     }
     
 }

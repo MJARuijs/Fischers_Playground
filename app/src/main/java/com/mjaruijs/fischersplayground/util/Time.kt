@@ -5,7 +5,7 @@ import java.util.*
 
 object Time {
 
-    fun getTimeStamp(): Long {
+    fun getFullTimeStamp(): Long {
         val timeString = SimpleDateFormat("yyyy.MM.dd.HH.mm.ss", Locale.getDefault()).format(System.currentTimeMillis())
         var timeWithoutPeriods = ""
 
@@ -16,6 +16,19 @@ object Time {
         }
 
         return timeWithoutPeriods.toLong()
+    }
+
+    fun getSimpleTimeStamp(): String {
+        val timeString = SimpleDateFormat("HH:mm", Locale.getDefault()).format(System.currentTimeMillis())
+        var timeWithoutPeriods = ""
+
+        for (char in timeString) {
+            if (char != '.') {
+                timeWithoutPeriods += char
+            }
+        }
+
+        return timeWithoutPeriods
     }
 
 }

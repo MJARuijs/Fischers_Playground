@@ -74,6 +74,9 @@ object NetworkManager {
         } else if (message.topic == Topic.GAME_UPDATE) {
             val intent = Intent("mjaruijs.fischers_playground.GAME_UPDATE").putExtra(message.category, message.content)
             context.sendBroadcast(intent)
+        } else if (message.topic == Topic.CHAT_MESSAGE) {
+            val intent = Intent("mjaruijs.fischers_playground.CHAT_MESSAGE").putExtra(message.category, message.content)
+            context.sendBroadcast(intent)
         }
     }
 

@@ -15,7 +15,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     private lateinit var board: Board
     private lateinit var game: Game
 
-    private lateinit var gameRenderer: GameRenderer
+    private lateinit var gameRenderer: GameRenderer2D
     private lateinit var boardRenderer: BoardRenderer
 
     private var aspectRatio = 1.0f
@@ -33,7 +33,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         PieceTextures.createTextureArray()
 
-        gameRenderer = GameRenderer(context)
+        gameRenderer = GameRenderer2D(context)
         boardRenderer = BoardRenderer(context)
 
         onContextCreated()
