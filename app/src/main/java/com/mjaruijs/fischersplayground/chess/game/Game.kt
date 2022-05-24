@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.chess.Action
+import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
@@ -15,6 +16,8 @@ import kotlin.math.roundToInt
 abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move> = ArrayList()) {
 
     protected val state = GameState(isPlayingWhite)
+
+    val board: Board = Board()
 
     private val takenPieces = ArrayList<Piece>()
     private val piecesTakenByOpponent = ArrayList<Piece>()
@@ -34,15 +37,32 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     var enableBackButton: () -> Unit = {}
     var enableForwardButton: () -> Unit = {}
     var onPieceTaken: (PieceType, Team) -> Unit = { _, _ -> }
-    var onCheck: (Vector2) -> Unit = {}
-    var onCheckCleared: () -> Unit = {}
+//    var onCheck: (Vector2) -> Unit = {}
+//    var onCheckCleared: () -> Unit = {}
     var onCheckMate: (Team) -> Unit = {}
+
+    init {
+        board.requestPossibleMoves = { square ->
+            val possibleMoves = determinePossibleMoves(square, getCurrentTeam())
+            board.updatePossibleMoves(possibleMoves)
+        }
+    }
 
     abstract fun getCurrentTeam(): Team
 
     abstract fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean): ArrayList<Vector2>
 
     abstract fun processAction(action: Action): Action
+
+    fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
+        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
+        val boardAction = processAction(clickAction)
+
+        board.processAction(boardAction)
+
+//        val selectedSquare = board.onClick(x, y, displayWidth, displayHeight)
+
+    }
 
     private fun incrementMoveCounter(): Int {
         currentMoveIndex++
@@ -99,6 +119,11 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     operator fun get(i: Int, j: Int): Piece? {
         return state[i, j]
+    }
+
+    fun clearBoardData() {
+        board.clearPossibleMoves()
+        board.deselectSquare()
     }
 
     private fun setAnimationData(pieceType: PieceType, fromPosition: Vector2, toPosition: Vector2, onAnimationFinished: () -> Unit = {}) {
@@ -375,11 +400,13 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             isCheckMate -> onCheckMate(team)
             isCheck -> {
                 isChecked = true
-                onCheck(findKingPosition(state, team))
+                board.checkedKingSquare = findKingPosition(state, team)
+//                onCheck(findKingPosition(state, team))
             }
             isChecked -> {
                 isChecked = false
-                onCheckCleared()
+                board.checkedKingSquare = Vector2(-1f, -1f)
+//                onCheckCleared()
             }
         }
     }

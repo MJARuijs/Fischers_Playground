@@ -2,7 +2,7 @@ package com.mjaruijs.fischersplayground.chess
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Board(private val requestPossibleMoves: (Vector2) -> Unit) {
+class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
 
     private val possibleSquaresForMove = ArrayList<Vector2>()
 

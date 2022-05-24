@@ -83,7 +83,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private lateinit var opponentName: String
 //    private lateinit var opponentId: String
 
-    private lateinit var board: Board
+//    private lateinit var board: Board
     private lateinit var game: Game
 
     private lateinit var glView: SurfaceView
@@ -170,16 +170,16 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         game.enableForwardButton = ::enableForwardButton
         game.onPieceTaken = ::onPieceTaken
         game.onCheckMate = ::onCheckMate
-        game.onCheck = ::onCheck
-        game.onCheckCleared = ::onCheckCleared
+//        game.onCheck = ::onCheck
+//        game.onCheckCleared = ::onCheckCleared
 
-        board = Board { square ->
-            val possibleMoves = game.determinePossibleMoves(square, game.getCurrentTeam())
-            board.updatePossibleMoves(possibleMoves)
-        }
+//        board = Board { square ->
+//            val possibleMoves = game.determinePossibleMoves(square, game.getCurrentTeam())
+//            board.updatePossibleMoves(possibleMoves)
+//        }
 
         glView.setGameState(game)
-        glView.setBoard(board)
+        glView.setBoard(game.board)
 
         if (game is MultiPlayerGame) {
             runOnUiThread {
@@ -223,18 +223,20 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             return
         }
 
-        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
-        val boardAction = game.processAction(clickAction)
+        game.onClick(x, y, displayWidth, displayHeight)
 
-        board.processAction(boardAction)
+//        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
+//        val boardAction = game.processAction(clickAction)
+
+//        board.processAction(boardAction)
     }
 
     private fun onCheck(square: Vector2) {
-        board.checkedKingSquare = square
+//        board.checkedKingSquare = square
     }
 
     private fun onCheckCleared() {
-        board.checkedKingSquare = Vector2(-1, 1)
+//        board.checkedKingSquare = Vector2(-1, 1)
     }
 
     private fun onCheckMate(team: Team) {
@@ -624,8 +626,9 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
                     it.disable()
                 }
                 if (buttonStates.second) {
-                    board.clearPossibleMoves()
-                    board.deselectSquare()
+//                    board.clearPossibleMoves()
+//                    board.deselectSquare()
+                    game.clearBoardData()
                     findViewById<UIButton>(R.id.forward_button)?.enable()
                 }
                 glView.requestRender()

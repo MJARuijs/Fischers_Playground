@@ -22,7 +22,7 @@ object ErrorHandler {
     }
 
     private fun saveLocally(e: Exception) {
-
+        println(e)
     }
 
 }
