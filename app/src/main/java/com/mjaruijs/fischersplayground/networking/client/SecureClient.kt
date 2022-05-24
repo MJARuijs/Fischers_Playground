@@ -47,7 +47,7 @@ class SecureClient(channel: SocketChannel, address: String, callback: (Message, 
         val message = decodeMessage()
 
         Thread {
-            callback(Message.fromString(message, address), context)
+            callback(Message.fromString(message), context)
         }.start()
     }
 

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="chat_padding">8dp</dimen>
+    <dimen name="piece_button">80dp</dimen>
 </resources>

@@ -13,7 +13,9 @@ import kotlin.math.roundToInt
 
 class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(context, attributes) {
 
-    private val takenPieces = ArrayList<TakenPieceData>()
+    private val takenWhitePieces = ArrayList<TakenPieceData>()
+    private val takenBlackPieces = ArrayList<TakenPieceData>()
+    private val pieceOffset = 10
     private var maxPieceWidth = 0
     private var pieceHeight = 0
     private val whitePaint = Paint()
@@ -28,12 +30,7 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
 //        blackPaint.setShadowLayer(10.0f, 10.0f, 10.0f, Color.WHITE)
     }
 
-    private fun sort() {
-        takenPieces.sortBy { pieceType -> pieceType.type.value }
-    }
-
     fun add(pieceType: PieceType, team: Team) {
-//        println("PIECE ADDED: $pieceType, $team")
         val resourceId = if (team == Team.WHITE) {
             when (pieceType) {
                 PieceType.PAWN -> R.drawable.white_pawn
@@ -54,23 +51,54 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
             }
         }
 
-        val offset = 10
-
         val drawable = ResourcesCompat.getDrawable(resources, resourceId, null) ?: throw IllegalArgumentException("Could not find resource with id: $resourceId")
         val bitmap = drawable.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ALPHA_8)
-        val outlineBitmap = drawable.toBitmap(drawable.intrinsicWidth + offset * 2, drawable.intrinsicHeight + offset * 2, Bitmap.Config.ALPHA_8)
+        val outlineBitmap = drawable.toBitmap(drawable.intrinsicWidth + pieceOffset * 2, drawable.intrinsicHeight + pieceOffset * 2, Bitmap.Config.ALPHA_8)
 
-        val numberOfPieces = takenPieces.filter { piece -> piece.team == team }.size
+        val numberOfPieces = if (team == Team.WHITE) takenWhitePieces.size else takenBlackPieces.size
         val left = numberOfPieces * maxPieceWidth
         val right = (numberOfPieces + 1) * maxPieceWidth
 
-        val rect = Rect(left, offset, right, pieceHeight + offset)
-        val outlineRect = Rect(left - offset, 0, right + offset, pieceHeight + offset * 2)
+        val rect = Rect(left, pieceOffset, right, pieceHeight + pieceOffset)
+        val outlineRect = Rect(left - pieceOffset, 0, right + pieceOffset, pieceHeight + pieceOffset * 2)
 
-        takenPieces += TakenPieceData(pieceType, team, bitmap, rect, outlineBitmap, outlineRect)
-        sort()
+        if (team == Team.WHITE) {
+            takenWhitePieces += TakenPieceData(pieceType, team, bitmap, rect, outlineBitmap, outlineRect)
+            sortWhitePieces()
+        } else {
+            takenBlackPieces += TakenPieceData(pieceType, team, bitmap, rect, outlineBitmap, outlineRect)
+            sortBlackPieces()
+        }
 
         invalidate()
+    }
+
+    private fun sortWhitePieces() {
+        takenWhitePieces.sortWith { piece1, piece2 ->
+            if (piece1.type.sortingValue > piece2.type.sortingValue) 1 else -1
+        }
+        recalculateWhiteBorders()
+    }
+
+    private fun sortBlackPieces() {
+        takenBlackPieces.sortWith { piece1, piece2 ->
+            if (piece1.type.sortingValue > piece2.type.sortingValue) 1 else -1
+        }
+        recalculateBlackBorders()
+    }
+
+    private fun recalculateWhiteBorders() {
+        for ((i, piece) in takenWhitePieces.withIndex()) {
+            takenWhitePieces[i].rect.left = i * maxPieceWidth
+            takenWhitePieces[i].rect.right = (i + 1) * maxPieceWidth
+        }
+    }
+
+    private fun recalculateBlackBorders() {
+        for ((i, piece) in takenBlackPieces.withIndex()) {
+            takenBlackPieces[i].rect.left = i * maxPieceWidth
+            takenBlackPieces[i].rect.right = (i + 1) * maxPieceWidth
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -81,8 +109,6 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
         if (pieceHeight > maxPieceWidth) {
             pieceHeight = maxPieceWidth
         }
-
-//        println("Max piece width: $maxPieceWidth. Height: $h")
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -92,15 +118,12 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
             return
         }
 
-        for (piece in takenPieces) {
-//            println("Drawing piece")
-            if (piece.team == Team.WHITE) {
-                canvas.drawBitmap(piece.bitmap, null, piece.rect, whitePaint)
-            } else {
-//                canvas.drawBitmap(piece.outlineBitmap, null, piece.outlineRect, whitePaint)
-                canvas.drawBitmap(piece.bitmap, null, piece.rect, blackPaint)
-//                addWhiteBorder(piece.bitmap, 10.0f)
-            }
+        for (piece in takenWhitePieces) {
+            canvas.drawBitmap(piece.bitmap, null, piece.rect, whitePaint)
+        }
+
+        for (piece in takenBlackPieces) {
+            canvas.drawBitmap(piece.bitmap, null, piece.rect, blackPaint)
         }
     }
 

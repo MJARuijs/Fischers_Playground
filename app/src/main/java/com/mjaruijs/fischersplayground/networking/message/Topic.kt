@@ -4,7 +4,8 @@ enum class Topic {
 
     GAME_UPDATE,
     CHAT_MESSAGE,
-    INFO;
+    INFO,
+    CRASH_REPORT;
 
     companion object {
         fun fromString(value: String): Topic {

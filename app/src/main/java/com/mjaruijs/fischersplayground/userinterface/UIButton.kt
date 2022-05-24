@@ -50,7 +50,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     }
 
     fun enable(): UIButton {
-        println("ENABLED")
         disabled = false
         textPaint.color = Color.WHITE
         invalidate()
@@ -64,9 +63,15 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         return this
     }
 
-    fun setDrawable(resourceId: Int): UIButton {
+    fun setColoredDrawable(resourceId: Int): UIButton {
         val drawable = ResourcesCompat.getDrawable(resources, resourceId, null)
         bitmap = drawable!!.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ALPHA_8)
+        return this
+    }
+
+    fun setTexturedDrawable(resourceId: Int): UIButton {
+        val drawable = ResourcesCompat.getDrawable(resources, resourceId, null)
+        bitmap = drawable!!.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
         return this
     }
 

@@ -5,14 +5,14 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-enum class PieceType(val value: Int, val sign: Char) {
+enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
 
-    PAWN(1, 'P'),
-    KNIGHT(3, 'N'),
-    BISHOP(3, 'B'),
-    ROOK(5, 'R'),
-    QUEEN(9, 'Q'),
-    KING(900, 'K');
+    PAWN(1, 'P', 0),
+    KNIGHT(3, 'N', 1),
+    BISHOP(3, 'B', 2),
+    ROOK(5, 'R', 3),
+    QUEEN(9, 'Q', 4),
+    KING(900, 'K', 5);
 
     companion object {
 
@@ -28,9 +28,9 @@ enum class PieceType(val value: Int, val sign: Char) {
 
 //        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, gameState: GameState, moves: ArrayList<Move>) = getPossibleMoves(team, piece, square, gameState, moves)
 
-        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, isSinglePlayer: Boolean, gameState: GameState, moves: ArrayList<Move>): ArrayList<Vector2> {
+        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, isSinglePlayer: Boolean, gameState: GameState, moves: ArrayList<Move>, lookingForCheck: Boolean): ArrayList<Vector2> {
             return when (piece.type) {
-                KING -> getPossibleMovesForKing(piece, square, moves, isSinglePlayer, gameState)
+                KING -> getPossibleMovesForKing(piece, square, moves, isSinglePlayer, gameState, lookingForCheck)
                 QUEEN -> getPossibleMovesForQueen(piece, square, gameState)
                 ROOK -> getPossibleMovesForRook(piece, square, gameState)
                 BISHOP -> getPossibleMovesForBishop(piece, square, gameState)
@@ -163,11 +163,11 @@ enum class PieceType(val value: Int, val sign: Char) {
                             if (pieceLeftToPawn.team != piece.team && pieceLeftToPawn.type == PAWN) {
                                 if (isSinglePlayer) {
                                     if ((piece.team == Team.WHITE && lastMove.fromPosition.y.roundToInt() == 6) || (piece.team == Team.BLACK && lastMove.fromPosition.y.roundToInt() == 1)) {
-                                        possibleMoves += Vector2(x + 1, y + direction)
+                                        possibleMoves += Vector2(x - 1, y + direction)
                                     }
                                 } else {
                                     if (lastMove.fromPosition.y.roundToInt() == 6) {
-                                        possibleMoves += Vector2(x + 1, y + direction)
+                                        possibleMoves += Vector2(x - 1, y + direction)
                                     }
                                 }
                             }
@@ -179,7 +179,7 @@ enum class PieceType(val value: Int, val sign: Char) {
             return possibleMoves
         }
 
-        private fun getPossibleMovesForKing(piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: GameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForKing(piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: GameState, lookingForCheck: Boolean): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             for (i in -1 .. 1) {
@@ -205,12 +205,14 @@ enum class PieceType(val value: Int, val sign: Char) {
                 }
             }
 
-            if (canShortCastle(piece.team, moves, isSinglePlayer, gameState)) {
-                possibleMoves += square + Vector2(2, 0)
-            }
+            if (!lookingForCheck) {
+                if (canShortCastle(piece.team, moves, isSinglePlayer, gameState)) {
+                    possibleMoves += square + Vector2(2, 0)
+                }
 
-            if (canLongCastle(piece.team, moves, isSinglePlayer, gameState)) {
-                possibleMoves += square - Vector2(2 , 0)
+                if (canLongCastle(piece.team, moves, isSinglePlayer, gameState)) {
+                    possibleMoves += square - Vector2(2 , 0)
+                }
             }
 
             return possibleMoves
@@ -398,7 +400,7 @@ enum class PieceType(val value: Int, val sign: Char) {
             }
 
             if (kingMoved || rookMoved) {
-//                return false
+                return false
             }
 
             for (i in 1 until 3) {
@@ -461,7 +463,7 @@ enum class PieceType(val value: Int, val sign: Char) {
             }
 
             if (kingMoved || rookMoved) {
-//                return false
+                return false
             }
 
             for (i in 1 until 3) {
@@ -499,11 +501,21 @@ enum class PieceType(val value: Int, val sign: Char) {
                     }
 
                     if (piece.type == KING) {
-                        if (abs(x - square.x) < 1 && abs(y - square.y) < 1) {
+//                        for (kingX in -1 until 1) {
+//                            for (kingY in -1 until 1) {
+//                                val possibleKingSquare = Vector2(kingX + x, kingY + y)
+//                                println("KING ATTACKING: $possibleKingSquare. Testing for $square")
+//                                if (possibleKingSquare == square) {
+//                                    return true
+//                                }
+//                            }
+//                        }
+//                        println("Attacked square: $square. Attacking from: <$x, $y>")
+                        if (abs(x - square.x) == 1f && abs(y - square.y) == 1f) {
                             return true
                         }
                     } else {
-                        val possibleMoves = getPossibleMoves(piece.team, piece, Vector2(x, y), isSinglePlayer, state, moves)
+                        val possibleMoves = getPossibleMoves(piece.team, piece, Vector2(x, y), isSinglePlayer, state, moves, true)
 
                         if (possibleMoves.contains(square)) {
                             return true

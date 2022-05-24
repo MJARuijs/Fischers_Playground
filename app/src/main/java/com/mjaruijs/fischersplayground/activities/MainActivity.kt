@@ -54,10 +54,11 @@ class MainActivity : AppCompatActivity() {
     private val opponentOfferedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "opponent_offered_draw", ::onOpponentOfferedDraw)
     private val opponentAcceptedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_draw", ::onOpponentAcceptedDraw)
     private val opponentDeclinedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "declined_draw", ::onOpponentDeclinedDraw)
-
+    private val chatMessageReceiver = MessageReceiver(Topic.CHAT_MESSAGE, "", ::onChatMessageReceived)
 
     private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
+    private val chatFilter = IntentFilter("mjaruijs.fischers_playground.CHAT_MESSAGE")
 
     private val invitePlayerDialog = InvitePlayerDialog(::onInvite)
     private val incomingInviteDialog = IncomingInviteDialog()
@@ -127,6 +128,10 @@ class MainActivity : AppCompatActivity() {
     private fun isInitialized() = NetworkManager.isRunning()
 
     private fun updateRecentOpponents(newOpponent: Pair<String, String>) {
+        if (newOpponent.second == id) {
+            return
+        }
+
         val temp = Stack<Pair<String, String>>()
 
         while (temp.size < 2 && recentOpponents.isNotEmpty()) {
@@ -183,12 +188,17 @@ class MainActivity : AppCompatActivity() {
         val underscoreIndex = inviteId.indexOf('_')
         val opponentId = inviteId.substring(0, underscoreIndex)
 
-        val newGameStatus = if (playingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
-
         SavedGames.put(inviteId, MultiPlayerGame(inviteId, id!!, opponentName, playingWhite))
 
         val timeStamp = Time.getFullTimeStamp()
-        gameAdapter.updateGameCard(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, createGameIfAbsent = true, hasUpdate = true)
+        val newGameStatus = if (playingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
+
+        val hasUpdate = newGameStatus == GameStatus.PLAYER_MOVE
+        val doesCardExist = gameAdapter.updateGameCard(inviteId, newGameStatus, playingWhite, hasUpdate)
+
+        if (!doesCardExist) {
+            gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, hasUpdate)
+        }
 
         updateRecentOpponents(Pair(opponentName, opponentId))
     }
@@ -290,7 +300,7 @@ class MainActivity : AppCompatActivity() {
         val moveNotation = data[1]
         val move = Move.fromChessNotation(moveNotation)
 
-        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
+        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE, move.timeStamp)
 
         val game = SavedGames.get(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
         game.moveOpponent(move, false)
@@ -307,7 +317,7 @@ class MainActivity : AppCompatActivity() {
         game.news = News(NewsType.OPPONENT_RESIGNED)
         SavedGames.put(gameId, game)
 
-        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
+        gameAdapter.updateCardStatus(gameId, GameStatus.GAME_WON)
     }
 
     private fun onOpponentOfferedDraw(content: String) {
@@ -371,6 +381,16 @@ class MainActivity : AppCompatActivity() {
         SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_REJECTED_UNDO)
     }
 
+    private fun onChatMessageReceived(content: String) {
+        val data = content.split('|')
+        val gameId = data[0]
+        val timeStamp = data[1]
+        val messageContent = data[2]
+
+        val message = ChatMessage(timeStamp, messageContent, MessageType.RECEIVED)
+        SavedGames.get(gameId)?.chatMessages?.add(message)
+    }
+
     private fun parseActiveGameData(activeGamesData: String) {
         val gamesData = activeGamesData.split(',')
 
@@ -379,18 +399,14 @@ class MainActivity : AppCompatActivity() {
                 continue
             }
 
-            val data = gameData.split('|')
-            println("PRINTING DATA $gameData")
-            for (d in data) {
-                println(d)
-            }
+            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
             val gameId = data[0]
             val lastUpdated = data[1].toLong()
             val opponentName = data[2]
             val isPlayerWhite = data[3].toBoolean()
             val currentPlayerToMove = data[4]
-            val moveList = data[5].removePrefix("[").removeSuffix("]").split(' ')
-            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split(' ')
+            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
+            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
             val winner = data[7]
 
             val moves = ArrayList<Move>()
@@ -404,10 +420,14 @@ class MainActivity : AppCompatActivity() {
             val messages = ArrayList<ChatMessage>()
             for (message in chatMessages) {
                 if (message.isNotBlank()) {
-                    val messageData = message.split(',')
-                    val timeStamp = messageData[0]
-                    val messageContent = messageData[1]
-                    messages += ChatMessage(timeStamp, messageContent, MessageType.SENT)
+                    val messageData = message.split('~')
+                    val senderId = messageData[0]
+                    val timeStamp = messageData[1]
+                    val messageContent = messageData[2]
+
+                    val type = if (senderId == id) MessageType.SENT else MessageType.RECEIVED
+
+                    messages += ChatMessage(timeStamp, messageContent, type)
                 }
             }
 
@@ -481,7 +501,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun processUpdatedGames(updatedGameData: String) {
-        val updatedGameIds = updatedGameData.split(',')
+        val updatedGameIds = updatedGameData.split(' ')
 
         for (gameId in updatedGameIds) {
             if (gameId.isBlank()) {
@@ -506,6 +526,7 @@ class MainActivity : AppCompatActivity() {
         registerReceiver(opponentOfferedDrawReceiver, gameUpdateFilter)
         registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
+        registerReceiver(chatMessageReceiver, chatFilter)
     }
 
     override fun onResume() {
@@ -518,7 +539,10 @@ class MainActivity : AppCompatActivity() {
             val status = game.second.status
             val isPlayerWhite = game.second.isPlayingWhite
 
-            gameAdapter.updateGameCard(gameId, lastUpdated, opponentName, status, isPlayerWhite, createGameIfAbsent = true, hasUpdate = false)
+            val doesGameExist = gameAdapter.updateGameCard(gameId, status, isPlayerWhite)
+            if (!doesGameExist) {
+                gameAdapter += GameCardItem(gameId, lastUpdated, opponentName, status, isPlayerWhite, true)
+            }
         }
 
         registerReceivers()
@@ -538,6 +562,7 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(opponentOfferedDrawReceiver)
         unregisterReceiver(opponentAcceptedDrawReceiver)
         unregisterReceiver(opponentDeclinedDrawReceiver)
+        unregisterReceiver(chatMessageReceiver)
         super.onStop()
     }
 

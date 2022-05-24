@@ -22,8 +22,6 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
     var status: GameStatus
     var news = News(NewsType.NO_NEWS)
 
-    private var initialized = false
-
     init {
         status = if (moves.isEmpty()) {
             if (isPlayingWhite) {
@@ -39,12 +37,6 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
                 GameStatus.PLAYER_MOVE
             }
         }
-    }
-
-    fun init() {
-        if (initialized) {
-            return
-        }
 
         for (move in moves) {
             if (move.team == team) {
@@ -53,13 +45,11 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
                 moveOpponent(move, true)
             }
         }
-
-        initialized = true
     }
 
     override fun getCurrentTeam() = team
 
-    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState) = PieceType.getPossibleMoves(this.team, piece, square, false, state, moves)
+    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(this.team, piece, square, false, state, moves, lookingForCheck)
 
     fun reverseMoves(numberOfMoves: Int) {
         for (i in 0 until numberOfMoves) {
@@ -81,6 +71,8 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
                 return null
             }
         }
+
+        println("MOVING OPPONENT: $fromPosition $toPosition")
 
         val move = move(!team, fromPosition, toPosition, runInBackground)
 
@@ -107,6 +99,8 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
                 return null
             }
         }
+
+        println("MOVING PLAYER $fromPosition $toPosition")
 
         val move = move(team, fromPosition, toPosition, runInBackground)
 

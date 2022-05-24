@@ -66,7 +66,7 @@ object NetworkManager {
     }
 
     private fun onRead(message: Message, context: Context) {
-        Logger.debug("Received message from: ${message.senderAddress}: $message")
+        Logger.debug("Received message from: $message")
 
         if (message.topic == Topic.INFO) {
             val intent = Intent("mjaruijs.fischers_playground.INFO").putExtra(message.category, message.content)

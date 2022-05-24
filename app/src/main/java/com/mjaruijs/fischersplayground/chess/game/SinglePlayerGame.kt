@@ -15,7 +15,7 @@ class SinglePlayerGame : Game(true) {
 
     override fun getCurrentTeam() = teamToMove
 
-    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState) = PieceType.getPossibleMoves(piece.team, piece, square, true, state, moves)
+    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(piece.team, piece, square, true, state, moves, lookingForCheck)
 
     override fun showPreviousMove(): Pair<Boolean, Boolean> {
         if (currentMoveIndex != -1) {

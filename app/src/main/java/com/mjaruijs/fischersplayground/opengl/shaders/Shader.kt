@@ -18,8 +18,6 @@ class Shader(type: ShaderType, sourceCode: String) {
         if (compileStatus[0] != GL_TRUE) {
             println("SHADER COMPILATION FAILED")
             println(glGetShaderInfoLog(handle))
-        } else {
-            println("SHADER COMPILED SUCCESSFULLY")
         }
     }
 

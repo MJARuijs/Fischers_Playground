@@ -7,45 +7,66 @@
     android:layout_height="match_parent"
     android:background="#808080">
 
+    <ImageView
+        android:id="@+id/imageView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:foreground="@drawable/chess_background"
+        android:foregroundTint="#D33E3D3D"
+        android:foregroundTintMode="src_atop"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/chess_background" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chat_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/chat_input_box"
+        app:layout_constraintBottom_toTopOf="@+id/chat_input_card"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <EditText
-        android:id="@+id/chat_input_box"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/chat_input_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:autofillHints=""
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:textColorLink="#EBBA91"
+        app:cardCornerRadius="45dp"
+        app:cardBackgroundColor="#EBBA91"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/send_card"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="SpeakableTextPresentCheck" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <EditText
+            android:id="@+id/chat_input_box"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="8dp"
+            android:background="@null"
+            android:ems="10"
+            android:hint="Message"
+            android:inputType="textPersonName|textCapSentences|textCapWords|textCapCharacters"
+            android:textSize="24sp" />
+    </androidx.cardview.widget.CardView>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/send_card"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-
-        android:layout_marginBottom="8dp"
         app:cardBackgroundColor="#EBBA91"
         app:cardCornerRadius="90dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/chat_input_card"
         app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/chat_recycler_view">
+        app:layout_constraintTop_toTopOf="@+id/chat_input_card">
 
         <ImageView
             android:id="@+id/send_button"

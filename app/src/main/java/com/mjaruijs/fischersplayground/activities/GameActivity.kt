@@ -4,6 +4,7 @@ import android.animation.ObjectAnimator
 import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -11,6 +12,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightObserver
+import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvider
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
@@ -31,10 +34,10 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.news.News
 import com.mjaruijs.fischersplayground.news.NewsType
 import com.mjaruijs.fischersplayground.opengl.SurfaceView
-import com.mjaruijs.fischersplayground.userinterface.PlayerCardFragment
+import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class GameActivity : AppCompatActivity(R.layout.activity_game) {
+class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightObserver {
 
     private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
     private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
@@ -58,6 +61,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
     private val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
     private val opponentDeclinedDrawDialog = OpponentDeclinedDrawDialog()
     private val checkMateDialog = CheckMateDialog()
+    private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
     private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
@@ -66,6 +70,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
     private var displayWidth = 0
     private var displayHeight = 0
 
+    private var chatInitialized = false
     private var chatOpened = false
     private var chatTranslation = 0
 
@@ -83,11 +88,21 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
 
     private lateinit var glView: SurfaceView
 
+    private lateinit var keyboardHeightProvider: KeyboardHeightProvider
+
 //    private lateinit var chatAdapter: ChatAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideActivityDecorations()
+
+        println("HELLOOOO???")
+        keyboardHeightProvider = KeyboardHeightProvider(this)
+        findViewById<View>(R.id.game_layout).post {
+            Runnable {
+                keyboardHeightProvider.start()
+            }.run()
+        }
 
         incomingInviteDialog.create(this)
         undoRequestedDialog.create(this)
@@ -99,6 +114,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
         opponentAcceptedDrawDialog.create(this)
         opponentDeclinedDrawDialog.create(this)
         checkMateDialog.create(this)
+        pieceChooserDialog.create(this)
 
         if (!intent.hasExtra("is_playing_white")) {
             throw IllegalArgumentException("Missing essential information: is_player_white")
@@ -125,10 +141,15 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
             val opponentBundle = Bundle()
             opponentBundle.putString("player_name", opponentName)
 
+            val chatBundle = Bundle()
+            chatBundle.putString("game_id", gameId)
+            chatBundle.putString("user_id", id)
+
             supportFragmentManager.commit {
                 setReorderingAllowed(true)
                 replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
                 replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
+                replace(R.id.chat_container, ChatFragment(::onChatMessageSent))
             }
         }
     }
@@ -138,9 +159,13 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
             game = SinglePlayerGame()
         } else {
             game = SavedGames.get(gameId) ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
-            (game as MultiPlayerGame).init()
+
+            runOnUiThread {
+                getChatFragment().addMessages((game as MultiPlayerGame).chatMessages)
+            }
         }
 
+        game.onPawnPromoted = ::onPawnPromoted
         game.enableBackButton = ::enableBackButton
         game.enableForwardButton = ::enableForwardButton
         game.onPieceTaken = ::onPieceTaken
@@ -162,24 +187,10 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
                 (game as MultiPlayerGame).news = News(NewsType.NO_NEWS)
             }
         }
+    }
 
-        val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
-        val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
-        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.WHITE)
-        (opponentFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.PAWN, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.ROOK, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.ROOK, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.KNIGHT, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.KNIGHT, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.BISHOP, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.BISHOP, Team.BLACK)
-//        (playerFragment as PlayerCardFragment).addTakenPiece(PieceType.QUEEN, Team.BLACK)
+    private fun onPawnUpgraded(square: Vector2, pieceType: PieceType, team: Team) {
+        game.upgradePawn(square, pieceType, team)
     }
 
     private fun getChatFragment(): ChatFragment {
@@ -194,21 +205,16 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
         displayWidth = width
         displayHeight = height
 
-        val chatFragment = findViewById<FragmentContainerView>(R.id.chat_container)
+        if (!chatInitialized) {
+            val chatFragment = findViewById<FragmentContainerView>(R.id.chat_container)
 
-        val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
-        val chatButtonWidth = openChatButton.width
-        chatTranslation = displayWidth - chatButtonWidth
+            val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
+            val chatButtonWidth = openChatButton.width
+            chatTranslation = displayWidth - chatButtonWidth
 
-        chatFragment.translationX -= chatTranslation
-        openChatButton.translationX -= chatTranslation
-
-        val chatBundle = Bundle()
-        chatBundle.putString("game_id", gameId)
-        chatBundle.putString("user_id", id)
-
-        supportFragmentManager.commit {
-            replace(R.id.chat_container, ChatFragment::class.java, chatBundle)
+            chatFragment.translationX -= chatTranslation
+            openChatButton.translationX -= chatTranslation
+            chatInitialized = true
         }
     }
 
@@ -225,12 +231,10 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
 
     private fun onCheck(square: Vector2) {
         board.checkedKingSquare = square
-//        glView.kingChecked(square)
     }
 
     private fun onCheckCleared() {
         board.checkedKingSquare = Vector2(-1, 1)
-//        glView.kingChecked(Vector2(-1, -1))
     }
 
     private fun onCheckMate(team: Team) {
@@ -419,6 +423,13 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
         }
     }
 
+    private fun onChatMessageSent(message: ChatMessage) {
+        NetworkManager.sendMessage(Message(Topic.CHAT_MESSAGE, "", "$gameId|$id|${message.timeStamp}|${message.message}"))
+        if (game is MultiPlayerGame) {
+            (game as MultiPlayerGame).chatMessages += message
+        }
+    }
+
     private fun closeAndSaveGameAsWin() {
         SavedGames.get(gameId)?.status = GameStatus.GAME_WON
         finish()
@@ -448,6 +459,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
     }
 
     private fun saveGame() {
+        println("SAVING GAME: ${(game as MultiPlayerGame).chatMessages.size}")
         SavedGames.put(gameId, game as MultiPlayerGame)
     }
 
@@ -464,6 +476,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
         registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
         registerReceiver(chatMessageReceiver, chatFilter)
+
+        keyboardHeightProvider.observer = this
     }
 
     override fun onStop() {
@@ -479,6 +493,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
         unregisterReceiver(opponentDeclinedDrawReceiver)
         unregisterReceiver(chatMessageReceiver)
 
+        keyboardHeightProvider.observer = null
+
         if (game is MultiPlayerGame) {
             saveGame()
         }
@@ -487,16 +503,27 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
 
     override fun onDestroy() {
         glView.destroy()
+        keyboardHeightProvider.close()
         super.onDestroy()
     }
 
     override fun onBackPressed() {
         if (isChatOpened()) {
-//            getChatFragment().closeChat()
             closeChat()
         } else {
             super.onBackPressed()
         }
+    }
+
+    override fun onKeyboardHeightChanged(height: Int) {
+        println("KEYBOARD HEIGHT: $height")
+//        if (height > 0) {
+            getChatFragment().translate(height)
+//        }
+    }
+
+    private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
+        return pieceChooserDialog.show(square, team)
     }
 
     private fun enableBackButton() {
@@ -530,12 +557,16 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
         resignButton
             .setTextYOffset(textOffset)
             .setText("Resign")
-            .setDrawable(R.drawable.resign)
+            .setColoredDrawable(R.drawable.resign)
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
 
             .setOnClickListener {
+                if (isChatOpened()) {
+                    return@setOnClickListener
+                }
+
                 resignDialog.show(gameId, id) {
                     NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "resign", "$gameId|$id"))
                     SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
@@ -547,36 +578,44 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
         offerDrawButton
             .setText("Offer Draw")
             .setColor(buttonBackgroundColor)
-            .setDrawable(R.drawable.handshake_13359)
+            .setColoredDrawable(R.drawable.handshake_13359)
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setTextYOffset(textOffset)
             .setOnClickListener {
+                if (isChatOpened()) {
+                    return@setOnClickListener
+                }
+
                 offerDrawDialog.show(gameId, id)
             }
 
         val redoButton = findViewById<UIButton>(R.id.request_redo_button)
         redoButton
             .setText("Undo")
-            .setDrawable(R.drawable.rewind)
+            .setColoredDrawable(R.drawable.rewind)
             .setButtonTextSize(50f)
             .setColor(buttonBackgroundColor)
             .setButtonTextColor(textColor)
             .setTextYOffset(textOffset)
             .setOnClickListener {
+                if (isChatOpened()) {
+                    return@setOnClickListener
+                }
+
                 NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "request_undo", "$gameId|$id"))
             }
 
         findViewById<UIButton>(R.id.back_button)
             .setText("Back")
-            .setDrawable(R.drawable.back_arrow)
+            .setColoredDrawable(R.drawable.back_arrow)
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
             .setTextYOffset(textOffset)
             .disable()
             .setOnClickListener {
-                if ((it as UIButton).disabled) {
+                if ((it as UIButton).disabled || isChatOpened()) {
                     return@setOnClickListener
                 }
 
@@ -594,14 +633,14 @@ class GameActivity : AppCompatActivity(R.layout.activity_game) {
 
         findViewById<UIButton>(R.id.forward_button)
             .setText("Forward")
-            .setDrawable(R.drawable.forward_arrow)
+            .setColoredDrawable(R.drawable.forward_arrow)
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
             .setTextYOffset(textOffset)
             .disable()
             .setOnClickListener {
-                if ((it as UIButton).disabled) {
+                if ((it as UIButton).disabled || isChatOpened()) {
                     return@setOnClickListener
                 }
 

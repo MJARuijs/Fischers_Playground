@@ -25,8 +25,6 @@ class ShaderProgram(vararg shaders: Shader) {
         if (linkStatus[0] != GL_TRUE) {
             println("SHADERPROGRAM LINKING FAILED")
             println(glGetProgramInfoLog(handle))
-        } else {
-            println("SHADERPROGRAM LINKED SUCCESSFULLY")
         }
 
         glValidateProgram(handle)
@@ -37,8 +35,6 @@ class ShaderProgram(vararg shaders: Shader) {
         if (validateStatus[0] != GL_TRUE) {
             println("SHADERPROGRAM VALIDATION FAILED")
             println(glGetProgramInfoLog(handle))
-        } else {
-            println("SHADERPROGRAM VALIDATED")
         }
     }
 

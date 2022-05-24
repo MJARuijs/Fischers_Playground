@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.dialogs
 
 import android.app.Dialog
 import android.content.Context
-import android.view.View
 import android.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView

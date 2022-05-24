@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/knight_button"
+        android:layout_width="@dimen/piece_button"
+        android:layout_height="@dimen/piece_button"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/bishop_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/bishop_button"
+        android:layout_width="@dimen/piece_button"
+        android:layout_height="@dimen/piece_button"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintEnd_toStartOf="@id/rook_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/knight_button"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/rook_button"
+        android:layout_width="@dimen/piece_button"
+        android:layout_height="@dimen/piece_button"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintEnd_toStartOf="@id/queen_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/bishop_button"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
+        android:id="@+id/queen_button"
+        android:layout_width="@dimen/piece_button"
+        android:layout_height="@dimen/piece_button"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/rook_button"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

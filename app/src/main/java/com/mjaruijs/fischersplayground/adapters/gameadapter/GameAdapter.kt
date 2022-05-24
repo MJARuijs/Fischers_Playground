@@ -14,6 +14,7 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.util.Time
 import kotlin.IllegalArgumentException
 import kotlin.collections.ArrayList
 
@@ -22,36 +23,47 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
     private val games = ArrayList<GameCardItem>()
 
     @SuppressLint("NotifyDataSetChanged")
-    fun updateGameCard(gameId: String, lastUpdated: Long, opponentName: String, newStatus: GameStatus, isPlayerWhite: Boolean? = null, createGameIfAbsent: Boolean = false, hasUpdate: Boolean) {
-        val game = games.find { game -> game.id == gameId }
+    fun updateGameCard(gameId: String, newStatus: GameStatus, isPlayerWhite: Boolean? = null, hasUpdate: Boolean): Boolean {
+        val game = games.find { game -> game.id == gameId } ?: return false
 
-        if (game == null && !createGameIfAbsent) {
-            throw IllegalArgumentException("Could not find game card with id: $gameId")
-        } else if (game == null) {
-            val newGame = GameCardItem(gameId, lastUpdated, opponentName, newStatus, isPlayerWhite, true)
-            plusAssign(newGame)
+        game.gameStatus = newStatus
+        game.isPlayingWhite = isPlayerWhite
+
+        if (hasUpdate) {
+            hasUpdate(gameId)
         } else {
-            game.gameStatus = newStatus
-            game.isPlayingWhite = isPlayerWhite
-
-            if (hasUpdate) {
-                hasUpdate(gameId)
-            }
-
-            sort()
-            notifyDataSetChanged()
+            clearUpdate(gameId)
         }
+
+        sort()
+        notifyDataSetChanged()
+        return true
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    fun updateCardStatus(id: String, newStatus: GameStatus) {
+    fun updateGameCard(gameId: String, newStatus: GameStatus, isPlayerWhite: Boolean? = null): Boolean {
+        val game = games.find { game -> game.id == gameId } ?: return false
+
+        game.gameStatus = newStatus
+        game.isPlayingWhite = isPlayerWhite
+
+        sort()
+        notifyDataSetChanged()
+        return true
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateCardStatus(id: String, newStatus: GameStatus, timeStamp: Long) {
         val game = games.find { game -> game.id == id } ?: throw IllegalArgumentException("Could not update game card with id: $id, since it does not exist..")
         game.gameStatus = newStatus
         game.hasUpdate = true
+        game.lastUpdated = timeStamp
 
         sort()
         notifyDataSetChanged()
     }
+
+    fun updateCardStatus(id: String, newStatus: GameStatus) = updateCardStatus(id, newStatus, Time.getFullTimeStamp())
 
     @SuppressLint("NotifyDataSetChanged")
     operator fun plusAssign(gameCardItem: GameCardItem) {
@@ -77,7 +89,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
         NetworkManager.sendMessage(Message(Topic.INFO, "clear_update", "$userId|${gameCardItem.id}"))
     }
 
-    fun clearUpdate(gameId: String) {
+    private fun clearUpdate(gameId: String) {
         val game = games.find { game -> game.id == gameId } ?: throw IllegalArgumentException("Could not set update-light for game with id: $gameId, since it does not exist..")
         val gameIndex = games.indexOf(game)
 

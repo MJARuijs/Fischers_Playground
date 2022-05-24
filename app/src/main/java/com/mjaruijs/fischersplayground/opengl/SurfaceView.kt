@@ -49,10 +49,6 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         renderer.setGameState(game)
     }
 
-    fun kingChecked(square: Vector2) {
-        renderer.kingChecked(square)
-    }
-
     private fun update() {
         val animating = renderer.update(1.0f / tickRate)
 

@@ -73,7 +73,7 @@ open class EncodedClient(channel: SocketChannel, val address: String, val callba
         val message = readMessage()
 
         Thread {
-            callback(Message.fromString(message, address), context)
+            callback(Message.fromString(message), context)
         }.start()
     }
 

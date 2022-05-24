@@ -18,13 +18,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FischersPlayground">
         <activity
-            android:name=".TestActivity"
-            android:exported="false" />
-        <activity
             android:name=".activities.GameActivity"
+            android:windowSoftInputMode="adjustNothing"
             android:exported="false" />
         <activity
             android:name=".activities.MainActivity"
+            android:windowSoftInputMode="adjustNothing"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

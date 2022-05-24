@@ -8,16 +8,12 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.util.Time
 
 class ChatAdapter(private val messages: ArrayList<ChatMessage> = arrayListOf()) : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
 
     private var recyclerWidth = 0
 
     operator fun plusAssign(message: ChatMessage) {
-//        val timeStamp = Time.getSimpleTimeStamp()
-//        val type = if (messages.size % 2 == 0) MessageType.SENT else MessageType.RECEIVED
-//        messages += ChatMessage(timeStamp, message, type)
         messages += message
         notifyItemChanged(messages.size - 1)
     }
@@ -45,6 +41,7 @@ class ChatAdapter(private val messages: ArrayList<ChatMessage> = arrayListOf()) 
 
         holder.messageCard.layoutParams = params
         holder.messageContentView.maxWidth = (recyclerWidth * 0.7f).toInt()
+
     }
 
     override fun getItemCount() = messages.size
