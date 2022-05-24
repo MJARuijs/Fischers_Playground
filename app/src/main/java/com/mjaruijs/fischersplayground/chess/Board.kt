@@ -19,8 +19,13 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
 
     fun getPossibleMoves() = possibleSquaresForMove
 
+    fun isASquareSelected(): Boolean {
+        return selectedSquare.x != -1f
+    }
+
     fun deselectSquare() {
         selectedSquare = Vector2(-1, -1)
+        clearPossibleMoves()
     }
 
     fun updatePossibleMoves(possibleMoves: ArrayList<Vector2>) {
@@ -31,9 +36,18 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
         }
     }
 
-    fun clearPossibleMoves() {
+    private fun clearPossibleMoves() {
         for (i in 0 until MAX_NUMBER_OF_POSSIBLE_MOVES) {
             possibleSquaresForMove[i] = Vector2(-1f, -1f)
+        }
+    }
+
+    fun updateSelectedSquare(square: Vector2) {
+        if (square == Vector2(-1, -1)) {
+            deselectSquare()
+        } else {
+            selectedSquare = square
+            requestPossibleMoves(selectedSquare)
         }
     }
 
@@ -45,27 +59,25 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
             }
             ActionType.SQUARE_DESELECTED -> {
                 deselectSquare()
-                clearPossibleMoves()
             }
             ActionType.PIECE_MOVED -> {
                 deselectSquare()
-                clearPossibleMoves()
             }
             ActionType.NO_OP -> {}
         }
     }
 
-    fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Action {
-        val selection = determineSelectedSquare(x, y, displayWidth, displayHeight)
+    fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Vector2 {
+        return determineSelectedSquare(x, y, displayWidth, displayHeight)
 
-        if (selection == Vector2(-1f, -1f)) {
-            return Action(selection, ActionType.SQUARE_DESELECTED, selectedSquare)
-        }
+//        if (selection == Vector2(-1f, -1f)) {
+//            return Action(selection, ActionType.SQUARE_DESELECTED, selectedSquare)
+//        }
 
-        return Action(selection, ActionType.SQUARE_SELECTED, selectedSquare)
+//        return Action(selection, ActionType.SQUARE_SELECTED, selectedSquare)
     }
 
-    private fun determineSelectedSquare(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Vector2 {
+    fun determineSelectedSquare(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Vector2 {
         val scaledX = x / displayWidth
         val scaledY = (y / displayHeight) * 2.0f - 1.0f
 

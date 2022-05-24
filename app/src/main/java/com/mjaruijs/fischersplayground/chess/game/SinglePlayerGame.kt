@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.chess.Action
+import com.mjaruijs.fischersplayground.chess.Action2
 import com.mjaruijs.fischersplayground.chess.ActionType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -44,6 +45,32 @@ class SinglePlayerGame : Game(true) {
         }
 
         return super.move(team, fromPosition, toPosition, runInBackground)
+    }
+
+    override fun processOnClick(square: Vector2): Action2 {
+        if (board.isASquareSelected()) {
+            val selectedSquare = board.selectedSquare
+
+            if (possibleMoves.contains(square)) {
+                move(teamToMove, selectedSquare, square, false)
+                teamToMove = !teamToMove
+                return Action2.PIECE_MOVED
+            }
+
+            val pieceAtSquare = state[square] ?: return Action2.NO_OP
+
+            if (pieceAtSquare.team == teamToMove) {
+                return if (FloatUtils.compare(selectedSquare, square)) Action2.SQUARE_DESELECTED else Action2.SQUARE_SELECTED
+            }
+        } else {
+            val pieceAtSquare = state[square] ?: return Action2.NO_OP
+
+            if (pieceAtSquare.team == teamToMove) {
+                return Action2.SQUARE_SELECTED
+            }
+        }
+
+        return Action2.NO_OP
     }
 
     override fun processAction(action: Action): Action {

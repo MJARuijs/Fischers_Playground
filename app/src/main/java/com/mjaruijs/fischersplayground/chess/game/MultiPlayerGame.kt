@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.chess.game
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.chess.Action
+import com.mjaruijs.fischersplayground.chess.Action2
 import com.mjaruijs.fischersplayground.chess.ActionType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -122,6 +123,39 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         return move
     }
 
+    override fun processOnClick(square: Vector2): Action2 {
+        if (!isShowingCurrentMove()) {
+            return Action2.NO_OP
+        }
+
+        if (status != GameStatus.PLAYER_MOVE) {
+            return Action2.NO_OP
+        }
+
+        if (board.isASquareSelected()) {
+            val selectedSquare = board.selectedSquare
+
+            if (possibleMoves.contains(square)) {
+                movePlayer(selectedSquare, square, false)
+                return Action2.PIECE_MOVED
+            }
+
+            val pieceAtSquare = state[square] ?: return Action2.NO_OP
+
+            if (pieceAtSquare.team == team) {
+                return if (FloatUtils.compare(selectedSquare, square)) Action2.SQUARE_DESELECTED else Action2.SQUARE_SELECTED
+            }
+        } else {
+            val pieceAtSquare = state[square] ?: return Action2.NO_OP
+
+            if (pieceAtSquare.team == team) {
+                return Action2.SQUARE_SELECTED
+            }
+        }
+
+        return Action2.NO_OP
+    }
+
     override fun processAction(action: Action): Action {
         if (!isShowingCurrentMove()) {
             println("NOT SHOWING CURRENT MOVE $currentMoveIndex ${moves.size}")
@@ -162,7 +196,7 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
                     return Action(action.clickedPosition, ActionType.SQUARE_SELECTED)
                 }
 
-                return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
+//                return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
             }
         }
 

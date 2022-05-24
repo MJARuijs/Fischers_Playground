@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.chess.Action
+import com.mjaruijs.fischersplayground.chess.Action2
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -54,14 +55,22 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     abstract fun processAction(action: Action): Action
 
+    abstract fun processOnClick(square: Vector2): Action2
+
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
-        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
-        val boardAction = processAction(clickAction)
+//        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
+//        val boardAction = processAction(clickAction)
+//        board.processAction(boardAction)
 
-        board.processAction(boardAction)
+        val selectedSquare = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
 
-//        val selectedSquare = board.onClick(x, y, displayWidth, displayHeight)
+        val action = processOnClick(selectedSquare)
 
+        if (action == Action2.SQUARE_SELECTED) {
+            board.updateSelectedSquare(selectedSquare)
+        } else if (action == Action2.SQUARE_DESELECTED || action == Action2.PIECE_MOVED) {
+            board.deselectSquare()
+        }
     }
 
     private fun incrementMoveCounter(): Int {
@@ -122,7 +131,6 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     }
 
     fun clearBoardData() {
-        board.clearPossibleMoves()
         board.deselectSquare()
     }
 
@@ -317,9 +325,6 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     private fun isMoveValid(fromPosition: Vector2, toPosition: Vector2, piece: Piece, team: Team): Boolean {
         val copiedState = state.copy()
-//        if (piece.type == PieceType.PAWN) {
-            println("POSSIBLE OPTION: ${piece.type} $fromPosition -> $toPosition")
-//        }
         copiedState[fromPosition] = null
         copiedState[toPosition] = piece
 
