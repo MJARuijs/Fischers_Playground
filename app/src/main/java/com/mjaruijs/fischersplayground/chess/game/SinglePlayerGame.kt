@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.chess.Action
+import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
@@ -29,7 +30,7 @@ class SinglePlayerGame : Game(true) {
         return super.showNextMove()
     }
 
-    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
+    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
         if (!isShowingCurrentMove()) {
             val moveCount = moves.size
             for (i in currentMoveIndex + 1 until moveCount) {
@@ -50,10 +51,10 @@ class SinglePlayerGame : Game(true) {
 
         move(team, fromPosition, toPosition, runInBackground)
 
-        val pieceAtNewPosition = state[toPosition]
-        val move = finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
+//        val pieceAtNewPosition = state[toPosition]
+//        val move = finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
 
-        move.movedPiece = state[toPosition]?.type ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+//        move.movedPiece = state[toPosition]?.type ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
     }
 
     override fun processOnClick(square: Vector2): Action {
@@ -69,8 +70,8 @@ class SinglePlayerGame : Game(true) {
 //                } else {
 //                println("TEAM TO MOVE: $teamToMove")
                 Thread {
-//                    move(teamToMove, selectedSquare, square, false)
-                    movePlayer(selectedSquare, square, false)
+                    move(teamToMove, selectedSquare, square, false)
+//                    movePlayer(selectedSquare, square, false)
                 }.start()
 //                }
 

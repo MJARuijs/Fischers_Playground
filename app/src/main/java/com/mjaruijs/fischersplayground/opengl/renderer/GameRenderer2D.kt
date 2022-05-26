@@ -105,7 +105,7 @@ class GameRenderer2D(context: Context) {
         val translation = fromPosition - toPosition
         val totalDistance = fromPosition - toPosition
 
-        animations += AnimationValues(animationData.pieceType, animatingRow, animatingCol, translation, totalDistance, animationData.onAnimationFinished)
+        animations += AnimationValues(animatingRow, animatingCol, translation, totalDistance, animationData.onAnimationFinished)
     }
 
     fun destroy() {

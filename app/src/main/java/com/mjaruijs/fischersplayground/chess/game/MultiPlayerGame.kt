@@ -72,11 +72,15 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
         val pieceAtNewPosition = state[toPosition]
 
-        move(!team, fromPosition, toPosition, runInBackground)
+        move(move, runInBackground)
+//        move(!team, fromPosition, toPosition, runInBackground)
+
+//        if (move.promotedPiece != null) {
+//            state[move.toPosition] = Piece(move.promotedPiece, move.team)
+//        }
 
 
-
-        finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
+//        finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
 
         println("MULTIPLAYER MOVING OPPONENT")
 
@@ -102,11 +106,11 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
         val pieceAtNewPosition = state[toPosition]
 
-        move(team, fromPosition, toPosition, runInBackground)
+        val move = move(team, fromPosition, toPosition, runInBackground)
 
-        val move = finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
+//        finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
 
-        move.movedPiece = state[toPosition]?.type ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+//        move.movedPiece = state[toPosition]?.type ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
 
         if (!runInBackground) {
             println("MULTIPLAYER FINALIZING MOVE ${pieceAtNewPosition?.type} ")

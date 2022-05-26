@@ -2,7 +2,7 @@ package com.mjaruijs.fischersplayground.chess.pieces
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null) {
+class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, val promotedPiece: PieceType?) {
 
     fun toChessNotation(): String {
         var notation = "$timeStamp:"
@@ -20,6 +20,10 @@ class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val t
 
         notation += getRowSign(toPosition)
         notation += getColSign(toPosition)
+
+        if (promotedPiece != null) {
+            notation += promotedPiece.sign
+        }
 
         if (isCheckMate) {
             notation += "#"
@@ -75,6 +79,7 @@ class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val t
 
             var i = 0
             val movedPieceSign = notation[i++]
+            val movedPiece = PieceType.getBySign(movedPieceSign)
             val team = if (movedPieceSign.isUpperCase()) Team.WHITE else Team.BLACK
 
             val fromRow = notation[i++]
@@ -98,6 +103,13 @@ class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val t
             val toX = colToNumber(toCol)
             val toY = toRow.toString().toInt()
 
+            var promotedPiece: PieceType? = null
+
+            if (movedPiece == PieceType.PAWN && ((team == Team.WHITE && toY == 7) || (team == Team.BLACK && toY == 0))) {
+                val promotedPieceSign = notation[i++]
+                promotedPiece = PieceType.getBySign(promotedPieceSign)
+            }
+
             var isCheckMate = false
             var isCheck = false
 
@@ -111,7 +123,7 @@ class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val t
                 }
             }
 
-            return Move(timeStamp, team, Vector2(fromX, fromY), Vector2(toX, toY), PieceType.getBySign(movedPieceSign), isCheckMate, isCheck, takenPiece)
+            return Move(timeStamp, team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, promotedPiece)
         }
 
         private fun colToNumber(col: Char): Int {
