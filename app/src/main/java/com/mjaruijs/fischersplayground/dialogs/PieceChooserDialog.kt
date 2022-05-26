@@ -17,12 +17,9 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
 
     fun create(context: Context) {
         dialog = Dialog(context)
-//        dialogBuilder.setTitle("Checkmate!")
-//        dialog = dialogBuilder.create()
         dialog.setContentView(R.layout.piece_picker_dialog)
         dialog.setCancelable(false)
         dialog.setCanceledOnTouchOutside(false)
-//        dialog.setOnDismissListener {  }
     }
 
     fun show(square: Vector2, team: Team) {

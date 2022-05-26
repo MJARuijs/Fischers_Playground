@@ -1,5 +1,10 @@
 package com.mjaruijs.fischersplayground.chess
 
-import com.mjaruijs.fischersplayground.math.vectors.Vector2
+enum class Action {
 
-data class Action(val clickedPosition: Vector2, val type: ActionType, val previouslySelectedPosition: Vector2? = null)
+    SQUARE_SELECTED,
+    SQUARE_DESELECTED,
+    PIECE_MOVED,
+    NO_OP
+
+}

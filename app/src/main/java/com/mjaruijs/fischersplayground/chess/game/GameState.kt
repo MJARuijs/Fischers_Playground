@@ -57,7 +57,14 @@ class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayLi
         }
     }
 
-    operator fun get(i: Int, j: Int) = state[i][j]
+    operator fun get(i: Int, j: Int): Piece? {
+        return try {
+            state[i][j]
+        } catch (e: IndexOutOfBoundsException) {
+            ErrorHandler.reportCrash(e)
+            return null
+        }
+    }
 
     operator fun get(i: Float, j: Float) = state[i.roundToInt()][j.roundToInt()]
 
@@ -89,5 +96,25 @@ class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayLi
         }
 
         return GameState(isPlayingWhite, copiedState)
+    }
+
+    override fun toString(): String {
+        var string = ""
+
+        for (y in 0 until 8) {
+            string += "["
+            for (x in 0 until 8) {
+
+                string += state[x][y]?.type
+
+                if (x != 7) {
+                    string += "\t"
+                }
+            }
+
+            string += "]\n"
+        }
+
+        return string
     }
 }

@@ -51,32 +51,6 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
         }
     }
 
-    fun processAction(action: Action) {
-        when (action.type) {
-            ActionType.SQUARE_SELECTED -> {
-                selectedSquare = action.clickedPosition
-                requestPossibleMoves(selectedSquare)
-            }
-            ActionType.SQUARE_DESELECTED -> {
-                deselectSquare()
-            }
-            ActionType.PIECE_MOVED -> {
-                deselectSquare()
-            }
-            ActionType.NO_OP -> {}
-        }
-    }
-
-    fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Vector2 {
-        return determineSelectedSquare(x, y, displayWidth, displayHeight)
-
-//        if (selection == Vector2(-1f, -1f)) {
-//            return Action(selection, ActionType.SQUARE_DESELECTED, selectedSquare)
-//        }
-
-//        return Action(selection, ActionType.SQUARE_SELECTED, selectedSquare)
-    }
-
     fun determineSelectedSquare(x: Float, y: Float, displayWidth: Int, displayHeight: Int): Vector2 {
         val scaledX = x / displayWidth
         val scaledY = (y / displayHeight) * 2.0f - 1.0f

@@ -3,8 +3,6 @@ package com.mjaruijs.fischersplayground.chess.game
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.chess.Action
-import com.mjaruijs.fischersplayground.chess.Action2
-import com.mjaruijs.fischersplayground.chess.ActionType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
@@ -59,61 +57,60 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         }
     }
 
-    fun moveOpponent(move: Move, runInBackground: Boolean): Move? {
+    fun moveOpponent(move: Move, runInBackground: Boolean) {
         val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
         val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
 
-        return moveOpponent(fromPosition, toPosition, runInBackground)
-    }
-
-    private fun moveOpponent(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move? {
         if (!runInBackground) {
             if (status != GameStatus.OPPONENT_MOVE) {
-                return null
+                return
             }
         }
 
         println("MOVING OPPONENT: $fromPosition $toPosition")
 
-        val move = move(!team, fromPosition, toPosition, runInBackground)
+        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+        val pieceAtNewPosition = state[toPosition]
+
+        move(!team, fromPosition, toPosition, runInBackground)
+
+
+
+        finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
+
         println("MULTIPLAYER MOVING OPPONENT")
 
-//        if (move.movedPiece == PieceType.PAWN) {
-//            if (toPosition.y == 0.0f) {
-//                state[toPosition] = Piece(PieceType.QUEEN, !team)
-//            }
-//        }
-
         status = GameStatus.PLAYER_MOVE
-        return move
     }
 
-    private fun movePlayer(move: Move): Move? {
+    private fun movePlayer(move: Move) {
         val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
         val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
 
-        return movePlayer(fromPosition, toPosition, true)
+        movePlayer(fromPosition, toPosition, true)
     }
 
-    private fun movePlayer(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move? {
+    private fun movePlayer(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
         if (!runInBackground) {
             if (status != GameStatus.PLAYER_MOVE) {
-                return null
+                return
             }
         }
 
         println("MOVING PLAYER $fromPosition $toPosition")
 
-        val move = move(team, fromPosition, toPosition, runInBackground)
+        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+        val pieceAtNewPosition = state[toPosition]
 
-//        if (move.movedPiece == PieceType.PAWN) {
-//            if (toPosition.y == 7.0f) {
-//                state[toPosition] = Piece(PieceType.QUEEN, team)
-//            }
-//        }
+        move(team, fromPosition, toPosition, runInBackground)
 
-        println("MULTIPLAYER FINALIZING MOVE")
+        val move = finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
+
+        move.movedPiece = state[toPosition]?.type ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+
         if (!runInBackground) {
+            println("MULTIPLAYER FINALIZING MOVE ${pieceAtNewPosition?.type} ")
+
             val timeStamp = Time.getFullTimeStamp()
             val positionUpdateMessage = "$gameId|$id|${move.toChessNotation()}|$timeStamp"
             val message = Message(Topic.GAME_UPDATE, "move", positionUpdateMessage)
@@ -122,16 +119,15 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         }
 
         status = GameStatus.OPPONENT_MOVE
-        return move
     }
 
-    override fun processOnClick(square: Vector2): Action2 {
+    override fun processOnClick(square: Vector2): Action {
         if (!isShowingCurrentMove()) {
-            return Action2.NO_OP
+            return Action.NO_OP
         }
 
         if (status != GameStatus.PLAYER_MOVE) {
-            return Action2.NO_OP
+            return Action.NO_OP
         }
 
         if (board.isASquareSelected()) {
@@ -141,70 +137,23 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
                 Thread {
                     movePlayer(selectedSquare, square, false)
                 }.start()
-                return Action2.PIECE_MOVED
+                return Action.PIECE_MOVED
             }
 
-            val pieceAtSquare = state[square] ?: return Action2.NO_OP
+            val pieceAtSquare = state[square] ?: return Action.NO_OP
 
             if (pieceAtSquare.team == team) {
-                return if (FloatUtils.compare(selectedSquare, square)) Action2.SQUARE_DESELECTED else Action2.SQUARE_SELECTED
+                return if (FloatUtils.compare(selectedSquare, square)) Action.SQUARE_DESELECTED else Action.SQUARE_SELECTED
             }
         } else {
-            val pieceAtSquare = state[square] ?: return Action2.NO_OP
+            val pieceAtSquare = state[square] ?: return Action.NO_OP
 
             if (pieceAtSquare.team == team) {
-                return Action2.SQUARE_SELECTED
+                return Action.SQUARE_SELECTED
             }
         }
 
-        return Action2.NO_OP
-    }
-
-    override fun processAction(action: Action): Action {
-        if (!isShowingCurrentMove()) {
-            println("NOT SHOWING CURRENT MOVE $currentMoveIndex ${moves.size}")
-            return Action(action.clickedPosition, ActionType.NO_OP)
-        }
-
-        if (status != GameStatus.PLAYER_MOVE) {
-            return Action(action.clickedPosition, ActionType.NO_OP)
-        }
-
-        if (action.type == ActionType.SQUARE_DESELECTED) {
-            return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED) // Square deselected
-        }
-
-        if (action.type == ActionType.SQUARE_SELECTED) {
-            // No piece has been selected yet
-            if (action.previouslySelectedPosition == null || action.previouslySelectedPosition.x == -1.0f || action.previouslySelectedPosition.y == -1.0f) {
-                val piece = state[action.clickedPosition] ?: return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
-
-                // Select a piece now, if the piece belongs to the team who's turn it is
-                if (piece.team == team) {
-                    return Action(action.clickedPosition, ActionType.SQUARE_SELECTED)
-                }
-            } else { // A piece is already selected
-
-                // If the newly selected square belongs to the possible moves of the selected piece, we can move to that new square
-                if (possibleMoves.contains(action.clickedPosition)) {
-                    movePlayer(action.previouslySelectedPosition, action.clickedPosition, false)
-                    return Action(action.clickedPosition, ActionType.PIECE_MOVED)
-                }
-
-                val currentlySelectedPiece = state[action.clickedPosition] ?: return Action(action.clickedPosition, ActionType.NO_OP)
-
-                if (currentlySelectedPiece.team == team) {
-                    if (FloatUtils.compare(action.clickedPosition, action.previouslySelectedPosition)) {
-                        return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
-                    }
-                    return Action(action.clickedPosition, ActionType.SQUARE_SELECTED)
-                }
-
-//                return Action(action.clickedPosition, ActionType.SQUARE_DESELECTED)
-            }
-        }
-
-        return Action(action.clickedPosition, ActionType.NO_OP)
+        return Action.NO_OP
     }
 
 }

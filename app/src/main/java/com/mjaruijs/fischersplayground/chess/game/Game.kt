@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.chess.Action
-import com.mjaruijs.fischersplayground.chess.Action2
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -56,9 +55,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     abstract fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean): ArrayList<Vector2>
 
-    abstract fun processAction(action: Action): Action
-
-    abstract fun processOnClick(square: Vector2): Action2
+    abstract fun processOnClick(square: Vector2): Action
 
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
 //        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
@@ -69,16 +66,16 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
         val action = processOnClick(selectedSquare)
 
-        if (action == Action2.SQUARE_SELECTED) {
+        if (action == Action.SQUARE_SELECTED) {
             board.updateSelectedSquare(selectedSquare)
-        } else if (action == Action2.SQUARE_DESELECTED || action == Action2.PIECE_MOVED) {
+        } else if (action == Action.SQUARE_DESELECTED || action == Action.PIECE_MOVED) {
             board.deselectSquare()
         }
     }
 
     private fun incrementMoveCounter(): Int {
         currentMoveIndex++
-        println("CURRENT MOVE INDEX: $currentMoveIndex")
+//        println("CURRENT MOVE INDEX: $currentMoveIndex")
         if (currentMoveIndex == 0) {
             enableBackButton()
         }
@@ -148,8 +145,8 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     }
 
     fun upgradePawn(square: Vector2, pieceType: PieceType, team: Team) {
-        locked.set(false)
         state[square] = Piece(pieceType, team)
+        locked.set(false)
     }
 
     private fun redoMove(move: Move) {
@@ -212,11 +209,11 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         decrementMoveCounter()
     }
 
-    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
+    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
         possibleMoves.clear()
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
-        val pieceAtNewPosition = state[toPosition]
+//        val pieceAtNewPosition = state[toPosition]
         println("MOVING PIECE FROM $team: ${currentPositionPiece.type} from: $fromPosition to: $toPosition")
 
         val takenPiece = take(currentPositionPiece, fromPosition, toPosition)
@@ -232,56 +229,36 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
         if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(team, fromPosition, toPosition, runInBackground)
-//            return finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
         } else {
             state[toPosition] = currentPositionPiece
             state[fromPosition] = null
 
             if (!runInBackground) {
                 setAnimationData(currentPositionPiece.type, fromPosition, toPosition)
-            }
 
-            if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
-                locked.set(true)
+                if (currentPositionPiece.type == PieceType.PAWN && team == this.team && (toPosition.y == 0f || toPosition.y == 7f)) {
+                    locked.set(true)
 
-                Thread {
-                    onPawnPromoted(toPosition, team)
-                }.start()
+                    Thread {
+                        onPawnPromoted(toPosition, team)
+                    }.start()
 
-                while (locked.get()) {
-//                    Thread.sleep(1)
+                    while (locked.get()) {}
+
+
+//                    currentPositionPiece = state[toPosition] ?: throw IllegalArgumentException("Pawn wasn't upgraded to anything..")
                 }
-
-//                state[toPosition] = Piece(promotedPieceType, team)
-//                return finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
-//            } else {
-//                return finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
             }
-
         }
 
         println("FINISHING MOVE ${state[toPosition]?.type}")
-
-        val isCheck = isPlayerChecked(state, !team)
-        val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
-
-        updateCheckData(!team, isCheck, isCheckMate)
-
-        val move = Move(Time.getFullTimeStamp(), team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
-        if (!runInBackground) {
-            if (isShowingCurrentMove()) {
-                incrementMoveCounter()
-            }
-            moves += move
-        }
-
-        return move
-//        return finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
     }
 
     fun finishMove(fromPosition: Vector2, toPosition: Vector2, currentPositionPiece: Piece, pieceAtNewPosition: Piece?, runInBackground: Boolean): Move {
         val isCheck = isPlayerChecked(state, !team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
+
+        println(state.toString())
 
         updateCheckData(!team, isCheck, isCheckMate)
 

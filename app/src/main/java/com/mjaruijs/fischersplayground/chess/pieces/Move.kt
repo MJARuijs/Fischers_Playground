@@ -2,7 +2,7 @@ package com.mjaruijs.fischersplayground.chess.pieces
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val toPosition: Vector2, val movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null) {
+class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null) {
 
     fun toChessNotation(): String {
         var notation = "$timeStamp:"

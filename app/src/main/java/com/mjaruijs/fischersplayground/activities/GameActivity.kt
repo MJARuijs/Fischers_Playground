@@ -191,8 +191,11 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
     private fun onPawnUpgraded(square: Vector2, pieceType: PieceType, team: Team) {
         game.upgradePawn(square, pieceType, team)
-        glView.invalidate()
-        glView.requestRender()
+        Thread {
+            Thread.sleep(10)
+            glView.invalidate()
+            glView.requestRender()
+        }.start()
     }
 
     private fun getChatFragment(): ChatFragment {
