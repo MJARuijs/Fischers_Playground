@@ -44,16 +44,16 @@ class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayLi
             state[6][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
             state[7][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
 
-//            state[0][1] = Piece(PieceType.PAWN, Team.BLACK)
-//            state[7][6] = Piece(PieceType.PAWN, Team.WHITE)
-
-//            state[4][6] = Piece(PieceType.KING, Team.BLACK)
-//            state[2][6] = Piece(PieceType.KING, Team.WHITE)
-
             for (i in 0 until 8) {
                 state[i][whitePawnIndex] = Piece(PieceType.PAWN, Team.WHITE)
                 state[i][blackPawnIndex] = Piece(PieceType.PAWN, Team.BLACK)
             }
+
+//            state[0][1] = Piece(PieceType.PAWN, Team.BLACK)
+//            state[7][6] = Piece(PieceType.PAWN, Team.WHITE)
+//
+//            state[5][6] = Piece(PieceType.KING, Team.BLACK)
+//            state[2][6] = Piece(PieceType.KING, Team.WHITE)
         }
     }
 

@@ -76,12 +76,13 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         println("MOVING OPPONENT: $fromPosition $toPosition")
 
         val move = move(!team, fromPosition, toPosition, runInBackground)
+        println("MULTIPLAYER MOVING OPPONENT")
 
-        if (move.movedPiece == PieceType.PAWN) {
-            if (toPosition.y == 0.0f) {
-                state[toPosition] = Piece(PieceType.QUEEN, !team)
-            }
-        }
+//        if (move.movedPiece == PieceType.PAWN) {
+//            if (toPosition.y == 0.0f) {
+//                state[toPosition] = Piece(PieceType.QUEEN, !team)
+//            }
+//        }
 
         status = GameStatus.PLAYER_MOVE
         return move
@@ -105,12 +106,13 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
 
         val move = move(team, fromPosition, toPosition, runInBackground)
 
-        if (move.movedPiece == PieceType.PAWN) {
-            if (toPosition.y == 7.0f) {
-                state[toPosition] = Piece(PieceType.QUEEN, team)
-            }
-        }
+//        if (move.movedPiece == PieceType.PAWN) {
+//            if (toPosition.y == 7.0f) {
+//                state[toPosition] = Piece(PieceType.QUEEN, team)
+//            }
+//        }
 
+        println("MULTIPLAYER FINALIZING MOVE")
         if (!runInBackground) {
             val timeStamp = Time.getFullTimeStamp()
             val positionUpdateMessage = "$gameId|$id|${move.toChessNotation()}|$timeStamp"
@@ -136,7 +138,9 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
             val selectedSquare = board.selectedSquare
 
             if (possibleMoves.contains(square)) {
-                movePlayer(selectedSquare, square, false)
+                Thread {
+                    movePlayer(selectedSquare, square, false)
+                }.start()
                 return Action2.PIECE_MOVED
             }
 

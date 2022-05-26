@@ -43,6 +43,7 @@ class SinglePlayerGame : Game(true) {
             }
             currentMoveIndex = moves.size - 1
         }
+        teamToMove = !teamToMove
 
         return super.move(team, fromPosition, toPosition, runInBackground)
     }
@@ -52,8 +53,18 @@ class SinglePlayerGame : Game(true) {
             val selectedSquare = board.selectedSquare
 
             if (possibleMoves.contains(square)) {
-                move(teamToMove, selectedSquare, square, false)
-                teamToMove = !teamToMove
+
+                val pieceAtSelectedSquare = state[selectedSquare] ?: return Action2.NO_OP
+
+//                if (pieceAtSelectedSquare.type == PieceType.PAWN && (square.y == 0f || square.y == 7f)) {
+
+//                } else {
+//                println("TEAM TO MOVE: $teamToMove")
+                Thread {
+                    move(teamToMove, selectedSquare, square, false)
+                }.start()
+//                }
+
                 return Action2.PIECE_MOVED
             }
 

@@ -83,7 +83,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private lateinit var opponentName: String
 //    private lateinit var opponentId: String
 
-//    private lateinit var board: Board
+    //    private lateinit var board: Board
     private lateinit var game: Game
 
     private lateinit var glView: SurfaceView
@@ -191,6 +191,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
     private fun onPawnUpgraded(square: Vector2, pieceType: PieceType, team: Team) {
         game.upgradePawn(square, pieceType, team)
+        glView.invalidate()
+        glView.requestRender()
     }
 
     private fun getChatFragment(): ChatFragment {
@@ -520,12 +522,13 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     override fun onKeyboardHeightChanged(height: Int) {
         println("KEYBOARD HEIGHT: $height")
 //        if (height > 0) {
-            getChatFragment().translate(height)
+        getChatFragment().translate(height)
 //        }
     }
 
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
-        return pieceChooserDialog.show(square, team)
+        runOnUiThread { pieceChooserDialog.show(square, team) }
+        return PieceType.QUEEN
     }
 
     private fun enableBackButton() {

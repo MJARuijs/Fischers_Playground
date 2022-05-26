@@ -10,6 +10,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.AnimationData
 import com.mjaruijs.fischersplayground.util.Time
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -31,6 +32,8 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     protected val team = if (isPlayingWhite) Team.WHITE else Team.BLACK
 
     private var isChecked = false
+
+    private var locked = AtomicBoolean(false)
 
     var lastUpdated = 0L
 
@@ -145,6 +148,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     }
 
     fun upgradePawn(square: Vector2, pieceType: PieceType, team: Team) {
+        locked.set(false)
         state[square] = Piece(pieceType, team)
     }
 
@@ -237,16 +241,26 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
                 setAnimationData(currentPositionPiece.type, fromPosition, toPosition)
             }
 
-//            if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
-//                val promotedPieceType = onPawnPromoted(toPosition, team)
+            if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
+                locked.set(true)
+
+                Thread {
+                    onPawnPromoted(toPosition, team)
+                }.start()
+
+                while (locked.get()) {
+//                    Thread.sleep(1)
+                }
+
 //                state[toPosition] = Piece(promotedPieceType, team)
 //                return finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
-
 //            } else {
 //                return finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
-//            }
+            }
 
         }
+
+        println("FINISHING MOVE ${state[toPosition]?.type}")
 
         val isCheck = isPlayerChecked(state, !team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
@@ -265,22 +279,22 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 //        return finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
     }
 
-//    private fun finishMove(fromPosition: Vector2, toPosition: Vector2, currentPositionPiece: Piece, pieceAtNewPosition: Piece?, runInBackground: Boolean): Move {
-//        val isCheck = isPlayerChecked(state, !team)
-//        val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
-//
-//        updateCheckData(!team, isCheck, isCheckMate)
-//
-//        val move = Move(Time.getFullTimeStamp(), team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
-//        if (!runInBackground) {
-//            if (isShowingCurrentMove()) {
-//                incrementMoveCounter()
-//            }
-//            moves += move
-//        }
-//
-//        return move
-//    }
+    fun finishMove(fromPosition: Vector2, toPosition: Vector2, currentPositionPiece: Piece, pieceAtNewPosition: Piece?, runInBackground: Boolean): Move {
+        val isCheck = isPlayerChecked(state, !team)
+        val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
+
+        updateCheckData(!team, isCheck, isCheckMate)
+
+        val move = Move(Time.getFullTimeStamp(), team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
+        if (!runInBackground) {
+            if (isShowingCurrentMove()) {
+                incrementMoveCounter()
+            }
+            moves += move
+        }
+
+        return move
+    }
 
     private fun take(currentPiece: Piece, fromPosition: Vector2, toPosition: Vector2): Piece? {
         val pieceAtNewPosition = state[toPosition]

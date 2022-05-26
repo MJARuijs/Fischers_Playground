@@ -109,6 +109,8 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                 y == 1
             }
 
+//            val pawnAtStartingSquare = (piece.team == Team.WHITE && y == 1) || (piece.team == Team.BLACK && y == 6)
+
             if (pawnAtStartingSquare && firstSquareEmpty) {
                 if (gameState[x, y + direction * 2] == null) {
                     possibleMoves += Vector2(x, y + direction * 2)

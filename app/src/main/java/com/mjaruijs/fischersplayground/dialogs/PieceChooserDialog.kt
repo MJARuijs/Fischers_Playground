@@ -25,9 +25,7 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
 //        dialog.setOnDismissListener {  }
     }
 
-    fun show(square: Vector2, team: Team): PieceType {
-
-        var pickedPiece: PieceType = PieceType.PAWN
+    fun show(square: Vector2, team: Team) {
 
         if (team == Team.WHITE) {
             dialog.findViewById<UIButton>(R.id.knight_button)
@@ -35,7 +33,6 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
                 .setOnClickListener {
-                    pickedPiece = PieceType.KNIGHT
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.KNIGHT, team)
                 }
@@ -45,9 +42,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
                 .setOnClickListener {
-                    pickedPiece = PieceType.BISHOP
                     dialog.dismiss()
-
+                    onPieceSelected(square, PieceType.BISHOP, team)
                 }
 
             dialog.findViewById<UIButton>(R.id.rook_button)
@@ -55,8 +51,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
                 .setOnClickListener {
-                    pickedPiece = PieceType.ROOK
                     dialog.dismiss()
+                    onPieceSelected(square, PieceType.ROOK, team)
                 }
 
             dialog.findViewById<UIButton>(R.id.queen_button)
@@ -64,8 +60,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
                 .setOnClickListener {
-                    pickedPiece = PieceType.QUEEN
                     dialog.dismiss()
+                    onPieceSelected(square, PieceType.QUEEN, team)
                 }
         } else {
             dialog.findViewById<UIButton>(R.id.knight_button).setTexturedDrawable(R.drawable.black_knight)
@@ -75,13 +71,6 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
         }
 
         dialog.show()
-        return pickedPiece
-//        dialogBuilder.setMessage("$winnerName has won!")
-//        dialogBuilder.setPositiveButton("Ok") { _, _ ->
-//            onClick()
-//        }
-//
-//        dialog = dialogBuilder.show()
     }
 
 }
