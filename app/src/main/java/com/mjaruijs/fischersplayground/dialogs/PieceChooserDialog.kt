@@ -1,8 +1,10 @@
 package com.mjaruijs.fischersplayground.dialogs
 
+import android.app.Activity
 import android.app.Dialog
-import android.content.Context
 import android.graphics.Color
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
@@ -13,15 +15,20 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
 
     private lateinit var dialog: Dialog
 
-    fun create(context: Context) {
+    fun create(context: Activity) {
         dialog = Dialog(context)
         dialog.setContentView(R.layout.piece_picker_dialog)
         dialog.setCancelable(false)
         dialog.setCanceledOnTouchOutside(false)
     }
 
-    fun show(square: Vector2, team: Team) {
+    fun setLayout() {
+        dialog.window?.apply {
+            setLayout(MATCH_PARENT, WRAP_CONTENT)
+        }
+    }
 
+    fun show(square: Vector2, team: Team) {
         if (team == Team.WHITE) {
             dialog.findViewById<UIButton>(R.id.knight_button)
                 .setTexturedDrawable(R.drawable.white_knight)

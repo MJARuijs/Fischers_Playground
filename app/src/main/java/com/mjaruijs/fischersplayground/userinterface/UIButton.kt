@@ -28,6 +28,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     private var rect = Rect()
 
+    var centerVertically = true
     var disabled = false
     var buttonText = ""
 
@@ -85,12 +86,30 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
             val halfDrawableWidth = (w * scale / 2)
 
             val left = ((halfViewWidth - halfDrawableWidth).roundToInt())
-            val top = 0
             val right = ((w * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
-            val bottom = (h * scale).roundToInt()
+
+            val top: Int
+            val bottom: Int
+
+            if (centerVertically) {
+                val halfViewHeight = (h / 2)
+                val halfDrawableHeight = (h * scale / 2)
+
+                top = ((halfViewHeight - halfDrawableHeight).roundToInt())
+                bottom = ((h * scale + halfViewHeight - halfDrawableHeight)).roundToInt()
+            } else {
+                top = 0
+                bottom = (h * scale).roundToInt()
+            }
+//            val bottom = (h * scale).roundToInt()
 
             rect = Rect(left, top, right, bottom)
         }
+    }
+
+    fun setCenterVertically(center: Boolean): UIButton {
+        centerVertically = center
+        return this
     }
 
     fun setDrawablePadding(padding: Int): UIButton {

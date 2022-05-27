@@ -17,7 +17,6 @@ import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvide
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
-import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.SavedGames
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
@@ -229,19 +228,6 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         }
 
         game.onClick(x, y, displayWidth, displayHeight)
-
-//        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
-//        val boardAction = game.processAction(clickAction)
-
-//        board.processAction(boardAction)
-    }
-
-    private fun onCheck(square: Vector2) {
-//        board.checkedKingSquare = square
-    }
-
-    private fun onCheckCleared() {
-//        board.checkedKingSquare = Vector2(-1, 1)
     }
 
     private fun onCheckMate(team: Team) {
@@ -485,6 +471,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         registerReceiver(chatMessageReceiver, chatFilter)
 
         keyboardHeightProvider.observer = this
+
+        pieceChooserDialog.setLayout()
     }
 
     override fun onStop() {
@@ -569,7 +557,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
-
+            .setCenterVertically(false)
             .setOnClickListener {
                 if (isChatOpened()) {
                     return@setOnClickListener
@@ -590,6 +578,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setTextYOffset(textOffset)
+            .setCenterVertically(false)
             .setOnClickListener {
                 if (isChatOpened()) {
                     return@setOnClickListener
@@ -606,6 +595,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setColor(buttonBackgroundColor)
             .setButtonTextColor(textColor)
             .setTextYOffset(textOffset)
+            .setCenterVertically(false)
             .setOnClickListener {
                 if (isChatOpened()) {
                     return@setOnClickListener
@@ -621,6 +611,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
             .setTextYOffset(textOffset)
+            .setCenterVertically(false)
             .disable()
             .setOnClickListener {
                 if ((it as UIButton).disabled || isChatOpened()) {
@@ -648,6 +639,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setColor(buttonBackgroundColor)
             .setTextYOffset(textOffset)
             .disable()
+            .setCenterVertically(false)
             .setOnClickListener {
                 if ((it as UIButton).disabled || isChatOpened()) {
                     return@setOnClickListener

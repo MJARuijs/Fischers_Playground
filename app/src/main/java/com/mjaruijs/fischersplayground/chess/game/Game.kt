@@ -96,7 +96,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         }
 
         val currentMove = moves[currentMoveIndex]
-        undoMove(currentMove)
+        undoMove(currentMove, false)
 
         val shouldDisableBackButton = currentMoveIndex == -1
         val shouldEnableForwardButton = currentMoveIndex == moves.size - 2
@@ -170,11 +170,20 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         updateCheckData(!move.team, isCheck, isCheckMate)
     }
 
-    protected fun undoMove(move: Move) {
-        val fromPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
-        val toPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
+    protected fun undoMove(move: Move, flipCoordinates: Boolean) {
+        val fromPosition: Vector2
+        val toPosition: Vector2
+
+        if (flipCoordinates) {
+            fromPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
+            toPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
+        } else {
+            fromPosition = move.toPosition
+            toPosition = move.fromPosition
+        }
 
 
+        println("UNDOING MOVE ${move.toChessNotation()} ${move.team} $fromPosition $toPosition")
 
 //        val fromPosition = move.toPosition
 //        val toPosition = move.fromPosition
@@ -317,7 +326,9 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             if (!runInBackground) {
                 setAnimationData(fromPosition, toPosition)
 
-                if (currentPositionPiece.type == PieceType.PAWN && team == this.team && (toPosition.y == 0f || toPosition.y == 7f)) {
+                println("MOVE: $team ${this.team} $toPosition")
+
+                if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
                     locked.set(true)
 
                     Thread {

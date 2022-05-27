@@ -52,7 +52,7 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
 
     fun reverseMoves(numberOfMoves: Int) {
         for (i in 0 until numberOfMoves) {
-            undoMove(moves.removeLast())
+            undoMove(moves.removeLast(), true)
             status = if (status == GameStatus.OPPONENT_MOVE) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
         }
     }
