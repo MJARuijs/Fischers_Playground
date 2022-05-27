@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.dialogs
 
-import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
@@ -13,7 +12,6 @@ import com.mjaruijs.fischersplayground.userinterface.UIButton
 class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team) -> Unit) {
 
     private lateinit var dialog: Dialog
-    private lateinit var dialogBuilder: AlertDialog.Builder
 
     fun create(context: Context) {
         dialog = Dialog(context)
@@ -61,10 +59,41 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
         } else {
-            dialog.findViewById<UIButton>(R.id.knight_button).setTexturedDrawable(R.drawable.black_knight)
-            dialog.findViewById<UIButton>(R.id.bishop_button).setTexturedDrawable(R.drawable.black_bishop)
-            dialog.findViewById<UIButton>(R.id.rook_button).setTexturedDrawable(R.drawable.black_rook)
-            dialog.findViewById<UIButton>(R.id.queen_button).setTexturedDrawable(R.drawable.black_queen)
+            dialog.findViewById<UIButton>(R.id.knight_button)
+                .setTexturedDrawable(R.drawable.black_knight)
+                .setColor(Color.rgb(235, 186, 145))
+                .setCornerRadius(20f)
+                .setOnClickListener {
+                    dialog.dismiss()
+                    onPieceSelected(square, PieceType.QUEEN, team)
+                }
+
+            dialog.findViewById<UIButton>(R.id.bishop_button)
+                .setTexturedDrawable(R.drawable.black_bishop)
+                .setColor(Color.rgb(235, 186, 145))
+                .setCornerRadius(20f)
+                .setOnClickListener {
+                    dialog.dismiss()
+                    onPieceSelected(square, PieceType.QUEEN, team)
+                }
+
+            dialog.findViewById<UIButton>(R.id.rook_button)
+                .setTexturedDrawable(R.drawable.black_rook)
+                .setColor(Color.rgb(235, 186, 145))
+                .setCornerRadius(20f)
+                .setOnClickListener {
+                    dialog.dismiss()
+                    onPieceSelected(square, PieceType.QUEEN, team)
+                }
+
+            dialog.findViewById<UIButton>(R.id.queen_button)
+                .setTexturedDrawable(R.drawable.black_queen)
+                .setColor(Color.rgb(235, 186, 145))
+                .setCornerRadius(20f)
+                .setOnClickListener {
+                    dialog.dismiss()
+                    onPieceSelected(square, PieceType.QUEEN, team)
+                }
         }
 
         dialog.show()
