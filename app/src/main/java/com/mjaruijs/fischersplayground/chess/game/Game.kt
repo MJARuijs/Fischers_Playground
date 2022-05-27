@@ -352,39 +352,6 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         return move
     }
 
-//    fun finishMove(fromPosition: Vector2, toPosition: Vector2, currentPositionPiece: Piece, pieceAtNewPosition: Piece?, runInBackground: Boolean): Move {
-//        val isCheck = isPlayerChecked(state, !team)
-//        val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
-//
-//        println(state.toString())
-//
-//        updateCheckData(!team, isCheck, isCheckMate)
-//
-//        val move = Move(Time.getFullTimeStamp(), team, fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type)
-//        if (!runInBackground) {
-//            if (isShowingCurrentMove()) {
-//                incrementMoveCounter()
-//            }
-//            moves += move
-//        }
-//
-//        return move
-//    }
-
-    private fun tookEnPassant(pieceType: PieceType, fromPosition: Vector2, toPosition: Vector2): Boolean {
-        if (pieceType != PieceType.PAWN) {
-            return false
-        }
-
-        val direction = toPosition - fromPosition
-
-        if (direction.x == 0.0f) {
-            return false
-        }
-
-        return true
-    }
-
     private fun take(currentPiece: Piece, fromPosition: Vector2, toPosition: Vector2): Piece? {
         val pieceAtNewPosition = state[toPosition]
 
