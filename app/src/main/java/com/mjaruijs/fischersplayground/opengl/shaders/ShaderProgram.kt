@@ -2,7 +2,9 @@ package com.mjaruijs.fischersplayground.opengl.shaders
 
 import android.opengl.GLES20.*
 import com.mjaruijs.fischersplayground.math.Color
+import com.mjaruijs.fischersplayground.math.matrices.Matrix4
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
+import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import java.nio.IntBuffer
 
 class ShaderProgram(vararg shaders: Shader) {
@@ -75,6 +77,15 @@ class ShaderProgram(vararg shaders: Shader) {
         glUniform2fv(location, 1, vector.toArray(), 0)
     }
 
+    fun set(name: String, vector: Vector3) {
+        val location = getUniformLocation(name)
+        glUniform3fv(location, 1, vector.toArray(), 0)
+    }
+
+    fun set(name: String, matrix: Matrix4) {
+        val location = getUniformLocation(name)
+        glUniformMatrix4fv(location, 1, true, matrix.toArray(), 0)
+    }
 //    fun set(name: String, vector: Vector3) = set(name, vector.toArray(), ::glUniform3fv)
 //    fun set(name: String, vector: Vector4) = set(name, vector.toArray(), ::glUniform4fv)
 //
@@ -99,4 +110,5 @@ class ShaderProgram(vararg shaders: Shader) {
     fun destroy() {
         glDeleteProgram(handle)
     }
+
 }

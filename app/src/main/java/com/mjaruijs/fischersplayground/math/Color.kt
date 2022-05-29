@@ -72,6 +72,14 @@ data class Color(var r: Float = 0.0f, var g: Float = 0.0f, var b: Float = 0.0f, 
 
     companion object {
 
+        val LIGHT_WHITE = Color(0.8f, 0.8f, 0.8f)
+
+        val WHITE = Color(1f, 1f, 1f)
+        val DARK = Color(0.2f, 0.2f, 0.2f)
+
+        val BLACK = Color(0f, 0f, 0f)
+
+
         fun average(first: Color, second: Color): Color = (first + second) / 2.0f
 
         fun mix(first: Color, second: Color, weight: Float) = (first * (1.0f - weight)) + (second * weight)

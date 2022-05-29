@@ -32,9 +32,11 @@ import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.news.News
 import com.mjaruijs.fischersplayground.news.NewsType
-import com.mjaruijs.fischersplayground.opengl.SurfaceView
+import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
+import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import kotlin.math.roundToInt
 
 class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightObserver {
 
@@ -95,7 +97,6 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         super.onCreate(savedInstanceState)
         hideActivityDecorations()
 
-        println("HELLOOOO???")
         keyboardHeightProvider = KeyboardHeightProvider(this)
         findViewById<View>(R.id.game_layout).post {
             Runnable {
@@ -169,16 +170,10 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         game.enableForwardButton = ::enableForwardButton
         game.onPieceTaken = ::onPieceTaken
         game.onCheckMate = ::onCheckMate
-//        game.onCheck = ::onCheck
-//        game.onCheckCleared = ::onCheckCleared
 
-//        board = Board { square ->
-//            val possibleMoves = game.determinePossibleMoves(square, game.getCurrentTeam())
-//            board.updatePossibleMoves(possibleMoves)
-//        }
+        glView.setGame(game)
 
-        glView.setGameState(game)
-        glView.setBoard(game.board)
+        restorePreferences()
 
         if (game is MultiPlayerGame) {
             runOnUiThread {
@@ -187,6 +182,31 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             }
         }
     }
+
+
+    private fun restorePreferences() {
+        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+
+        val cameraPosition = preferences.getString(SettingsActivity.CAMERA_POSITION_KEY, "") ?: ""
+        val cameraRotation = preferences.getString(SettingsActivity.CAMERA_ROTATION_KEY, "") ?: ""
+        val fov = preferences.getInt(SettingsActivity.FOV_KEY, 45)
+        val pieceScale = preferences.getFloat(SettingsActivity.PIECE_SCALE_KEY, 1.0f)
+
+        if (cameraPosition.isNotBlank()) {
+            glView.getRenderer().setCameraPosition(Vector3.fromString(cameraPosition))
+        }
+//
+        if (cameraRotation.isNotBlank()) {
+            glView.getRenderer().setCameraRotation(Vector3.fromString(cameraRotation))
+        }
+//
+        glView.getRenderer().setFoV(fov)
+//        fovSeekbar.progress = (fov - 20) / 5
+//
+        glView.getRenderer().setPieceScale(pieceScale)
+//        pieceScaleSeekbar.progress = (pieceScale * 100).roundToInt()
+    }
+
 
     private fun onPawnUpgraded(square: Vector2, pieceType: PieceType, team: Team) {
         game.upgradePawn(square, pieceType, team)

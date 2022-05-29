@@ -76,4 +76,16 @@ data class Vector3(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f
 
     override fun toArray() = floatArrayOf(x, y, z)
 
+    companion object {
+
+        fun fromString(string: String): Vector3 {
+            val values = string.removePrefix("<").removeSuffix(">").replace(",", "").split(' ')
+            val x = values[0].toFloat()
+            val y = values[1].toFloat()
+            val z = values[2].toFloat()
+            return Vector3(x, y, z)
+        }
+
+    }
+
 }

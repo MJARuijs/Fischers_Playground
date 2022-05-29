@@ -18,19 +18,24 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FischersPlayground">
         <activity
+            android:name=".activities.SettingsActivity"
+            android:exported="true" >
+
+        </activity>
+        <activity
             android:name=".activities.GameActivity"
-            android:windowSoftInputMode="adjustNothing"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustNothing" />
         <activity
             android:name=".activities.MainActivity"
-            android:windowSoftInputMode="adjustNothing"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustNothing">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>
-
 
 </manifest>

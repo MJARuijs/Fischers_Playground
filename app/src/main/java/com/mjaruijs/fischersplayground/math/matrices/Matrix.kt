@@ -215,6 +215,16 @@ abstract class Matrix<T: Matrix<T>>(private val dimensions: Int, var elements: F
      */
     fun copy() = create(elements.copyOf(size))
 
+    fun toArray(): FloatArray {
+        var floats = FloatArray(0)
+
+        for (element in elements) {
+            floats += element
+        }
+
+        return floats
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Matrix<*>) return false

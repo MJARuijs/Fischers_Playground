@@ -49,6 +49,8 @@ class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayLi
                 state[i][blackPawnIndex] = Piece(PieceType.PAWN, Team.BLACK)
             }
 
+//            state[0][0] = Piece(PieceType.PAWN, Team.WHITE)
+
 //            state[0][1] = Piece(PieceType.PAWN, Team.BLACK)
 //            state[7][6] = Piece(PieceType.PAWN, Team.WHITE)
 //
@@ -68,7 +70,13 @@ class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayLi
 
     operator fun get(i: Float, j: Float) = state[i.roundToInt()][j.roundToInt()]
 
-    operator fun get(vector2: Vector2) = state[vector2.x.roundToInt()][vector2.y.roundToInt()]
+    operator fun get(vector2: Vector2): Piece? {
+        return try {
+            state[vector2.x.roundToInt()][vector2.y.roundToInt()]
+        } catch (e: ArrayIndexOutOfBoundsException) {
+            null
+        }
+    }
 
     operator fun set(vector2: Vector2, piece: Piece?) {
        try {

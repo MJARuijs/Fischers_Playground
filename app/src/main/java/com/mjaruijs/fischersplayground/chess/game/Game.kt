@@ -58,12 +58,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     abstract fun processOnClick(square: Vector2): Action
 
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
-//        val clickAction = board.onClick(x, y, displayWidth, displayHeight)
-//        val boardAction = processAction(clickAction)
-//        board.processAction(boardAction)
-
         val selectedSquare = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
-
         val action = processOnClick(selectedSquare)
 
         if (action == Action.SQUARE_SELECTED) {
@@ -396,7 +391,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         return takenPiece
     }
 
-    fun determinePossibleMoves(square: Vector2, team: Team): ArrayList<Vector2> {
+    private fun determinePossibleMoves(square: Vector2, team: Team): ArrayList<Vector2> {
         val piece = state[square] ?: return arrayListOf()
 
         possibleMoves = getPieceMoves(piece, square, state, false)

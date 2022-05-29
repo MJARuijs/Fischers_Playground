@@ -32,6 +32,7 @@ import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.news.News
 import com.mjaruijs.fischersplayground.news.NewsType
+import com.mjaruijs.fischersplayground.opengl.OBJLoader
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
@@ -81,6 +82,30 @@ class MainActivity : AppCompatActivity() {
         if (!isInitialized()) {
             PieceTextures.init(this)
 
+//            Thread {
+//                OBJLoader.preload(this, R.raw.pawn)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.bishop)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.knight)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.rook)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.queen)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.king)
+//            }.start()
+
             NetworkManager.run(this)
 
             if (id != null && id!!.isNotBlank()) {
@@ -99,13 +124,7 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<ImageView>(R.id.settings_button)
             .setOnClickListener {
-                val intent = Intent(this, GameActivity::class.java)
-                    .putExtra("id", id)
-                    .putExtra("user_name", userName)
-                    .putExtra("is_single_player", true)
-                    .putExtra("is_playing_white", true)
-                    .putExtra("game_id", "test_game")
-                    .putExtra("opponent_name", "Opponent")
+                val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)
             }
 
@@ -117,6 +136,24 @@ class MainActivity : AppCompatActivity() {
             .setOnClickListener {
                 invitePlayerDialog.show()
             }
+
+        findViewById<UIButton>(R.id.single_player_button)
+            .setText("Single player")
+            .setButtonTextSize(100.0f)
+            .setColor(Color.rgb(235, 186, 145))
+            .setCornerRadius(45.0f)
+            .setOnClickListener {
+                val intent = Intent(this, GameActivity::class.java)
+                    .putExtra("id", id)
+                    .putExtra("user_name", userName)
+                    .putExtra("is_single_player", true)
+                    .putExtra("is_playing_white", true)
+                    .putExtra("game_id", "test_game")
+                    .putExtra("opponent_name", "Opponent")
+                println("HELLO")
+                startActivity(intent)
+            }
+
 
         gameAdapter = GameAdapter(::onGameClicked)
 

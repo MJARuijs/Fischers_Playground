@@ -3,9 +3,11 @@ package com.mjaruijs.fischersplayground.userinterface
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
@@ -32,6 +34,14 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     var disabled = false
     var buttonText = ""
 
+    private var heldDown = false
+    private var startClickTimer = -1L
+
+    var onHold: () -> Unit = {}
+    var onRelease: () -> Unit = {}
+
+    private var holding = AtomicBoolean(false)
+
     init {
         paint.isAntiAlias = true
         paint.color = Color.rgb(0.25f, 0.25f, 0.25f)
@@ -43,6 +53,49 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         textPaint.isFakeBoldText = true
 
         debugPaint.color = Color.GREEN
+
+        setOnTouchListener { v, event ->
+
+            if (event.action == MotionEvent.ACTION_BUTTON_PRESS) {
+                println("CLICKED")
+                performClick()
+            } else if (event.action == MotionEvent.ACTION_DOWN) {
+                println("ACTION IS DOWN")
+                startClickTimer = System.currentTimeMillis()
+                heldDown = true
+
+                holding.set(true)
+
+                Thread {
+                    while (holding.get()) {
+                        onHold()
+                    }
+
+                    onRelease()
+                }.start()
+            } else if (event.action == MotionEvent.ACTION_UP) {
+                println("ACTION IS UP")
+                val buttonReleasedTime = System.currentTimeMillis()
+                if (buttonReleasedTime - startClickTimer < 500) {
+                    performClick()
+
+                }
+                heldDown = false
+                holding.set(false)
+            }
+
+            return@setOnTouchListener true
+        }
+    }
+
+    fun setOnHoldListener(onHold: () -> Unit): UIButton {
+        this.onHold = onHold
+        return this
+    }
+
+    fun setOnReleaseListener(onRelease: () -> Unit): UIButton {
+        this.onRelease = onRelease
+        return this
     }
 
     fun setCornerRadius(radius: Float): UIButton {

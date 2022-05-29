@@ -29,7 +29,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.mjaruijs.fischersplayground.opengl.SurfaceView
+    <com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
         android:id="@+id/opengl_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
