@@ -3,17 +3,18 @@ package com.mjaruijs.fischersplayground.opengl.renderer
 import android.content.Context
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
+import androidx.appcompat.app.AppCompatActivity
+import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.CAMERA_ZOOM_KEY
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
-import com.mjaruijs.fischersplayground.math.vectors.Vector4
 import com.mjaruijs.fischersplayground.opengl.Camera
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.PI
 
-class OpenGLRenderer(private val context: Context, private val onContextCreated: () -> Unit, var is3D: Boolean) : GLSurfaceView.Renderer {
+class OpenGLRenderer(private val context: Context, private val onContextCreated: () -> Unit, private var is3D: Boolean) : GLSurfaceView.Renderer {
 
     private lateinit var board: Board
     private lateinit var game: Game
@@ -22,7 +23,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     private lateinit var boardRenderer: BoardRenderer
     private lateinit var gameRenderer3D: GameRenderer3D
 
-    private val camera = Camera()
+    private val camera = Camera(zoom = DEFAULT_ZOOM)
 
     private var aspectRatio = 1.0f
     private var displayWidth = 0
@@ -30,7 +31,13 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     private var initialized = false
 
+    var isPlayerWhite = true
+
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
+
+    companion object {
+        private const val DEFAULT_ZOOM = 4.0f
+    }
 
     override fun onSurfaceCreated(p0: GL10?, config: EGLConfig?) {
         glClearColor(0.25f, 0.25f, 0.25f, 1f)
@@ -43,12 +50,16 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         PieceTextures.createTextureArray()
 
         gameRenderer = GameRenderer2D(context)
-        gameRenderer3D = GameRenderer3D(context)
+        gameRenderer3D = GameRenderer3D(context, isPlayerWhite)
 
         boardRenderer = BoardRenderer(context)
 
         onContextCreated()
         initialized = true
+
+        val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
+        val zoom = preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM)
+        camera.zoom = zoom
     }
 
     fun setPieceScale(scale: Float) {
@@ -64,10 +75,17 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     fun update(delta: Float): Boolean {
         return if (initialized) {
-            Thread {
-                gameRenderer.startAnimations(game)
-            }.start()
-            gameRenderer.update(delta)
+            if (is3D) {
+                Thread {
+                    gameRenderer3D.startAnimations(game)
+                }.start()
+                gameRenderer3D.update(delta)
+            } else {
+                Thread {
+                    gameRenderer.startAnimations(game)
+                }.start()
+                gameRenderer.update(delta)
+            }
         } else {
             false
         }
@@ -98,14 +116,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         board.updateCamera(camera)
     }
 
-    fun getCameraPosition() = camera.position
-
     fun getCameraRotation() = camera.rotation
-
-    fun setCameraPosition(position: Vector3) {
-        camera.position = position
-        updateBoardCamera()
-    }
 
     fun setCameraRotation(rotation: Vector3) {
         camera.rotation = rotation
@@ -115,26 +126,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     fun setFoV(fov: Int) {
         camera.fieldOfView = fov.toFloat()
         updateBoardCamera()
-    }
-
-    fun setFoV(fov: Float) {
-        camera.fieldOfView = fov
-    }
-
-    fun getCameraDirection(): Vector3 {
-        val clipCoords = Vector4(0f, 0f, -1f, 1f)
-        val eyeSpace = camera.projectionMatrix.inverse().dot(clipCoords)
-        eyeSpace.z = -1f
-        eyeSpace.w = 0f
-
-        return camera.viewMatrix.inverse().dot(eyeSpace).xyz().normal()
-    }
-
-    fun zoomCamera(zoomLevel: Float) {
-        val cameraDirection = getCameraDirection()
-
-        camera.zoom = cameraDirection * zoomLevel * 0.001f
-//        println(camera.zoom)
     }
 
     fun rotateCamera(rotation: Vector3) {
@@ -149,22 +140,14 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         updateBoardCamera()
     }
 
-    fun rotateCamera(angle: Float) {
-        camera.rotation.y += angle
-    }
-
-    fun translateCameraY(translation: Float) {
-        camera.translate(Vector3(0f, translation, 0f))
-        updateBoardCamera()
-    }
-
-    fun translateCameraZ(translation: Float) {
-        camera.translate(Vector3(0f, 0f, translation))
+    fun zoomCamera(distance: Float) {
+        camera.zoom(distance)
         updateBoardCamera()
     }
 
     fun destroy() {
-//        gameRenderer.destroy()
-//        boardRenderer.destroy()
+        gameRenderer.destroy()
+        gameRenderer3D.destroy()
+        boardRenderer.destroy()
     }
 }

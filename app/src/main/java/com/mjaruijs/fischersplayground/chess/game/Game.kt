@@ -70,7 +70,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     private fun incrementMoveCounter(): Int {
         currentMoveIndex++
-        println("CURRENT MOVE INDEX: $currentMoveIndex")
+//        println("CURRENT MOVE INDEX: $currentMoveIndex")
         if (currentMoveIndex == 0) {
             enableBackButton()
         }
@@ -130,6 +130,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     }
 
     private fun setAnimationData(fromPosition: Vector2, toPosition: Vector2, onAnimationFinished: () -> Unit = {}) {
+        println("ADDING ANIMATION DATA TO GAME")
         animationData += AnimationData(fromPosition, toPosition, onAnimationFinished)
     }
 
@@ -178,7 +179,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         }
 
 
-        println("UNDOING MOVE ${move.toChessNotation()} ${move.team} $fromPosition $toPosition")
+//        println("UNDOING MOVE ${move.toChessNotation()} ${move.team} $fromPosition $toPosition")
 
 //        val fromPosition = move.toPosition
 //        val toPosition = move.fromPosition
@@ -278,8 +279,8 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         val isCheck = isPlayerChecked(state, team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
 
-        println(state.toString())
-        println("IS CHECK? : $team  ${move.team} $isCheck")
+//        println(state.toString())
+//        println("IS CHECK? : $team  ${move.team} $isCheck")
         updateCheckData(team, isCheck, isCheckMate)
 
 //        val move = Move(Time.getFullTimeStamp(), team, move.fromPosition, toPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type, promotedPiece)
@@ -297,7 +298,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
         val pieceAtNewPosition = state[toPosition]
-        println("MOVING PIECE FROM $team: ${currentPositionPiece.type} from: $fromPosition to: $toPosition")
+//        println("MOVING PIECE FROM $team: ${currentPositionPiece.type} from: $fromPosition to: $toPosition")
 
         val takenPiece = take(currentPositionPiece, fromPosition, toPosition)
 
@@ -321,7 +322,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             if (!runInBackground) {
                 setAnimationData(fromPosition, toPosition)
 
-                println("MOVE: $team ${this.team} $toPosition")
+//                println("MOVE: $team ${this.team} $toPosition")
 
                 if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
                     locked.set(true)
@@ -338,12 +339,12 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             }
         }
 
-        println("FINISHING MOVE ${state[toPosition]?.type}")
+//        println("FINISHING MOVE ${state[toPosition]?.type}")
 
         val isCheck = isPlayerChecked(state, !team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
 
-        println(state.toString())
+//        println(state.toString())
 
         updateCheckData(!team, isCheck, isCheckMate)
 

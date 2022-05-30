@@ -28,6 +28,18 @@ class GameRenderer2D(context: Context) {
 
     private val animations = ArrayList<AnimationValues>()
 
+    private fun startAnimation(animationData: AnimationData) {
+        val toPosition = animationData.toPosition
+        val fromPosition = animationData.fromPosition
+
+        val animatingRow = toPosition.x.roundToInt()
+        val animatingCol = toPosition.y.roundToInt()
+        val translation = fromPosition - toPosition
+        val totalDistance = fromPosition - toPosition
+
+        animations += AnimationValues(animatingRow, animatingCol, translation, totalDistance, animationData.onAnimationFinished)
+    }
+
     @Suppress("ControlFlowWithEmptyBody")
     fun startAnimations(game: Game) {
         while (isLocked.get()) {}
@@ -94,18 +106,6 @@ class GameRenderer2D(context: Context) {
         }
 
         return animations.isNotEmpty()
-    }
-
-    private fun startAnimation(animationData: AnimationData) {
-        val toPosition = animationData.toPosition
-        val fromPosition = animationData.fromPosition
-
-        val animatingRow = toPosition.x.roundToInt()
-        val animatingCol = toPosition.y.roundToInt()
-        val translation = fromPosition - toPosition
-        val totalDistance = fromPosition - toPosition
-
-        animations += AnimationValues(animatingRow, animatingCol, translation, totalDistance, animationData.onAnimationFinished)
     }
 
     fun destroy() {

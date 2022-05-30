@@ -12,7 +12,7 @@ class BoardModel(is3D: Boolean) {
         val scaleFactor = 1.0f / 4.0f
         val offset = 1.0f
 
-        val height = -0.02f
+        val height = 0f
 
         for (x in 0 until 8) {
             for (y in 0 until 8) {

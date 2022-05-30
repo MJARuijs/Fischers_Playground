@@ -20,6 +20,8 @@ data class Vector3(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f
 
     fun xz() = Vector2(x, z)
 
+    operator fun minus(factor: Float) = Vector3(x - factor, y - factor, z - factor)
+
     override operator fun get(index: Int) = when (index) {
         0 -> x
         1 -> y

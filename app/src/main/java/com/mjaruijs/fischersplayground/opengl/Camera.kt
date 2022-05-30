@@ -7,13 +7,11 @@ import kotlin.math.tan
 
 class Camera(
     var fieldOfView: Float = 45.0f,
-    var aspectRatio: Float = 1.0f,
-    var zNear: Float = 0.01f,
-    var zFar: Float = 1000.0f,
-
-    var position: Vector3 = Vector3(),
-    var rotation: Vector3 = Vector3(),
-    var zoom: Vector3 = Vector3()
+    private var aspectRatio: Float = 1.0f,
+    private var zNear: Float = 0.1f,
+    private var zFar: Float = 1000.0f,
+    var zoom: Float = 4.0f,
+    var rotation: Vector3 = Vector3()
 ) {
 
     val projectionMatrix: Matrix4
@@ -26,19 +24,23 @@ class Camera(
 
     val viewMatrix: Matrix4
         get() = Matrix4()
+            .translate(-Vector3(0f, 0f, zoom))
             .rotate(rotation)
-            .translate(-position - zoom)
+
+    fun getPosition() = viewMatrix.inverse().getPosition()
 
     val rotationMatrix: Matrix4
         get() = Matrix4().rotateY(-rotation.y).rotateX(-rotation.x)
 
-    fun translate(translation: Vector3) {
-        val rotationMatrix = Matrix4().rotateY(-rotation.y)
-        position += rotationMatrix.dot(-translation.unit() * 0.00001f)
+    fun zoom(distance: Float) {
+        zoom = distance
 
-        if (position.z < 0.0f) {
-            position.z = 0.0f
+        if (zoom < 1.0f) {
+            zoom = 1.0f
         }
 
+        if (zoom > 10.0f) {
+            zoom = 10.0f
+        }
     }
 }

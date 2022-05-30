@@ -129,7 +129,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         isPlayingWhite = intent.getBooleanExtra("is_playing_white", false)
 
         glView = findViewById(R.id.opengl_view)
-        glView.init(::onContextCreated, ::onClick, ::onDisplaySizeChanged)
+        glView.init(::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
 
         initUIButtons()
         initChatBox()
@@ -193,7 +193,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         val pieceScale = preferences.getFloat(SettingsActivity.PIECE_SCALE_KEY, 1.0f)
 
         if (cameraPosition.isNotBlank()) {
-            glView.getRenderer().setCameraPosition(Vector3.fromString(cameraPosition))
+//            glView.getRenderer().setCameraPosition(Vector3.fromString(cameraPosition))
         }
 //
         if (cameraRotation.isNotBlank()) {

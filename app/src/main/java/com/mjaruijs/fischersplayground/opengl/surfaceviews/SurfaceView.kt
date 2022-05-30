@@ -12,9 +12,9 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
     private val tickRate = 60.0f
 
-    private val renderer: OpenGLRenderer
     private val fixedRateThread = FixedRateThread(tickRate, ::update)
 
+    private lateinit var renderer: OpenGLRenderer
     private lateinit var onSurfaceCreated: () -> Unit
     private lateinit var onClick: (Float, Float) -> Unit
 
@@ -22,15 +22,16 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         setEGLContextClientVersion(3)
 
         renderer = OpenGLRenderer(context, ::onContextCreated, true)
-
         setRenderer(renderer)
+
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
-    fun init(onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit) {
+    fun init(onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean) {
         this.onSurfaceCreated = onSurfaceCreated
         this.onClick = onClick
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
+        renderer.isPlayerWhite = isPlayerWhite
     }
 
     fun getRenderer() = renderer

@@ -119,8 +119,8 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
 
         val rayDirection = camera.viewMatrix.inverse().dot(eyeSpace).xyz().normal()
 
-        val position = camera.position
-        val t = (-0.02f - position.z) / rayDirection.z
+        val position = camera.getPosition()
+        val t = -position.z / rayDirection.z
 
         val squareX = position.x + rayDirection.x * t
         val squareY = position.y + rayDirection.y * t
