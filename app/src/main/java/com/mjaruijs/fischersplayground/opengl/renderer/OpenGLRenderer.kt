@@ -10,6 +10,7 @@ import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.Camera
+import java.nio.ByteBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.PI
@@ -19,20 +20,27 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     private lateinit var board: Board
     private lateinit var game: Game
 
-    private lateinit var gameRenderer: GameRenderer2D
+    private lateinit var gameRenderer2D: GameRenderer2D
     private lateinit var boardRenderer: BoardRenderer
     private lateinit var gameRenderer3D: GameRenderer3D
 
     private val camera = Camera(zoom = DEFAULT_ZOOM)
 
     private var aspectRatio = 1.0f
-    private var displayWidth = 0
-    private var displayHeight = 0
+
+    var displayWidth = 0
+        private set
+    var displayHeight = 0
+        private set
 
     private var initialized = false
 
     var isPlayerWhite = true
 
+    private var pixelsRequested = false
+
+    var onDraw: () -> Unit = {}
+    var onPixelsRead: (ByteBuffer) -> Unit = {}
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
 
     companion object {
@@ -42,24 +50,41 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     override fun onSurfaceCreated(p0: GL10?, config: EGLConfig?) {
         glClearColor(0.25f, 0.25f, 0.25f, 1f)
         glEnable(GL_BLEND)
-        glEnable(GL_CULL_FACE)
-        glEnable(GL_DEPTH_TEST)
+        setOpenGLSettings()
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         PieceTextures.createTextureArray()
 
-        gameRenderer = GameRenderer2D(context)
+        gameRenderer2D = GameRenderer2D(context)
         gameRenderer3D = GameRenderer3D(context, isPlayerWhite)
-
         boardRenderer = BoardRenderer(context)
 
         onContextCreated()
         initialized = true
 
         val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
-        val zoom = preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM)
-        camera.zoom = zoom
+        camera.zoom = preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM)
+    }
+
+    fun set3D(is3D: Boolean) {
+        this.is3D = is3D
+
+        if (this::board.isInitialized) {
+            board.is3D = is3D
+        }
+
+        setOpenGLSettings()
+    }
+
+    private fun setOpenGLSettings()  {
+        if (is3D) {
+            glEnable(GL_CULL_FACE)
+            glEnable(GL_DEPTH_TEST)
+        } else {
+            glDisable(GL_CULL_FACE)
+            glDisable(GL_DEPTH_TEST)
+        }
     }
 
     fun setPieceScale(scale: Float) {
@@ -74,7 +99,8 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun update(delta: Float): Boolean {
-        return if (initialized) {
+        return if (this::game.isInitialized) {
+
             if (is3D) {
                 Thread {
                     gameRenderer3D.startAnimations(game)
@@ -82,9 +108,9 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
                 gameRenderer3D.update(delta)
             } else {
                 Thread {
-                    gameRenderer.startAnimations(game)
+                    gameRenderer2D.startAnimations(game)
                 }.start()
-                gameRenderer.update(delta)
+                gameRenderer2D.update(delta)
             }
         } else {
             false
@@ -101,19 +127,35 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     override fun onDrawFrame(p0: GL10?) {
-        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        if (!this::game.isInitialized) {
+            return
+        }
 
         if (is3D) {
+            glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+
             boardRenderer.render3D(board, camera)
             gameRenderer3D.render(game, camera)
         } else {
+            glClear(GL_COLOR_BUFFER_BIT)
+
             boardRenderer.render(board, aspectRatio)
-            gameRenderer.render(game, aspectRatio)
+            gameRenderer2D.render(game, aspectRatio)
         }
+
+        if (pixelsRequested) {
+            onPixelsRead(saveBuffer())
+            pixelsRequested = false
+            onPixelsRead = {}
+        }
+
+        onDraw()
     }
 
     private fun updateBoardCamera() {
-        board.updateCamera(camera)
+        if (this::board.isInitialized) {
+            board.updateCamera(camera)
+        }
     }
 
     fun getCameraRotation() = camera.rotation
@@ -145,8 +187,20 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         updateBoardCamera()
     }
 
+    fun requestScreenPixels(onPixelsRead: (ByteBuffer) -> Unit) {
+        this.onPixelsRead = onPixelsRead
+        pixelsRequested = true
+    }
+
+    private fun saveBuffer(): ByteBuffer {
+        val pixelData = ByteBuffer.allocateDirect(displayWidth * displayHeight * 4)
+        glReadPixels(0, 0, displayWidth, displayHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixelData)
+        pixelData.rewind()
+        return pixelData
+    }
+
     fun destroy() {
-        gameRenderer.destroy()
+        gameRenderer2D.destroy()
         gameRenderer3D.destroy()
         boardRenderer.destroy()
     }

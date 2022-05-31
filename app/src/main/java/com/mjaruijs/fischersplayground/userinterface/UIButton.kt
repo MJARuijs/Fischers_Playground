@@ -57,10 +57,8 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         setOnTouchListener { v, event ->
 
             if (event.action == MotionEvent.ACTION_BUTTON_PRESS) {
-                println("CLICKED")
                 performClick()
             } else if (event.action == MotionEvent.ACTION_DOWN) {
-                println("ACTION IS DOWN")
                 startClickTimer = System.currentTimeMillis()
                 heldDown = true
 
@@ -74,7 +72,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
                     onRelease()
                 }.start()
             } else if (event.action == MotionEvent.ACTION_UP) {
-                println("ACTION IS UP")
                 val buttonReleasedTime = System.currentTimeMillis()
                 if (buttonReleasedTime - startClickTimer < 500) {
                     performClick()

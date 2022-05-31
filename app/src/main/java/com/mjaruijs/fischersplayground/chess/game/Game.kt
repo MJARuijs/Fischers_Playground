@@ -130,7 +130,6 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     }
 
     private fun setAnimationData(fromPosition: Vector2, toPosition: Vector2, onAnimationFinished: () -> Unit = {}) {
-        println("ADDING ANIMATION DATA TO GAME")
         animationData += AnimationData(fromPosition, toPosition, onAnimationFinished)
     }
 
@@ -178,13 +177,6 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
             toPosition = move.fromPosition
         }
 
-
-//        println("UNDOING MOVE ${move.toChessNotation()} ${move.team} $fromPosition $toPosition")
-
-//        val fromPosition = move.toPosition
-//        val toPosition = move.fromPosition
-
-
         val piece = Piece(move.movedPiece, move.team)
 
         if (piece.type == PieceType.KING && abs(toPosition.x - fromPosition.x) == 2.0f) {
@@ -222,8 +214,6 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
     fun move(move: Move, runInBackground: Boolean) {
         possibleMoves.clear()
-
-//        println("${move.team} ${move.from}")
 
         val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
         val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition

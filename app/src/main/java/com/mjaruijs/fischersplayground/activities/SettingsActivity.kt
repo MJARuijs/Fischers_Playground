@@ -1,79 +1,175 @@
 package com.mjaruijs.fischersplayground.activities
 
+import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.SeekBar
+import android.transition.ChangeBounds
+import android.transition.TransitionManager
+import android.view.View
+import android.widget.ImageView
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.transition.doOnEnd
+import androidx.core.view.ViewCompat
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
-import com.mjaruijs.fischersplayground.dialogs.GraphicSettingsDialog
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
-import com.mjaruijs.fischersplayground.opengl.surfaceviews.GamePreviewSurface
-import kotlin.math.roundToInt
+import com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
+import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("SameParameterValue")
 class SettingsActivity : AppCompatActivity() {
 
-    private lateinit var glView: GamePreviewSurface
     private lateinit var game: SinglePlayerGame
-    private lateinit var fovSeekbar: SeekBar
-    private lateinit var pieceScaleSeekbar: SeekBar
+//    private lateinit var fovSeekbar: SeekBar
+//    private lateinit var pieceScaleSeekbar: SeekBar
 
-    private lateinit var graphicSettingsDialog: GraphicSettingsDialog
+    private lateinit var glView3D: GameSettingsSurface
+    private lateinit var previewImage3D: ImageView
+
+    private lateinit var card2D: CardView
+    private lateinit var card3D: CardView
+
+    private lateinit var graphicsSettingsButton: ImageView
+    private lateinit var settingsLayout: ConstraintLayout
+
+    private val defaultConstraints = ConstraintSet()
+    private val expandedConstraints = ConstraintSet()
+
+    private var is3D = false
+    private var expanded = false
+
+    private var locked = AtomicBoolean(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-
         PieceTextures.init(this)
 
-        graphicSettingsDialog = GraphicSettingsDialog(this)
+        hideActivityDecorations()
 
-        glView = findViewById(R.id.opengl_view)
-        glView.init(::onContextCreated, ::onCameraRotated, ::savePreference)
+        settingsLayout = findViewById(R.id.settings_layout)
 
-        fovSeekbar = findViewById(R.id.fov_seekbar)
-        fovSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val actualProgress = progress * 5 + 20
-                glView.getRenderer().setFoV(actualProgress)
-                glView.requestRender()
-                savePreference(FOV_KEY, actualProgress)
+        defaultConstraints.clone(settingsLayout)
+        expandedConstraints.clone(this, R.layout.activity_settings_alt)
+
+        graphicsSettingsButton = findViewById(R.id.graphics_settings_button)
+
+        card2D = findViewById(R.id.graphics_2d_card)
+        card3D = findViewById(R.id.graphics_3d_card)
+
+        card2D.setOnClickListener {
+            is3D = false
+            selectGraphicsType()
+        }
+
+        card3D.setOnClickListener {
+            is3D = true
+            selectGraphicsType()
+        }
+
+        previewImage3D = findViewById(R.id.graphics_3d_preview_image)
+
+        glView3D = findViewById(R.id.preview_3d)
+        glView3D.init(::onContextCreated, ::onCameraRotated, ::savePreference)
+        glView3D.getRenderer().set3D(true)
+
+        restore3DPreference()
+    }
+
+    private fun onDrawFirstFrame() {
+        glView3D.getRenderer().onDraw = {}
+
+        runOnUiThread {
+            graphicsSettingsButton.setOnClickListener {
+
+                Thread {
+                    if (expanded) {
+
+                        locked.set(true)
+
+                        glView3D.getRenderer().requestScreenPixels(::onPixelsReceived)
+                        glView3D.requestRender()
+
+                        while (locked.get()) { }
+                    }
+
+                    showPreview()
+
+                    val transition = ChangeBounds()
+                    val constraint = if (expanded) defaultConstraints else expandedConstraints
+
+                    transition.doOnEnd {
+                        expanded = !expanded
+
+                        if (expanded) {
+                            showGLView()
+                        }
+                    }
+
+                    runOnUiThread {
+                        constraint.applyTo(settingsLayout)
+                        TransitionManager.beginDelayedTransition(settingsLayout, transition)
+                    }
+
+                }.start()
+
             }
+        }
+    }
 
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-            }
+    private fun showPreview() {
+        runOnUiThread {
+            previewImage3D.visibility = View.VISIBLE
+            glView3D.isActive = false
+        }
+    }
 
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-            }
-        })
+    private fun showGLView() {
+        runOnUiThread {
+            glView3D.isActive = true
+            previewImage3D.visibility = View.INVISIBLE
+        }
+    }
 
-        pieceScaleSeekbar = findViewById(R.id.piece_scale_seekbar)
-        pieceScaleSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val actualProgress = progress.toFloat() / 100.0f
-                glView.getRenderer().setPieceScale(actualProgress)
-                glView.requestRender()
-                savePreference(PIECE_SCALE_KEY, actualProgress)
-            }
+    private fun onPixelsReceived(pixelData: ByteBuffer) {
+        val width = glView3D.getRenderer().displayWidth
+        val height = glView3D.getRenderer().displayHeight
 
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-            }
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmap.copyPixelsFromBuffer(pixelData)
 
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-            }
-        })
+        runOnUiThread {
+            findViewById<ImageView>(R.id.graphics_3d_preview_image).setImageBitmap(bitmap)
+            locked.set(false)
+        }
     }
 
     private fun onContextCreated() {
-        game = SinglePlayerGame()
-        glView.setGame(game)
+        runOnUiThread {
+            game = SinglePlayerGame()
+            glView3D.setGame(game)
+            restorePreferences()
 
-        restorePreferences()
+            glView3D.getRenderer().onDraw = ::onDrawFirstFrame
+            glView3D.getRenderer().requestScreenPixels(::onPixelsReceived)
+            glView3D.requestRender()
+        }
     }
 
     private fun onCameraRotated() {
-        savePreference(CAMERA_ROTATION_KEY, glView.getRenderer().getCameraRotation())
+        savePreference(CAMERA_ROTATION_KEY, glView3D.getRenderer().getCameraRotation())
+    }
+
+    private fun restore3DPreference() {
+        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+
+        is3D = preferences.getBoolean(GRAPHICS_3D_KEY, false)
+        selectGraphicsType()
     }
 
     private fun restorePreferences() {
@@ -84,14 +180,28 @@ class SettingsActivity : AppCompatActivity() {
         val pieceScale = preferences.getFloat(PIECE_SCALE_KEY, 1.0f)
 
         if (cameraRotation.isNotBlank()) {
-            glView.getRenderer().setCameraRotation(Vector3.fromString(cameraRotation))
+            glView3D.getRenderer().setCameraRotation(Vector3.fromString(cameraRotation))
         }
 
-        glView.getRenderer().setFoV(fov)
-        fovSeekbar.progress = (fov - 20) / 5
+        glView3D.getRenderer().setFoV(fov)
+//        fovSeekbar.progress = (fov - 20) / 5
 
-        glView.getRenderer().setPieceScale(pieceScale)
-        pieceScaleSeekbar.progress = (pieceScale * 100).roundToInt()
+        glView3D.getRenderer().setPieceScale(pieceScale)
+//        pieceScaleSeekbar.progress = (pieceScale * 100).roundToInt()
+
+    }
+
+    private fun selectGraphicsType() {
+        if (is3D) {
+            card2D.setCardBackgroundColor(Color.argb(0.0f, 0.25f, 0.25f, 0.25f))
+            card3D.setCardBackgroundColor(Color.rgb(235, 186, 145))
+            graphicsSettingsButton.visibility = View.VISIBLE
+        } else {
+            card2D.setCardBackgroundColor(Color.rgb(235, 186, 145))
+            card3D.setCardBackgroundColor(Color.argb(0.0f, 0.25f, 0.25f, 0.25f))
+            graphicsSettingsButton.visibility = View.GONE
+        }
+        savePreference(GRAPHICS_3D_KEY, is3D)
     }
 
     private fun savePreference(key: String, value: Vector3) {
@@ -102,15 +212,16 @@ class SettingsActivity : AppCompatActivity() {
             apply()
         }
     }
-
-    private fun savePreference(key: String, value: Int) {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
-
-        with(preferences.edit()) {
-            putInt(key, value)
-            apply()
-        }
-    }
+//
+//    private fun savePreference(key: String, value: Int) {
+//        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+//
+//        with(preferences.edit()) {
+//            putInt(key, value)
+//            apply()
+//        }
+//    }
+//
 
     private fun savePreference(key: String, value: Float) {
         val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
@@ -121,8 +232,25 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun savePreference(key: String, value: Boolean) {
+        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+
+        with(preferences.edit()) {
+            putBoolean(key, value)
+            apply()
+        }
+    }
+
+    private fun hideActivityDecorations() {
+        val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
+//        windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+//        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+
+        supportActionBar?.hide()
+    }
+
     companion object {
-        internal const val CAMERA_POSITION_KEY = "camera_position"
+        internal const val GRAPHICS_3D_KEY = "3D_graphics_enabled"
         internal const val CAMERA_ROTATION_KEY = "camera_rotation"
         internal const val CAMERA_ZOOM_KEY = "camera_zoom"
         internal const val FOV_KEY = "camera_fov"

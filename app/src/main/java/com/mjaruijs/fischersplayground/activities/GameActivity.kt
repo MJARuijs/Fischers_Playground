@@ -36,7 +36,6 @@ import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.userinterface.UIButton
-import kotlin.math.roundToInt
 
 class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightObserver {
 
@@ -82,16 +81,11 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private lateinit var userName: String
     private lateinit var gameId: String
     private lateinit var opponentName: String
-//    private lateinit var opponentId: String
-
-    //    private lateinit var board: Board
     private lateinit var game: Game
 
     private lateinit var glView: SurfaceView
 
     private lateinit var keyboardHeightProvider: KeyboardHeightProvider
-
-//    private lateinit var chatAdapter: ChatAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -187,26 +181,17 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private fun restorePreferences() {
         val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
 
-        val cameraPosition = preferences.getString(SettingsActivity.CAMERA_POSITION_KEY, "") ?: ""
         val cameraRotation = preferences.getString(SettingsActivity.CAMERA_ROTATION_KEY, "") ?: ""
         val fov = preferences.getInt(SettingsActivity.FOV_KEY, 45)
         val pieceScale = preferences.getFloat(SettingsActivity.PIECE_SCALE_KEY, 1.0f)
 
-        if (cameraPosition.isNotBlank()) {
-//            glView.getRenderer().setCameraPosition(Vector3.fromString(cameraPosition))
-        }
-//
         if (cameraRotation.isNotBlank()) {
             glView.getRenderer().setCameraRotation(Vector3.fromString(cameraRotation))
         }
-//
-        glView.getRenderer().setFoV(fov)
-//        fovSeekbar.progress = (fov - 20) / 5
-//
-        glView.getRenderer().setPieceScale(pieceScale)
-//        pieceScaleSeekbar.progress = (pieceScale * 100).roundToInt()
-    }
 
+        glView.getRenderer().setFoV(fov)
+        glView.getRenderer().setPieceScale(pieceScale)
+    }
 
     private fun onPawnUpgraded(square: Vector2, pieceType: PieceType, team: Team) {
         game.upgradePawn(square, pieceType, team)
@@ -531,10 +516,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     override fun onKeyboardHeightChanged(height: Int) {
-        println("KEYBOARD HEIGHT: $height")
-//        if (height > 0) {
         getChatFragment().translate(height)
-//        }
     }
 
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
@@ -567,7 +549,6 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private fun initUIButtons() {
         val textOffset = 70
         val textColor = Color.WHITE
-//        val buttonBackgroundColor = Color.rgb(235, 186, 145)
         val buttonBackgroundColor = Color.DKGRAY
         val resignButton = findViewById<UIButton>(R.id.resign_button)
         resignButton
@@ -643,8 +624,6 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
                     it.disable()
                 }
                 if (buttonStates.second) {
-//                    board.clearPossibleMoves()
-//                    board.deselectSquare()
                     game.clearBoardData()
                     findViewById<UIButton>(R.id.forward_button)?.enable()
                 }
@@ -674,7 +653,6 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
                 }
                 glView.requestRender()
             }
-
     }
 
     private fun initChatBox() {

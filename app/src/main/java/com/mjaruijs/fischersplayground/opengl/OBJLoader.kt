@@ -16,10 +16,16 @@ object OBJLoader {
             return cache[location]!!
         }
 
-        return if (currentlyLoading.contains(location)) {
-            while (currentlyLoading[location]!!.get()) {
-                Thread.sleep(1)
+        return if (currentlyLoading.containsKey(location)) {
+            println("CONTAINS $location")
+            try {
+                while (currentlyLoading[location]!!.get()) {
+                    Thread.sleep(1)
+                }
+            } catch (e: NullPointerException) {
+
             }
+
             currentlyLoading.remove(location)
             cache[location]!!
         } else {
@@ -32,13 +38,18 @@ object OBJLoader {
     }
 
     fun preload(context: Context, location: Int) {
+        if (cache.containsKey(location)) {
+            return
+        }
+
         println("PRELOADING: $location")
         currentlyLoading[location] = AtomicBoolean(true)
 
         val mesh = load(context, location)
         cache[location] = mesh
 
-        currentlyLoading[location]!!.set(false)
+        currentlyLoading[location]?.set(false)
+        println("DONE LOADING $location")
     }
 
     private fun load(context: Context, fileLocation: Int): MeshData {

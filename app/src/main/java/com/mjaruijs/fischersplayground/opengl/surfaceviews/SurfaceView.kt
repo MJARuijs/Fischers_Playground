@@ -1,9 +1,11 @@
 package com.mjaruijs.fischersplayground.opengl.surfaceviews
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.MotionEvent
+import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.GRAPHICS_3D_KEY
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
 import com.mjaruijs.fischersplayground.util.FixedRateThread
@@ -14,14 +16,17 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
     private val fixedRateThread = FixedRateThread(tickRate, ::update)
 
-    private lateinit var renderer: OpenGLRenderer
+    private var renderer: OpenGLRenderer
     private lateinit var onSurfaceCreated: () -> Unit
     private lateinit var onClick: (Float, Float) -> Unit
 
     init {
         setEGLContextClientVersion(3)
 
-        renderer = OpenGLRenderer(context, ::onContextCreated, true)
+        val preferences = context.getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val is3D = preferences.getBoolean(GRAPHICS_3D_KEY, false)
+
+        renderer = OpenGLRenderer(context, ::onContextCreated, is3D)
         setRenderer(renderer)
 
         renderMode = RENDERMODE_WHEN_DIRTY
@@ -30,6 +35,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     fun init(onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean) {
         this.onSurfaceCreated = onSurfaceCreated
         this.onClick = onClick
+
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
         renderer.isPlayerWhite = isPlayerWhite
     }
