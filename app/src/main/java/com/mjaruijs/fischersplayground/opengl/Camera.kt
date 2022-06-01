@@ -33,14 +33,34 @@ class Camera(
         get() = Matrix4().rotateY(-rotation.y).rotateX(-rotation.x)
 
     fun zoom(distance: Float) {
+        println("RESULTING ZOOM: $distance")
         zoom = distance
 
         if (zoom < 1.0f) {
             zoom = 1.0f
         }
 
-        if (zoom > 10.0f) {
-            zoom = 10.0f
+        if (zoom > MAX_ZOOM) {
+            zoom = MAX_ZOOM
         }
+        println("---End Zoom: $zoom\n")
+    }
+
+    fun incrementZoom(distance: Float) {
+        println("INCREMENTED ZOOM BY: $distance")
+        zoom += distance
+
+        if (zoom < 1.0f) {
+            zoom = 1.0f
+        }
+
+        if (zoom > MAX_ZOOM) {
+            zoom = MAX_ZOOM
+        }
+        println("---End Zoom: $zoom\n")
+    }
+
+    companion object {
+        const val MAX_ZOOM = 30f
     }
 }

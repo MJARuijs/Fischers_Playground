@@ -43,6 +43,8 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     var onPixelsRead: (ByteBuffer) -> Unit = {}
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
 
+    private var gl: GL10? = null
+
     companion object {
         private const val DEFAULT_ZOOM = 4.0f
     }
@@ -118,12 +120,20 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
+        this.gl = p0
+        println("RESIZED: $width $height")
         glViewport(0, 0, width, height)
         displayWidth = width
         displayHeight = height
         aspectRatio = width.toFloat() / height.toFloat()
 
         onDisplaySizeChanged(displayWidth, displayHeight)
+    }
+
+    fun changeViewport(width: Int, height: Int) {
+//        glViewport(0, 0, width, height)
+//        onSurfaceChanged(gl!!, width, height)
+
     }
 
     override fun onDrawFrame(p0: GL10?) {
@@ -184,6 +194,11 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     fun zoomCamera(distance: Float) {
         camera.zoom(distance)
+        updateBoardCamera()
+    }
+
+    fun incrementZoom(distance: Float) {
+        camera.incrementZoom(distance)
         updateBoardCamera()
     }
 

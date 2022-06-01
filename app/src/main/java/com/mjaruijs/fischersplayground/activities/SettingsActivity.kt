@@ -1,17 +1,19 @@
 package com.mjaruijs.fischersplayground.activities
 
+import android.animation.ObjectAnimator
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Point
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.transition.ChangeBounds
 import android.transition.TransitionManager
 import android.view.View
 import android.widget.ImageView
+import android.widget.SeekBar
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
-import androidx.core.transition.doOnEnd
+import androidx.core.animation.doOnEnd
 import androidx.core.view.ViewCompat
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
@@ -20,13 +22,14 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToInt
 
-@Suppress("SameParameterValue")
+@Suppress("SameParameterValue", "ControlFlowWithEmptyBody")
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var game: SinglePlayerGame
-//    private lateinit var fovSeekbar: SeekBar
-//    private lateinit var pieceScaleSeekbar: SeekBar
+    private lateinit var fovSeekbar: SeekBar
+    private lateinit var pieceScaleSeekbar: SeekBar
 
     private lateinit var glView3D: GameSettingsSurface
     private lateinit var previewImage3D: ImageView
@@ -36,14 +39,23 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var graphicsSettingsButton: ImageView
     private lateinit var settingsLayout: ConstraintLayout
+    private lateinit var graphicsSettingsLayout: ConstraintLayout
 
-    private val defaultConstraints = ConstraintSet()
-    private val expandedConstraints = ConstraintSet()
+    private val defaultSettingsConstraints = ConstraintSet()
+    private val expandedSettingsConstraints = ConstraintSet()
+
+    private val defaultGraphicsConstraints = ConstraintSet()
+    private val expandedGraphicsConstraints = ConstraintSet()
 
     private var is3D = false
     private var expanded = false
 
     private var locked = AtomicBoolean(false)
+
+    private var initialized = false
+
+    private var initialX = 0f
+    private var initialY = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,14 +65,23 @@ class SettingsActivity : AppCompatActivity() {
         hideActivityDecorations()
 
         settingsLayout = findViewById(R.id.settings_layout)
+        graphicsSettingsLayout = findViewById(R.id.graphics_3d_layout)
 
-        defaultConstraints.clone(settingsLayout)
-        expandedConstraints.clone(this, R.layout.activity_settings_alt)
+        defaultSettingsConstraints.clone(settingsLayout)
+        expandedSettingsConstraints.clone(this, R.layout.activity_settings_alt)
+
+        defaultGraphicsConstraints.clone(graphicsSettingsLayout)
+        expandedGraphicsConstraints.clone(this, R.layout.graphics_settings_alt)
 
         graphicsSettingsButton = findViewById(R.id.graphics_settings_button)
 
         card2D = findViewById(R.id.graphics_2d_card)
         card3D = findViewById(R.id.graphics_3d_card)
+
+        fovSeekbar = findViewById(R.id.fov_seekbar)
+        pieceScaleSeekbar = findViewById(R.id.piece_scale_seekbar)
+
+        setupSeekbars()
 
         card2D.setOnClickListener {
             is3D = false
@@ -81,44 +102,56 @@ class SettingsActivity : AppCompatActivity() {
         restore3DPreference()
     }
 
+    override fun onBackPressed() {
+        if (expanded) {
+            collapse()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun test() {
+        graphicsSettingsButton.setOnClickListener {
+
+            if (!initialized) {
+                initialX = card3D.x
+                initialY = card3D.y
+
+                initialized = true
+            }
+
+            Thread {
+                if (expanded) {
+                    locked.set(true)
+
+                    glView3D.getRenderer().requestScreenPixels(::onPixelsReceived)
+                    glView3D.requestRender()
+
+                    while (locked.get()) {
+
+                    }
+                }
+
+                showPreview()
+
+                runOnUiThread {
+                    if (expanded) {
+                        collapse()
+                    } else {
+                        expand()
+                    }
+
+                    expanded = !expanded
+                }
+            }.start()
+        }
+    }
+
     private fun onDrawFirstFrame() {
         glView3D.getRenderer().onDraw = {}
 
         runOnUiThread {
-            graphicsSettingsButton.setOnClickListener {
-
-                Thread {
-                    if (expanded) {
-
-                        locked.set(true)
-
-                        glView3D.getRenderer().requestScreenPixels(::onPixelsReceived)
-                        glView3D.requestRender()
-
-                        while (locked.get()) { }
-                    }
-
-                    showPreview()
-
-                    val transition = ChangeBounds()
-                    val constraint = if (expanded) defaultConstraints else expandedConstraints
-
-                    transition.doOnEnd {
-                        expanded = !expanded
-
-                        if (expanded) {
-                            showGLView()
-                        }
-                    }
-
-                    runOnUiThread {
-                        constraint.applyTo(settingsLayout)
-                        TransitionManager.beginDelayedTransition(settingsLayout, transition)
-                    }
-
-                }.start()
-
-            }
+            test()
         }
     }
 
@@ -133,6 +166,7 @@ class SettingsActivity : AppCompatActivity() {
         runOnUiThread {
             glView3D.isActive = true
             previewImage3D.visibility = View.INVISIBLE
+//            graphicsSettingsButton.visibility = View.INVISIBLE
         }
     }
 
@@ -147,6 +181,133 @@ class SettingsActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.graphics_3d_preview_image).setImageBitmap(bitmap)
             locked.set(false)
         }
+    }
+
+    private fun expand() {
+        println("EXPANDING")
+        val currentWidth = card3D.width
+        val currentHeight = card3D.height
+
+        println(currentHeight)
+//        fovSeekbar.visibility = View.VISIBLE
+//        pieceScaleSeekbar.visibility = View.VISIBLE
+
+//        val transition = ChangeBounds()
+//        transition.duration = 250L
+
+        expandedGraphicsConstraints.applyTo(graphicsSettingsLayout)
+//        expandedSettingsConstraints.applyTo(settingsLayout)
+//        TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
+//        TransitionManager.beginDelayedTransition(settingsLayout)
+
+        val cardScaleXAnimator = ObjectAnimator.ofFloat(card3D, "scaleX", card3D.scaleX * 2.0f)
+        val cardScaleYAnimator = ObjectAnimator.ofFloat(card3D, "scaleY", card3D.scaleY * 2.0f)
+        val cardXAnimator = ObjectAnimator.ofFloat(card3D, "x", (getDisplayWidth() - currentWidth) / 2f)
+        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", (getDisplayWidth() - currentWidth) / 2f + (832 - 678) / 2)
+
+        val card2DScaleAnimator = ObjectAnimator.ofFloat(card2D, "scaleX", 0.0f)
+        val card2DAnimator = ObjectAnimator.ofFloat(card2D, "x", 0.0f)
+
+//        val fovScaleXAnimator = ObjectAnimator.ofFloat(fovSeekbar, "scaleX", 1.0f)
+//        val fovScaleYAnimator = ObjectAnimator.ofFloat(fovSeekbar, "scaleY", 1.0f)
+//
+//        val pieceScaleXAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "scaleX", 1.0f)
+//        val pieceScaleYAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "scaleY", 1.0f)
+//
+//        val pieceAlphaAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "alpha", 1f)
+//        val fovAlphaAnimator = ObjectAnimator.ofFloat(fovSeekbar, "alpha", 1f)
+
+        cardScaleXAnimator.duration = 250L
+        cardScaleYAnimator.duration = 250L
+        cardXAnimator.duration = 250L
+        cardYAnimator.duration = 250L
+
+        card2DScaleAnimator.duration = 250L
+        card2DAnimator.duration = 250L
+
+
+//        fovScaleXAnimator.duration = 250L
+//        fovScaleYAnimator.duration = 250L
+//        pieceScaleXAnimator.duration = 250L
+//        pieceScaleYAnimator.duration = 250L
+//
+//        pieceAlphaAnimator.duration = 250L
+//        fovAlphaAnimator.duration = 250L
+
+//        pieceYAnimator.duration = 250L
+
+        cardScaleXAnimator.start()
+        cardScaleYAnimator.start()
+        cardXAnimator.start()
+        cardYAnimator.start()
+
+//        card2DScaleAnimator.start()
+//        card2DAnimator.start()
+
+//        fovScaleXAnimator.start()
+//        fovScaleYAnimator.start()
+//        pieceScaleXAnimator.start()
+//        pieceScaleYAnimator.start()
+
+//        pieceAlphaAnimator.start()
+//        fovAlphaAnimator.start()
+//        pieceYAnimator.start()
+
+        graphicsSettingsButton.visibility = View.GONE
+
+        cardScaleXAnimator.doOnEnd {
+            println(card3D.height)
+            println(card3D.measuredHeight)
+
+            showGLView()
+        }
+    }
+
+    private fun collapse() {
+        println("COLLAPSING")
+
+        val cardScaleXAnimator = ObjectAnimator.ofFloat(card3D, "scaleX", 1.0f)
+        val cardScaleYAnimator = ObjectAnimator.ofFloat(card3D, "scaleY", 1.0f)
+        val cardXAnimator = ObjectAnimator.ofFloat(card3D, "x", initialX)
+        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", initialY)
+
+        val card2DScaleAnimator = ObjectAnimator.ofFloat(card2D, "scaleX", 1.0f)
+
+//        val fovScaleXAnimator = ObjectAnimator.ofFloat(fovSeekbar, "scaleX", 0.0f)
+//        val fovScaleYAnimator = ObjectAnimator.ofFloat(fovSeekbar, "scaleY", 0.0f)
+//
+//        val pieceScaleXAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "scaleX", 0.0f)
+//        val pieceScaleYAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "scaleY", 0.0f)
+
+        cardScaleXAnimator.duration = 250L
+        cardScaleYAnimator.duration = 250L
+        cardXAnimator.duration = 250L
+        cardYAnimator.duration = 250L
+        card2DScaleAnimator.duration = 250L
+
+//        fovScaleXAnimator.duration = 250L
+//        fovScaleYAnimator.duration = 250L
+//        pieceScaleXAnimator.duration = 250L
+//        pieceScaleYAnimator.duration = 250L
+
+        cardScaleXAnimator.start()
+        cardScaleYAnimator.start()
+        cardXAnimator.start()
+        cardYAnimator.start()
+        card2DScaleAnimator.start()
+
+        defaultGraphicsConstraints.applyTo(graphicsSettingsLayout)
+        defaultSettingsConstraints.applyTo(settingsLayout)
+        TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
+        TransitionManager.beginDelayedTransition(settingsLayout)
+
+//        fovScaleXAnimator.start()
+//        fovScaleYAnimator.start()
+//        pieceScaleXAnimator.start()
+//        pieceScaleYAnimator.start()
+
+//        fovSeekbar.visibility = View.GONE
+//        pieceScaleSeekbar.visibility = View.GONE
     }
 
     private fun onContextCreated() {
@@ -184,11 +345,10 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         glView3D.getRenderer().setFoV(fov)
-//        fovSeekbar.progress = (fov - 20) / 5
+        fovSeekbar.progress = (fov - FOV_OFFSET) / FOV_SCALE
 
         glView3D.getRenderer().setPieceScale(pieceScale)
-//        pieceScaleSeekbar.progress = (pieceScale * 100).roundToInt()
-
+        pieceScaleSeekbar.progress = (pieceScale * 100).roundToInt()
     }
 
     private fun selectGraphicsType() {
@@ -212,16 +372,15 @@ class SettingsActivity : AppCompatActivity() {
             apply()
         }
     }
-//
-//    private fun savePreference(key: String, value: Int) {
-//        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
-//
-//        with(preferences.edit()) {
-//            putInt(key, value)
-//            apply()
-//        }
-//    }
-//
+
+    private fun savePreference(key: String, value: Int) {
+        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+
+        with(preferences.edit()) {
+            putInt(key, value)
+            apply()
+        }
+    }
 
     private fun savePreference(key: String, value: Float) {
         val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
@@ -249,11 +408,52 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.hide()
     }
 
+    private fun setupSeekbars() {
+        fovSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val actualProgress = progress * FOV_SCALE + FOV_OFFSET
+                glView3D.getRenderer().setFoV(actualProgress)
+                glView3D.requestRender()
+                savePreference(FOV_KEY, actualProgress)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+            }
+        })
+
+        pieceScaleSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val actualProgress = progress.toFloat() / 100.0f
+                glView3D.getRenderer().setPieceScale(actualProgress)
+                glView3D.requestRender()
+                savePreference(PIECE_SCALE_KEY, actualProgress)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+            }
+        })
+    }
+
+    private fun getDisplayWidth(): Int {
+        val screenSize = Point()
+        windowManager.defaultDisplay.getSize(screenSize)
+        return screenSize.x
+    }
+
     companion object {
         internal const val GRAPHICS_3D_KEY = "3D_graphics_enabled"
         internal const val CAMERA_ROTATION_KEY = "camera_rotation"
         internal const val CAMERA_ZOOM_KEY = "camera_zoom"
         internal const val FOV_KEY = "camera_fov"
         internal const val PIECE_SCALE_KEY = "piece_scale"
+
+        private const val FOV_OFFSET = 10
+        private const val FOV_SCALE = 5
     }
 }

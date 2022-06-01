@@ -8,9 +8,11 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.CAMERA_ZOOM_KEY
 import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
 import com.mjaruijs.fischersplayground.util.FixedRateThread
+import kotlin.math.abs
 
 class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSurfaceView(context, attributeSet) {
 
@@ -66,18 +68,80 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
         }
     }
 
+//    private var pointer1X = -1f
+//    private var pointer1Y = -1f
+//    private var pointer2X = -1f
+//    private var pointer2Y = -1f
+
+    private var currentDistance = 0f
+
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event == null || !isActive) {
             return false
         }
 
-        if (event.pointerCount >= 2) {
+        if (event.action == MotionEvent.ACTION_MOVE && event.pointerCount == 2) {
             isZooming = true
-            return scaleGestureDetector.onTouchEvent(event)
+
+            val pointerId1 = event.getPointerId(0)
+            val pointerId2 = event.getPointerId(1)
+
+            val coords1 = MotionEvent.PointerCoords()
+            val coords2 = MotionEvent.PointerCoords()
+
+            try {
+                event.getPointerCoords(pointerId1, coords1)
+                event.getPointerCoords(pointerId2, coords2)
+
+                val pointer1Location = Vector2(coords1.x, coords1.y)
+                val pointer2Location = Vector2(coords2.x, coords2.y)
+
+                val absoluteDifference = (pointer1Location - pointer2Location).absolute()
+                val distance = absoluteDifference.length()
+
+                if (currentDistance == 0f) {
+                    currentDistance = distance
+                }
+
+                val difference = (distance - currentDistance)
+
+                if (difference == 0f) {
+                    return true
+                }
+                println("$difference $distance $currentDistance")
+
+                val scale = 50f
+
+                if (abs(difference) > 1f) {
+                    if (difference > 0) {
+                        renderer.incrementZoom(-difference / scale)
+                    } else if (difference < 0) {
+                        renderer.incrementZoom(-difference / scale)
+                    }
+
+                    currentDistance = distance
+                }
+
+
+//                renderer.zoomCamera(20.0f - difference)
+//                savePreference(CAMERA_ZOOM_KEY, 20.0f - difference)
+
+
+                requestRender()
+            } catch (e: IllegalArgumentException) {
+
+            }
+            return true
         }
+
+
+//        if (event.pointerCount >= 2) {
+////            return scaleGestureDetector.onTouchEvent(event)
+//        }
 
         if (isZooming && event.action == MotionEvent.ACTION_UP) {
             isZooming = false
+            currentDistance = 0f
         }
 
         if (isZooming) {
@@ -109,12 +173,9 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
     inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
 
-//        private var scaleFocusX = 0f
-//        private var scaleFocusY = 0f
         var scaleCoef = 1.0f
 
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
-
             if (detector == null) {
                 return false
             }
@@ -123,8 +184,9 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
             scaleCoef = scale
 
-            renderer.zoomCamera(10.0f - scaleCoef)
-            savePreference(CAMERA_ZOOM_KEY, 10.0f - scaleCoef)
+
+            renderer.zoomCamera(20.0f - scaleCoef)
+            savePreference(CAMERA_ZOOM_KEY, 20.0f - scaleCoef)
 
             requestRender()
 
@@ -134,17 +196,11 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             invalidate()
 
-//            scaleFocusX = detector.focusX
-//            scaleFocusY = detector.focusY
-
             return true
         }
 
         override fun onScaleEnd(detector: ScaleGestureDetector?) {
-//            scaleFocusX = 0f
-//            scaleFocusY = 0f
         }
-
     }
 
 }
