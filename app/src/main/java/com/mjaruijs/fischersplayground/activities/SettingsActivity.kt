@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.transition.TransitionManager
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.SeekBar
 import androidx.cardview.widget.CardView
@@ -57,6 +58,8 @@ class SettingsActivity : AppCompatActivity() {
     private var initialX = 0f
     private var initialY = 0f
 
+    private var maximumCardHeight = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
@@ -66,13 +69,6 @@ class SettingsActivity : AppCompatActivity() {
 
         settingsLayout = findViewById(R.id.settings_layout)
         graphicsSettingsLayout = findViewById(R.id.graphics_3d_layout)
-
-        defaultSettingsConstraints.clone(settingsLayout)
-        expandedSettingsConstraints.clone(this, R.layout.activity_settings_alt)
-
-        defaultGraphicsConstraints.clone(graphicsSettingsLayout)
-        expandedGraphicsConstraints.clone(this, R.layout.graphics_settings_alt)
-
         graphicsSettingsButton = findViewById(R.id.graphics_settings_button)
 
         card2D = findViewById(R.id.graphics_2d_card)
@@ -82,6 +78,7 @@ class SettingsActivity : AppCompatActivity() {
         pieceScaleSeekbar = findViewById(R.id.piece_scale_seekbar)
 
         setupSeekbars()
+
 
         card2D.setOnClickListener {
             is3D = false
@@ -98,6 +95,27 @@ class SettingsActivity : AppCompatActivity() {
         glView3D = findViewById(R.id.preview_3d)
         glView3D.init(::onContextCreated, ::onCameraRotated, ::savePreference)
         glView3D.getRenderer().set3D(true)
+
+        defaultSettingsConstraints.clone(this, R.layout.activity_settings)
+        expandedSettingsConstraints.clone(this, R.layout.activity_settings_alt)
+
+        defaultGraphicsConstraints.clone(graphicsSettingsLayout)
+        expandedGraphicsConstraints.clone(this, R.layout.graphics_settings_alt)
+        expandedGraphicsConstraints.applyTo(graphicsSettingsLayout)
+        TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
+
+        window.decorView.post {
+            maximumCardHeight = card3D.height
+            println("MAX HEIGHT: $maximumCardHeight")
+            defaultGraphicsConstraints.applyTo(graphicsSettingsLayout)
+            TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
+        }
+
+
+//        findViewById<Button>(R.id.test_button).setOnClickListener {
+//            expandedGraphicsConstraints.applyTo(graphicsSettingsLayout)
+//            TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
+//        }
 
         restore3DPreference()
     }
@@ -135,11 +153,7 @@ class SettingsActivity : AppCompatActivity() {
                 showPreview()
 
                 runOnUiThread {
-                    if (expanded) {
-                        collapse()
-                    } else {
-                        expand()
-                    }
+                    if (expanded) collapse() else expand()
 
                     expanded = !expanded
                 }
@@ -189,71 +203,30 @@ class SettingsActivity : AppCompatActivity() {
         val currentHeight = card3D.height
 
         println(currentHeight)
-//        fovSeekbar.visibility = View.VISIBLE
-//        pieceScaleSeekbar.visibility = View.VISIBLE
-
-//        val transition = ChangeBounds()
-//        transition.duration = 250L
 
         expandedGraphicsConstraints.applyTo(graphicsSettingsLayout)
 //        expandedSettingsConstraints.applyTo(settingsLayout)
-//        TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
+        TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
 //        TransitionManager.beginDelayedTransition(settingsLayout)
 
         val cardScaleXAnimator = ObjectAnimator.ofFloat(card3D, "scaleX", card3D.scaleX * 2.0f)
         val cardScaleYAnimator = ObjectAnimator.ofFloat(card3D, "scaleY", card3D.scaleY * 2.0f)
         val cardXAnimator = ObjectAnimator.ofFloat(card3D, "x", (getDisplayWidth() - currentWidth) / 2f)
-        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", (getDisplayWidth() - currentWidth) / 2f + (832 - 678) / 2)
-
-        val card2DScaleAnimator = ObjectAnimator.ofFloat(card2D, "scaleX", 0.0f)
-        val card2DAnimator = ObjectAnimator.ofFloat(card2D, "x", 0.0f)
-
-//        val fovScaleXAnimator = ObjectAnimator.ofFloat(fovSeekbar, "scaleX", 1.0f)
-//        val fovScaleYAnimator = ObjectAnimator.ofFloat(fovSeekbar, "scaleY", 1.0f)
-//
-//        val pieceScaleXAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "scaleX", 1.0f)
-//        val pieceScaleYAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "scaleY", 1.0f)
-//
-//        val pieceAlphaAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "alpha", 1f)
-//        val fovAlphaAnimator = ObjectAnimator.ofFloat(fovSeekbar, "alpha", 1f)
+        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", (getDisplayWidth() - currentWidth) / 2f + (maximumCardHeight - currentHeight) / 2)
+//        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", 32f)
+//        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", (getDisplayWidth() - currentWidth) / 2f + (660 - 504) / 2)
 
         cardScaleXAnimator.duration = 250L
         cardScaleYAnimator.duration = 250L
         cardXAnimator.duration = 250L
         cardYAnimator.duration = 250L
 
-        card2DScaleAnimator.duration = 250L
-        card2DAnimator.duration = 250L
-
-
-//        fovScaleXAnimator.duration = 250L
-//        fovScaleYAnimator.duration = 250L
-//        pieceScaleXAnimator.duration = 250L
-//        pieceScaleYAnimator.duration = 250L
-//
-//        pieceAlphaAnimator.duration = 250L
-//        fovAlphaAnimator.duration = 250L
-
-//        pieceYAnimator.duration = 250L
-
         cardScaleXAnimator.start()
         cardScaleYAnimator.start()
         cardXAnimator.start()
         cardYAnimator.start()
 
-//        card2DScaleAnimator.start()
-//        card2DAnimator.start()
-
-//        fovScaleXAnimator.start()
-//        fovScaleYAnimator.start()
-//        pieceScaleXAnimator.start()
-//        pieceScaleYAnimator.start()
-
-//        pieceAlphaAnimator.start()
-//        fovAlphaAnimator.start()
-//        pieceYAnimator.start()
-
-        graphicsSettingsButton.visibility = View.GONE
+//        graphicsSettingsButton.visibility = View.GONE
 
         cardScaleXAnimator.doOnEnd {
             println(card3D.height)
@@ -273,22 +246,11 @@ class SettingsActivity : AppCompatActivity() {
 
         val card2DScaleAnimator = ObjectAnimator.ofFloat(card2D, "scaleX", 1.0f)
 
-//        val fovScaleXAnimator = ObjectAnimator.ofFloat(fovSeekbar, "scaleX", 0.0f)
-//        val fovScaleYAnimator = ObjectAnimator.ofFloat(fovSeekbar, "scaleY", 0.0f)
-//
-//        val pieceScaleXAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "scaleX", 0.0f)
-//        val pieceScaleYAnimator = ObjectAnimator.ofFloat(pieceScaleSeekbar, "scaleY", 0.0f)
-
         cardScaleXAnimator.duration = 250L
         cardScaleYAnimator.duration = 250L
         cardXAnimator.duration = 250L
         cardYAnimator.duration = 250L
         card2DScaleAnimator.duration = 250L
-
-//        fovScaleXAnimator.duration = 250L
-//        fovScaleYAnimator.duration = 250L
-//        pieceScaleXAnimator.duration = 250L
-//        pieceScaleYAnimator.duration = 250L
 
         cardScaleXAnimator.start()
         cardScaleYAnimator.start()
@@ -300,14 +262,6 @@ class SettingsActivity : AppCompatActivity() {
         defaultSettingsConstraints.applyTo(settingsLayout)
         TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
         TransitionManager.beginDelayedTransition(settingsLayout)
-
-//        fovScaleXAnimator.start()
-//        fovScaleYAnimator.start()
-//        pieceScaleXAnimator.start()
-//        pieceScaleYAnimator.start()
-
-//        fovSeekbar.visibility = View.GONE
-//        pieceScaleSeekbar.visibility = View.GONE
     }
 
     private fun onContextCreated() {
@@ -444,6 +398,12 @@ class SettingsActivity : AppCompatActivity() {
         val screenSize = Point()
         windowManager.defaultDisplay.getSize(screenSize)
         return screenSize.x
+    }
+
+    private fun getDisplayHeight(): Int {
+        val screenSize = Point()
+        windowManager.defaultDisplay.getSize(screenSize)
+        return screenSize.y
     }
 
     companion object {
