@@ -4,8 +4,6 @@ import android.content.Context
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.MotionEvent
-import android.view.ScaleGestureDetector
-import android.view.View
 import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.CAMERA_ZOOM_KEY
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
@@ -27,9 +25,6 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
     private var oldX = 0f
     private var oldY = 0f
-
-    private val scaleListener = ScaleListener()
-    private var scaleGestureDetector = ScaleGestureDetector(context, scaleListener)
 
     private var isZooming = false
     var isActive = false
@@ -108,24 +103,19 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
                 if (difference == 0f) {
                     return true
                 }
-//                println("$difference $distance $currentDistance")
 
                 val scale = 50f
 
                 if (abs(difference) > 1f) {
                     if (difference > 0) {
-                        renderer.incrementZoom(-difference / scale)
+                        renderer.incrementCameraZoom(-difference / scale)
                     } else if (difference < 0) {
-                        renderer.incrementZoom(-difference / scale)
+                        renderer.incrementCameraZoom(-difference / scale)
                     }
 
                     currentDistance = distance
+                    savePreference(CAMERA_ZOOM_KEY, renderer.getCameraZoom())
                 }
-
-
-//                renderer.zoomCamera(20.0f - difference)
-//                savePreference(CAMERA_ZOOM_KEY, 20.0f - difference)
-
 
                 requestRender()
             } catch (e: IllegalArgumentException) {
@@ -133,11 +123,6 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
             }
             return true
         }
-
-
-//        if (event.pointerCount >= 2) {
-////            return scaleGestureDetector.onTouchEvent(event)
-//        }
 
         if (isZooming && event.action == MotionEvent.ACTION_UP) {
             isZooming = false
@@ -169,38 +154,4 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 //        fixedRateThread.stop()
         renderer.destroy()
     }
-
-
-    inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-
-        var scaleCoef = 1.0f
-
-        override fun onScale(detector: ScaleGestureDetector?): Boolean {
-            if (detector == null) {
-                return false
-            }
-
-            val scale = detector.scaleFactor * scaleCoef
-
-            scaleCoef = scale
-
-
-            renderer.zoomCamera(20.0f - scaleCoef)
-            savePreference(CAMERA_ZOOM_KEY, 20.0f - scaleCoef)
-
-            requestRender()
-
-            return true
-        }
-
-        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-            invalidate()
-
-            return true
-        }
-
-        override fun onScaleEnd(detector: ScaleGestureDetector?) {
-        }
-    }
-
 }

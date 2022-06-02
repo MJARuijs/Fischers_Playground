@@ -10,7 +10,7 @@ class Camera(
     private var aspectRatio: Float = 1.0f,
     private var zNear: Float = 0.1f,
     private var zFar: Float = 1000.0f,
-    var zoom: Float = 4.0f,
+    private var zoom: Float = 4.0f,
     var rotation: Vector3 = Vector3()
 ) {
 
@@ -32,8 +32,9 @@ class Camera(
     val rotationMatrix: Matrix4
         get() = Matrix4().rotateY(-rotation.y).rotateX(-rotation.x)
 
-    fun zoom(distance: Float) {
-//        println("RESULTING ZOOM: $distance")
+    fun getZoom() = zoom
+
+    fun setZoom(distance: Float) {
         zoom = distance
 
         if (zoom < 1.0f) {
@@ -43,11 +44,9 @@ class Camera(
         if (zoom > MAX_ZOOM) {
             zoom = MAX_ZOOM
         }
-//        println("---End Zoom: $zoom\n")
     }
 
     fun incrementZoom(distance: Float) {
-//        println("INCREMENTED ZOOM BY: $distance")
         zoom += distance
 
         if (zoom < 1.0f) {
@@ -57,7 +56,6 @@ class Camera(
         if (zoom > MAX_ZOOM) {
             zoom = MAX_ZOOM
         }
-//        println("---End Zoom: $zoom\n")
     }
 
     companion object {

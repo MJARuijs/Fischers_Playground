@@ -61,7 +61,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         onContextCreated()
 
         val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
-        camera.zoom = preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM)
+        camera.setZoom(preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM))
     }
 
     fun set3D(is3D: Boolean) {
@@ -117,17 +117,12 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
+
         displayWidth = width
         displayHeight = height
         aspectRatio = width.toFloat() / height.toFloat()
 
         onDisplaySizeChanged(displayWidth, displayHeight)
-    }
-
-    fun changeViewport(width: Int, height: Int) {
-//        glViewport(0, 0, width, height)
-//        onSurfaceChanged(gl!!, width, height)
-
     }
 
     override fun onDrawFrame(p0: GL10?) {
@@ -186,20 +181,17 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         updateBoardCamera()
     }
 
-    fun zoomCamera(distance: Float) {
-        camera.zoom(distance)
+    fun setCameraZoom(distance: Float) {
+        camera.setZoom(distance)
         updateBoardCamera()
     }
 
-    fun incrementZoom(distance: Float) {
+    fun incrementCameraZoom(distance: Float) {
         camera.incrementZoom(distance)
         updateBoardCamera()
     }
 
-    fun requestScreenPixels(onPixelsRead: (ByteBuffer) -> Unit) {
-        this.onPixelsRead = onPixelsRead
-        pixelsRequested = true
-    }
+    fun getCameraZoom() = camera.getZoom()
 
     private fun saveBuffer(): ByteBuffer {
         val pixelData = ByteBuffer.allocateDirect(displayWidth * displayHeight * 4)

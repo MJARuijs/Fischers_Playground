@@ -3,4 +3,5 @@
     <dimen name="chat_padding">8dp</dimen>
     <dimen name="piece_button">60dp</dimen>
     <dimen name="piece_button_padding">4dp</dimen>
+    <dimen name="graphics_settings_text_size">20sp</dimen>
 </resources>
