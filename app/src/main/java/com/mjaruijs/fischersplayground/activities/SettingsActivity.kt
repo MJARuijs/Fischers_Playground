@@ -6,9 +6,11 @@ import android.graphics.Color
 import android.graphics.Point
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.transition.ChangeBounds
 import android.transition.TransitionManager
+import android.util.TypedValue
+import android.util.TypedValue.COMPLEX_UNIT_DIP
 import android.view.View
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.SeekBar
 import androidx.cardview.widget.CardView
@@ -16,6 +18,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.animation.doOnEnd
 import androidx.core.view.ViewCompat
+import androidx.core.view.marginTop
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
@@ -33,10 +36,11 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var pieceScaleSeekbar: SeekBar
 
     private lateinit var glView3D: GameSettingsSurface
-    private lateinit var previewImage3D: ImageView
+//    private lateinit var previewImage3D: ImageView
 
     private lateinit var card2D: CardView
     private lateinit var card3D: CardView
+    private lateinit var innerCard3D: CardView
 
     private lateinit var graphicsSettingsButton: ImageView
     private lateinit var settingsLayout: ConstraintLayout
@@ -60,9 +64,16 @@ class SettingsActivity : AppCompatActivity() {
 
     private var maximumCardHeight = 0
 
+    private var padding = 0f
+    private var scaledPadding = 0f
+    private var collapsedViewWidth = 0f
+    private var uiItemsOffset = 0f
+    private var viewXRatio = 1f
+    private var view3DYRatio = 1f
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
+        setContentView(R.layout.activity_settings_expanded)
         PieceTextures.init(this)
 
         hideActivityDecorations()
@@ -73,12 +84,12 @@ class SettingsActivity : AppCompatActivity() {
 
         card2D = findViewById(R.id.graphics_2d_card)
         card3D = findViewById(R.id.graphics_3d_card)
+        innerCard3D = findViewById(R.id.inner_card_3D)
 
         fovSeekbar = findViewById(R.id.fov_seekbar)
         pieceScaleSeekbar = findViewById(R.id.piece_scale_seekbar)
 
         setupSeekbars()
-
 
         card2D.setOnClickListener {
             is3D = false
@@ -90,7 +101,7 @@ class SettingsActivity : AppCompatActivity() {
             selectGraphicsType()
         }
 
-        previewImage3D = findViewById(R.id.graphics_3d_preview_image)
+//        previewImage3D = findViewById(R.id.graphics_3d_preview_image)
 
         glView3D = findViewById(R.id.preview_3d)
         glView3D.init(::onContextCreated, ::onCameraRotated, ::savePreference)
@@ -99,23 +110,37 @@ class SettingsActivity : AppCompatActivity() {
         defaultSettingsConstraints.clone(this, R.layout.activity_settings)
         expandedSettingsConstraints.clone(this, R.layout.activity_settings_alt)
 
-        defaultGraphicsConstraints.clone(graphicsSettingsLayout)
-        expandedGraphicsConstraints.clone(this, R.layout.graphics_settings_alt)
-        expandedGraphicsConstraints.applyTo(graphicsSettingsLayout)
-        TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
+        defaultGraphicsConstraints.clone(this, R.layout.graphics_settings)
+        expandedGraphicsConstraints.clone(this, R.layout.graphics_settings_expanded)
+
+        padding = dpToPx(8f)
+        val totalPadding = padding * 3
+        val displayWidth = getDisplayWidth().toFloat()
+        val remainingViewWidth = displayWidth - totalPadding
+
+        collapsedViewWidth = remainingViewWidth / 2f
+        viewXRatio = collapsedViewWidth / displayWidth
+        scaledPadding = padding / displayWidth
+
+        println("$totalPadding, $displayWidth, $remainingViewWidth, $collapsedViewWidth, $viewXRatio")
 
         window.decorView.post {
+
             maximumCardHeight = card3D.height
-            println("MAX HEIGHT: $maximumCardHeight")
+
+            val displayHeight = getDisplayHeight().toFloat()
+            val expandedViewHeight = card3D.height
+            view3DYRatio = expandedViewHeight / displayHeight
+
+            uiItemsOffset = (maximumCardHeight - displayWidth) / displayWidth
+            println("MAX HEIGHT: $maximumCardHeight $uiItemsOffset $view3DYRatio ${card3D.y}")
+
             defaultGraphicsConstraints.applyTo(graphicsSettingsLayout)
             TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
+
+            collapse2DView()
+            collapse3DView()
         }
-
-
-//        findViewById<Button>(R.id.test_button).setOnClickListener {
-//            expandedGraphicsConstraints.applyTo(graphicsSettingsLayout)
-//            TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
-//        }
 
         restore3DPreference()
     }
@@ -171,7 +196,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showPreview() {
         runOnUiThread {
-            previewImage3D.visibility = View.VISIBLE
+//            previewImage3D.visibility = View.VISIBLE
             glView3D.isActive = false
         }
     }
@@ -179,8 +204,8 @@ class SettingsActivity : AppCompatActivity() {
     private fun showGLView() {
         runOnUiThread {
             glView3D.isActive = true
-            previewImage3D.visibility = View.INVISIBLE
-//            graphicsSettingsButton.visibility = View.INVISIBLE
+//            previewImage3D.visibility = View.INVISIBLE
+            graphicsSettingsButton.visibility = View.VISIBLE
         }
     }
 
@@ -192,9 +217,45 @@ class SettingsActivity : AppCompatActivity() {
         bitmap.copyPixelsFromBuffer(pixelData)
 
         runOnUiThread {
-            findViewById<ImageView>(R.id.graphics_3d_preview_image).setImageBitmap(bitmap)
+//            findViewById<ImageView>(R.id.graphics_3d_preview_image).setImageBitmap(bitmap)
             locked.set(false)
         }
+    }
+
+    private fun collapse2DView() {
+//        card3D.visibility = View.INVISIBLE
+
+//        println("CARD2D width: ${card2D.width / 2} ${card2D.x} ${card2D.x + card2D.width}")
+
+        card2D.scaleX = viewXRatio
+        card2D.scaleY = viewXRatio
+//        card2D.x -= card2D.width / 4
+//        card2D.y -= card2D.width / 4
+//        card2D.y -= card2D.width / 4
+        card2D.x = -card2D.width / 4f + padding / 4
+        card2D.y = -card2D.width / 4f + padding / 4
+//        card2D.y = 0f
+//        println("CARD2D width: ${card2D.width * viewXRatio} ${card2D.x} [${card2D.x - card2D.width / 4}, ${card2D.x + card2D.width / 4}] {${card2D.translationX}, ${card2D.right}}")
+        println("Card2D Height: ${card2D.y} ")
+    }
+
+    private fun collapse3DView() {
+//        println("CARD3D width: ${card3D.width / 2} ${card3D.x} ${card3D.x + card3D.width}")
+        val transition = ChangeBounds()
+        transition.duration = 0
+        defaultGraphicsConstraints.applyTo(graphicsSettingsLayout)
+        TransitionManager.beginDelayedTransition(graphicsSettingsLayout, transition)
+
+        card3D.scaleX = viewXRatio
+        card3D.scaleY = viewXRatio
+//        graphicsSettingsButton.scaleX = 2f
+//        graphicsSettingsButton.scaleY = 2f
+
+        card3D.x = card3D.width / 4f - padding / 4
+        card3D.y = -card3D.width / 4f + padding / 4
+
+//        println("CARD3D width: ${card3D.width / 2} ${card3D.x}  [${card3D.x - card3D.width / 4}, ${card3D.x + card3D.width / 4}] {${card3D.translationX}, ${card3D.right}}")
+
     }
 
     private fun expand() {
@@ -202,29 +263,47 @@ class SettingsActivity : AppCompatActivity() {
         val currentWidth = card3D.width
         val currentHeight = card3D.height
 
-        println(currentHeight)
+//        println(currentHeight)
 
-        expandedGraphicsConstraints.applyTo(graphicsSettingsLayout)
-//        expandedSettingsConstraints.applyTo(settingsLayout)
-        TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
-//        TransitionManager.beginDelayedTransition(settingsLayout)
+        val transition = ChangeBounds()
+        transition.duration = 250L
 
-        val cardScaleXAnimator = ObjectAnimator.ofFloat(card3D, "scaleX", card3D.scaleX * 2.0f)
-        val cardScaleYAnimator = ObjectAnimator.ofFloat(card3D, "scaleY", card3D.scaleY * 2.0f)
-        val cardXAnimator = ObjectAnimator.ofFloat(card3D, "x", (getDisplayWidth() - currentWidth) / 2f)
-        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", (getDisplayWidth() - currentWidth) / 2f + (maximumCardHeight - currentHeight) / 2)
+
+//        card3D.scaleX = viewXRatio * 2.0f + scaledPadding
+//        card3D.scaleY = viewXRatio * 2.0f + scaledPadding
+//
+//        card3D.x = 0f
+//        card3D.y = 0.0f
+
+//        val marge = findViewById<CardView>(R.id.inner_card_3D).paddingTop
+//        println("RADIUS: ${card3D.radius} ${card2D.radius} ${inn}")
+
+//        findViewById<CardView>(R.id.inner_card_3D).setContentPadding(marge, marge, marge, marge)
+//        card3D.radius *= viewXRatio
+        val cardScaleXAnimator = ObjectAnimator.ofFloat(card3D, "scaleX", viewXRatio * 2.0f + scaledPadding)
+        val cardScaleYAnimator = ObjectAnimator.ofFloat(card3D, "scaleY", viewXRatio * 2.0f + scaledPadding)
+        val cardXAnimator = ObjectAnimator.ofFloat(card3D, "x", 0f)
+        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", 0f)
+
 //        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", 32f)
 //        val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", (getDisplayWidth() - currentWidth) / 2f + (660 - 504) / 2)
+
+        val radiusAnimator = ObjectAnimator.ofFloat(card3D, "radius", card3D.radius * viewXRatio)
+        val innerRadiusAnimator = ObjectAnimator.ofFloat(innerCard3D, "radius", innerCard3D.radius * viewXRatio)
 
         cardScaleXAnimator.duration = 250L
         cardScaleYAnimator.duration = 250L
         cardXAnimator.duration = 250L
         cardYAnimator.duration = 250L
+        radiusAnimator.duration = 250L
+        innerRadiusAnimator.duration = 250L
 
         cardScaleXAnimator.start()
         cardScaleYAnimator.start()
         cardXAnimator.start()
         cardYAnimator.start()
+        radiusAnimator.start()
+        innerRadiusAnimator.start()
 
 //        graphicsSettingsButton.visibility = View.GONE
 
@@ -232,36 +311,53 @@ class SettingsActivity : AppCompatActivity() {
             println(card3D.height)
             println(card3D.measuredHeight)
 
-            showGLView()
+            expandedGraphicsConstraints.applyTo(graphicsSettingsLayout)
         }
+//        TransitionManager.beginDelayedTransition(graphicsSettingsLayout, transition)
+        showGLView()
     }
 
     private fun collapse() {
         println("COLLAPSING")
 
-        val cardScaleXAnimator = ObjectAnimator.ofFloat(card3D, "scaleX", 1.0f)
-        val cardScaleYAnimator = ObjectAnimator.ofFloat(card3D, "scaleY", 1.0f)
+        val cardScaleXAnimator = ObjectAnimator.ofFloat(card3D, "scaleX", viewXRatio)
+        val cardScaleYAnimator = ObjectAnimator.ofFloat(card3D, "scaleY", viewXRatio)
         val cardXAnimator = ObjectAnimator.ofFloat(card3D, "x", initialX)
         val cardYAnimator = ObjectAnimator.ofFloat(card3D, "y", initialY)
+        val radiusAnimator = ObjectAnimator.ofFloat(card3D, "radius", card3D.radius / viewXRatio)
+        val innerRadiusAnimator = ObjectAnimator.ofFloat(innerCard3D, "radius", innerCard3D.radius / viewXRatio)
 
-        val card2DScaleAnimator = ObjectAnimator.ofFloat(card2D, "scaleX", 1.0f)
+//        val card2DScaleAnimator = ObjectAnimator.ofFloat(card2D, "scaleX", 1.0f)
 
         cardScaleXAnimator.duration = 250L
         cardScaleYAnimator.duration = 250L
         cardXAnimator.duration = 250L
         cardYAnimator.duration = 250L
-        card2DScaleAnimator.duration = 250L
+//        card2DScaleAnimator.duration = 250L
+        radiusAnimator.duration = 250L
+        innerRadiusAnimator.duration = 250L
+
+//        card3D.scaleX = viewXRatio
+//        card3D.scaleY = viewXRatio
+//        card3D.x = initialX
+//        card3D.y = initialY
 
         cardScaleXAnimator.start()
         cardScaleYAnimator.start()
         cardXAnimator.start()
         cardYAnimator.start()
-        card2DScaleAnimator.start()
+        radiusAnimator.start()
+        innerRadiusAnimator.start()
+
+//        card2DScaleAnimator.start()
+
+        val transition = ChangeBounds()
+        transition.duration = 250L
 
         defaultGraphicsConstraints.applyTo(graphicsSettingsLayout)
-        defaultSettingsConstraints.applyTo(settingsLayout)
-        TransitionManager.beginDelayedTransition(graphicsSettingsLayout)
-        TransitionManager.beginDelayedTransition(settingsLayout)
+//        defaultSettingsConstraints.applyTo(settingsLayout)
+        TransitionManager.beginDelayedTransition(graphicsSettingsLayout, transition)
+//        TransitionManager.beginDelayedTransition(settingsLayout)
     }
 
     private fun onContextCreated() {
@@ -307,14 +403,16 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun selectGraphicsType() {
         if (is3D) {
-            card2D.setCardBackgroundColor(Color.argb(0.0f, 0.25f, 0.25f, 0.25f))
+            card2D.setCardBackgroundColor(Color.argb(1.0f, 0.25f, 0.25f, 0.25f))
             card3D.setCardBackgroundColor(Color.rgb(235, 186, 145))
             graphicsSettingsButton.visibility = View.VISIBLE
         } else {
             card2D.setCardBackgroundColor(Color.rgb(235, 186, 145))
-            card3D.setCardBackgroundColor(Color.argb(0.0f, 0.25f, 0.25f, 0.25f))
+            card3D.setCardBackgroundColor(Color.argb(1.0f, 0.25f, 0.25f, 0.25f))
             graphicsSettingsButton.visibility = View.GONE
         }
+//        card2D.setCardBackgroundColor(Color.argb(1.0f, 0.25f, 0.25f, 0.85f))
+//        card3D.setCardBackgroundColor(Color.argb(1.0f, 0.85f, 0.25f, 0.25f))
         savePreference(GRAPHICS_3D_KEY, is3D)
     }
 
@@ -404,6 +502,10 @@ class SettingsActivity : AppCompatActivity() {
         val screenSize = Point()
         windowManager.defaultDisplay.getSize(screenSize)
         return screenSize.y
+    }
+
+    private fun dpToPx(dp: Float): Float {
+        return TypedValue.applyDimension(COMPLEX_UNIT_DIP, dp, resources.displayMetrics)
     }
 
     companion object {

@@ -33,8 +33,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     var displayHeight = 0
         private set
 
-    private var initialized = false
-
     var isPlayerWhite = true
 
     private var pixelsRequested = false
@@ -43,14 +41,12 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     var onPixelsRead: (ByteBuffer) -> Unit = {}
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
 
-    private var gl: GL10? = null
-
     companion object {
         private const val DEFAULT_ZOOM = 4.0f
     }
 
     override fun onSurfaceCreated(p0: GL10?, config: EGLConfig?) {
-        glClearColor(0.75f, 0.25f, 0.25f, 1f)
+        glClearColor(0.25f, 0.25f, 0.25f, 1f)
         glEnable(GL_BLEND)
         setOpenGLSettings()
 
@@ -63,7 +59,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         boardRenderer = BoardRenderer(context)
 
         onContextCreated()
-        initialized = true
 
         val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
         camera.zoom = preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM)
@@ -104,9 +99,9 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         return if (this::game.isInitialized) {
 
             if (is3D) {
-//                Thread {
+                Thread {
 //                    gameRenderer3D.startAnimations(game)
-//                }.start()
+                }.start()
 //                gameRenderer3D.update(delta)
                 false
             } else {
@@ -121,8 +116,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
-        this.gl = p0
-        println("RESIZED: $width $height")
         glViewport(0, 0, width, height)
         displayWidth = width
         displayHeight = height

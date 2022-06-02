@@ -33,7 +33,7 @@ class Camera(
         get() = Matrix4().rotateY(-rotation.y).rotateX(-rotation.x)
 
     fun zoom(distance: Float) {
-        println("RESULTING ZOOM: $distance")
+//        println("RESULTING ZOOM: $distance")
         zoom = distance
 
         if (zoom < 1.0f) {
@@ -43,11 +43,11 @@ class Camera(
         if (zoom > MAX_ZOOM) {
             zoom = MAX_ZOOM
         }
-        println("---End Zoom: $zoom\n")
+//        println("---End Zoom: $zoom\n")
     }
 
     fun incrementZoom(distance: Float) {
-        println("INCREMENTED ZOOM BY: $distance")
+//        println("INCREMENTED ZOOM BY: $distance")
         zoom += distance
 
         if (zoom < 1.0f) {
@@ -57,7 +57,7 @@ class Camera(
         if (zoom > MAX_ZOOM) {
             zoom = MAX_ZOOM
         }
-        println("---End Zoom: $zoom\n")
+//        println("---End Zoom: $zoom\n")
     }
 
     companion object {

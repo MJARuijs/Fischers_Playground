@@ -108,7 +108,7 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
                 if (difference == 0f) {
                     return true
                 }
-                println("$difference $distance $currentDistance")
+//                println("$difference $distance $currentDistance")
 
                 val scale = 50f
 
