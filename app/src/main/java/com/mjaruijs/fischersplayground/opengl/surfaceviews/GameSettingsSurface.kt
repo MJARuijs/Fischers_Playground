@@ -63,11 +63,6 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
         }
     }
 
-//    private var pointer1X = -1f
-//    private var pointer1Y = -1f
-//    private var pointer2X = -1f
-//    private var pointer2Y = -1f
-
     private var currentDistance = 0f
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {

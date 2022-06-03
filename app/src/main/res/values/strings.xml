@@ -2,4 +2,7 @@
     <string name="app_name">Fischer\'s Playground</string>
     <string name="welcome">Welcome</string>
     <string name="search_players">Search players..</string>
+    <string name="fullscreen">Fullscreen</string>
+    <string name="field_of_view">Field of View</string>
+    <string name="pieces_size">Pieces size</string>
 </resources>

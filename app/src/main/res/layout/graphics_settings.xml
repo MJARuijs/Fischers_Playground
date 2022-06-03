@@ -47,15 +47,14 @@
         android:layout_height="wrap_content"
         android:foreground="@drawable/close_icon"
         android:foregroundTint="@color/accent_color"
-        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/close_icon" />
 
     <ImageView
         android:id="@+id/graphics_settings_button"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:foreground="@drawable/settings_outline_icon"
         android:foregroundTint="#EBBA91"
         app:layout_constraintBottom_toBottomOf="@+id/preview_3d"

@@ -35,6 +35,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var card2D: CardView
     private lateinit var card3D: CardView
     private lateinit var innerCard3D: CardView
+    private lateinit var fullScreenCard: CardView
 
     private lateinit var collapseCardButton: ImageView
     private lateinit var graphicsSettingsButton: ImageView
@@ -56,6 +57,7 @@ class SettingsActivity : AppCompatActivity() {
     private var scaledPadding = 0f
     private var collapsedViewWidth = 0f
     private var viewXRatio = 1f
+    private var fullScreenToggleY = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +74,7 @@ class SettingsActivity : AppCompatActivity() {
         card2D = findViewById(R.id.graphics_2d_card)
         card3D = findViewById(R.id.graphics_3d_card)
         innerCard3D = findViewById(R.id.inner_card_3D)
+        fullScreenCard = findViewById(R.id.full_screen_card)
 
         fovSeekbar = findViewById(R.id.fov_seekbar)
         pieceScaleSeekbar = findViewById(R.id.piece_scale_seekbar)
@@ -103,6 +106,8 @@ class SettingsActivity : AppCompatActivity() {
         collapsedViewWidth = remainingViewWidth / 2f
         viewXRatio = collapsedViewWidth / displayWidth
         scaledPadding = padding / displayWidth
+
+        fullScreenToggleY = fullScreenCard.y
 
         window.decorView.post {
             collapse2DView()
