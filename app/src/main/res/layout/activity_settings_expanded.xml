@@ -30,10 +30,9 @@
         app:cardCornerRadius="20dp"
         app:cardElevation="4dp"
         app:layout_constraintDimensionRatio="W,1:1"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/graphics_3d_card"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="invisible">
+        app:layout_constraintTop_toTopOf="parent">
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
@@ -49,7 +48,7 @@
                 android:layout_height="match_parent"
                 android:layout_margin="8dp"
                 android:scaleY="-1"
-                app:srcCompat="@drawable/chess" />
+                app:srcCompat="@drawable/ic_launcher_background" />
         </androidx.cardview.widget.CardView>
 
     </androidx.cardview.widget.CardView>
@@ -58,14 +57,15 @@
         android:id="@+id/graphics_3d_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
         app:cardBackgroundColor="@color/accent_color"
         app:cardCornerRadius="20dp"
         app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="invisible">
+        app:layout_constraintTop_toTopOf="parent">
         <!--        app:layout_constraintStart_toEndOf="@id/graphics_2d_card"-->
 
         <androidx.cardview.widget.CardView
@@ -81,63 +81,62 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <!--                <ImageView-->
-                <!--                    android:id="@+id/graphics_3d_preview_image"-->
-                <!--                    android:layout_width="match_parent"-->
-                <!--                    android:layout_height="0dp"-->
-                <!--                    android:scaleY="-1"-->
-                <!--                    app:layout_constraintDimensionRatio="H,1:1"-->
-                <!--                    app:layout_constraintEnd_toEndOf="parent"-->
-                <!--                    app:layout_constraintStart_toStartOf="parent"-->
-                <!--                    app:layout_constraintTop_toTopOf="parent"-->
-                <!--                    app:srcCompat="@drawable/black_pawn" />-->
-
-                <SeekBar
-                    android:id="@+id/fov_seekbar"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginBottom="16dp"
-                    android:max="6"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/graphics_controls_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="8dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/fov_text" />
+                    app:layout_constraintTop_toBottomOf="@id/preview_3d">
 
-                <SeekBar
-                    android:id="@+id/piece_scale_seekbar"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/piece_scale_text" />
+                    <SeekBar
+                        android:id="@+id/piece_scale_seekbar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/piece_scale_text" />
 
-                <TextView
-                    android:id="@+id/piece_scale_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/pieces_size"
-                    android:textColor="@color/accent_color"
-                    android:textSize="@dimen/graphics_settings_text_size"
-                    android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/preview_3d" />
+                    <SeekBar
+                        android:id="@+id/fov_seekbar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="16dp"
+                        android:max="6"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/fov_text" />
 
-                <TextView
-                    android:id="@+id/fov_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/field_of_view"
-                    android:textColor="@color/accent_color"
-                    android:textSize="@dimen/graphics_settings_text_size"
-                    android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/piece_scale_seekbar" />
+                    <TextView
+                        android:id="@+id/fov_text"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/field_of_view"
+                        android:textColor="@color/accent_color"
+                        android:textSize="@dimen/graphics_settings_text_size"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/piece_scale_seekbar" />
+
+                    <TextView
+                        android:id="@+id/piece_scale_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/pieces_size"
+                        android:textColor="@color/accent_color"
+                        android:textSize="@dimen/graphics_settings_text_size"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
                     android:id="@+id/preview_3d"
@@ -163,6 +162,7 @@
                     android:id="@+id/graphics_settings_button"
                     android:layout_width="60dp"
                     android:layout_height="60dp"
+                    android:alpha="1"
                     android:foreground="@drawable/settings_outline_icon"
                     android:foregroundTint="#EBBA91"
                     app:layout_constraintBottom_toBottomOf="@+id/preview_3d"
@@ -181,7 +181,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
+        android:visibility="visible"
         app:cardCornerRadius="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -203,7 +205,7 @@
                 android:id="@+id/full_screen_toggle_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="16dp"
                 android:text="@string/fullscreen"
                 android:textColor="@color/accent_color"
                 android:textSize="20sp"

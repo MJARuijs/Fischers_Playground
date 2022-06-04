@@ -116,6 +116,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
+        println("RESIZED: $width, $height")
         glViewport(0, 0, width, height)
 
         displayWidth = width

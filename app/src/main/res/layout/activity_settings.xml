@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/settings_layout"
+    android:forceDarkAllowed="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".activities.SettingsActivity">
@@ -40,7 +41,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="4dp"
-            app:cardCornerRadius="16dp">
+            app:cardBackgroundColor="#404040"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
 
             <ImageView
                 android:id="@+id/preview_2d"
@@ -78,46 +81,72 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
-            app:cardCornerRadius="17dp">
+            app:cardCornerRadius="17dp"
+            app:cardElevation="0dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/graphics_3d_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <ImageView
-                    android:id="@+id/graphics_3d_preview_image"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/graphics_controls_layout"
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:scaleY="-1"
-                    app:layout_constraintDimensionRatio="H,1:1"
+                    android:layout_height="match_parent"
+                    app:layout_constraintBottom_toBottomOf="@id/preview_3d"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/black_pawn" />
+                    app:layout_constraintStart_toStartOf="parent">
 
-                <SeekBar
-                    android:id="@+id/fov_seekbar"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:max="6"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
+                    <SeekBar
+                        android:id="@+id/piece_scale_seekbar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:alpha="0"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/piece_scale_text" />
 
-                <SeekBar
-                    android:id="@+id/piece_scale_seekbar"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_marginStart="8dp"
+                    <SeekBar
+                        android:id="@+id/fov_seekbar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="16dp"
+                        android:alpha="0"
+                        android:max="6"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/fov_text" />
 
-                    android:layout_marginEnd="8dp"
-                    app:layout_constraintBottom_toTopOf="@id/fov_seekbar"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/preview_3d" />
+                    <TextView
+                        android:id="@+id/fov_text"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="8dp"
+                        android:alpha="0"
+                        android:text="@string/field_of_view"
+                        android:textColor="@color/accent_color"
+                        android:textSize="@dimen/graphics_settings_text_size"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/piece_scale_seekbar" />
+
+                    <TextView
+                        android:id="@+id/piece_scale_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:alpha="0"
+                        android:text="@string/pieces_size"
+                        android:textColor="@color/accent_color"
+                        android:textSize="@dimen/graphics_settings_text_size"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
                     android:id="@+id/preview_3d"
@@ -134,169 +163,65 @@
                     android:layout_height="60dp"
                     android:foreground="@drawable/settings_outline_icon"
                     android:foregroundTint="#EBBA91"
-                    app:layout_constraintBottom_toTopOf="@id/piece_scale_seekbar"
+                    app:layout_constraintBottom_toBottomOf="@id/preview_3d"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:srcCompat="@drawable/ic_settings" />
 
+                <ImageView
+                    android:id="@+id/collapse_card_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0"
+                    android:foreground="@drawable/close_icon"
+                    android:foregroundTint="@color/accent_color"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/close_icon"
+                    tools:ignore="SpeakableTextPresentCheck" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
     </androidx.cardview.widget.CardView>
 
-    <Button
-        android:id="@+id/test_button"
-        android:layout_width="wrap_content"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/full_screen_card"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Button"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:visibility="visible"
+        app:cardCornerRadius="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/graphics_3d_card">
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <CheckBox
+                android:id="@+id/full_screen_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/full_screen_toggle_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="@string/fullscreen"
+                android:textColor="@color/accent_color"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>
-
-<!--<?xml version="1.0" encoding="utf-8"?>-->
-<!--<androidx.constraintlayout.widget.ConstraintLayout-->
-<!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
-<!--    xmlns:tools="http://schemas.android.com/tools"-->
-<!--    android:id="@+id/settings_layout"-->
-<!--    android:layout_width="match_parent"-->
-<!--    android:layout_height="match_parent"-->
-<!--    tools:context=".activities.SettingsActivity">-->
-
-<!--    <ImageView-->
-<!--        android:id="@+id/settings_background"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:foreground="@drawable/chess_background"-->
-<!--        android:foregroundTint="#D33E3D3D"-->
-<!--        android:foregroundTintMode="src_atop"-->
-<!--        android:scaleType="centerCrop"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toTopOf="parent"-->
-<!--        app:srcCompat="@drawable/chess_background" />-->
-
-<!--    <androidx.cardview.widget.CardView-->
-<!--        android:id="@+id/graphics_2d_card"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="0dp"-->
-<!--        android:layout_marginStart="8dp"-->
-<!--        android:layout_marginTop="8dp"-->
-<!--        android:layout_marginEnd="4dp"-->
-<!--        app:cardBackgroundColor="@color/accent_color"-->
-<!--        app:cardCornerRadius="20dp"-->
-<!--        app:layout_constraintDimensionRatio="W,1:1"-->
-<!--        app:layout_constraintEnd_toStartOf="@id/graphics_3d_card"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toTopOf="parent">-->
-
-<!--        <androidx.cardview.widget.CardView-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_margin="4dp"-->
-<!--            app:cardCornerRadius="16dp">-->
-
-<!--            <ImageView-->
-<!--                android:id="@+id/preview_2d"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="match_parent"-->
-<!--                android:layout_margin="8dp"-->
-<!--                android:scaleY="-1"-->
-<!--                app:srcCompat="@drawable/chess" />-->
-
-<!--&lt;!&ndash;            <com.mjaruijs.fischersplayground.opengl.surfaceviews.GamePreviewSurface&ndash;&gt;-->
-<!--&lt;!&ndash;                android:id="@+id/preview_2d"&ndash;&gt;-->
-<!--&lt;!&ndash;                android:layout_width="match_parent"&ndash;&gt;-->
-<!--&lt;!&ndash;                android:layout_height="match_parent"&ndash;&gt;-->
-<!--&lt;!&ndash;                android:layout_margin="8dp" />&ndash;&gt;-->
-<!--        </androidx.cardview.widget.CardView>-->
-
-<!--    </androidx.cardview.widget.CardView>-->
-
-<!--    <androidx.cardview.widget.CardView-->
-<!--        android:id="@+id/graphics_3d_card"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginStart="4dp"-->
-<!--        android:layout_marginTop="8dp"-->
-<!--        android:layout_marginEnd="8dp"-->
-<!--        app:cardBackgroundColor="@color/accent_color"-->
-<!--        app:cardCornerRadius="20dp"-->
-<!--        app:cardElevation="2dp"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toEndOf="@id/graphics_2d_card"-->
-<!--        app:layout_constraintTop_toTopOf="parent">-->
-
-<!--        <androidx.cardview.widget.CardView-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_margin="4dp"-->
-<!--            app:cardCornerRadius="17dp">-->
-
-<!--            <androidx.constraintlayout.widget.ConstraintLayout-->
-<!--                android:id="@+id/graphics_3d_layout"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content">-->
-
-<!--&lt;!&ndash;                <ImageView&ndash;&gt;-->
-<!--&lt;!&ndash;                    android:id="@+id/graphics_3d_preview_image"&ndash;&gt;-->
-<!--&lt;!&ndash;                    android:layout_width="match_parent"&ndash;&gt;-->
-<!--&lt;!&ndash;                    android:layout_height="0dp"&ndash;&gt;-->
-<!--&lt;!&ndash;                    android:scaleY="-1"&ndash;&gt;-->
-<!--&lt;!&ndash;                    app:layout_constraintDimensionRatio="H,1:1"&ndash;&gt;-->
-<!--&lt;!&ndash;                    app:layout_constraintEnd_toEndOf="parent"&ndash;&gt;-->
-<!--&lt;!&ndash;                    app:layout_constraintStart_toStartOf="parent"&ndash;&gt;-->
-<!--&lt;!&ndash;                    app:layout_constraintTop_toTopOf="parent"&ndash;&gt;-->
-<!--&lt;!&ndash;                    app:srcCompat="@drawable/black_pawn" />&ndash;&gt;-->
-
-<!--                <SeekBar-->
-<!--                    android:id="@+id/piece_scale_seekbar"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="0dp"-->
-<!--                    android:layout_marginStart="8dp"-->
-
-<!--                    android:layout_marginEnd="8dp"-->
-<!--                    app:layout_constraintBottom_toTopOf="@id/fov_seekbar"-->
-<!--                    app:layout_constraintEnd_toEndOf="parent"-->
-<!--                    app:layout_constraintStart_toStartOf="parent"-->
-<!--                    app:layout_constraintTop_toBottomOf="@id/preview_3d" />-->
-
-<!--                <SeekBar-->
-<!--                    android:id="@+id/fov_seekbar"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="0dp"-->
-<!--                    android:layout_marginStart="8dp"-->
-<!--                    android:layout_marginEnd="8dp"-->
-<!--                    android:max="6"-->
-<!--                    app:layout_constraintBottom_toBottomOf="parent"-->
-<!--                    app:layout_constraintEnd_toEndOf="parent"-->
-<!--                    app:layout_constraintStart_toStartOf="parent" />-->
-
-<!--                <com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface-->
-<!--                    android:id="@+id/preview_3d"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="0dp"-->
-<!--                    app:layout_constraintDimensionRatio="h,1:1"-->
-<!--                    app:layout_constraintEnd_toEndOf="parent"-->
-<!--                    app:layout_constraintStart_toStartOf="parent"-->
-<!--                    app:layout_constraintTop_toTopOf="parent" />-->
-
-<!--                <ImageView-->
-<!--                    android:id="@+id/graphics_settings_button"-->
-<!--                    android:layout_width="60dp"-->
-<!--                    android:layout_height="60dp"-->
-<!--                    android:foreground="@drawable/settings_outline_icon"-->
-<!--                    android:foregroundTint="#EBBA91"-->
-<!--                    app:layout_constraintBottom_toTopOf="@id/piece_scale_seekbar"-->
-<!--                    app:layout_constraintEnd_toEndOf="parent"-->
-<!--                    app:layout_constraintStart_toStartOf="parent"-->
-<!--                    app:layout_constraintTop_toTopOf="parent"-->
-<!--                    app:srcCompat="@drawable/ic_settings" />-->
-
-<!--            </androidx.constraintlayout.widget.ConstraintLayout>-->
-<!--        </androidx.cardview.widget.CardView>-->
-<!--    </androidx.cardview.widget.CardView>-->
-
-<!--</androidx.constraintlayout.widget.ConstraintLayout>-->

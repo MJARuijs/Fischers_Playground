@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/graphics_3d_layout"
@@ -8,27 +7,60 @@
     android:layout_height="wrap_content"
     tools:context=".activities.SettingsActivity">
 
-    <SeekBar
-        android:id="@+id/fov_seekbar"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:max="6"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/graphics_controls_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="@id/preview_3d"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/fov_text" />
+        app:layout_constraintStart_toStartOf="parent">
 
-    <SeekBar
-        android:id="@+id/piece_scale_seekbar"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/piece_scale_text" />
+        <SeekBar
+            android:id="@+id/piece_scale_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/piece_scale_text" />
+
+        <SeekBar
+            android:id="@+id/fov_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="16dp"
+            android:max="6"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/fov_text" />
+
+        <TextView
+            android:id="@+id/fov_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/field_of_view"
+            android:textColor="@color/accent_color"
+            android:textSize="@dimen/graphics_settings_text_size"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/piece_scale_seekbar" />
+
+        <TextView
+            android:id="@+id/piece_scale_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/pieces_size"
+            android:textColor="@color/accent_color"
+            android:textSize="@dimen/graphics_settings_text_size"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
         android:id="@+id/preview_3d"
@@ -42,19 +74,10 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
-        android:id="@+id/collapse_card_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:foreground="@drawable/close_icon"
-        android:foregroundTint="@color/accent_color"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/close_icon" />
-
-    <ImageView
         android:id="@+id/graphics_settings_button"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:alpha="0"
         android:foreground="@drawable/settings_outline_icon"
         android:foregroundTint="#EBBA91"
         app:layout_constraintBottom_toBottomOf="@+id/preview_3d"
@@ -63,24 +86,15 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_settings" />
 
-    <TextView
-        android:id="@+id/piece_scale_text"
+    <ImageView
+        android:id="@+id/collapse_card_button"
         android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:textColor="@color/accent_color"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/preview_3d" />
-
-    <TextView
-        android:id="@+id/fov_text"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:textColor="@color/accent_color"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/piece_scale_seekbar" />
+        android:layout_height="wrap_content"
+        android:alpha="1.0"
+        android:foreground="@drawable/close_icon"
+        android:foregroundTint="@color/accent_color"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/close_icon" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
