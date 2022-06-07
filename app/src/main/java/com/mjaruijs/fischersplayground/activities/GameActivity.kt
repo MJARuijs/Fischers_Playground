@@ -98,6 +98,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
 
         hideActivityDecorations(fullScreen)
+        registerReceivers()
 
         keyboardHeightProvider = KeyboardHeightProvider(this)
         findViewById<View>(R.id.game_layout).post {
@@ -419,6 +420,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     private fun onUserStatusReceived(content: String) {
+        println("USER STATUS RECEIVED")
         val data = content.split('|')
         val opponentId = data[0]
         val gameId = data[1]
@@ -483,14 +485,16 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     private fun setOpponentStatusIcon(gameId: String) {
+        println("GETTING FRAGMENT")
         val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
 
         println("TRYING TO SET STATUS: ${this.gameId} :: $gameId")
 
         when {
             this.gameId == gameId -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_GAME)
-            gameId == "-1" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.OFFLINE)
-            else -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.ONLINE)
+            gameId == "away" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.AWAY)
+            gameId == "offline" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.OFFLINE)
+            else -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_OTHER_GAME)
         }
     }
 
@@ -499,8 +503,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         SavedGames.put(gameId, game as MultiPlayerGame)
     }
 
-    override fun onResume() {
-        super.onResume()
+    private fun registerReceivers() {
         registerReceiver(inviteReceiver, infoFilter)
         registerReceiver(newGameReceiver, infoFilter)
         registerReceiver(gameUpdateReceiver, gameUpdateFilter)
@@ -513,6 +516,11 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
         registerReceiver(chatMessageReceiver, chatFilter)
         registerReceiver(userStatusReceiver, statusFilter)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        registerReceivers()
 
         keyboardHeightProvider.observer = this
 
@@ -547,11 +555,16 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         super.onDestroy()
     }
 
+    override fun onUserLeaveHint() {
+        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|away"))
+        super.onUserLeaveHint()
+    }
+
     override fun onBackPressed() {
         if (isChatOpened()) {
             closeChat()
         } else {
-            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|0"))
+            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|0"))
             super.onBackPressed()
         }
     }

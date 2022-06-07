@@ -154,7 +154,6 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
             }
 
-
         gameAdapter = GameAdapter(::onGameClicked)
 
         val gameRecyclerView = findViewById<RecyclerView>(R.id.game_list)
@@ -323,6 +322,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun onIdReceived(id: String) {
         val preferences = getPreferences(MODE_PRIVATE)
+        this.id = id
 
         with(preferences.edit()) {
             putString("ID", id)
@@ -602,6 +602,17 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(opponentDeclinedDrawReceiver)
         unregisterReceiver(chatMessageReceiver)
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|offline"))
+        super.onDestroy()
+    }
+
+    override fun onUserLeaveHint() {
+//        println("USER LEAVING")
+//        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|away"))
+        super.onUserLeaveHint()
     }
 
     private fun hideActivityDecorations() {

@@ -42,7 +42,7 @@
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:foreground="@drawable/circle"
-        android:foregroundTint="#808080"
+        android:foregroundTint="#000000"
         app:layout_constraintBottom_toTopOf="@+id/player_icon"
         app:layout_constraintEnd_toEndOf="@+id/player_icon"
         app:layout_constraintStart_toEndOf="@+id/player_icon"
