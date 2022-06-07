@@ -3,7 +3,6 @@ package com.mjaruijs.fischersplayground.opengl
 import android.content.Context
 import com.mjaruijs.fischersplayground.opengl.model.MeshData
 import java.io.BufferedInputStream
-import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 
 object OBJLoader {
@@ -53,84 +52,90 @@ object OBJLoader {
     }
 
     private fun load(context: Context, fileLocation: Int): MeshData {
-        val vertices: ArrayList<Float> = ArrayList()
-        val normals: ArrayList<Float> = ArrayList()
-        val textures: ArrayList<Float> = ArrayList()
-        val faces: ArrayList<String> = ArrayList()
 
-        try {
-            val inputStream = context.resources.openRawResource(fileLocation)
-            val reader = BufferedInputStream(inputStream)
+        val vertices: FloatArray
+        val normals: FloatArray
+        val textures: FloatArray
+//        val faces: IntArray
+        val faces: Array<String>
 
-            val content = ByteArray(reader.available())
+        val inputStream = context.resources.openRawResource(fileLocation)
+        val reader = BufferedInputStream(inputStream)
 
-            while (reader.available() > 0) {
-                reader.read(content)
-            }
+        val content = ByteArray(reader.available())
 
-            val lines = String(content).split('\n')
-
-            for (line in lines) {
-
-                if (line.isBlank()) {
-                    continue
-                }
-
-                val parts = line.replace("  ", " ").split(' ').toList()
-
-                when (parts[0]) {
-                    "v" -> {
-                        // vertices
-                        vertices.add(java.lang.Float.valueOf(parts[1]))
-                        vertices.add(java.lang.Float.valueOf(parts[2]))
-                        vertices.add(java.lang.Float.valueOf(parts[3]))
-                    }
-                    "vt" -> {
-                        // textures
-                        textures.add(java.lang.Float.valueOf(parts[1]))
-                        textures.add(java.lang.Float.valueOf(parts[2]))
-                    }
-                    "vn" -> {
-                        // normals
-                        normals.add(java.lang.Float.valueOf(parts[1]))
-                        normals.add(java.lang.Float.valueOf(parts[2]))
-                        normals.add(java.lang.Float.valueOf(parts[3]))
-                    }
-                    "f" -> {
-                        // faces: vertex/texture/normal
-                        faces.add(parts[1])
-                        faces.add(parts[2])
-                        faces.add(parts[3])
-                    }
-                }
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
+        while (reader.available() > 0) {
+            reader.read(content)
         }
 
-//        val numFaces = faces.size
+        val lines = String(content).split('\n')
 
-//        val normalsArray = FloatArray(numFaces * 3)
-//        val textureCoordinates = FloatArray(numFaces * 2)
-//        val positions = FloatArray(numFaces * 3)
+        val numberOfVertices = lines.count { line -> line.startsWith("v") }
+        val numberOfNormals = lines.count { line -> line.startsWith("vn") }
+        val numberOfTextureCoordinates = lines.count { line -> line.startsWith("vt") }
+        val numberOfFaces = lines.count { line -> line.trim().startsWith("f") }
 
-        var positionIndex = 0
+        vertices = FloatArray(numberOfVertices * 3)
+        normals = FloatArray(numberOfNormals * 3)
+        textures = FloatArray(numberOfTextureCoordinates * 2)
+        faces = Array(numberOfFaces * 3) { "" }
+
+        var vertexIndex = 0
         var normalIndex = 0
-//        var textureIndex = 0
+        var textureIndex = 0
+        var faceIndex = 0
 
-        var vertexData = FloatArray(faces.size * 3)
-        var normalData = FloatArray(faces.size * 3)
+        for (line in lines) {
 
-        var maxX = -Float.MAX_VALUE
-        var minX = Float.MAX_VALUE
+            if (line.isBlank()) {
+                continue
+            }
 
-        var indices = IntArray(faces.size)
-//        var i = 0f
+            val parts = line.replace("  ", " ").split(' ').toList()
+            when (parts[0]) {
+                "v" -> {
+                    // vertices
+                    vertices[vertexIndex++] = parts[1].toFloat()
+                    vertices[vertexIndex++] = parts[2].toFloat()
+                    vertices[vertexIndex++] = parts[3].toFloat()
+                }
+                "vt" -> {
+                    // textures
+                    textures[textureIndex++] = parts[1].toFloat()
+                    textures[textureIndex++] = parts[2].toFloat()
+                }
+                "vn" -> {
+                    // normals
+                    normals[normalIndex++] = parts[1].toFloat()
+                    normals[normalIndex++] = parts[2].toFloat()
+                    normals[normalIndex++] = parts[3].toFloat()
+                }
+                "f" -> {
+                    try {
+                        // faces: vertex/texture/normal
+                        faces[faceIndex++] = parts[1]
+                        faces[faceIndex++] = parts[2]
+                        faces[faceIndex++] = parts[3]
+                    } catch (e: Exception) {
+                        println("FAILED TO PARSE LINE: $line $numberOfFaces ${parts.size} ${faces.size} $faceIndex")
+                        throw e
+                    }
 
-//        indices.fill(i++, 0, faces.size)
+                }
+            }
+        }
+
+        vertexIndex = 0
+        normalIndex = 0
+        textureIndex = 0
+
+        val vertexData = FloatArray(faces.size * 3)
+        val normalData = FloatArray(faces.size * 3)
+        val textureData = FloatArray(faces.size * 2)
+
+        val indices = IntArray(faces.size)
 
         for ((i, face) in faces.withIndex()) {
-//            println("Face: $face")
             val parts = face.split("/").toTypedArray()
             var index = 3 * (parts[0].toInt() - 1)
 
@@ -138,37 +143,17 @@ object OBJLoader {
             val yPosition = vertices[index++]
             val zPosition = vertices[index]
 
-            if (xPosition > maxX) {
-                maxX = xPosition
-            }
-
-            if (xPosition < minX){
-                minX = xPosition
-            }
-
-//            vertexData += xPosition
-//            vertexData += yPosition
-//            vertexData += zPosition
-
-            vertexData[positionIndex++] = xPosition
-            vertexData[positionIndex++] = yPosition
-            vertexData[positionIndex++] = zPosition
-
-//            i++
-//            i++
-//            i++
+            vertexData[vertexIndex++] = xPosition
+            vertexData[vertexIndex++] = yPosition
+            vertexData[vertexIndex++] = zPosition
 
             index = 2 * (parts[1].toInt() - 1)
-//            textureCoordinates[normalIndex++] = textures.get(index++)
-            // NOTE: Bitmap gets y-inverted
-//            textureCoordinates[normalIndex++] = 1 - textures.get(index)
+            val xTexture = textures[index++]
+            val yTexture = textures[index]
+            textureData[textureIndex++] += xTexture
+            textureData[textureIndex++] += 1 - yTexture
 
-//            val xTexture = textures[index++]
-//            val yTexture = textures[index]
-//            vertexData += xTexture
-//            vertexData += yTexture
-
-            index = 3 * (parts[2].trim().toInt() - 1)
+            index = 3 * (parts[2].toInt() - 1)
             val xNormal = normals[index++]
             val yNormal = normals[index++]
             val zNormal = normals[index]
@@ -180,11 +165,6 @@ object OBJLoader {
             indices[i] = i
         }
 
-        for (f in indices) {
-//            println(f)
-        }
-
-//        println("DONE LOADING FILE $i")
-        return MeshData(vertexData, normalData, indices)
+        return MeshData(vertexData, normalData, textureData, indices)
     }
 }

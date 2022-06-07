@@ -4,8 +4,6 @@ const int MAX_NUMBER_OF_SQUARES = 27;
 
 layout (location = 0) in vec4 inPosition;
 
-//uniform vec2 scale;
-//uniform float aspectRatio;
 uniform vec2 selectedSquareCoordinates;
 uniform vec2 checkedKingSquare;
 uniform vec2 possibleSquares[MAX_NUMBER_OF_SQUARES];
@@ -15,15 +13,12 @@ uniform mat4 view;
 
 flat out int squareSelected;
 
-out vec2 textureCoordinates;
-out float tileColor;
+out float normalIndex;
 out vec3 worldPosition;
 
 void main() {
-    textureCoordinates = inPosition.xy;
-    tileColor = inPosition.w;
-
     vec3 position = inPosition.xyz;
+    normalIndex = inPosition.w;
 
     squareSelected = 0;
 
@@ -42,9 +37,6 @@ void main() {
             squareSelected = 2;
         }
     }
-
-//    position.x /= aspectRatio;
-//    position *= scale;
 
     worldPosition = inPosition.xyz;
 

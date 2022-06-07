@@ -12,7 +12,6 @@ class TextureArray(textures: List<Texture>) {
     init {
         val buffer = IntArray(1)
         glGenTextures(1, buffer, 0)
-
         handle = buffer[0]
 
         val width = textures[0].width

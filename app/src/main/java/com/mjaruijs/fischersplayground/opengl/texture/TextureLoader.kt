@@ -17,6 +17,8 @@ object TextureLoader {
         bitmap.copyPixelsToBuffer(pixelData)
         pixelData.rewind()
 
+        //        texture.init()
+
         return Texture(bitmap, pixelData)
     }
 

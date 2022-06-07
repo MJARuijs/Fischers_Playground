@@ -99,7 +99,7 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
                     return true
                 }
 
-                val scale = 50f
+                val scale = 100f
 
                 if (abs(difference) > 1f) {
                     if (difference > 0) {

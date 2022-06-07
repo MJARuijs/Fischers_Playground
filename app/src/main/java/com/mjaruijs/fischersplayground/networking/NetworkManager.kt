@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 object NetworkManager {
 
-    private const val SERVER_IP = "192.168.178.18"
+    private const val SERVER_IP = "192.168.178.71"
     private const val SERVER_PORT = 4500
 
     private val clientInitializing = AtomicBoolean(false)
@@ -76,6 +76,9 @@ object NetworkManager {
             context.sendBroadcast(intent)
         } else if (message.topic == Topic.CHAT_MESSAGE) {
             val intent = Intent("mjaruijs.fischers_playground.CHAT_MESSAGE").putExtra(message.category, message.content)
+            context.sendBroadcast(intent)
+        } else if (message.topic == Topic.USER_STATUS) {
+            val intent = Intent("mjaruijs.fischers_playground.USER_STATUS").putExtra(message.category, message.content)
             context.sendBroadcast(intent)
         }
     }

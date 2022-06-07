@@ -1,13 +1,15 @@
 package com.mjaruijs.fischersplayground.opengl.texture
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.opengl.GLES20
-import android.opengl.GLES20.glDeleteTextures
-import android.opengl.GLUtils
+import android.opengl.GLES20.*
+import android.opengl.GLES30.GL_RGBA8
+import android.opengl.GLES30.glTexStorage2D
 import java.nio.ByteBuffer
+import kotlin.math.log2
+import kotlin.math.max
+import kotlin.math.min
 
-class Texture(private val bitmap: Bitmap, val pixelData: ByteBuffer) {
+class Texture(bitmap: Bitmap, val pixelData: ByteBuffer) {
 
     var handle = -1
         private set
@@ -17,29 +19,37 @@ class Texture(private val bitmap: Bitmap, val pixelData: ByteBuffer) {
 
     fun init() {
         val textureHandle = IntArray(1)
-        GLES20.glGenTextures(1, textureHandle, 0)
+        glGenTextures(1, textureHandle, 0)
         handle = textureHandle[0]
 
-        if (textureHandle[0] != 0) {
-            val bitmapOptions = BitmapFactory.Options()
-            bitmapOptions.inScaled = false
-            bitmapOptions.outConfig = Bitmap.Config.ARGB_8888
 
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0])
+//        if (handle != 0) {
+//            val bitmapOptions = BitmapFactory.Options()
+//            bitmapOptions.inScaled = false
+//            bitmapOptions.outConfig = Bitmap.Config.ARGB_8888
 
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+            val size = min(width, height).toFloat()
+            val levels = max(1, log2(size).toInt())
 
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+            glBindTexture(GL_TEXTURE_2D, handle)
+            glTexStorage2D(GL_TEXTURE_2D, levels, GL_RGBA8, width, height)
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixelData)
 
-            val pixelData = ByteBuffer.allocateDirect(bitmap.byteCount)
-            bitmap.copyPixelsToBuffer(pixelData)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+
+//            GLUtils.texImage2D(GL_TEXTURE_2D, 0, bitmap, 0)
+            glBindTexture(GL_TEXTURE_2D, 0)
+
+
+//            val pixelData = ByteBuffer.allocateDirect(bitmap.byteCount)
+//            bitmap.copyPixelsToBuffer(pixelData)
 //            bitmap.recycle()
-
-            pixelData.rewind()
-        }
+//
+//            pixelData.rewind()
+//        }
     }
 
     fun destroy() {

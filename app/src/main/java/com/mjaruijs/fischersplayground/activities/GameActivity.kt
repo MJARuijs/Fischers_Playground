@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
@@ -34,6 +35,7 @@ import com.mjaruijs.fischersplayground.news.News
 import com.mjaruijs.fischersplayground.news.NewsType
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
+import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
@@ -50,6 +52,12 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private val opponentAcceptedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_draw", ::onOpponentAcceptedDraw)
     private val opponentDeclinedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "declined_draw", ::onOpponentDeclinedDraw)
     private val chatMessageReceiver = MessageReceiver(Topic.CHAT_MESSAGE, "", ::onChatMessageReceived)
+    private val userStatusReceiver = MessageReceiver(Topic.USER_STATUS, "status", ::onUserStatusReceived)
+
+    private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
+    private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
+    private val chatFilter = IntentFilter("mjaruijs.fischers_playground.CHAT_MESSAGE")
+    private val statusFilter = IntentFilter("mjaruijs.fischers_playground.USER_STATUS")
 
     private val incomingInviteDialog = IncomingInviteDialog()
     private val undoRequestedDialog = UndoRequestedDialog()
@@ -62,10 +70,6 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private val opponentDeclinedDrawDialog = OpponentDeclinedDrawDialog()
     private val checkMateDialog = CheckMateDialog()
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
-
-    private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
-    private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
-    private val chatFilter = IntentFilter("mjaruijs.fischers_playground.CHAT_MESSAGE")
 
     private var displayWidth = 0
     private var displayHeight = 0
@@ -89,7 +93,11 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        hideActivityDecorations()
+
+        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
+
+        hideActivityDecorations(fullScreen)
 
         keyboardHeightProvider = KeyboardHeightProvider(this)
         findViewById<View>(R.id.game_layout).post {
@@ -122,6 +130,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         isSinglePlayer = intent.getBooleanExtra("is_single_player", false)
         isPlayingWhite = intent.getBooleanExtra("is_playing_white", false)
 
+        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId"))
+
         glView = findViewById(R.id.opengl_view)
         glView.init(::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
 
@@ -131,9 +141,12 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (savedInstanceState == null) {
             val playerBundle = Bundle()
             playerBundle.putString("player_name", userName)
+            playerBundle.putBoolean("hide_status_icon", true)
 
             val opponentBundle = Bundle()
             opponentBundle.putString("player_name", opponentName)
+            opponentBundle.putBoolean("hide_status_icon", false)
+
 
             val chatBundle = Bundle()
             chatBundle.putString("game_id", gameId)
@@ -143,7 +156,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
                 setReorderingAllowed(true)
                 replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
                 replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
-                replace(R.id.chat_container, ChatFragment(::onChatMessageSent))
+                replace(R.id.chat_container, ChatFragment(::onChatMessageSent, ::translateChat, ::closeChat))
             }
         }
     }
@@ -176,7 +189,6 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             }
         }
     }
-
 
     private fun restorePreferences() {
         val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
@@ -406,6 +418,14 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         }
     }
 
+    private fun onUserStatusReceived(content: String) {
+        val data = content.split('|')
+        val opponentId = data[0]
+        val gameId = data[1]
+
+        setOpponentStatusIcon(gameId)
+    }
+
     private fun onChatMessageReceived(content: String) {
         val data = content.split('|')
         val gameId = data[0]
@@ -448,12 +468,30 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         closeAndSaveGameAsDraw()
     }
 
-    private fun hideActivityDecorations() {
-        val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
-        windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-//        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
-
+    private fun hideActivityDecorations(isFullscreen: Boolean) {
         supportActionBar?.hide()
+
+        if (isFullscreen) {
+            val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
+            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
+            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+        }
+
+    }
+
+    private fun setOpponentStatusIcon(gameId: String) {
+        val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
+
+        println("TRYING TO SET STATUS: ${this.gameId} :: $gameId")
+
+        when {
+            this.gameId == gameId -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_GAME)
+            gameId == "-1" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.OFFLINE)
+            else -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.ONLINE)
+        }
     }
 
     private fun saveGame() {
@@ -474,6 +512,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
         registerReceiver(chatMessageReceiver, chatFilter)
+        registerReceiver(userStatusReceiver, statusFilter)
 
         keyboardHeightProvider.observer = this
 
@@ -492,6 +531,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         unregisterReceiver(opponentAcceptedDrawReceiver)
         unregisterReceiver(opponentDeclinedDrawReceiver)
         unregisterReceiver(chatMessageReceiver)
+        unregisterReceiver(userStatusReceiver)
 
         keyboardHeightProvider.observer = null
 
@@ -511,6 +551,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (isChatOpened()) {
             closeChat()
         } else {
+            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|0"))
             super.onBackPressed()
         }
     }
@@ -531,6 +572,20 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
     private fun enableForwardButton() {
         findViewById<UIButton>(R.id.forward_button).enable()
+    }
+
+    private fun translateChat(translation: Float) {
+        val chatContainer = findViewById<FragmentContainerView>(R.id.chat_container)
+        val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
+        chatContainer.x -= translation
+        openChatButton.x -= translation
+
+        if (chatContainer.x > 0.0f) {
+            chatContainer.x = 0.0f
+        }
+        if (openChatButton.x > chatTranslation.toFloat()) {
+            openChatButton.x = chatTranslation.toFloat()
+        }
     }
 
     private fun closeChat() {

@@ -20,8 +20,8 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     private lateinit var board: Board
     private lateinit var game: Game
 
-    private lateinit var gameRenderer2D: GameRenderer2D
     private lateinit var boardRenderer: BoardRenderer
+    private lateinit var gameRenderer2D: GameRenderer2D
 //    private lateinit var gameRenderer3D: GameRenderer3D
 
     private val camera = Camera(zoom = DEFAULT_ZOOM)
@@ -52,7 +52,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        PieceTextures.createTextureArray()
+        PieceTextures.createTextureArrays()
 
         gameRenderer2D = GameRenderer2D(context)
 //        gameRenderer3D = GameRenderer3D(context, isPlayerWhite)
@@ -62,6 +62,21 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
         camera.setZoom(preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM))
+    }
+
+    fun setR(r: Float) {
+//        gameRenderer3D.rChannel = r
+//        println("r=${gameRenderer3D.rChannel}, g=${gameRenderer3D.gChannel}, b=${gameRenderer3D.bChannel}")
+    }
+
+    fun setG(g: Float) {
+//        gameRenderer3D.gChannel = g
+//        println("r=${gameRenderer3D.rChannel}, g=${gameRenderer3D.gChannel}, b=${gameRenderer3D.bChannel}")
+    }
+
+    fun setB(b: Float) {
+//        gameRenderer3D.bChannel = b
+//        println("r=${gameRenderer3D.rChannel}, g=${gameRenderer3D.gChannel}, b=${gameRenderer3D.bChannel}")
     }
 
     fun set3D(is3D: Boolean) {
@@ -96,27 +111,27 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun update(delta: Float): Boolean {
-        return if (this::game.isInitialized) {
+//        return if (this::game.isInitialized) {
 
-            if (is3D) {
-                Thread {
+//            if (is3D) {
+//                Thread {
 //                    gameRenderer3D.startAnimations(game)
-                }.start()
+//                }.start()
 //                gameRenderer3D.update(delta)
-                false
-            } else {
-                Thread {
-                    gameRenderer2D.startAnimations(game)
-                }.start()
-                gameRenderer2D.update(delta)
-            }
-        } else {
-            false
-        }
+//                false
+//            } else {
+//                Thread {
+//                    gameRenderer2D.startAnimations(game)
+//                }.start()
+//                gameRenderer2D.update(delta)
+//            }
+//        } else {
+//            false
+//        }
+        return false
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
-        println("RESIZED: $width, $height")
         glViewport(0, 0, width, height)
 
         displayWidth = width
@@ -131,17 +146,17 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
             return
         }
 
-        if (is3D) {
-            glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+//        if (is3D) {
+//            glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-            boardRenderer.render3D(board, camera)
+//            boardRenderer.render3D(board, camera)
 //            gameRenderer3D.render(game, camera)
-        } else {
+//        } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
-            boardRenderer.render(board, aspectRatio)
+            boardRenderer.render2D(board, aspectRatio)
             gameRenderer2D.render(game, aspectRatio)
-        }
+//        }
 
         if (pixelsRequested) {
             onPixelsRead(saveBuffer())

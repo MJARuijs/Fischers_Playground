@@ -1,8 +1,11 @@
 package com.mjaruijs.fischersplayground.fragments
 
+import android.content.Context
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -16,8 +19,10 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatAdapter
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.util.Time
+import kotlin.math.abs
 
-class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit) : Fragment(R.layout.chat_fragment) {
+
+class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val translate: (Float) -> Unit, private val close: () -> Unit) : Fragment(R.layout.chat_fragment) {
 
     private lateinit var constraintLayout: ConstraintLayout
 
@@ -29,6 +34,12 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit) : Fragment(
 
     private lateinit var sendButton: CardView
     private var keyboardHeight = -1
+
+    private var previousX = 0f
+    private var previousY = 0f
+
+    private var totalDX = 0f
+    private var holdStartTime = 0L
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -64,10 +75,62 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit) : Fragment(
             sendMessage(inputBox.text.toString())
         }
 
+        chatRecycler.setOnClickListener {
+            close()
+        }
+
+        chatRecycler.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                return true
+            }
+
+            override fun onTouchEvent(rv: RecyclerView, event: MotionEvent) {
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    totalDX = 0f
+                    holdStartTime = System.currentTimeMillis()
+
+                    previousX = event.x
+                    previousY = event.y
+                }
+                if (event.action == MotionEvent.ACTION_MOVE) {
+                    val dx = event.x - previousX
+
+                    totalDX += dx
+
+                    if (abs(dx) > 5.0f) {
+//                        translate(-dx)
+                    }
+
+                    previousX = event.x
+                    previousY = event.y
+                }
+                if (event.action == MotionEvent.ACTION_UP) {
+                    val currentTime = System.currentTimeMillis()
+                    val totalHoldTime = currentTime - holdStartTime
+                    holdStartTime = 0L
+
+                    if (totalDX < -20f) {
+                        closeKeyboard()
+                        close()
+                    } else if (totalHoldTime < 250L) {
+                        closeKeyboard()
+                    }
+                }
+            }
+
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+            }
+
+        })
     }
 
-    fun toggle() {
-        val offset = if (keyboardHeight == 0) 32 else keyboardHeight
+    private fun closeKeyboard() {
+        val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(requireView().windowToken, 0)
+    }
+
+    private fun toggle() {
+        val offset = if (keyboardHeight == 0) 32 else keyboardHeight + 32
         val constraints = ConstraintSet()
         constraints.clone(constraintLayout)
         constraints.connect(R.id.chat_input_card, ConstraintSet.BOTTOM, R.id.chat_layout, ConstraintSet.BOTTOM, offset)

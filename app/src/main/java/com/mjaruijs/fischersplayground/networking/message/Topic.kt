@@ -5,6 +5,7 @@ enum class Topic {
     GAME_UPDATE,
     CHAT_MESSAGE,
     INFO,
+    USER_STATUS,
     CRASH_REPORT;
 
     companion object {

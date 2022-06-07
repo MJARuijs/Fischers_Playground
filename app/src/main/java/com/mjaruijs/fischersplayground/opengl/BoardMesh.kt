@@ -8,7 +8,7 @@ import java.nio.IntBuffer
 
 class BoardMesh(vertices: FloatArray, is3D: Boolean) {
 
-    private val count = vertices.size / 3
+    private val count: Int
 
     private val vertexBuffer: FloatBuffer =
         ByteBuffer.allocateDirect(vertices.size * Float.SIZE_BYTES).run {
@@ -24,7 +24,8 @@ class BoardMesh(vertices: FloatArray, is3D: Boolean) {
 
     init {
         val buffers = IntBuffer.allocate(1)
-        val size = if (is3D) 4 else 3
+        val size = if (is3D) 4 else 2
+        count = vertices.size / size
 
         glGenVertexArrays(1, buffers)
         vao = buffers[0]

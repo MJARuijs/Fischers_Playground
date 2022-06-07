@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.transition.doOnEnd
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -129,6 +130,12 @@ class SettingsActivity : AppCompatActivity() {
 
         val transition = ChangeBounds()
         transition.duration = ANIMATION_DURATION
+        transition.doOnEnd {
+            graphicsSettingsButton.visibility = View.GONE
+
+            glView3D.isActive = true
+            expanded = true
+        }
 
         expandedGraphicsConstraints.applyTo(graphics3DLayout)
         expandedSettingsConstraints.applyTo(settingsLayout)
@@ -138,9 +145,6 @@ class SettingsActivity : AppCompatActivity() {
             animator.duration = ANIMATION_DURATION
             animator.start()
         }
-
-        glView3D.isActive = true
-        expanded = true
     }
 
     @SuppressLint("Recycle")
@@ -158,6 +162,11 @@ class SettingsActivity : AppCompatActivity() {
 
         val transition = ChangeBounds()
         transition.duration = ANIMATION_DURATION
+        transition.doOnEnd {
+            graphicsSettingsButton.visibility = View.VISIBLE
+            glView3D.isActive = false
+            expanded = false
+        }
 
         defaultGraphicsConstraints.applyTo(graphics3DLayout)
         defaultSettingsConstraints.applyTo(settingsLayout)
@@ -167,9 +176,6 @@ class SettingsActivity : AppCompatActivity() {
             animator.duration = ANIMATION_DURATION
             animator.start()
         }
-
-        glView3D.isActive = false
-        expanded = false
     }
 
     private fun resetLayout() {
@@ -303,6 +309,47 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupUIElements() {
+        findViewById<SeekBar>(R.id.r_seekbar).setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                glView3D.getRenderer().setR(progress.toFloat() / 255f)
+                glView3D.requestRender()
+
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+            }
+        })
+
+        findViewById<SeekBar>(R.id.g_seekbar).setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                glView3D.getRenderer().setG(progress.toFloat() / 255f)
+                glView3D.requestRender()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+            }
+        })
+
+        findViewById<SeekBar>(R.id.b_seekbar).setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                glView3D.getRenderer().setB(progress.toFloat() / 255f)
+                glView3D.requestRender()
+
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+            }
+        })
+
         fullScreenCard.findViewById<CheckBox>(R.id.full_screen_checkbox).setOnCheckedChangeListener { _, isChecked ->
             savePreference(FULL_SCREEN_KEY, isChecked)
             hideActivityDecorations(isChecked)
@@ -326,6 +373,10 @@ class SettingsActivity : AppCompatActivity() {
                     return
                 }
 
+                if (!expanded) {
+                    return
+                }
+
                 val actualProgress = progress * FOV_SCALE + FOV_OFFSET
                 glView3D.getRenderer().setFoV(actualProgress)
                 glView3D.requestRender()
@@ -342,6 +393,10 @@ class SettingsActivity : AppCompatActivity() {
         pieceScaleSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (seekBar == null || seekBar.id != pieceScaleSeekbar.id) {
+                    return
+                }
+
+                if (!expanded) {
                     return
                 }
 

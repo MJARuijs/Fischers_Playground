@@ -82,29 +82,29 @@ class MainActivity : AppCompatActivity() {
         if (!isInitialized()) {
             PieceTextures.init(this)
 
-            Thread {
-                OBJLoader.preload(this, R.raw.pawn)
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.bishop)
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.knight)
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.rook)
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.queen)
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.king)
-            }.start()
+//            Thread {
+//                OBJLoader.preload(this, R.raw.cube)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.bishop)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.knight)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.rook)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.queen)
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.king)
+//            }.start()
 
             NetworkManager.run(this)
 
@@ -569,6 +569,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         val games = SavedGames.getAll()
+//        NetworkManager.sendMessage(Message(Topic.GAME_UPDATE))
         for (game in games) {
             val gameId = game.first
             val lastUpdated = game.second.lastUpdated

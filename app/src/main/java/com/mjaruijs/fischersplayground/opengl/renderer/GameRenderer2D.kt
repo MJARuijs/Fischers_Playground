@@ -60,7 +60,9 @@ class GameRenderer2D(context: Context) {
 
         piece2DProgram.start()
         piece2DProgram.set("aspectRatio", aspectRatio)
-        sampler.bind(PieceTextures.getTextureArray())
+        piece2DProgram.set("textureMaps", sampler.index)
+
+        sampler.bind(PieceTextures.get2DTextureArray())
 
         for (row in 0 until 8) {
             for (col in 0 until 8) {
@@ -75,8 +77,7 @@ class GameRenderer2D(context: Context) {
                 }
 
                 piece2DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 4.0f)
-                piece2DProgram.set("textureId", piece.textureId.toFloat())
-                piece2DProgram.set("textureMaps", sampler.index)
+                piece2DProgram.set("textureId", piece.textureId2D.toFloat())
                 piece2DProgram.set("translation", translation)
                 quad.draw()
             }

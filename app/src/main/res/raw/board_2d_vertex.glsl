@@ -2,7 +2,7 @@
 
 const int MAX_NUMBER_OF_SQUARES = 27;
 
-layout (location = 0) in vec3 inPosition;
+layout (location = 0) in vec2 inPosition;
 
 uniform vec2 scale;
 uniform float aspectRatio;
@@ -13,11 +13,11 @@ uniform vec2 possibleSquares[MAX_NUMBER_OF_SQUARES];
 flat out int squareSelected;
 
 out vec2 textureCoordinates;
-out float tileColor;
+//out float tileColor;
 
 void main() {
     textureCoordinates = inPosition.xy;
-    tileColor = inPosition.z;
+//    tileColor = inPosition.z;
 
     vec2 position = inPosition.xy;
 

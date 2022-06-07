@@ -6,9 +6,9 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-class Mesh(vertices: FloatArray, normals: FloatArray, indices: IntArray) {
+class Mesh(vertices: FloatArray, normals: FloatArray, textureCoordinates: FloatArray, indices: IntArray) {
 
-    constructor(data: MeshData) : this(data.vertices, data.normals, data.indices)
+    constructor(data: MeshData) : this(data.vertices, data.normals, data.textureCoordinates, data.indices)
 
     private val count = indices.size
 
@@ -30,6 +30,15 @@ class Mesh(vertices: FloatArray, normals: FloatArray, indices: IntArray) {
             }
         }
 
+    private val textureBuffer: FloatBuffer =
+        ByteBuffer.allocateDirect(textureCoordinates.size * Float.SIZE_BYTES).run {
+            order(ByteOrder.nativeOrder())
+            asFloatBuffer().apply {
+                put(textureCoordinates)
+                position(0)
+            }
+        }
+
     private val indexBuffer: IntBuffer =
         ByteBuffer.allocateDirect(indices.size * Int.SIZE_BYTES).run {
             order(ByteOrder.nativeOrder())
@@ -42,8 +51,8 @@ class Mesh(vertices: FloatArray, normals: FloatArray, indices: IntArray) {
     private val vao: Int
     private val vbo: Int
     private val nbo: Int
+    private val tbo: Int
     private val ibo: Int
-//    private val tbo: Int
 
     init {
         val buffers = IntBuffer.allocate(1)
@@ -58,11 +67,11 @@ class Mesh(vertices: FloatArray, normals: FloatArray, indices: IntArray) {
         nbo = buffers[0]
 
         glGenBuffers(1, buffers)
+        tbo = buffers[0]
+
+        glGenBuffers(1, buffers)
         ibo = buffers[0]
-//
-//        glGenBuffers(1, buffers)
-//        tbo = buffers[0]
-        
+
         glBindVertexArray(vao)
         glBindBuffer(GL_ARRAY_BUFFER, vbo)
         glBufferData(GL_ARRAY_BUFFER, vertexBuffer.capacity() * Float.SIZE_BYTES, vertexBuffer, GL_STATIC_DRAW)
@@ -74,6 +83,10 @@ class Mesh(vertices: FloatArray, normals: FloatArray, indices: IntArray) {
         glBindBuffer(GL_ARRAY_BUFFER, nbo)
         glBufferData(GL_ARRAY_BUFFER, normalBuffer.capacity() * Float.SIZE_BYTES, normalBuffer, GL_STATIC_DRAW)
         glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0)
+
+        glBindBuffer(GL_ARRAY_BUFFER, tbo)
+        glBufferData(GL_ARRAY_BUFFER, textureBuffer.capacity() * Float.SIZE_BYTES, textureBuffer, GL_STATIC_DRAW)
+        glVertexAttribPointer(2, 2, GL_FLOAT, false, 0, 0)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo)
@@ -87,6 +100,7 @@ class Mesh(vertices: FloatArray, normals: FloatArray, indices: IntArray) {
         glBindVertexArray(vao)
         glEnableVertexAttribArray(0)
         glEnableVertexAttribArray(1)
+        glEnableVertexAttribArray(2)
 //        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo)
 
         glDrawArrays(GL_TRIANGLES, 0, count)
@@ -95,12 +109,15 @@ class Mesh(vertices: FloatArray, normals: FloatArray, indices: IntArray) {
 
         glDisableVertexAttribArray(0)
         glDisableVertexAttribArray(1)
+        glDisableVertexAttribArray(2)
 
         glBindVertexArray(0)
 
     }
 
     fun destroy() {
+        glDeleteBuffers(1, IntBuffer.wrap(intArrayOf(tbo)))
+        glDeleteBuffers(1, IntBuffer.wrap(intArrayOf(nbo)))
         glDeleteBuffers(1, IntBuffer.wrap(intArrayOf(vbo)))
         glDeleteVertexArrays(1, IntBuffer.wrap(intArrayOf(vao)))
     }

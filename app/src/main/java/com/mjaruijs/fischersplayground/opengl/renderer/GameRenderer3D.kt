@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.opengl.renderer
 import android.content.Context
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.Color
@@ -19,6 +20,7 @@ import com.mjaruijs.fischersplayground.opengl.model.Mesh
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
+import com.mjaruijs.fischersplayground.opengl.texture.Sampler
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.PI
 import kotlin.math.abs
@@ -26,7 +28,7 @@ import kotlin.math.roundToInt
 
 class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
 
-    private val isLocked = AtomicBoolean(false)
+    private val sampler = Sampler(0)
     private val piece3DProgram = ShaderProgram(
         ShaderLoader.load(R.raw.piece_3d_vertex, ShaderType.VERTEX, context),
         ShaderLoader.load(R.raw.piece_3d_fragment, ShaderType.FRAGMENT, context)
@@ -59,6 +61,13 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
     private val whiteKnightRotation = if (isPlayerWhite) ROTATION_MATRIX else Matrix4()
     private val blackKnightRotation = if (isPlayerWhite) Matrix4() else ROTATION_MATRIX
 
+    private val isLocked = AtomicBoolean(false)
+
+
+    var rChannel = 1.0f
+    var gChannel = 1.0f
+    var bChannel = 1.0f
+
     private fun startAnimation(animationData: AnimationData) {
         val toPosition = animationData.toPosition
         val fromPosition = animationData.fromPosition
@@ -90,13 +99,19 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
         startAnimations(game)
 
         piece3DProgram.start()
-
         piece3DProgram.set("projection", camera.projectionMatrix)
         piece3DProgram.set("view", camera.viewMatrix)
         piece3DProgram.set("cameraPosition", camera.getPosition())
+        piece3DProgram.set("textureMaps", sampler.index)
+
+        piece3DProgram.set("rChannel", rChannel)
+        piece3DProgram.set("gChannel", gChannel)
+        piece3DProgram.set("bChannel", bChannel)
 
         ambientLight.applyTo(piece3DProgram)
         directionalLight.applyTo(piece3DProgram)
+
+        sampler.bind(PieceTextures.get3DTextureArray())
 
         for (row in 0 until 8) {
             for (col in 0 until 8) {
@@ -115,6 +130,9 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
                 } else {
                     blackMaterial.applyTo(piece3DProgram)
                 }
+
+                piece3DProgram.set("isWhite", if (piece.team == Team.WHITE) 1f else 0f)
+                piece3DProgram.set("textureId", piece.textureId3D.toFloat())
 
                 when (piece.type) {
                     PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
