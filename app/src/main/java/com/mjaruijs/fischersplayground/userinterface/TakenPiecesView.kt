@@ -73,6 +73,29 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
         invalidate()
     }
 
+    fun removeTakenPiece(type: PieceType, team: Team) {
+        println("REMOVING $type from $team")
+        if (team == Team.WHITE) {
+            val lastPieceIndex = takenWhitePieces.indexOfLast { piece -> piece.type == type }
+            if (lastPieceIndex == -1) {
+                return
+            }
+
+            takenWhitePieces.removeAt(lastPieceIndex)
+            sortWhitePieces()
+        } else {
+            val lastPieceIndex = takenBlackPieces.indexOfLast { piece -> piece.type == type }
+            if (lastPieceIndex == -1) {
+                return
+            }
+
+            takenBlackPieces.removeAt(lastPieceIndex)
+            sortWhitePieces()
+        }
+
+        invalidate()
+    }
+
     private fun sortWhitePieces() {
         takenWhitePieces.sortWith { piece1, piece2 ->
             if (piece1.type.sortingValue > piece2.type.sortingValue) 1 else -1

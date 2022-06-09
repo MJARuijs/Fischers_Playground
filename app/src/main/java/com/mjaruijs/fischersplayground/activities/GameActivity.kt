@@ -146,8 +146,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
             val opponentBundle = Bundle()
             opponentBundle.putString("player_name", opponentName)
-            opponentBundle.putBoolean("hide_status_icon", false)
-
+            opponentBundle.putBoolean("hide_status_icon", isSinglePlayer)
 
             val chatBundle = Bundle()
             chatBundle.putString("game_id", gameId)
@@ -177,6 +176,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         game.enableBackButton = ::enableBackButton
         game.enableForwardButton = ::enableForwardButton
         game.onPieceTaken = ::onPieceTaken
+        game.onPieceRegained = ::onPieceRegained
         game.onCheckMate = ::onCheckMate
 
         glView.setGame(game)
@@ -263,6 +263,16 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
             val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
             (playerFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
+        }
+    }
+
+    private fun onPieceRegained(pieceType: PieceType, team: Team) {
+        if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
+            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
+            (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
+        } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
+            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
+            (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
         }
     }
 
@@ -617,7 +627,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private fun initUIButtons() {
         val textOffset = 70
         val textColor = Color.WHITE
-        val buttonBackgroundColor = Color.DKGRAY
+        val buttonBackgroundColor = Color.rgb(0.25f, 0.25f, 0.25f)
         val resignButton = findViewById<UIButton>(R.id.resign_button)
         resignButton
             .setTextYOffset(textOffset)

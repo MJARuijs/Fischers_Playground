@@ -14,6 +14,8 @@ data class Vector3(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f
 
     constructor(elements: FloatArray): this(elements[0], elements[1], elements[2])
 
+    constructor(floatList: List<Float>) : this(floatList[0], floatList[1], floatList[2])
+
     fun xy() = Vector2(x, y)
 
     fun yz() = Vector2(y, z)

@@ -36,6 +36,11 @@ class PlayerCardFragment : Fragment(R.layout.player_card) {
         takenPieceView.add(pieceType, team)
     }
 
+    fun removeTakenPiece(pieceType: PieceType, team: Team) {
+        val takenPieceView = view?.findViewById<TakenPiecesView>(R.id.taken_pieces_view) ?: throw IllegalArgumentException("No view was found with id: taken_pieces_view")
+        takenPieceView.removeTakenPiece(pieceType, team)
+    }
+
     fun setStatusIcon(status: PlayerStatus) {
         println("SETTING STATUS $status")
         if (this::statusIcon.isInitialized) {

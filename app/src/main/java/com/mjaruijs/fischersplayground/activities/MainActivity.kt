@@ -10,6 +10,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -82,29 +84,29 @@ class MainActivity : AppCompatActivity() {
         if (!isInitialized()) {
             PieceTextures.init(this)
 
-//            Thread {
-//                OBJLoader.preload(this, R.raw.pawn, "pawn")
-//            }.start()
-//
-//            Thread {
-//                OBJLoader.preload(this, R.raw.bishop, "bishop")
-//            }.start()
+            Thread {
+                OBJLoader.preload(this, R.raw.parsed_pawn, "pawn")
+            }.start()
+
+            Thread {
+                OBJLoader.preload(this, R.raw.parsed_bishop, "bishop")
+            }.start()
 
             Thread {
                 OBJLoader.preload(this, R.raw.parsed_knight, "parsed_knight")
             }.start()
 
-//            Thread {
-//                OBJLoader.preload(this, R.raw.rook, "rook")
-//            }.start()
-//
-//            Thread {
-//                OBJLoader.preload(this, R.raw.queen, "queen")
-//            }.start()
-//
-//            Thread {
-//                OBJLoader.preload(this, R.raw.king, "king")
-//            }.start()
+            Thread {
+                OBJLoader.preload(this, R.raw.parsed_rook, "rook")
+            }.start()
+
+            Thread {
+                OBJLoader.preload(this, R.raw.parsed_queen, "queen")
+            }.start()
+
+            Thread {
+                OBJLoader.preload(this, R.raw.parsed_king, "king")
+            }.start()
 
             NetworkManager.run(this)
 
@@ -131,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<UIButton>(R.id.start_new_game_button)
             .setText("Start new game")
             .setButtonTextSize(100.0f)
-            .setColor(Color.rgb(235, 186, 145))
+            .setColor(235, 186, 145)
             .setCornerRadius(45.0f)
             .setOnClickListener {
                 invitePlayerDialog.show()
@@ -150,7 +152,6 @@ class MainActivity : AppCompatActivity() {
                     .putExtra("is_playing_white", true)
                     .putExtra("game_id", "test_game")
                     .putExtra("opponent_name", "Opponent")
-                println("HELLO")
                 startActivity(intent)
             }
 
@@ -159,6 +160,8 @@ class MainActivity : AppCompatActivity() {
         val gameRecyclerView = findViewById<RecyclerView>(R.id.game_list)
         gameRecyclerView.layoutManager = LinearLayoutManager(this)
         gameRecyclerView.adapter = gameAdapter
+
+        AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES)
     }
 
     private fun isInitialized() = NetworkManager.isRunning()

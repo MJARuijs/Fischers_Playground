@@ -12,6 +12,7 @@ import kotlin.math.roundToInt
 
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
 
+    private var hoverColor = Color.rgb(0.1f, 0.1f, 0.1f)
     private val textPaint = Paint()
     private val paint = Paint()
 
@@ -54,31 +55,38 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
         debugPaint.color = Color.GREEN
 
-        setOnTouchListener { v, event ->
+        setOnTouchListener { _, event ->
 
-            if (event.action == MotionEvent.ACTION_BUTTON_PRESS) {
-                performClick()
-            } else if (event.action == MotionEvent.ACTION_DOWN) {
-                startClickTimer = System.currentTimeMillis()
-                heldDown = true
+            when (event.action) {
+                MotionEvent.ACTION_BUTTON_PRESS -> performClick()
+                MotionEvent.ACTION_DOWN -> {
+                    startClickTimer = System.currentTimeMillis()
+                    heldDown = true
+                    holding.set(true)
 
-                holding.set(true)
+                    paint.color = addColors(paint.color, hoverColor)
+                    invalidate()
 
-                Thread {
-                    while (holding.get()) {
-                        onHold()
+                    Thread {
+                        while (holding.get()) {
+                            onHold()
+                        }
+
+                        onRelease()
+                    }.start()
+                }
+                MotionEvent.ACTION_UP -> {
+                    paint.color = subtractColors(paint.color, hoverColor)
+                    invalidate()
+
+                    val buttonReleasedTime = System.currentTimeMillis()
+                    if (buttonReleasedTime - startClickTimer < 500) {
+                        performClick()
                     }
 
-                    onRelease()
-                }.start()
-            } else if (event.action == MotionEvent.ACTION_UP) {
-                val buttonReleasedTime = System.currentTimeMillis()
-                if (buttonReleasedTime - startClickTimer < 500) {
-                    performClick()
-
+                    heldDown = false
+                    holding.set(false)
                 }
-                heldDown = false
-                holding.set(false)
             }
 
             return@setOnTouchListener true
@@ -173,8 +181,17 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         return this
     }
 
+    fun setColor(r: Int, g: Int, b: Int): UIButton {
+//        hoverColor = Color.rgb(r / 25, g / 25, b / 25)
+        paint.color = Color.rgb(r, g, b)
+
+        return this
+    }
+
     fun setColor(color: Int): UIButton {
+//        defaultColor = color
         paint.color = color
+
         return this
     }
 
@@ -224,4 +241,54 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
     }
 
+    private fun setTextSize(text: String, desiredWidth: Float) {
+        val size = 48f
+        textPaint.textSize = size
+        val bounds = Rect()
+        textPaint.getTextBounds(text, 0, text.length, bounds)
+        val desiredTextSize = size * desiredWidth / bounds.width()
+        textPaint.textSize = desiredTextSize
+    }
+
+    private fun addColors(a: Int, b: Int): Int {
+        val colorA = Color.valueOf(a)
+        val colorB = Color.valueOf(b)
+
+        var newR = colorA.red() + colorB.red()
+        var newG = colorA.green() + colorB.green()
+        var newB = colorA.blue() + colorB.blue()
+
+        if (newR > 1.0f) {
+            newR = 1.0f
+        }
+        if (newG > 1.0f) {
+            newG = 1.0f
+        }
+        if (newB > 1.0f) {
+            newB = 1.0f
+        }
+
+        return Color.rgb(newR, newG, newB)
+    }
+
+    private fun subtractColors(a: Int, b: Int): Int {
+        val colorA = Color.valueOf(a)
+        val colorB = Color.valueOf(b)
+
+        var newR = colorA.red() - colorB.red()
+        var newG = colorA.green() - colorB.green()
+        var newB = colorA.blue() - colorB.blue()
+
+        if (newR < 0.0f) {
+            newR = 0.0f
+        }
+        if (newG < 0.0f) {
+            newG = 0.0f
+        }
+        if (newB < 0.0f) {
+            newB = 0.0f
+        }
+
+        return Color.rgb(newR, newG, newB)
+    }
 }

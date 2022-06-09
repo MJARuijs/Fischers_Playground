@@ -58,7 +58,6 @@ object OBJLoader {
         val vertices: FloatArray
         val normals: FloatArray
         val textures: FloatArray
-//        val faces: IntArray
         val faces: Array<String>
 
 //        var startTime = System.nanoTime()
@@ -96,7 +95,7 @@ object OBJLoader {
         var textureIndex = 0
         var faceIndex = 0
 
-//        startTime = System.nanoTime()
+//        var startTime = System.nanoTime()
 
         val vertexStartIndex = 0
         val vertexEndIndex = numberOfVertices
@@ -120,14 +119,6 @@ object OBJLoader {
                 val line = lines[i]
                 val parts = line.split(' ')
 
-//                if (i == vertexStartIndex) {
-//                    println("FIRST VERTEX: $line")
-//                }
-//
-//                if (i == vertexEndIndex - 1) {
-//                    println("LAST VERTEX: $line $i")
-//                }
-
                 vertices[vertexIndex++] = parts[1].toFloat()
                 vertices[vertexIndex++] = parts[2].toFloat()
                 vertices[vertexIndex++] = parts[3].toFloat()
@@ -135,19 +126,10 @@ object OBJLoader {
             verticesParsed.set(true)
         }.start()
 
-
         Thread {
             for (i in textureStartIndex until textureEndIndex) {
                 val line = lines[i]
                 val parts = line.split(' ')
-
-//                if (i == textureStartIndex) {
-//                    println("FIRST TEXTURE: $line $i")
-//                }
-//
-//                if (i == textureEndIndex - 1) {
-//                    println("LAST TEXTURE: $line $i")
-//                }
 
                 textures[textureIndex++] = parts[1].toFloat()
                 textures[textureIndex++] = parts[2].toFloat()
@@ -160,12 +142,7 @@ object OBJLoader {
             for (i in normalStartIndex until normalEndIndex) {
                 val line = lines[i]
                 val parts = line.split(' ')
-//                if (i == normalStartIndex) {
-//                    println("FIRST NORMAL: $line $i")
-//                }
-//                if (i == normalEndIndex - 1) {
-//                    println("LAST NORMAL: $line $i")
-//                }
+
                 try {
                     normals[normalIndex++] = parts[1].toFloat()
                     normals[normalIndex++] = parts[2].toFloat()
@@ -183,13 +160,6 @@ object OBJLoader {
                 val line = lines[i]
                 val parts = line.split(' ')
 
-//                if (i == faceStartIndex) {
-//                    println("FIRST FACE: $line $i")
-//                }
-//
-//                if (i == faceEndIndex - 1) {
-//                    println("LAST FACE: $line $i")
-//                }
                 try {
                     faces[faceIndex++] = parts[1]
                     faces[faceIndex++] = parts[2]
@@ -199,15 +169,15 @@ object OBJLoader {
                     throw e
                 }
             }
+
             facesParsed.set(true)
         }.start()
 
-        while (!verticesParsed.get() && !texturesParsed.get() && !normalsParsed.get() && !facesParsed.get()) {
-            Thread.sleep(10)
+
+        while (!verticesParsed.get() || !texturesParsed.get() || !normalsParsed.get() || !facesParsed.get()) {
+            Thread.sleep(0)
         }
 
-//        endTime = System.nanoTime()
-//        println("$name parsing lines: ${(endTime - startTime) / 1000000}")
 
         var vertexIndex2 = 0
         var normalIndex2 = 0
@@ -217,39 +187,47 @@ object OBJLoader {
         val normalData = FloatArray(faces.size * 3)
         val textureData = FloatArray(faces.size * 2)
 
-        val startTime = System.nanoTime()
+//        startTime = System.nanoTime()
+
         for (face in faces) {
-            val parts = face.split("/")
-//            var index = 3 * (parts[0].toInt() - 1)
+            val parts = face.split("/").toTypedArray()
+            var index = 3 * (parts[0].toInt() - 1)
 
-    var index = 0
+            try {
+                val xPosition = vertices[index++]
+                val yPosition = vertices[index++]
+                val zPosition = vertices[index]
 
-            val xPosition = vertices[index++]
-            val yPosition = vertices[index++]
-            val zPosition = vertices[index]
+                vertexData[vertexIndex2++] = xPosition
+                vertexData[vertexIndex2++] = yPosition
+                vertexData[vertexIndex2++] = zPosition
 
-            vertexData[vertexIndex2++] = xPosition
-            vertexData[vertexIndex2++] = yPosition
-            vertexData[vertexIndex2++] = zPosition
+                index = 2 * (parts[1].toInt() - 1)
+                val xTexture = textures[index++]
+                val yTexture = textures[index]
+                textureData[textureIndex2++] += xTexture
+                textureData[textureIndex2++] += 1 - yTexture
 
-//            index = 2 * (parts[1].toInt() - 1)
-            val xTexture = textures[index++]
-            val yTexture = textures[index]
-            textureData[textureIndex2++] += xTexture
-            textureData[textureIndex2++] += 1 - yTexture
+                index = 3 * (parts[2].toInt() - 1)
+                val xNormal = normals[index++]
+                val yNormal = normals[index++]
+                val zNormal = normals[index]
 
-//            index = 3 * (parts[2].toInt() - 1)
-            val xNormal = normals[index++]
-            val yNormal = normals[index++]
-            val zNormal = normals[index]
+                normalData[normalIndex2++] = xNormal
+                normalData[normalIndex2++] = yNormal
+                normalData[normalIndex2++] = zNormal
+            } catch (e: Exception) {
+                println("Face: $face")
+                throw e
+            }
 
-            normalData[normalIndex2++] = xNormal
-            normalData[normalIndex2++] = yNormal
-            normalData[normalIndex2++] = zNormal
+
         }
 
-        val endTime = System.nanoTime()
-        println("$name parsing faces: ${(endTime - startTime) / 1000000}")
+//        endTime = System.nanoTime()
+//        println("$name parsing faces: ${(endTime - startTime) / 1000000}")
+//        var endTime = System.nanoTime()
+//        println("parsing $name: ${(endTime - startTime) / 1000000}")
 
         return MeshData(vertexData, normalData, textureData)
     }

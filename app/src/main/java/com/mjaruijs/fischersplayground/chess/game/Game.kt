@@ -40,6 +40,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     var enableBackButton: () -> Unit = {}
     var enableForwardButton: () -> Unit = {}
     var onPieceTaken: (PieceType, Team) -> Unit = { _, _ -> }
+    var onPieceRegained: (PieceType, Team) -> Unit = {_, _ -> }
 //    var onCheck: (Vector2) -> Unit = {}
 //    var onCheckCleared: () -> Unit = {}
     var onCheckMate: (Team) -> Unit = {}
@@ -95,6 +96,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
         val shouldDisableBackButton = currentMoveIndex == -1
         val shouldEnableForwardButton = currentMoveIndex == moves.size - 2
+
 
         return Pair(shouldDisableBackButton, shouldEnableForwardButton)
     }
@@ -175,6 +177,12 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         } else {
             fromPosition = move.toPosition
             toPosition = move.fromPosition
+        }
+
+        println("UNDOING MOVE")
+        if (move.pieceTaken != null) {
+            println("TAKEN PIECE: ${move.pieceTaken}, ${move.team}")
+            onPieceRegained(move.pieceTaken, move.team)
         }
 
         val piece = Piece(move.movedPiece, move.team)
