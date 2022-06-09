@@ -39,7 +39,7 @@ void main() {
         }
     }
 
-    position.x /= aspectRatio;
+//    position.x /= aspectRatio;
     position *= scale;
 
 

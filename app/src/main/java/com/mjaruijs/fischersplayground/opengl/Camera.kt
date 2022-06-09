@@ -8,7 +8,7 @@ import kotlin.math.tan
 class Camera(
     var fieldOfView: Float = 45.0f,
     private var aspectRatio: Float = 1.0f,
-    private var zNear: Float = 0.1f,
+    private var zNear: Float = 1f,
     private var zFar: Float = 1000.0f,
     private var zoom: Float = 4.0f,
     var rotation: Vector3 = Vector3()

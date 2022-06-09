@@ -152,14 +152,16 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
             boardRenderer.render3D(board, camera)
-//            highlightRenderer.ren
+            highlightRenderer.renderSelectedSquares3D(board, aspectRatio, displayWidth, displayHeight, camera)
             gameRenderer3D.render(game, camera)
         } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
             boardRenderer.render2D(board, aspectRatio)
-            highlightRenderer.render2D(board, aspectRatio, displayWidth, displayHeight)
+            highlightRenderer.renderSelectedSquares2D(board, aspectRatio, displayWidth, displayHeight)
             gameRenderer2D.render(game, aspectRatio)
+            highlightRenderer.renderPossibleSquares2D(board, aspectRatio, displayWidth, displayHeight)
+
         }
 
         if (pixelsRequested) {

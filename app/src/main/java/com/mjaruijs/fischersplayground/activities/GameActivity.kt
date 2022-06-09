@@ -504,6 +504,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
         when {
             this.gameId == gameId -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_GAME)
+            gameId == "online" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_OTHER_GAME)
             gameId == "away" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.AWAY)
             gameId == "offline" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.OFFLINE)
             else -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_OTHER_GAME)
@@ -533,6 +534,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     override fun onResume() {
         super.onResume()
         registerReceivers()
+        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId"))
 
         keyboardHeightProvider.observer = this
 
@@ -562,8 +564,11 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     override fun onDestroy() {
+        println("ON DESTROY GAME_ACTIVITY")
         glView.destroy()
         keyboardHeightProvider.close()
+        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|offline"))
+
         super.onDestroy()
     }
 
@@ -576,7 +581,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (isChatOpened()) {
             closeChat()
         } else {
-            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|0"))
+            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|online"))
             super.onBackPressed()
         }
     }

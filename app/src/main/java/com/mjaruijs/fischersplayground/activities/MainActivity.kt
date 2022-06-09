@@ -571,7 +571,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        println("ON RESUME")
         val games = SavedGames.getAll()
+        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|online"))
 //        NetworkManager.sendMessage(Message(Topic.GAME_UPDATE))
         for (game in games) {
             val gameId = game.first
@@ -608,13 +610,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        println("ON DESTROY MAIN_ACTIVITY")
         NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|offline"))
         super.onDestroy()
     }
 
     override fun onUserLeaveHint() {
 //        println("USER LEAVING")
-//        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|away"))
+        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|away"))
         super.onUserLeaveHint()
     }
 

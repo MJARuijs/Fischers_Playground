@@ -49,6 +49,14 @@ class Quad {
         glBindVertexArray(0)
     }
 
+    fun drawInstanced(count: Int) {
+        glBindVertexArray(vao)
+        glEnableVertexAttribArray(0)
+        glDrawArraysInstanced(GL_TRIANGLES, 0, vertices.size, count)
+        glDisableVertexAttribArray(0)
+        glBindVertexArray(0)
+    }
+
     fun draw() {
         glBindVertexArray(vao)
         glEnableVertexAttribArray(0)
