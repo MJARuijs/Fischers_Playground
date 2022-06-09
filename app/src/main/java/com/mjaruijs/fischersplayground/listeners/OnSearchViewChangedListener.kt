@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.userinterface
+package com.mjaruijs.fischersplayground.listeners
 
 import android.widget.SearchView
 import java.util.concurrent.atomic.AtomicBoolean

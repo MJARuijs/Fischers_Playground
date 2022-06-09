@@ -13,24 +13,22 @@ import kotlin.math.roundToInt
 
 class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(context, attributes) {
 
-    private val takenWhitePieces = ArrayList<TakenPieceData>()
-    private val takenBlackPieces = ArrayList<TakenPieceData>()
+    private val takenPieces = ArrayList<TakenPieceData>()
     private val pieceOffset = 10
     private var maxPieceWidth = 0
     private var pieceHeight = 0
-    private val whitePaint = Paint()
-    private val blackPaint = Paint()
 
-    init {
-        whitePaint.color = Color.WHITE
-        whitePaint.isAntiAlias = true
+    private val paint = Paint()
+    private lateinit var team: Team
 
-        blackPaint.color = Color.BLACK
-        blackPaint.isAntiAlias = true
-//        blackPaint.setShadowLayer(10.0f, 10.0f, 10.0f, Color.WHITE)
+    fun init(team: Team) {
+        this.team = team
+
+        paint.isAntiAlias = true
+        paint.color = if (team == Team.WHITE) Color.WHITE else Color.BLACK
     }
 
-    fun add(pieceType: PieceType, team: Team) {
+    fun add(pieceType: PieceType) {
         val resourceId = if (team == Team.WHITE) {
             when (pieceType) {
                 PieceType.PAWN -> R.drawable.white_pawn
@@ -55,72 +53,49 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
         val bitmap = drawable.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ALPHA_8)
         val outlineBitmap = drawable.toBitmap(drawable.intrinsicWidth + pieceOffset * 2, drawable.intrinsicHeight + pieceOffset * 2, Bitmap.Config.ALPHA_8)
 
-        val numberOfPieces = if (team == Team.WHITE) takenWhitePieces.size else takenBlackPieces.size
+        val numberOfPieces = takenPieces.size
         val left = numberOfPieces * maxPieceWidth
         val right = (numberOfPieces + 1) * maxPieceWidth
 
         val rect = Rect(left, pieceOffset, right, pieceHeight + pieceOffset)
         val outlineRect = Rect(left - pieceOffset, 0, right + pieceOffset, pieceHeight + pieceOffset * 2)
 
-        if (team == Team.WHITE) {
-            takenWhitePieces += TakenPieceData(pieceType, team, bitmap, rect, outlineBitmap, outlineRect)
-            sortWhitePieces()
-        } else {
-            takenBlackPieces += TakenPieceData(pieceType, team, bitmap, rect, outlineBitmap, outlineRect)
-            sortBlackPieces()
-        }
+        takenPieces += TakenPieceData(pieceType, team, bitmap, rect, outlineBitmap, outlineRect)
+        sort()
 
         invalidate()
     }
 
-    fun removeTakenPiece(type: PieceType, team: Team) {
-        println("REMOVING $type from $team")
-        if (team == Team.WHITE) {
-            val lastPieceIndex = takenWhitePieces.indexOfLast { piece -> piece.type == type }
-            if (lastPieceIndex == -1) {
-                return
-            }
-
-            takenWhitePieces.removeAt(lastPieceIndex)
-            sortWhitePieces()
-        } else {
-            val lastPieceIndex = takenBlackPieces.indexOfLast { piece -> piece.type == type }
-            if (lastPieceIndex == -1) {
-                return
-            }
-
-            takenBlackPieces.removeAt(lastPieceIndex)
-            sortWhitePieces()
+    fun removeTakenPiece(type: PieceType) {
+        val lastPieceIndex = takenPieces.indexOfLast { piece -> piece.type == type }
+        if (lastPieceIndex == -1) {
+            return
         }
+
+        takenPieces.removeAt(lastPieceIndex)
+        sort()
 
         invalidate()
     }
 
-    private fun sortWhitePieces() {
-        takenWhitePieces.sortWith { piece1, piece2 ->
+    private fun sort() {
+        takenPieces.sortWith { piece1, piece2 ->
             if (piece1.type.sortingValue > piece2.type.sortingValue) 1 else -1
         }
         recalculateWhiteBorders()
     }
 
-    private fun sortBlackPieces() {
-        takenBlackPieces.sortWith { piece1, piece2 ->
-            if (piece1.type.sortingValue > piece2.type.sortingValue) 1 else -1
-        }
-        recalculateBlackBorders()
-    }
+//    private fun sortBlackPieces() {
+//        takenBlackPieces.sortWith { piece1, piece2 ->
+//            if (piece1.type.sortingValue > piece2.type.sortingValue) 1 else -1
+//        }
+//        recalculateBlackBorders()
+//    }
 
     private fun recalculateWhiteBorders() {
-        for ((i, piece) in takenWhitePieces.withIndex()) {
-            takenWhitePieces[i].rect.left = i * maxPieceWidth
-            takenWhitePieces[i].rect.right = (i + 1) * maxPieceWidth
-        }
-    }
-
-    private fun recalculateBlackBorders() {
-        for ((i, piece) in takenBlackPieces.withIndex()) {
-            takenBlackPieces[i].rect.left = i * maxPieceWidth
-            takenBlackPieces[i].rect.right = (i + 1) * maxPieceWidth
+        for ((i, piece) in takenPieces.withIndex()) {
+            takenPieces[i].rect.left = i * maxPieceWidth
+            takenPieces[i].rect.right = (i + 1) * maxPieceWidth
         }
     }
 
@@ -141,12 +116,8 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
             return
         }
 
-        for (piece in takenWhitePieces) {
-            canvas.drawBitmap(piece.bitmap, null, piece.rect, whitePaint)
-        }
-
-        for (piece in takenBlackPieces) {
-            canvas.drawBitmap(piece.bitmap, null, piece.rect, blackPaint)
+        for (piece in takenPieces) {
+            canvas.drawBitmap(piece.bitmap, null, piece.rect, paint)
         }
     }
 

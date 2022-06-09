@@ -26,7 +26,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
+class PieceRenderer3D(context: Context, isPlayerWhite: Boolean) {
 
     private val sampler = Sampler(0)
     private val piece3DProgram = ShaderProgram(
@@ -174,12 +174,12 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
     }
 
     fun destroy() {
-//        pawnMesh.destroy()
-//        knightMesh.destroy()
-//        bishopMesh.destroy()
-//        rookMesh.destroy()
-//        queenMesh.destroy()
-//        kingMesh.destroy()
+        pawnMesh.destroy()
+        knightMesh.destroy()
+        bishopMesh.destroy()
+        rookMesh.destroy()
+        queenMesh.destroy()
+        kingMesh.destroy()
         piece3DProgram.destroy()
     }
 

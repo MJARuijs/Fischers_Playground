@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class GameRenderer2D(context: Context) {
+class PieceRenderer2D(context: Context) {
     
     private val quad = Quad()
     private val sampler = Sampler(0)

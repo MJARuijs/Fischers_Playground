@@ -21,8 +21,9 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     private lateinit var game: Game
 
     private lateinit var boardRenderer: BoardRenderer
-    private lateinit var gameRenderer2D: GameRenderer2D
-    private lateinit var gameRenderer3D: GameRenderer3D
+    private lateinit var gameRenderer2D: PieceRenderer2D
+    private lateinit var gameRenderer3D: PieceRenderer3D
+    private lateinit var highlightRenderer: HighlightRenderer
 
     private val camera = Camera(zoom = DEFAULT_ZOOM)
 
@@ -54,9 +55,10 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         PieceTextures.createTextureArrays()
 
-        gameRenderer2D = GameRenderer2D(context)
-        gameRenderer3D = GameRenderer3D(context, isPlayerWhite)
+        gameRenderer2D = PieceRenderer2D(context)
+        gameRenderer3D = PieceRenderer3D(context, isPlayerWhite)
         boardRenderer = BoardRenderer(context)
+        highlightRenderer = HighlightRenderer(context)
 
         onContextCreated()
 
@@ -150,11 +152,13 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
             boardRenderer.render3D(board, camera)
+//            highlightRenderer.ren
             gameRenderer3D.render(game, camera)
         } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
             boardRenderer.render2D(board, aspectRatio)
+            highlightRenderer.render2D(board, aspectRatio, displayWidth, displayHeight)
             gameRenderer2D.render(game, aspectRatio)
         }
 

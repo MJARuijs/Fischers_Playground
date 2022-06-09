@@ -142,10 +142,12 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (savedInstanceState == null) {
             val playerBundle = Bundle()
             playerBundle.putString("player_name", userName)
+            playerBundle.putString("team", if (isPlayingWhite) "WHITE" else "BLACK")
             playerBundle.putBoolean("hide_status_icon", true)
 
             val opponentBundle = Bundle()
             opponentBundle.putString("player_name", opponentName)
+            opponentBundle.putString("team", if (isPlayingWhite) "BLACK" else "WHITE")
             opponentBundle.putBoolean("hide_status_icon", isSinglePlayer)
 
             val chatBundle = Bundle()

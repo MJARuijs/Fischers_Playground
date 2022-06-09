@@ -14,10 +14,17 @@ import com.mjaruijs.fischersplayground.userinterface.TakenPiecesView
 class PlayerCardFragment : Fragment(R.layout.player_card) {
 
     private lateinit var statusIcon: ImageView
+    private lateinit var takenPieceView: TakenPiecesView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val name = requireArguments().getString("player_name")
         val hideStatusIcon = requireArguments().getBoolean("hide_status_icon")
+        val teamValue = requireArguments().getString("team") ?: throw IllegalArgumentException("Missing essential data in PlayerFragment: team")
+
+        val team = Team.fromString(teamValue)
+
+        takenPieceView = view.findViewById(R.id.taken_pieces_view)
+        takenPieceView.init(team)
 
         val playerNameView = view.findViewById<TextView>(R.id.player_card_name)
         if (playerNameView != null) {
@@ -32,13 +39,13 @@ class PlayerCardFragment : Fragment(R.layout.player_card) {
     }
 
     fun addTakenPiece(pieceType: PieceType, team: Team) {
-        val takenPieceView = view?.findViewById<TakenPiecesView>(R.id.taken_pieces_view) ?: throw IllegalArgumentException("No view was found with id: taken_pieces_view")
-        takenPieceView.add(pieceType, team)
+//        val takenPieceView = view?.findViewById<TakenPiecesView>(R.id.taken_pieces_view) ?: throw IllegalArgumentException("No view was found with id: taken_pieces_view")
+        takenPieceView.add(pieceType)
     }
 
     fun removeTakenPiece(pieceType: PieceType, team: Team) {
-        val takenPieceView = view?.findViewById<TakenPiecesView>(R.id.taken_pieces_view) ?: throw IllegalArgumentException("No view was found with id: taken_pieces_view")
-        takenPieceView.removeTakenPiece(pieceType, team)
+//        val takenPieceView = view?.findViewById<TakenPiecesView>(R.id.taken_pieces_view) ?: throw IllegalArgumentException("No view was found with id: taken_pieces_view")
+        takenPieceView.removeTakenPiece(pieceType)
     }
 
     fun setStatusIcon(status: PlayerStatus) {

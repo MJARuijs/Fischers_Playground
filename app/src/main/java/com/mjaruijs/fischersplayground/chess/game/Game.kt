@@ -164,6 +164,10 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         val isCheck = isPlayerChecked(state, !move.team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
+        if (move.pieceTaken != null) {
+            onPieceTaken(move.pieceTaken, !move.team)
+        }
+
         updateCheckData(!move.team, isCheck, isCheckMate)
     }
 
@@ -177,12 +181,6 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
         } else {
             fromPosition = move.toPosition
             toPosition = move.fromPosition
-        }
-
-        println("UNDOING MOVE")
-        if (move.pieceTaken != null) {
-            println("TAKEN PIECE: ${move.pieceTaken}, ${move.team}")
-            onPieceRegained(move.pieceTaken, move.team)
         }
 
         val piece = Piece(move.movedPiece, move.team)
@@ -215,6 +213,10 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
 
         val isCheck = isPlayerChecked(state, move.team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, move.team) else false
+
+        if (move.pieceTaken != null) {
+            onPieceRegained(move.pieceTaken, move.team)
+        }
 
         updateCheckData(move.team, isCheck, isCheckMate)
         decrementMoveCounter()

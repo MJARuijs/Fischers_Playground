@@ -11,7 +11,7 @@ import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerCardItem
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.userinterface.OnSearchViewChangedListener
+import com.mjaruijs.fischersplayground.listeners.OnSearchViewChangedListener
 import java.util.*
 
 class InvitePlayerDialog(private val onInvite: (String, Long, String, String) -> Unit) {
