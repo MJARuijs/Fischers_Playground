@@ -36,19 +36,19 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
 
     private val animations = ArrayList<AnimationValues>()
 
-    private val pawnMesh = Mesh(OBJLoader.get(context, R.raw.pawn))
-    private val bishopMesh = Mesh(OBJLoader.get(context, R.raw.bishop))
-    private val knightMesh = Mesh(OBJLoader.get(context, R.raw.knight))
-    private val rookMesh = Mesh(OBJLoader.get(context, R.raw.rook))
-    private val queenMesh = Mesh(OBJLoader.get(context, R.raw.queen))
-    private val kingMesh = Mesh(OBJLoader.get(context, R.raw.king))
-
-    private val pawn = Entity(pawnMesh)
-    private val bishop = Entity(bishopMesh)
+//    private val pawnMesh = Mesh(OBJLoader.get(context, R.raw.parsed_pawn))
+//    private val bishopMesh = Mesh(OBJLoader.get(context, R.raw.parsed_bishop))
+    private val knightMesh = Mesh(OBJLoader.get(context, R.raw.parsed_knight))
+//    private val rookMesh = Mesh(OBJLoader.get(context, R.raw.parsed_rook))
+//    private val queenMesh = Mesh(OBJLoader.get(context, R.raw.parsed_queen))
+//    private val kingMesh = Mesh(OBJLoader.get(context, R.raw.parsed_king))
+//
+//    private val pawn = Entity(pawnMesh)
+//    private val bishop = Entity(bishopMesh)
     private val knight = Entity(knightMesh)
-    private val rook = Entity(rookMesh)
-    private val queen = Entity(queenMesh)
-    private val king = Entity(kingMesh)
+//    private val rook = Entity(rookMesh)
+//    private val queen = Entity(queenMesh)
+//    private val king = Entity(kingMesh)
 
     private val ambientLight = AmbientLight(Color.DARK)
     private val directionalLight = DirectionalLight(Color.WHITE, Vector3(0.0f, -0.5f, 1f))
@@ -56,13 +56,12 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
     private val whiteMaterial = Material(Color(0.8f, 0.8f, 0.8f), Color(0.8f, 0.8f, 0.8f), Color.WHITE, 50.0f)
     private val blackMaterial = Material(Color(0.2f, 0.2f, 0.2f), Color(0.2f, 0.2f, 0.2f), Color.WHITE, 50.0f)
 
-    var pieceScale = Vector3(1f, 1f, 1f)
-
     private val whiteKnightRotation = if (isPlayerWhite) ROTATION_MATRIX else Matrix4()
     private val blackKnightRotation = if (isPlayerWhite) Matrix4() else ROTATION_MATRIX
 
     private val isLocked = AtomicBoolean(false)
 
+    var pieceScale = Vector3(1f, 1f, 1f)
 
     var rChannel = 1.0f
     var gChannel = 1.0f
@@ -135,15 +134,15 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
                 piece3DProgram.set("textureId", piece.textureId3D.toFloat())
 
                 when (piece.type) {
-                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
-                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
+//                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
+//                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
                     PieceType.KNIGHT -> {
                         val rotation = if (piece.team == Team.WHITE) whiteKnightRotation else blackKnightRotation
                         knight.render(piece3DProgram, translation, rotation, pieceScale)
                     }
-                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
-                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
-                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
+//                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
+//                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
+//                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
                 }
             }
         }
@@ -175,12 +174,12 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
     }
 
     fun destroy() {
-        pawnMesh.destroy()
-        knightMesh.destroy()
-        bishopMesh.destroy()
-        rookMesh.destroy()
-        queenMesh.destroy()
-        kingMesh.destroy()
+//        pawnMesh.destroy()
+//        knightMesh.destroy()
+//        bishopMesh.destroy()
+//        rookMesh.destroy()
+//        queenMesh.destroy()
+//        kingMesh.destroy()
         piece3DProgram.destroy()
     }
 

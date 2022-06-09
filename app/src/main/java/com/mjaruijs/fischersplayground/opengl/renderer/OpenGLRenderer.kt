@@ -22,7 +22,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     private lateinit var boardRenderer: BoardRenderer
     private lateinit var gameRenderer2D: GameRenderer2D
-//    private lateinit var gameRenderer3D: GameRenderer3D
+    private lateinit var gameRenderer3D: GameRenderer3D
 
     private val camera = Camera(zoom = DEFAULT_ZOOM)
 
@@ -55,7 +55,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         PieceTextures.createTextureArrays()
 
         gameRenderer2D = GameRenderer2D(context)
-//        gameRenderer3D = GameRenderer3D(context, isPlayerWhite)
+        gameRenderer3D = GameRenderer3D(context, isPlayerWhite)
         boardRenderer = BoardRenderer(context)
 
         onContextCreated()
@@ -100,7 +100,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun setPieceScale(scale: Float) {
-//        gameRenderer3D.pieceScale = Vector3(scale, scale, scale)
+        gameRenderer3D.pieceScale = Vector3(scale, scale, scale)
     }
 
     fun setGame(game: Game) {
@@ -111,24 +111,24 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun update(delta: Float): Boolean {
-//        return if (this::game.isInitialized) {
+        return if (this::game.isInitialized) {
 
-//            if (is3D) {
-//                Thread {
-//                    gameRenderer3D.startAnimations(game)
-//                }.start()
-//                gameRenderer3D.update(delta)
+            if (is3D) {
+                Thread {
+                    gameRenderer3D.startAnimations(game)
+                }.start()
+                gameRenderer3D.update(delta)
 //                false
-//            } else {
-//                Thread {
-//                    gameRenderer2D.startAnimations(game)
-//                }.start()
-//                gameRenderer2D.update(delta)
-//            }
-//        } else {
-//            false
-//        }
-        return false
+            } else {
+                Thread {
+                    gameRenderer2D.startAnimations(game)
+                }.start()
+                gameRenderer2D.update(delta)
+            }
+        } else {
+            false
+        }
+//        return false
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
@@ -146,17 +146,17 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
             return
         }
 
-//        if (is3D) {
-//            glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        if (is3D) {
+            glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-//            boardRenderer.render3D(board, camera)
-//            gameRenderer3D.render(game, camera)
-//        } else {
+            boardRenderer.render3D(board, camera)
+            gameRenderer3D.render(game, camera)
+        } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
             boardRenderer.render2D(board, aspectRatio)
             gameRenderer2D.render(game, aspectRatio)
-//        }
+        }
 
         if (pixelsRequested) {
             onPixelsRead(saveBuffer())
@@ -218,7 +218,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     fun destroy() {
         gameRenderer2D.destroy()
-//        gameRenderer3D.destroy()
+        gameRenderer3D.destroy()
         boardRenderer.destroy()
     }
 }

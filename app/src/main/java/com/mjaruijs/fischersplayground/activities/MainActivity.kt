@@ -83,27 +83,27 @@ class MainActivity : AppCompatActivity() {
             PieceTextures.init(this)
 
 //            Thread {
-//                OBJLoader.preload(this, R.raw.cube)
+//                OBJLoader.preload(this, R.raw.pawn, "pawn")
 //            }.start()
 //
 //            Thread {
-//                OBJLoader.preload(this, R.raw.bishop)
+//                OBJLoader.preload(this, R.raw.bishop, "bishop")
+//            }.start()
+
+            Thread {
+                OBJLoader.preload(this, R.raw.parsed_knight, "parsed_knight")
+            }.start()
+
+//            Thread {
+//                OBJLoader.preload(this, R.raw.rook, "rook")
 //            }.start()
 //
 //            Thread {
-//                OBJLoader.preload(this, R.raw.knight)
+//                OBJLoader.preload(this, R.raw.queen, "queen")
 //            }.start()
 //
 //            Thread {
-//                OBJLoader.preload(this, R.raw.rook)
-//            }.start()
-//
-//            Thread {
-//                OBJLoader.preload(this, R.raw.queen)
-//            }.start()
-//
-//            Thread {
-//                OBJLoader.preload(this, R.raw.king)
+//                OBJLoader.preload(this, R.raw.king, "king")
 //            }.start()
 
             NetworkManager.run(this)
