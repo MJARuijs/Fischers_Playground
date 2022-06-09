@@ -36,19 +36,19 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
 
     private val animations = ArrayList<AnimationValues>()
 
-//    private val pawnMesh = Mesh(OBJLoader.get(context, R.raw.parsed_pawn))
-//    private val bishopMesh = Mesh(OBJLoader.get(context, R.raw.parsed_bishop))
-    private val knightMesh = Mesh(OBJLoader.get(context, R.raw.parsed_knight))
-//    private val rookMesh = Mesh(OBJLoader.get(context, R.raw.parsed_rook))
-//    private val queenMesh = Mesh(OBJLoader.get(context, R.raw.parsed_queen))
-//    private val kingMesh = Mesh(OBJLoader.get(context, R.raw.parsed_king))
+    private val pawnMesh = Mesh(OBJLoader.get(context, R.raw.pawn_bytes))
+    private val bishopMesh = Mesh(OBJLoader.get(context, R.raw.bishop_bytes))
+    private val knightMesh = Mesh(OBJLoader.get(context, R.raw.knight_bytes))
+    private val rookMesh = Mesh(OBJLoader.get(context, R.raw.rook_bytes))
+    private val queenMesh = Mesh(OBJLoader.get(context, R.raw.queen_bytes))
+    private val kingMesh = Mesh(OBJLoader.get(context, R.raw.king_bytes))
 //
-//    private val pawn = Entity(pawnMesh)
-//    private val bishop = Entity(bishopMesh)
+    private val pawn = Entity(pawnMesh)
+    private val bishop = Entity(bishopMesh)
     private val knight = Entity(knightMesh)
-//    private val rook = Entity(rookMesh)
-//    private val queen = Entity(queenMesh)
-//    private val king = Entity(kingMesh)
+    private val rook = Entity(rookMesh)
+    private val queen = Entity(queenMesh)
+    private val king = Entity(kingMesh)
 
     private val ambientLight = AmbientLight(Color.DARK)
     private val directionalLight = DirectionalLight(Color.WHITE, Vector3(0.0f, -0.5f, 1f))
@@ -134,15 +134,15 @@ class GameRenderer3D(context: Context, isPlayerWhite: Boolean) {
                 piece3DProgram.set("textureId", piece.textureId3D.toFloat())
 
                 when (piece.type) {
-//                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
+                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
+                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
                     PieceType.KNIGHT -> {
                         val rotation = if (piece.team == Team.WHITE) whiteKnightRotation else blackKnightRotation
                         knight.render(piece3DProgram, translation, rotation, pieceScale)
                     }
-//                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
+                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
+                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
+                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
                 }
             }
         }
