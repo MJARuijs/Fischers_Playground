@@ -40,7 +40,7 @@ abstract class Game(isPlayingWhite: Boolean, protected var moves: ArrayList<Move
     var enableBackButton: () -> Unit = {}
     var enableForwardButton: () -> Unit = {}
     var onPieceTaken: (PieceType, Team) -> Unit = { _, _ -> }
-    var onPieceRegained: (PieceType, Team) -> Unit = {_, _ -> }
+    var onPieceRegained: (PieceType, Team) -> Unit = { _, _ -> }
 //    var onCheck: (Vector2) -> Unit = {}
 //    var onCheckCleared: () -> Unit = {}
     var onCheckMate: (Team) -> Unit = {}

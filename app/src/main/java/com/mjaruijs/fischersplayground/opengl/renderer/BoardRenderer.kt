@@ -80,8 +80,6 @@ class BoardRenderer(context: Context) {
         board3DProgram.stop()
     }
 
-    val quad = Quad()
-
     fun render2D(board: Board, displayWidth: Int, displayHeight: Int) {
         board2DProgram.start()
 //        board2DProgram.set("textureMap", diffuseSampler.index)
@@ -92,7 +90,7 @@ class BoardRenderer(context: Context) {
         diffuseSampler.bind(diffuseTexture)
 
         for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
-            board2DProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
+//            board2DProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
         }
 
 //        quad.draw()

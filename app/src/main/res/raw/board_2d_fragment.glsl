@@ -5,18 +5,17 @@ precision highp float;
 const vec3 whiteTile = vec3(196.0 / 255.0, 178.0 / 255.0, 158.0 / 255.0);
 const vec3 darkTile = vec3(109.0 / 255.0, 86.0 / 255.0, 68.0 / 255.0);
 
-const int KING_CHECK_INDEX = 1;
-const int SQUARE_SELECTED_INDEX = 2;
+//const int KING_CHECK_INDEX = 1;
+//const int SQUARE_SELECTED_INDEX = 2;
 
 in vec2 textureCoordinates;
 
-flat in int squareSelected;
+//flat in int squareSelected;
 
 uniform highp sampler2D textureMap;
-uniform highp vec2 selectedSquareCoordinates;
-uniform highp vec2 checkedKingSquare;
-uniform highp vec2 viewPort;
-
+//uniform highp vec2 selectedSquareCoordinates;
+//uniform highp vec2 checkedKingSquare;
+//uniform highp vec2 viewPort;
 
 out vec4 outColor;
 

@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.chess
 
-import com.mjaruijs.fischersplayground.math.Color
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector4
 import com.mjaruijs.fischersplayground.opengl.Camera
