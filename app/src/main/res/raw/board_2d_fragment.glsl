@@ -5,12 +5,18 @@ precision highp float;
 const vec3 whiteTile = vec3(196.0 / 255.0, 178.0 / 255.0, 158.0 / 255.0);
 const vec3 darkTile = vec3(109.0 / 255.0, 86.0 / 255.0, 68.0 / 255.0);
 
+const int KING_CHECK_INDEX = 1;
+const int SQUARE_SELECTED_INDEX = 2;
+
 in vec2 textureCoordinates;
-//in float tileColor;
 
 flat in int squareSelected;
 
 uniform highp sampler2D textureMap;
+uniform highp vec2 selectedSquareCoordinates;
+uniform highp vec2 checkedKingSquare;
+uniform highp vec2 viewPort;
+
 
 out vec4 outColor;
 
@@ -18,10 +24,10 @@ void main() {
     vec2 position = (textureCoordinates + vec2(1, 1)) / 2.0;
 
     vec4 textureColor = texture(textureMap, position * vec2(1, -1));
-
     float strength = (textureColor.r + textureColor.g + textureColor.b) / 2.0;
 
     float scale = 1.0 / 8.0;
+
     int squareX = 0;
     for (int x = 1; x < 9; x++) {
         if (position.x < float(x) * scale) {
@@ -38,11 +44,10 @@ void main() {
         }
     }
 
-    outColor = vec4(float(squareX) * scale, float(squareY) * scale, 0, 1);
-
     int remainderX = squareX % 2;
     int remainderY = squareY % 2;
 
+    outColor.a = 1.0;
     if (remainderY == 0) {
         if (remainderX == 0) {
             outColor.rgb = darkTile * strength;
@@ -57,27 +62,45 @@ void main() {
         }
     }
 
-//    if (remainderY == 0 && remainderX == 0) {
-//        outColor = vec4(1, 0, 0, 1.0);
-//    } else {
-//        outColor = vec4(0, 1, 0, 1.0);
+    if (squareSelected != 0) {
+        vec2 center;
+        vec4 color;
+
+        if (squareSelected == KING_CHECK_INDEX) {
+            center = checkedKingSquare * 8.0 + vec2(1.0, 1.0);
+            color = vec4(1, 0, 0, 1);
+        } else if (squareSelected == SQUARE_SELECTED_INDEX) {
+            center = selectedSquareCoordinates * 8.0 + vec2(1.0, 1.0) ;
+            color = vec4(0, 0, 1, 1);
+        }
+
+        vec2 currentPoint = gl_FragCoord.xy;
+        currentPoint /= viewPort;
+        currentPoint = (currentPoint * 2.0) - 1.0;
+        currentPoint /= vec2(1.0 / 8.0, 1.0 / 8.0);
+
+        float maxDistance = distance(currentPoint, center) / 1.5;
+        outColor = mix(vec4(1,1,1,1), color, maxDistance);
+    }
+
+//    vec2 center;
+//    vec4 color;
+
+//    if (squareSelected == KING_CHECK_INDEX) {
+//        center = checkedKingSquare * 8.0 + vec2(1.0, 1.0);
+//        color = vec4(1, 0, 0, 1);
+//    } else if (squareSelected == SQUARE_SELECTED_INDEX) {
+//        center = selectedSquareCoordinates * 8.0 + vec2(1.0, 1.0) ;
+
+//    center = vec2(0, 0);
+//        color = vec4(1, 0, 0, 1);
 //    }
 
-
-//    outColor = textureColor;
-//    outColor = vec4(position, 0, 1);
-//    outColor = vec4(textureCoordinates + vec2(1, 1), 0, 1);
-//    if (tileColor == 1.0) {
-//        outColor = vec4(whiteTile, 1.0);
-//    } else if (tileColor == 0.0) {
-//        outColor = vec4(darkTile, 1.0);
-//    }
+//    vec2 currentPoint = gl_FragCoord.xy;
+//    currentPoint /= viewPort;
+//    currentPoint = (currentPoint * 2.0) - 1.0;
+//    currentPoint /= vec2(1.0 / 8.0, 1.0 / 8.0);
 //
-//    if (squareSelected == 1) {
-//        outColor = vec4(0, 0, 1, 1);
-//    } else if (squareSelected == 2) {
-//        outColor = vec4(0.5, 0, 0, 1);
-//    } else if (squareSelected == 3) {
-//        outColor = vec4(0.5, 0, 0, 1);
-//    }
+//    float maxDistance = (distance(currentPoint, center) / 1.5) / 8.0;
+//    outColor = mix(vec4(1,1,1,1), color, maxDistance);
 }

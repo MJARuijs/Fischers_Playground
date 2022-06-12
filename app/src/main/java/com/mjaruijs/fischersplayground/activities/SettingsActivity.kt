@@ -131,6 +131,7 @@ class SettingsActivity : AppCompatActivity() {
         val transition = ChangeBounds()
         transition.duration = ANIMATION_DURATION
         transition.doOnEnd {
+            // TODO: Change visibility back to View.GONE
             graphicsSettingsButton.visibility = View.GONE
 
             glView3D.isActive = true
@@ -364,6 +365,9 @@ class SettingsActivity : AppCompatActivity() {
         graphicsSettingsButton.setOnClickListener {
             if (is3D && !expanded) {
                 expand()
+            } else if (expanded) {
+                glView3D.getRenderer().renderCircle = !glView3D.getRenderer().renderCircle
+                glView3D.requestRender()
             }
         }
 

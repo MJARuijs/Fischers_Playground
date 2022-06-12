@@ -2,6 +2,8 @@ package com.mjaruijs.fischersplayground.opengl.surfaceviews
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.graphics.Color
+import android.graphics.Paint
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -20,7 +22,10 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     private lateinit var onSurfaceCreated: () -> Unit
     private lateinit var onClick: (Float, Float) -> Unit
 
+    private val paint = Paint()
+
     init {
+        paint.color = Color.rgb(0f, 0f, 1f)
         setEGLContextClientVersion(3)
 
         val preferences = context.getSharedPreferences("graphics_preferences", MODE_PRIVATE)

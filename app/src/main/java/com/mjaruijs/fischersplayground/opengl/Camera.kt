@@ -10,7 +10,7 @@ class Camera(
     private var aspectRatio: Float = 1.0f,
     private var zNear: Float = 1f,
     private var zFar: Float = 1000.0f,
-    private var zoom: Float = 4.0f,
+    private var zoom: Float = DEFAULT_ZOOM,
     var rotation: Vector3 = Vector3()
 ) {
 
@@ -59,6 +59,7 @@ class Camera(
     }
 
     companion object {
+        const val DEFAULT_ZOOM = 3f
         const val MAX_ZOOM = 30f
     }
 }

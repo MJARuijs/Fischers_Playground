@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import androidx.appcompat.app.AppCompatActivity
@@ -10,6 +11,7 @@ import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.Camera
+import com.mjaruijs.fischersplayground.opengl.Camera.Companion.DEFAULT_ZOOM
 import java.nio.ByteBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -25,7 +27,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     private lateinit var gameRenderer3D: PieceRenderer3D
     private lateinit var highlightRenderer: HighlightRenderer
 
-    private val camera = Camera(zoom = DEFAULT_ZOOM)
+    private val camera = Camera()
 
     private var aspectRatio = 1.0f
 
@@ -41,10 +43,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     var onDraw: () -> Unit = {}
     var onPixelsRead: (ByteBuffer) -> Unit = {}
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
-
-    companion object {
-        private const val DEFAULT_ZOOM = 4.0f
-    }
 
     override fun onSurfaceCreated(p0: GL10?, config: EGLConfig?) {
         glClearColor(0.25f, 0.25f, 0.25f, 1f)
@@ -62,6 +60,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         onContextCreated()
 
+        // TODO: uncomment this line
         val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
         camera.setZoom(preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM))
     }
@@ -138,10 +137,14 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         displayWidth = width
         displayHeight = height
+
+        println("Display dimensions: $displayWidth, $displayHeight")
         aspectRatio = width.toFloat() / height.toFloat()
 
         onDisplaySizeChanged(displayWidth, displayHeight)
     }
+
+    var renderCircle = false
 
     override fun onDrawFrame(p0: GL10?) {
         if (!this::game.isInitialized) {
@@ -151,17 +154,21 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         if (is3D) {
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-            boardRenderer.render3D(board, camera)
+            boardRenderer.render3D(board, camera, displayWidth, displayHeight)
             highlightRenderer.renderSelectedSquares3D(board, aspectRatio, displayWidth, displayHeight, camera)
             gameRenderer3D.render(game, camera)
+
+//            if (renderCircle) {
+                highlightRenderer.renderPossibleSquares3D(board, camera, displayWidth, displayHeight)
+//            }
+
         } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
-            boardRenderer.render2D(board, aspectRatio)
+            boardRenderer.render2D(board, displayWidth, displayHeight)
             highlightRenderer.renderSelectedSquares2D(board, aspectRatio, displayWidth, displayHeight)
-            gameRenderer2D.render(game, aspectRatio)
-            highlightRenderer.renderPossibleSquares2D(board, aspectRatio, displayWidth, displayHeight)
-
+            gameRenderer2D.render(game)
+            highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight)
         }
 
         if (pixelsRequested) {
@@ -219,6 +226,12 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         val pixelData = ByteBuffer.allocateDirect(displayWidth * displayHeight * 4)
         glReadPixels(0, 0, displayWidth, displayHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixelData)
         pixelData.rewind()
+
+        val bitmap = Bitmap.createBitmap(displayWidth, displayHeight, Bitmap.Config.ARGB_8888)
+        bitmap.copyPixelsFromBuffer(pixelData)
+
+//        ImageUtils.saveBitmapToStorage(context, bitmap, "king_checked.png")
+
         return pixelData
     }
 

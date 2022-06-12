@@ -251,10 +251,12 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     private fun onCheckMate(team: Team) {
-        if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
-            checkMateDialog.show(userName, ::closeAndSaveGameAsWin)
-        } else {
-            checkMateDialog.show(opponentName, ::closeAndSaveGameAsLoss)
+        runOnUiThread {
+            if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
+                checkMateDialog.show(userName, ::closeAndSaveGameAsWin)
+            } else {
+                checkMateDialog.show(opponentName, ::closeAndSaveGameAsLoss)
+            }
         }
     }
 
@@ -660,7 +662,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         offerDrawButton
             .setText("Offer Draw")
             .setColor(buttonBackgroundColor)
-            .setColoredDrawable(R.drawable.handshake_13359)
+            .setColoredDrawable(R.drawable.handshake)
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setTextYOffset(textOffset)
@@ -692,7 +694,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
         findViewById<UIButton>(R.id.back_button)
             .setText("Back")
-            .setColoredDrawable(R.drawable.back_arrow)
+            .setColoredDrawable(R.drawable.arrow_back)
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
@@ -717,7 +719,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
         findViewById<UIButton>(R.id.forward_button)
             .setText("Forward")
-            .setColoredDrawable(R.drawable.forward_arrow)
+            .setColoredDrawable(R.drawable.arrow_forward)
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)

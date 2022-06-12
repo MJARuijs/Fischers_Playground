@@ -8,6 +8,7 @@ import com.mjaruijs.fischersplayground.math.Color
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.Camera
+import com.mjaruijs.fischersplayground.opengl.Quad
 import com.mjaruijs.fischersplayground.opengl.light.AmbientLight
 import com.mjaruijs.fischersplayground.opengl.light.DirectionalLight
 import com.mjaruijs.fischersplayground.opengl.model.Material
@@ -50,7 +51,7 @@ class BoardRenderer(context: Context) {
         specularTexture.init()
     }
 
-    fun render3D(board: Board, camera: Camera) {
+    fun render3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int) {
         board3DProgram.start()
         board3DProgram.set("diffuseTexture", diffuseSampler.index)
         board3DProgram.set("normalTexture", normalSampler.index)
@@ -61,6 +62,7 @@ class BoardRenderer(context: Context) {
         board3DProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
         board3DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
         board3DProgram.set("cameraPosition", camera.getPosition())
+        board3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
 
         diffuseSampler.bind(diffuseTexture)
         normalSampler.bind(normalTexture)
@@ -70,19 +72,21 @@ class BoardRenderer(context: Context) {
         directionalLight.applyTo(board3DProgram)
         boardFrameMaterial.applyTo(board3DProgram)
 
-        for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
-            board3DProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
-        }
+//        for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
+//            board3DProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
+//        }
 
         model3D.draw()
         board3DProgram.stop()
     }
 
-    fun render2D(board: Board, aspectRatio: Float) {
+    val quad = Quad()
+
+    fun render2D(board: Board, displayWidth: Int, displayHeight: Int) {
         board2DProgram.start()
-        board2DProgram.set("textureMap", diffuseSampler.index)
-        board2DProgram.set("aspectRatio", aspectRatio)
-        board2DProgram.set("scale", Vector2(aspectRatio, aspectRatio))
+//        board2DProgram.set("textureMap", diffuseSampler.index)
+//        board2DProgram.set("scale", Vector2(1.0f, 1.0f))
+        board2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
         board2DProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
         board2DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
         diffuseSampler.bind(diffuseTexture)
@@ -91,6 +95,7 @@ class BoardRenderer(context: Context) {
             board2DProgram.set("possibleSquares[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
         }
 
+//        quad.draw()
         model2D.draw()
         board2DProgram.stop()
     }

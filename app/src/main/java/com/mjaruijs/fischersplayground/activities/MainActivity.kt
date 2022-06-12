@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -124,7 +123,11 @@ class MainActivity : AppCompatActivity() {
         incomingInviteDialog.create(this)
         invitePlayerDialog.create(id!!, this)
 
-        findViewById<ImageView>(R.id.settings_button)
+        findViewById<UIButton>(R.id.settings_button)
+            .setColoredDrawable(R.drawable.settings_solid_icon)
+            .setColor(Color.TRANSPARENT)
+            .setChangeIconColorOnHover(false)
+            .setChangeTextColorOnHover(true)
             .setOnClickListener {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)

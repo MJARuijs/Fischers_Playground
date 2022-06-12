@@ -16,19 +16,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0"
-        app:srcCompat="@drawable/chess_background" />
+        app:srcCompat="@drawable/chess_background"
+        tools:visibility="gone" />
 
-    <ImageView
+    <com.mjaruijs.fischersplayground.userinterface.UIButton
         android:id="@+id/settings_button"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="16dp"
-        android:contentDescription="settings_icon"
+        android:layout_width="80dp"
+        android:layout_height="0dp"
         android:focusable="true"
-        app:layout_constraintBottom_toBottomOf="@+id/weclome_text_view"
+        app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/weclome_text_view"
-        app:srcCompat="@drawable/ic_settings" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/settings_solid_icon" />
 
     <TextView
         android:id="@+id/weclome_text_view"
@@ -41,6 +40,7 @@
         android:text="@string/welcome"
         android:textAlignment="viewStart"
         android:textSize="34sp"
+        app:layout_constraintBottom_toBottomOf="@id/settings_button"
         app:layout_constraintEnd_toStartOf="@+id/settings_button"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -74,7 +74,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         app:layout_constraintBottom_toTopOf="@+id/single_player_button"
         app:layout_constraintEnd_toEndOf="parent"

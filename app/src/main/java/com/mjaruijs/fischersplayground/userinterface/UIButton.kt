@@ -12,7 +12,9 @@ import kotlin.math.roundToInt
 
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
 
-    private var hoverColor = Color.rgb(0.1f, 0.1f, 0.1f)
+    private var iconHoverColor = Color.rgb(0.1f, 0.1f, 0.1f)
+    private var textHoverColor = Color.rgb(0.3f, 0.3f, 0.3f)
+
     private val textPaint = Paint()
     private val paint = Paint()
 
@@ -34,6 +36,9 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     var centerVertically = true
     var disabled = false
     var buttonText = ""
+
+    private var changeTextColorOnHover = false
+    private var changeIconColorOnHover = true
 
     private var heldDown = false
     private var startClickTimer = -1L
@@ -64,8 +69,16 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
                     heldDown = true
                     holding.set(true)
 
-                    paint.color = addColors(paint.color, hoverColor)
-                    invalidate()
+                    if (changeIconColorOnHover || changeTextColorOnHover) {
+                        if (changeIconColorOnHover) {
+                            paint.color = addColors(paint.color, iconHoverColor)
+                        }
+                        if (changeTextColorOnHover) {
+                            textPaint.color = subtractColors(textPaint.color, textHoverColor)
+                        }
+
+                        invalidate()
+                    }
 
                     Thread {
                         while (holding.get()) {
@@ -76,8 +89,16 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
                     }.start()
                 }
                 MotionEvent.ACTION_UP -> {
-                    paint.color = subtractColors(paint.color, hoverColor)
-                    invalidate()
+                    if (changeIconColorOnHover || changeTextColorOnHover) {
+                        if (changeIconColorOnHover) {
+                            paint.color = subtractColors(paint.color, iconHoverColor)
+                        }
+                        if (changeTextColorOnHover) {
+                            textPaint.color = addColors(textPaint.color, textHoverColor)
+                        }
+
+                        invalidate()
+                    }
 
                     val buttonReleasedTime = System.currentTimeMillis()
                     if (buttonReleasedTime - startClickTimer < 500) {
@@ -100,6 +121,16 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     fun setOnReleaseListener(onRelease: () -> Unit): UIButton {
         this.onRelease = onRelease
+        return this
+    }
+
+    fun setChangeTextColorOnHover(setting: Boolean): UIButton {
+        changeTextColorOnHover = setting
+        return this
+    }
+
+    fun setChangeIconColorOnHover(setting: Boolean): UIButton {
+        changeIconColorOnHover = setting
         return this
     }
 
@@ -235,6 +266,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         }
 
         if (bitmap != null) {
+//            textPaint.color = Color.rgb(1f, 0f, 0f)
             canvas.drawBitmap(bitmap!!, null, rect, textPaint)
         }
 

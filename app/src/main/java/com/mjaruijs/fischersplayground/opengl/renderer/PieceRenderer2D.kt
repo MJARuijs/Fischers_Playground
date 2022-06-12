@@ -55,11 +55,10 @@ class PieceRenderer2D(context: Context) {
         isLocked.set(false)
     }
 
-    fun render(game: Game, aspectRatio: Float) {
+    fun render(game: Game) {
         startAnimations(game)
 
         piece2DProgram.start()
-        piece2DProgram.set("aspectRatio", aspectRatio)
         piece2DProgram.set("textureMaps", sampler.index)
 
         sampler.bind(PieceTextures.get2DTextureArray())
@@ -71,12 +70,12 @@ class PieceRenderer2D(context: Context) {
                 val animation = animations.find { animation -> animation.animatingRow == row && animation.animatingCol == col }
 
                 val translation = if (animation == null) {
-                    (Vector2(row * aspectRatio * 2.0f, col * aspectRatio * 2.0f) / 8.0f) + Vector2(-aspectRatio, aspectRatio / 4.0f - aspectRatio)
+                    (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
                 } else {
-                    (Vector2((row + animation.translation.x) * aspectRatio * 2.0f, (col + animation.translation.y) * aspectRatio * 2.0f) / 8.0f) + Vector2(-aspectRatio, aspectRatio / 4.0f - aspectRatio)
+                    (Vector2((row + animation.translation.x) * 2.0f, (col + animation.translation.y) * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
                 }
 
-                piece2DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 4.0f)
+                piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
                 piece2DProgram.set("textureId", piece.textureId2D.toFloat())
                 piece2DProgram.set("translation", translation)
                 quad.draw()

@@ -10,14 +10,24 @@ import com.mjaruijs.fischersplayground.opengl.Quad
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
+import com.mjaruijs.fischersplayground.opengl.texture.Sampler
+import com.mjaruijs.fischersplayground.opengl.texture.TextureArray
+import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
 
 class HighlightRenderer(context: Context) {
 
     private val quad = Quad()
+    private val circleSampler = Sampler(0)
+    private val effectSampler = Sampler(1)
 
     private val highlight2DProgram = ShaderProgram(
         ShaderLoader.load(R.raw.possible_square_highlighter_2d_vertex, ShaderType.VERTEX, context),
         ShaderLoader.load(R.raw.possible_square_highlighter_2d_fragment, ShaderType.FRAGMENT, context)
+    )
+
+    private val highlight3DProgram = ShaderProgram(
+        ShaderLoader.load(R.raw.possible_square_highlighter_3d_vertex, ShaderType.VERTEX, context),
+        ShaderLoader.load(R.raw.possible_square_highlighter_3d_fragment, ShaderType.FRAGMENT, context)
     )
 
     private val selectedSquare2DProgram = ShaderProgram(
@@ -30,10 +40,19 @@ class HighlightRenderer(context: Context) {
         ShaderLoader.load(R.raw.selected_square_highlighter_3d_fragment, ShaderType.FRAGMENT, context)
     )
 
-    fun renderPossibleSquares2D(board: Board, aspectRatio: Float, displayWidth: Int, displayHeight: Int) {
+    private val circleTexture = TextureLoader.loadFromBitmap(context, R.drawable.circle)
+    private val squareSelectedTexture = TextureLoader.load(context, R.drawable.square_selected, "Square Selected")
+    private val kingCheckedTexture = TextureLoader.load(context, R.drawable.king_checked, "King Checked")
+    private val textureEffects = TextureArray(listOf(squareSelectedTexture, kingCheckedTexture))
+
+    init {
+        circleTexture.init()
+        kingCheckedTexture.init()
+        squareSelectedTexture.init()
+    }
+
+    fun renderPossibleSquares2D(board: Board, displayWidth: Int, displayHeight: Int) {
         highlight2DProgram.start()
-        highlight2DProgram.set("aspectRatio", aspectRatio)
-        highlight2DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 8f)
         highlight2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
 
         for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
@@ -42,6 +61,52 @@ class HighlightRenderer(context: Context) {
 
         quad.drawInstanced(board.getPossibleMoves().size)
         highlight2DProgram.stop()
+    }
+
+    fun renderPossibleSquares3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int) {
+        highlight3DProgram.start()
+        highlight3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
+        highlight3DProgram.set("projection", camera.projectionMatrix)
+        highlight3DProgram.set("view", camera.viewMatrix)
+        highlight3DProgram.set("zoom", camera.getZoom())
+        highlight3DProgram.set("circleTexture", circleSampler.index)
+        circleSampler.bind(circleTexture)
+
+        for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
+            highlight3DProgram.set("translations[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
+        }
+
+        quad.drawInstanced(board.getPossibleMoves().size)
+//        quad.draw()
+        highlight3DProgram.stop()
+    }
+
+    fun renderSelectedSquares3D(board: Board, aspectRatio: Float, displayWidth: Int, displayHeight: Int, camera: Camera) {
+        selectedSquare3DProgram.start()
+        selectedSquare3DProgram.set("aspectRatio", aspectRatio)
+        selectedSquare3DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 8.0f)
+        selectedSquare3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
+        selectedSquare3DProgram.set("projection", camera.projectionMatrix)
+        selectedSquare3DProgram.set("view", camera.viewMatrix)
+        selectedSquare3DProgram.set("effectSampler", effectSampler.index)
+        effectSampler.bind(textureEffects)
+
+        var i = 0
+
+        if (board.selectedSquare != Vector2(-1, -1)) {
+            selectedSquare3DProgram.set("translations[$i]", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
+            selectedSquare3DProgram.set("effects[$i]", 0f)
+            i++
+        }
+
+        if (board.checkedKingSquare != Vector2(-1, -1)) {
+            selectedSquare3DProgram.set("translations[$i]", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
+            selectedSquare3DProgram.set("effects[$i]", 1f)
+            i++
+        }
+
+        quad.drawInstanced(i)
+        selectedSquare3DProgram.stop()
     }
 
     fun renderSelectedSquares2D(board: Board, aspectRatio: Float, displayWidth: Int, displayHeight: Int) {
@@ -67,33 +132,6 @@ class HighlightRenderer(context: Context) {
         quad.drawInstanced(i)
 
         selectedSquare2DProgram.stop()
-    }
-
-    fun renderSelectedSquares3D(board: Board, aspectRatio: Float, displayWidth: Int, displayHeight: Int, camera: Camera) {
-        selectedSquare3DProgram.start()
-        selectedSquare3DProgram.set("aspectRatio", aspectRatio)
-        selectedSquare3DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 8.0f)
-        selectedSquare3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
-        selectedSquare3DProgram.set("projection", camera.projectionMatrix)
-        selectedSquare3DProgram.set("view", camera.viewMatrix)
-
-        var i = 0
-
-        if (board.selectedSquare != Vector2(-1, -1)) {
-            selectedSquare3DProgram.set("translations[$i]", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
-            selectedSquare3DProgram.set("colors[$i]", Color(0.0f, 0.0f, 1.0f))
-            i++
-        }
-
-        if (board.checkedKingSquare != Vector2(-1, -1)) {
-            selectedSquare3DProgram.set("translations[$i]", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
-            selectedSquare3DProgram.set("colors[$i]", Color(1.0f, 0.0f, 0.0f))
-            i++
-        }
-
-        quad.drawInstanced(i)
-
-        selectedSquare3DProgram.stop()
     }
 
     fun destroy() {

@@ -27,12 +27,12 @@ object PieceTextures {
         pieceTextures2D += Triple(PieceType.KING, Team.BLACK, TextureLoader.load(context, R.drawable.black_king))
         pieceTextures2D += Triple(PieceType.QUEEN, Team.BLACK, TextureLoader.load(context, R.drawable.black_queen))
 
-        pieceTextures3D += Pair(PieceType.PAWN, TextureLoader.load(context, R.drawable.pawn_texture))
-        pieceTextures3D += Pair(PieceType.KNIGHT, TextureLoader.load(context, R.drawable.knight_texture))
-        pieceTextures3D += Pair(PieceType.BISHOP, TextureLoader.load(context, R.drawable.bishop_texture))
-        pieceTextures3D += Pair(PieceType.ROOK, TextureLoader.load(context, R.drawable.rook_texture))
-        pieceTextures3D += Pair(PieceType.QUEEN, TextureLoader.load(context, R.drawable.queen_texture))
-        pieceTextures3D += Pair(PieceType.KING, TextureLoader.load(context, R.drawable.king_texture))
+        pieceTextures3D += Pair(PieceType.PAWN, TextureLoader.load(context, R.drawable.diffuse_map_pawn))
+        pieceTextures3D += Pair(PieceType.KNIGHT, TextureLoader.load(context, R.drawable.diffuse_map_knight))
+        pieceTextures3D += Pair(PieceType.BISHOP, TextureLoader.load(context, R.drawable.diffuse_map_bishop))
+        pieceTextures3D += Pair(PieceType.ROOK, TextureLoader.load(context, R.drawable.diffuse_map_rook))
+        pieceTextures3D += Pair(PieceType.QUEEN, TextureLoader.load(context, R.drawable.diffuse_map_queen))
+        pieceTextures3D += Pair(PieceType.KING, TextureLoader.load(context, R.drawable.diffuse_map_king))
 
 
     }
