@@ -42,7 +42,7 @@ class PieceRenderer3D(context: Context, isPlayerWhite: Boolean) {
     private val rookMesh = Mesh(OBJLoader.get(context, R.raw.rook_bytes))
     private val queenMesh = Mesh(OBJLoader.get(context, R.raw.queen_bytes))
     private val kingMesh = Mesh(OBJLoader.get(context, R.raw.king_bytes))
-//
+
     private val pawn = Entity(pawnMesh)
     private val bishop = Entity(bishopMesh)
     private val knight = Entity(knightMesh)

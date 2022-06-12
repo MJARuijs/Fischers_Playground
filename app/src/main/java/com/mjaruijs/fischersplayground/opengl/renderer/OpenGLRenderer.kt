@@ -29,16 +29,12 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     private val camera = Camera()
 
-    private var aspectRatio = 1.0f
-
-    var displayWidth = 0
-        private set
-    var displayHeight = 0
-        private set
-
-    var isPlayerWhite = true
+    private var displayWidth = 0
+    private var displayHeight = 0
 
     private var pixelsRequested = false
+
+    var isPlayerWhite = true
 
     var onDraw: () -> Unit = {}
     var onPixelsRead: (ByteBuffer) -> Unit = {}
@@ -60,7 +56,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         onContextCreated()
 
-        // TODO: uncomment this line
         val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
         camera.setZoom(preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM))
     }
@@ -119,7 +114,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
                     gameRenderer3D.startAnimations(game)
                 }.start()
                 gameRenderer3D.update(delta)
-//                false
             } else {
                 Thread {
                     gameRenderer2D.startAnimations(game)
@@ -129,7 +123,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         } else {
             false
         }
-//        return false
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
@@ -137,9 +130,6 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         displayWidth = width
         displayHeight = height
-
-        println("Display dimensions: $displayWidth, $displayHeight")
-        aspectRatio = width.toFloat() / height.toFloat()
 
         onDisplaySizeChanged(displayWidth, displayHeight)
     }
@@ -155,14 +145,14 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
             boardRenderer.render3D(board, camera, displayWidth, displayHeight)
-            highlightRenderer.renderSelectedSquares3D(board, aspectRatio, displayWidth, displayHeight, camera)
+            highlightRenderer.renderSelectedSquares3D(board, camera)
             gameRenderer3D.render(game, camera)
-            highlightRenderer.renderPossibleSquares3D(board, camera, displayWidth, displayHeight)
+            highlightRenderer.renderPossibleSquares3D(board, camera)
         } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
-            boardRenderer.render2D(board, displayWidth, displayHeight)
-            highlightRenderer.renderSelectedSquares2D(board, aspectRatio, displayWidth, displayHeight)
+            boardRenderer.render2D()
+            highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight)
             gameRenderer2D.render(game)
             highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight)
         }

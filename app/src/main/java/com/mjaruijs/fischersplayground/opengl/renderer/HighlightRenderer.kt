@@ -63,10 +63,8 @@ class HighlightRenderer(context: Context) {
         highlight2DProgram.stop()
     }
 
-    fun renderSelectedSquares2D(board: Board, aspectRatio: Float, displayWidth: Int, displayHeight: Int) {
+    fun renderSelectedSquares2D(board: Board, displayWidth: Int, displayHeight: Int) {
         selectedSquare2DProgram.start()
-        selectedSquare2DProgram.set("aspectRatio", aspectRatio)
-        selectedSquare2DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 8.0f)
         selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
 
         var i = 0
@@ -88,12 +86,10 @@ class HighlightRenderer(context: Context) {
         selectedSquare2DProgram.stop()
     }
 
-    fun renderPossibleSquares3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int) {
+    fun renderPossibleSquares3D(board: Board, camera: Camera) {
         highlight3DProgram.start()
-        highlight3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
         highlight3DProgram.set("projection", camera.projectionMatrix)
         highlight3DProgram.set("view", camera.viewMatrix)
-        highlight3DProgram.set("zoom", camera.getZoom())
         highlight3DProgram.set("circleTexture", circleSampler.index)
         circleSampler.bind(circleTexture)
 
@@ -102,15 +98,11 @@ class HighlightRenderer(context: Context) {
         }
 
         quad.drawInstanced(board.getPossibleMoves().size)
-//        quad.draw()
         highlight3DProgram.stop()
     }
 
-    fun renderSelectedSquares3D(board: Board, aspectRatio: Float, displayWidth: Int, displayHeight: Int, camera: Camera) {
+    fun renderSelectedSquares3D(board: Board, camera: Camera) {
         selectedSquare3DProgram.start()
-        selectedSquare3DProgram.set("aspectRatio", aspectRatio)
-        selectedSquare3DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 8.0f)
-        selectedSquare3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
         selectedSquare3DProgram.set("projection", camera.projectionMatrix)
         selectedSquare3DProgram.set("view", camera.viewMatrix)
         selectedSquare3DProgram.set("effectSampler", effectSampler.index)
