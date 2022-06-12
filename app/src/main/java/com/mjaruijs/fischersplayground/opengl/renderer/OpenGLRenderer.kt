@@ -23,8 +23,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     private lateinit var game: Game
 
     private lateinit var boardRenderer: BoardRenderer
-    private lateinit var gameRenderer2D: PieceRenderer2D
-    private lateinit var gameRenderer3D: PieceRenderer3D
+    private lateinit var pieceRenderer: PieceRenderer
     private lateinit var highlightRenderer: HighlightRenderer
 
     private val camera = Camera()
@@ -49,8 +48,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         PieceTextures.createTextureArrays()
 
-        gameRenderer2D = PieceRenderer2D(context)
-        gameRenderer3D = PieceRenderer3D(context, isPlayerWhite)
+        pieceRenderer = PieceRenderer(context, isPlayerWhite)
         boardRenderer = BoardRenderer(context)
         highlightRenderer = HighlightRenderer(context)
 
@@ -96,7 +94,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun setPieceScale(scale: Float) {
-        gameRenderer3D.pieceScale = Vector3(scale, scale, scale)
+        pieceRenderer.pieceScale = Vector3(scale, scale, scale)
     }
 
     fun setGame(game: Game) {
@@ -108,18 +106,10 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     fun update(delta: Float): Boolean {
         return if (this::game.isInitialized) {
-
-            if (is3D) {
-                Thread {
-                    gameRenderer3D.startAnimations(game)
-                }.start()
-                gameRenderer3D.update(delta)
-            } else {
-                Thread {
-                    gameRenderer2D.startAnimations(game)
-                }.start()
-                gameRenderer2D.update(delta)
-            }
+            Thread {
+                pieceRenderer.startAnimations(game)
+            }.start()
+            pieceRenderer.update(delta)
         } else {
             false
         }
@@ -146,14 +136,14 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
             boardRenderer.render3D(board, camera, displayWidth, displayHeight)
             highlightRenderer.renderSelectedSquares3D(board, camera)
-            gameRenderer3D.render(game, camera)
+            pieceRenderer.render3D(game, camera)
             highlightRenderer.renderPossibleSquares3D(board, camera)
         } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
             boardRenderer.render2D()
             highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight)
-            gameRenderer2D.render(game)
+            pieceRenderer.render2D(game)
             highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight)
         }
 
@@ -222,8 +212,8 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun destroy() {
-        gameRenderer2D.destroy()
-        gameRenderer3D.destroy()
+        pieceRenderer.destroy()
+        highlightRenderer.destroy()
         boardRenderer.destroy()
     }
 }

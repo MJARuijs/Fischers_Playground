@@ -12,6 +12,7 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
+import com.mjaruijs.fischersplayground.opengl.Quad
 import com.mjaruijs.fischersplayground.opengl.light.AmbientLight
 import com.mjaruijs.fischersplayground.opengl.light.DirectionalLight
 import com.mjaruijs.fischersplayground.opengl.model.Entity
@@ -26,15 +27,22 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class PieceRenderer3D(context: Context, isPlayerWhite: Boolean) {
-
+class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
+    
+    private val quad = Quad()
     private val sampler = Sampler(0)
+
+    private val isLocked = AtomicBoolean(false)
+
+    private val piece2DProgram = ShaderProgram(
+        ShaderLoader.load(R.raw.piece_2d_vertex, ShaderType.VERTEX, context),
+        ShaderLoader.load(R.raw.piece_2d_fragment, ShaderType.FRAGMENT, context)
+    )
+
     private val piece3DProgram = ShaderProgram(
         ShaderLoader.load(R.raw.piece_3d_vertex, ShaderType.VERTEX, context),
         ShaderLoader.load(R.raw.piece_3d_fragment, ShaderType.FRAGMENT, context)
     )
-
-    private val animations = ArrayList<AnimationValues>()
 
     private val pawnMesh = Mesh(OBJLoader.get(context, R.raw.pawn_bytes))
     private val bishopMesh = Mesh(OBJLoader.get(context, R.raw.bishop_bytes))
@@ -59,9 +67,9 @@ class PieceRenderer3D(context: Context, isPlayerWhite: Boolean) {
     private val whiteKnightRotation = if (isPlayerWhite) ROTATION_MATRIX else Matrix4()
     private val blackKnightRotation = if (isPlayerWhite) Matrix4() else ROTATION_MATRIX
 
-    private val isLocked = AtomicBoolean(false)
-
     var pieceScale = Vector3(1f, 1f, 1f)
+
+    private val animations = ArrayList<AnimationValues>()
 
     var rChannel = 1.0f
     var gChannel = 1.0f
@@ -94,7 +102,46 @@ class PieceRenderer3D(context: Context, isPlayerWhite: Boolean) {
         isLocked.set(false)
     }
 
-    fun render(game: Game, camera: Camera) {
+    fun render2D(game: Game) {
+        startAnimations(game)
+
+        piece2DProgram.start()
+        piece2DProgram.set("textureMaps", sampler.index)
+
+        sampler.bind(PieceTextures.get2DTextureArray())
+
+        for (row in 0 until 8) {
+            for (col in 0 until 8) {
+                val piece = game[row, col] ?: continue
+
+                val animation = animations.find { animation -> animation.animatingRow == row && animation.animatingCol == col }
+
+                val translation = if (animation == null) {
+                    (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
+                } else {
+                    (Vector2((row + animation.translation.x) * 2.0f, (col + animation.translation.y) * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
+                }
+
+                piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
+                piece2DProgram.set("textureId", piece.textureId2D.toFloat())
+                piece2DProgram.set("translation", translation)
+                quad.draw()
+            }
+        }
+
+        for (animation in animations) {
+            if (animation.stopAnimating) {
+                animation.onFinish()
+            }
+        }
+
+        animations.removeIf { animation -> animation.stopAnimating }
+
+        piece2DProgram.stop()
+    }
+
+
+    fun render3D(game: Game, camera: Camera) {
         startAnimations(game)
 
         piece3DProgram.start()
@@ -174,19 +221,11 @@ class PieceRenderer3D(context: Context, isPlayerWhite: Boolean) {
     }
 
     fun destroy() {
-        pawnMesh.destroy()
-        knightMesh.destroy()
-        bishopMesh.destroy()
-        rookMesh.destroy()
-        queenMesh.destroy()
-        kingMesh.destroy()
-        piece3DProgram.destroy()
+        quad.destroy()
+        piece2DProgram.destroy()
     }
 
     companion object {
-
         private val ROTATION_MATRIX = Matrix4().rotateZ(PI.toFloat())
-
     }
-
 }
