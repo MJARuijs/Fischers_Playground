@@ -157,11 +157,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
             boardRenderer.render3D(board, camera, displayWidth, displayHeight)
             highlightRenderer.renderSelectedSquares3D(board, aspectRatio, displayWidth, displayHeight, camera)
             gameRenderer3D.render(game, camera)
-
-//            if (renderCircle) {
-                highlightRenderer.renderPossibleSquares3D(board, camera, displayWidth, displayHeight)
-//            }
-
+            highlightRenderer.renderPossibleSquares3D(board, camera, displayWidth, displayHeight)
         } else {
             glClear(GL_COLOR_BUFFER_BIT)
 

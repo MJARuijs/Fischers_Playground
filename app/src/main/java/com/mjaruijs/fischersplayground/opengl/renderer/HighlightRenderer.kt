@@ -63,6 +63,31 @@ class HighlightRenderer(context: Context) {
         highlight2DProgram.stop()
     }
 
+    fun renderSelectedSquares2D(board: Board, aspectRatio: Float, displayWidth: Int, displayHeight: Int) {
+        selectedSquare2DProgram.start()
+        selectedSquare2DProgram.set("aspectRatio", aspectRatio)
+        selectedSquare2DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 8.0f)
+        selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
+
+        var i = 0
+
+        if (board.selectedSquare != Vector2(-1, -1)) {
+            selectedSquare2DProgram.set("translations[$i]", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
+            selectedSquare2DProgram.set("colors[$i]", Color(0.0f, 0.0f, 1.0f))
+            i++
+        }
+
+        if (board.checkedKingSquare != Vector2(-1, -1)) {
+            selectedSquare2DProgram.set("translations[$i]", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
+            selectedSquare2DProgram.set("colors[$i]", Color(1.0f, 0.0f, 0.0f))
+            i++
+        }
+
+        quad.drawInstanced(i)
+
+        selectedSquare2DProgram.stop()
+    }
+
     fun renderPossibleSquares3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int) {
         highlight3DProgram.start()
         highlight3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
@@ -107,31 +132,6 @@ class HighlightRenderer(context: Context) {
 
         quad.drawInstanced(i)
         selectedSquare3DProgram.stop()
-    }
-
-    fun renderSelectedSquares2D(board: Board, aspectRatio: Float, displayWidth: Int, displayHeight: Int) {
-        selectedSquare2DProgram.start()
-        selectedSquare2DProgram.set("aspectRatio", aspectRatio)
-        selectedSquare2DProgram.set("scale", Vector2(aspectRatio, aspectRatio) / 8.0f)
-        selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
-
-        var i = 0
-
-        if (board.selectedSquare != Vector2(-1, -1)) {
-            selectedSquare2DProgram.set("translations[$i]", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
-            selectedSquare2DProgram.set("colors[$i]", Color(0.0f, 0.0f, 1.0f))
-            i++
-        }
-
-        if (board.checkedKingSquare != Vector2(-1, -1)) {
-            selectedSquare2DProgram.set("translations[$i]", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
-            selectedSquare2DProgram.set("colors[$i]", Color(1.0f, 0.0f, 0.0f))
-            i++
-        }
-
-        quad.drawInstanced(i)
-
-        selectedSquare2DProgram.stop()
     }
 
     fun destroy() {

@@ -62,26 +62,26 @@ void main() {
         }
     }
 
-    if (squareSelected != 0) {
-        vec2 center;
-        vec4 color;
-
-        if (squareSelected == KING_CHECK_INDEX) {
-            center = checkedKingSquare * 8.0 + vec2(1.0, 1.0);
-            color = vec4(1, 0, 0, 1);
-        } else if (squareSelected == SQUARE_SELECTED_INDEX) {
-            center = selectedSquareCoordinates * 8.0 + vec2(1.0, 1.0) ;
-            color = vec4(0, 0, 1, 1);
-        }
-
-        vec2 currentPoint = gl_FragCoord.xy;
-        currentPoint /= viewPort;
-        currentPoint = (currentPoint * 2.0) - 1.0;
-        currentPoint /= vec2(1.0 / 8.0, 1.0 / 8.0);
-
-        float maxDistance = distance(currentPoint, center) / 1.5;
-        outColor = mix(vec4(1,1,1,1), color, maxDistance);
-    }
+//    if (squareSelected != 0) {
+//        vec2 center;
+//        vec4 color;
+//
+//        if (squareSelected == KING_CHECK_INDEX) {
+//            center = checkedKingSquare * 8.0 + vec2(1.0, 1.0);
+//            color = vec4(1, 0, 0, 1);
+//        } else if (squareSelected == SQUARE_SELECTED_INDEX) {
+//            center = selectedSquareCoordinates * 8.0 + vec2(1.0, 1.0) ;
+//            color = vec4(0, 0, 1, 1);
+//        }
+//
+//        vec2 currentPoint = gl_FragCoord.xy;
+//        currentPoint /= viewPort;
+//        currentPoint = (currentPoint * 2.0) - 1.0;
+//        currentPoint /= vec2(1.0 / 8.0, 1.0 / 8.0);
+//
+//        float maxDistance = distance(currentPoint, center) / 1.5;
+//        outColor = mix(vec4(1,1,1,1), color, maxDistance);
+//    }
 
 //    vec2 center;
 //    vec4 color;

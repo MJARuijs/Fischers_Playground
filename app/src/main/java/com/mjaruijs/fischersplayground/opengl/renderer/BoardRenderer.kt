@@ -87,8 +87,8 @@ class BoardRenderer(context: Context) {
 //        board2DProgram.set("textureMap", diffuseSampler.index)
 //        board2DProgram.set("scale", Vector2(1.0f, 1.0f))
         board2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
-        board2DProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
-        board2DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
+//        board2DProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
+//        board2DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
         diffuseSampler.bind(diffuseTexture)
 
         for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
