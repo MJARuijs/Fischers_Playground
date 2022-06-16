@@ -57,20 +57,20 @@ class SinglePlayerGame : Game(true) {
 //        move.movedPiece = state[toPosition]?.type ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
     }
 
-    override fun processOnClick(square: Vector2): Action {
+    override fun processOnClick(clickedSquare: Vector2): Action {
         if (board.isASquareSelected()) {
-            val selectedSquare = board.selectedSquare
+            val previouslySelectedSquare = board.selectedSquare
 
-            if (possibleMoves.contains(square)) {
+            if (possibleMoves.contains(clickedSquare)) {
 
-                val pieceAtSelectedSquare = state[selectedSquare] ?: return Action.NO_OP
+//                val pieceAtSelectedSquare = state[selectedSquare] ?: return Action.NO_OP
 
 //                if (pieceAtSelectedSquare.type == PieceType.PAWN && (square.y == 0f || square.y == 7f)) {
 
 //                } else {
 //                println("TEAM TO MOVE: $teamToMove")
                 Thread {
-                    move(teamToMove, selectedSquare, square, false)
+                    move(teamToMove, previouslySelectedSquare, clickedSquare, false)
 //                    movePlayer(selectedSquare, square, false)
                 }.start()
 //                }
@@ -78,13 +78,13 @@ class SinglePlayerGame : Game(true) {
                 return Action.PIECE_MOVED
             }
 
-            val pieceAtSquare = state[square] ?: return Action.NO_OP
+            val pieceAtSquare = state[clickedSquare] ?: return Action.NO_OP
 
             if (pieceAtSquare.team == teamToMove) {
-                return if (FloatUtils.compare(selectedSquare, square)) Action.SQUARE_DESELECTED else Action.SQUARE_SELECTED
+                return if (FloatUtils.compare(previouslySelectedSquare, clickedSquare)) Action.SQUARE_DESELECTED else Action.SQUARE_SELECTED
             }
         } else {
-            val pieceAtSquare = state[square] ?: return Action.NO_OP
+            val pieceAtSquare = state[clickedSquare] ?: return Action.NO_OP
 
             if (pieceAtSquare.team == teamToMove) {
                 return Action.SQUARE_SELECTED

@@ -14,7 +14,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.listeners.OnSearchViewChangedListener
 import java.util.*
 
-class InvitePlayerDialog(private val onInvite: (String, Long, String, String) -> Unit) {
+class CreateGameDialog(private val onInvite: (String, Long, String, String) -> Unit) {
 
     private lateinit var dialog: Dialog
     private lateinit var playerCardList: PlayerAdapter
@@ -45,6 +45,10 @@ class InvitePlayerDialog(private val onInvite: (String, Long, String, String) ->
         recyclerView.layoutManager = LinearLayoutManager(context)
 
         initialized = true
+    }
+
+    fun updateId(id: String) {
+        playerCardList.id = id
     }
 
     fun setRecentOpponents(opponents: Stack<Pair<String, String>>) {

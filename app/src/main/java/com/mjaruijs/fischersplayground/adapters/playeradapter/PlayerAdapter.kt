@@ -12,7 +12,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.Time
 
-class PlayerAdapter(private val id: String, private val onInvite: (String, Long, String, String) -> Unit) : RecyclerView.Adapter<PlayerAdapter.PlayerViewHolder>() {
+class PlayerAdapter(var id: String, private val onInvite: (String, Long, String, String) -> Unit) : RecyclerView.Adapter<PlayerAdapter.PlayerViewHolder>() {
 
     private val players = ArrayList<PlayerCardItem>()
 

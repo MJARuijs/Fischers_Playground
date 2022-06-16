@@ -11,9 +11,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+import androidx.cardview.widget.CardView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.marginStart
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
@@ -27,7 +29,8 @@ import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
-import com.mjaruijs.fischersplayground.dialogs.InvitePlayerDialog
+import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
+import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Message
 import com.mjaruijs.fischersplayground.networking.message.Topic
@@ -62,7 +65,8 @@ class MainActivity : AppCompatActivity() {
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
     private val chatFilter = IntentFilter("mjaruijs.fischers_playground.CHAT_MESSAGE")
 
-    private val invitePlayerDialog = InvitePlayerDialog(::onInvite)
+    private val createUsernameDialog = CreateUsernameDialog()
+    private val createGameDialog = CreateGameDialog(::onInvite)
     private val incomingInviteDialog = IncomingInviteDialog()
 
     private val recentOpponents = Stack<Pair<String, String>>()
@@ -83,29 +87,29 @@ class MainActivity : AppCompatActivity() {
         if (!isInitialized()) {
             PieceTextures.init(this)
 
-            Thread {
-                OBJLoader.preload(this, R.raw.pawn_bytes, "pawn")
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.bishop_bytes, "bishop")
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.knight_bytes, "parsed_knight")
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.rook_bytes, "rook")
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.queen_bytes, "queen")
-            }.start()
-
-            Thread {
-                OBJLoader.preload(this, R.raw.king_bytes, "king")
-            }.start()
+//            Thread {
+//                OBJLoader.preload(this, R.raw.pawn_bytes, "pawn")
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.bishop_bytes, "bishop")
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.knight_bytes, "parsed_knight")
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.rook_bytes, "rook")
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.queen_bytes, "queen")
+//            }.start()
+//
+//            Thread {
+//                OBJLoader.preload(this, R.raw.king_bytes, "king")
+//            }.start()
 
             NetworkManager.run(this)
 
@@ -114,14 +118,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        createUsernameDialog.create(this)
+        createUsernameDialog.setLayout()
+
         if (userName == null || userName!!.isBlank()) {
-            showCreateUsernameDialog()
+            createUsernameDialog.show(::setUserName)
         } else {
             findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
         }
 
         incomingInviteDialog.create(this)
-        invitePlayerDialog.create(id!!, this)
+        createGameDialog.create(id!!, this)
 
         findViewById<UIButton>(R.id.settings_button)
             .setColoredDrawable(R.drawable.settings_solid_icon)
@@ -139,7 +146,7 @@ class MainActivity : AppCompatActivity() {
             .setColor(235, 186, 145)
             .setCornerRadius(45.0f)
             .setOnClickListener {
-                invitePlayerDialog.show()
+                createGameDialog.show()
             }
 
         findViewById<UIButton>(R.id.single_player_button)
@@ -169,6 +176,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun isInitialized() = NetworkManager.isRunning()
 
+    private fun isUserRegisteredAtServer(): Boolean {
+        val preferences = getPreferences(MODE_PRIVATE)
+        return preferences.contains("ID")
+    }
+
     private fun updateRecentOpponents(newOpponent: Pair<String, String>) {
         if (newOpponent.second == id) {
             return
@@ -196,7 +208,7 @@ class MainActivity : AppCompatActivity() {
 
         recentOpponents.push(newOpponent)
 
-        invitePlayerDialog.setRecentOpponents(recentOpponents)
+        createGameDialog.setRecentOpponents(recentOpponents)
     }
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
@@ -284,36 +296,24 @@ class MainActivity : AppCompatActivity() {
         gameAdapter += GameCardItem(inviteId, timeStamp, invitingUsername, GameStatus.INVITE_RECEIVED, hasUpdate = true)
     }
 
-    private fun showCreateUsernameDialog() {
-        val dialogBuilder = AlertDialog.Builder(this)
-        dialogBuilder.setTitle("Create username")
+    private fun setUserName(userName: String) {
+        val preferences = getPreferences(AppCompatActivity.MODE_PRIVATE)
 
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-
-        dialogBuilder.setView(input)
-        dialogBuilder.setPositiveButton("Ok") { _, _ ->
-            val userName = input.text.toString()
-            val preferences = getPreferences(MODE_PRIVATE)
-
-            with(preferences.edit()) {
-                putString("USER_NAME", userName)
-                apply()
-            }
-
-            this.userName = userName
-
-            findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
-            NetworkManager.sendMessage(Message(Topic.INFO, "user_name", userName))
+        with(preferences.edit()) {
+            putString("USER_NAME", userName)
+            apply()
         }
 
-        dialogBuilder.show()
+        this.userName = userName
+
+        findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
+        NetworkManager.sendMessage(Message(Topic.INFO, "user_name", userName))
     }
 
     private fun onPlayersReceived(content: String) {
         val playersData = content.split(')')
 
-        invitePlayerDialog.clearPlayers()
+        createGameDialog.clearPlayers()
         for (playerData in playersData) {
             if (playerData.isBlank()) {
                 continue
@@ -322,7 +322,7 @@ class MainActivity : AppCompatActivity() {
             val data = playerData.removePrefix("(").removeSuffix(")").split('|')
             val name = data[0]
             val id = data[1]
-            invitePlayerDialog.addPlayers(name, id)
+            createGameDialog.addPlayers(name, id)
         }
     }
 
@@ -334,6 +334,8 @@ class MainActivity : AppCompatActivity() {
             putString("ID", id)
             apply()
         }
+
+        createGameDialog.updateId(id)
     }
 
     private fun onOpponentMoved(content: String) {
@@ -576,8 +578,11 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         println("ON RESUME")
         val games = SavedGames.getAll()
-        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|online"))
-//        NetworkManager.sendMessage(Message(Topic.GAME_UPDATE))
+
+        if (isUserRegisteredAtServer()) {
+            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|online"))
+        }
+
         for (game in games) {
             val gameId = game.first
             val lastUpdated = game.second.lastUpdated

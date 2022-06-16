@@ -50,7 +50,7 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
 
     override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(this.team, piece, square, false, state, moves, lookingForCheck)
 
-    fun reverseMoves(numberOfMoves: Int) {
+    fun undoMoves(numberOfMoves: Int) {
         for (i in 0 until numberOfMoves) {
             undoMove(moves.removeLast(), true)
             status = if (status == GameStatus.OPPONENT_MOVE) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
@@ -58,8 +58,8 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
     }
 
     fun moveOpponent(move: Move, runInBackground: Boolean) {
-        val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
-        val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
+//        val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
+//        val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
 
         if (!runInBackground) {
             if (status != GameStatus.OPPONENT_MOVE) {
@@ -67,13 +67,15 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
             }
         }
 
-        println("MOVING OPPONENT: $fromPosition $toPosition")
+//        println("MOVING OPPONENT: $fromPosition $toPosition")
 
-        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
-        val pieceAtNewPosition = state[toPosition]
+//        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+//        val pieceAtNewPosition = state[toPosition]
+
+
 
         move(move, runInBackground)
-//        move(!team, fromPosition, toPosition, runInBackground)
+
 
 //        if (move.promotedPiece != null) {
 //            state[move.toPosition] = Piece(move.promotedPiece, move.team)
@@ -82,14 +84,17 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
 
 //        finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
 
-        println("MULTIPLAYER MOVING OPPONENT")
+//        println("MULTIPLAYER MOVING OPPONENT")
 
         status = GameStatus.PLAYER_MOVE
     }
 
     private fun movePlayer(move: Move) {
-        val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
-        val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
+//        val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
+//        val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
+
+        val fromPosition = move.fromPosition
+        val toPosition = move.toPosition
 
         movePlayer(fromPosition, toPosition, true)
     }
@@ -103,10 +108,13 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
 
         println("MOVING PLAYER $fromPosition $toPosition")
 
-        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+//        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
         val pieceAtNewPosition = state[toPosition]
 
-        val move = move(team, fromPosition, toPosition, runInBackground)
+        val actualFromPosition = if (team == Team.WHITE) fromPosition else Vector2(7, 7) - fromPosition
+        val actualToPosition = if (team == Team.WHITE) toPosition else Vector2(7, 7) - toPosition
+
+        val move = move(team, actualFromPosition, actualToPosition, runInBackground)
 
 //        finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
 
@@ -125,7 +133,7 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         status = GameStatus.OPPONENT_MOVE
     }
 
-    override fun processOnClick(square: Vector2): Action {
+    override fun processOnClick(clickedSquare: Vector2): Action {
         if (!isShowingCurrentMove()) {
             return Action.NO_OP
         }
@@ -135,22 +143,22 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         }
 
         if (board.isASquareSelected()) {
-            val selectedSquare = board.selectedSquare
+            val previouslySelectedSquare = board.selectedSquare
 
-            if (possibleMoves.contains(square)) {
+            if (possibleMoves.contains(clickedSquare)) {
                 Thread {
-                    movePlayer(selectedSquare, square, false)
+                    movePlayer(previouslySelectedSquare, clickedSquare, false)
                 }.start()
                 return Action.PIECE_MOVED
             }
 
-            val pieceAtSquare = state[square] ?: return Action.NO_OP
+            val pieceAtSquare = state[clickedSquare] ?: return Action.NO_OP
 
             if (pieceAtSquare.team == team) {
-                return if (FloatUtils.compare(selectedSquare, square)) Action.SQUARE_DESELECTED else Action.SQUARE_SELECTED
+                return if (FloatUtils.compare(previouslySelectedSquare, clickedSquare)) Action.SQUARE_DESELECTED else Action.SQUARE_SELECTED
             }
         } else {
-            val pieceAtSquare = state[square] ?: return Action.NO_OP
+            val pieceAtSquare = state[clickedSquare] ?: return Action.NO_OP
 
             if (pieceAtSquare.team == team) {
                 return Action.SQUARE_SELECTED

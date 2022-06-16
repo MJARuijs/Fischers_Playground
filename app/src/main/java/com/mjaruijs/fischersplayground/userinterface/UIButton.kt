@@ -22,6 +22,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     private var bitmap: Bitmap? = null
 
+    private var maxTextSize = 0f
     private var buttonTextSize = 200.0f
     private var buttonTextColor = 0
 
@@ -45,6 +46,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     var onHold: () -> Unit = {}
     var onRelease: () -> Unit = {}
+    var onButtonInitialized: (Float) -> Unit = {}
 
     private var holding = AtomicBoolean(false)
 
@@ -194,6 +196,14 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
             rect = Rect(left, top, right, bottom)
         }
+
+        val maxTextSize = calculateMaxTextSize()
+        onButtonInitialized(maxTextSize)
+    }
+
+    fun setOnButtonInitialized(onButtonInitialized: (Float) -> Unit): UIButton {
+        this.onButtonInitialized = onButtonInitialized
+        return this
     }
 
     fun setCenterVertically(center: Boolean): UIButton {
@@ -228,6 +238,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     fun setText(text: String): UIButton {
         this.buttonText = text
+//        setTextSize(buttonText, width.toFloat())
         invalidate()
         return this
     }
@@ -235,6 +246,10 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     fun setButtonTextSize(size: Float): UIButton {
         buttonTextSize = size
         textPaint.textSize = size
+
+        println("Setting $buttonText size: $size")
+//        setTextSize(buttonText, width.toFloat())
+
         invalidate()
         return this
     }
@@ -273,13 +288,12 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
     }
 
-    private fun setTextSize(text: String, desiredWidth: Float) {
-        val size = 48f
-        textPaint.textSize = size
+    private fun calculateMaxTextSize(): Float {
+        val size = 50f
         val bounds = Rect()
-        textPaint.getTextBounds(text, 0, text.length, bounds)
-        val desiredTextSize = size * desiredWidth / bounds.width()
-        textPaint.textSize = desiredTextSize
+        textPaint.getTextBounds(buttonText, 0, buttonText.length, bounds)
+        maxTextSize = size * width.toFloat() / bounds.width()
+        return maxTextSize
     }
 
     private fun addColors(a: Int, b: Int): Int {

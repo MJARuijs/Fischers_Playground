@@ -91,6 +91,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
     private lateinit var keyboardHeightProvider: KeyboardHeightProvider
 
+    private var maxTextSize = Float.MAX_VALUE
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -288,7 +290,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             NewsType.OPPONENT_DECLINED_DRAW -> opponentDeclinedDrawDialog.show(opponentName)
             NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
             NewsType.OPPONENT_ACCEPTED_UNDO -> {
-                (game as MultiPlayerGame).reverseMoves(news.data)
+                (game as MultiPlayerGame).undoMoves(news.data)
                 glView.requestRender()
             }
             NewsType.OPPONENT_REJECTED_UNDO -> undoRejectedDialog.show(opponentName)
@@ -417,7 +419,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         val numberOfMovesReversed = data[1].toInt()
 
         if (this.gameId == gameId) {
-            (game as MultiPlayerGame).reverseMoves(numberOfMovesReversed)
+            (game as MultiPlayerGame).undoMoves(numberOfMovesReversed)
             glView.requestRender()
         } else {
             SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed)
@@ -633,8 +635,19 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         chatOpened = false
     }
 
+    private fun onButtonInitialized(textSize: Float) {
+        if (textSize < maxTextSize) {
+            maxTextSize = textSize
+            findViewById<UIButton>(R.id.resign_button).setButtonTextSize(maxTextSize)
+            findViewById<UIButton>(R.id.offer_draw_button).setButtonTextSize(maxTextSize)
+            findViewById<UIButton>(R.id.request_redo_button).setButtonTextSize(maxTextSize)
+            findViewById<UIButton>(R.id.back_button).setButtonTextSize(maxTextSize)
+            findViewById<UIButton>(R.id.forward_button).setButtonTextSize(maxTextSize)
+        }
+    }
+
     private fun initUIButtons() {
-        val textOffset = 70
+        val textOffset = 65
         val textColor = Color.WHITE
         val buttonBackgroundColor = Color.rgb(0.25f, 0.25f, 0.25f)
         val resignButton = findViewById<UIButton>(R.id.resign_button)
@@ -646,6 +659,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
             .setCenterVertically(false)
+            .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 if (isChatOpened()) {
                     return@setOnClickListener
@@ -667,6 +681,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextColor(textColor)
             .setTextYOffset(textOffset)
             .setCenterVertically(false)
+            .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 if (isChatOpened()) {
                     return@setOnClickListener
@@ -684,6 +699,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextColor(textColor)
             .setTextYOffset(textOffset)
             .setCenterVertically(false)
+            .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 if (isChatOpened()) {
                     return@setOnClickListener
@@ -692,7 +708,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
                 NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "request_undo", "$gameId|$id"))
             }
 
-        findViewById<UIButton>(R.id.back_button)
+        val backButton = findViewById<UIButton>(R.id.back_button)
+        backButton
             .setText("Back")
             .setColoredDrawable(R.drawable.arrow_back)
             .setButtonTextSize(50f)
@@ -700,6 +717,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setColor(buttonBackgroundColor)
             .setTextYOffset(textOffset)
             .setCenterVertically(false)
+            .setOnButtonInitialized(::onButtonInitialized)
             .disable()
             .setOnClickListener {
                 if ((it as UIButton).disabled || isChatOpened()) {
@@ -717,7 +735,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
                 glView.requestRender()
             }
 
-        findViewById<UIButton>(R.id.forward_button)
+        val forwardButton = findViewById<UIButton>(R.id.forward_button)
+        forwardButton
             .setText("Forward")
             .setColoredDrawable(R.drawable.arrow_forward)
             .setButtonTextSize(50f)
@@ -726,6 +745,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setTextYOffset(textOffset)
             .disable()
             .setCenterVertically(false)
+            .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 if ((it as UIButton).disabled || isChatOpened()) {
                     return@setOnClickListener

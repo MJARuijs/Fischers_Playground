@@ -35,6 +35,7 @@ class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val t
     }
 
     private fun getRowSign(square: Vector2): String {
+//        square.y.toInt().toString()
         if (team == Team.WHITE) return square.y.toInt().toString()
         return (7 - square.y.toInt()).toString()
     }
