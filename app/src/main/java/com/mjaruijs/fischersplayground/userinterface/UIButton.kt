@@ -247,7 +247,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         buttonTextSize = size
         textPaint.textSize = size
 
-        println("Setting $buttonText size: $size")
+//        println("Setting $buttonText size: $size")
 //        setTextSize(buttonText, width.toFloat())
 
         invalidate()

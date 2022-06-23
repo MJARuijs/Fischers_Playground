@@ -18,8 +18,8 @@ object Logger {
     private val errors = ArrayList<String>()
 
     private var printTag = true
-    private var printColored = true
-    private var printTimeStamp = true
+    private var printColored = false
+    private var printTimeStamp = false
 
     /**
      * Log a text with certain severity.
@@ -30,17 +30,17 @@ object Logger {
         var prefix = ""
 
         if (printColored) {
-            loggerOutStream.print(severity.color.code)
+//            loggerOutStream.print(severity.color.code)
         }
 
         if (printTimeStamp) {
-            prefix += createTimeStamp()
-            loggerOutStream.print(createTimeStamp())
+//            prefix += createTimeStamp()
+//            loggerOutStream.print(createTimeStamp())
         }
 
         if (printTag) {
-            prefix += createTag(severity)
-            loggerOutStream.print(createTag(severity))
+//            prefix += createTag(severity)
+//            loggerOutStream.print(createTag(severity))
         }
 
         loggerOutStream.print(message + "\n" + Severity.INFO.color.code)

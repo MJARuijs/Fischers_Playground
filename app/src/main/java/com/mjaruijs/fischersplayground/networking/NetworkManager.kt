@@ -39,7 +39,7 @@ object NetworkManager {
         Thread {
             try {
                 clientInitializing.set(true)
-                client = EncodedClient(PUBLIC_SERVER_IP, SERVER_PORT, NetworkManager::onRead)
+                client = EncodedClient(LOCAL_SERVER_IP, SERVER_PORT, NetworkManager::onRead)
                 initialized.set(true)
             } catch (e: Exception) {
                 println("Failed to connect to server..")
@@ -56,10 +56,12 @@ object NetworkManager {
     }
 
     fun sendMessage(message: Message) {
+
         Thread {
             while (clientInitializing.get()) {}
 
             if (initialized.get()) {
+//                println("Sending message: $message")
                 client.write(message.toString())
             }
 
@@ -67,7 +69,7 @@ object NetworkManager {
     }
 
     private fun onRead(message: Message, context: Context) {
-        Logger.debug("Received message from: $message")
+//        println("Received message from: $message")
 
         if (message.topic == Topic.INFO) {
             val intent = Intent("mjaruijs.fischers_playground.INFO").putExtra(message.category, message.content)
@@ -79,7 +81,7 @@ object NetworkManager {
             val intent = Intent("mjaruijs.fischers_playground.CHAT_MESSAGE").putExtra(message.category, message.content)
             context.sendBroadcast(intent)
         } else if (message.topic == Topic.USER_STATUS) {
-            println("SENDING STATUS BROADCAST")
+//            println("SENDING STATUS BROADCAST")
             val intent = Intent("mjaruijs.fischers_playground.USER_STATUS").putExtra(message.category, message.content)
             context.sendBroadcast(intent)
         }

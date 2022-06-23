@@ -1,6 +1,8 @@
 package com.mjaruijs.fischersplayground.activities
 
 import android.animation.ObjectAnimator
+import android.app.Activity
+import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
@@ -13,12 +15,13 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.MainActivity.Companion.MULTIPLAYER_GAME_FILE_NAME
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightObserver
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvider
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
+import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
-import com.mjaruijs.fischersplayground.chess.SavedGames
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
@@ -38,6 +41,7 @@ import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.util.FileManager
 
 class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightObserver {
 
@@ -93,6 +97,10 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
     private var maxTextSize = Float.MAX_VALUE
 
+    private var stayingInApp = false
+
+    private val savedGames = HashMap<String, MultiPlayerGame>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -133,7 +141,12 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         isSinglePlayer = intent.getBooleanExtra("is_single_player", false)
         isPlayingWhite = intent.getBooleanExtra("is_playing_white", false)
 
-        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId"))
+        loadSavedGames()
+
+//        val savedGamesData = intent.getStringExtra("saved_games")  ?: throw IllegalArgumentException("Missing essential information: saved_games")
+//        parseSavedGames(savedGamesData)
+
+//        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId"))
 
         glView = findViewById(R.id.opengl_view)
         glView.init(::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
@@ -169,7 +182,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (isSinglePlayer) {
             game = SinglePlayerGame()
         } else {
-            game = SavedGames.get(gameId) ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
+//            game = SavedGames.get(gameId) ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
+            game = savedGames[gameId] ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
 
             runOnUiThread {
                 getChatFragment().addMessages((game as MultiPlayerGame).chatMessages)
@@ -314,7 +328,11 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             GameStatus.OPPONENT_MOVE
         }
 
-        SavedGames.put(inviteId, MultiPlayerGame(inviteId, id, opponentName, playingWhite))
+        val newGame = MultiPlayerGame(inviteId, id, opponentName, playingWhite)
+
+        savedGames[inviteId] = newGame
+//        SavedGames.put(inviteId, newGame)
+        FileManager.write(this, "game.txt", newGame.toString())
     }
 
     private fun onOpponentResigned(content: String) {
@@ -325,8 +343,10 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             opponentResignedDialog.show(opponentUsername, ::closeAndSaveGameAsWin)
         } else {
-            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
-            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_RESIGNED)
+            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+            savedGames[gameId]?.news = News(NewsType.OPPONENT_RESIGNED)
+//            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
+//            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_RESIGNED)
         }
     }
 
@@ -339,8 +359,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             opponentOfferedDrawDialog.show(gameId, id, opponentUsername, ::acceptDraw)
         } else {
-            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
-            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_OFFERED_DRAW)
+//            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
+//            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_OFFERED_DRAW)
         }
     }
 
@@ -353,8 +373,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             opponentAcceptedDrawDialog.show(gameId, opponentUsername, ::closeAndSaveGameAsDraw)
         } else {
-            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
-            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_ACCEPTED_DRAW)
+//            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
+//            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_ACCEPTED_DRAW)
         }
     }
 
@@ -367,8 +387,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             opponentDeclinedDrawDialog.show(opponentUsername)
         } else {
-            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
-            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_DECLINED_DRAW)
+//            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
+//            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_DECLINED_DRAW)
         }
     }
 
@@ -383,10 +403,13 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             (game as MultiPlayerGame).moveOpponent(move, false)
             glView.requestRender()
         } else {
-            val game = SavedGames.get(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+
+            val game = savedGames.get(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
             game.moveOpponent(move, false)
 
-            SavedGames.put(gameId, game)
+            savedGames[gameId] = game
+//            SavedGames.put(gameId, game)
+//            FileManager.write(this, "game.txt", game.toString())
         }
     }
 
@@ -409,7 +432,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             undoRequestedDialog.show(gameId, opponentUsername, id)
         } else {
-            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_REQUESTED_UNDO)
+//            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_REQUESTED_UNDO)
         }
     }
 
@@ -422,8 +445,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             (game as MultiPlayerGame).undoMoves(numberOfMovesReversed)
             glView.requestRender()
         } else {
-            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed)
-            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
+//            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed)
+//            SavedGames.get(gameId)?.status = GameStatus.PLAYER_MOVE
         }
     }
 
@@ -431,17 +454,17 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             undoRejectedDialog.show(opponentName)
         } else {
-            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_REJECTED_UNDO)
+//            SavedGames.get(gameId)?.news = News(NewsType.OPPONENT_REJECTED_UNDO)
         }
     }
 
     private fun onUserStatusReceived(content: String) {
-        println("USER STATUS RECEIVED")
+//        println("USER STATUS RECEIVED")
         val data = content.split('|')
         val opponentId = data[0]
-        val gameId = data[1]
+        val opponentStatus = data[1]
 
-        setOpponentStatusIcon(gameId)
+        setOpponentStatusIcon(opponentStatus)
     }
 
     private fun onChatMessageReceived(content: String) {
@@ -455,7 +478,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             getChatFragment().addReceivedMessage(message)
         } else {
-            SavedGames.get(gameId)?.chatMessages?.add(message)
+            savedGames[gameId]?.chatMessages?.add(message)
+//            SavedGames.get(gameId)?.chatMessages?.add(message)
         }
     }
 
@@ -466,19 +490,59 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         }
     }
 
-    private fun closeAndSaveGameAsWin() {
-        SavedGames.get(gameId)?.status = GameStatus.GAME_WON
+    private fun finishActivity() {
+        val resultIntent = Intent()
+//        resultIntent.putExtra("saved_games", gamesToString())
+
+        if (game is MultiPlayerGame) {
+            resultIntent.putExtra("gameId", gameId)
+            resultIntent.putExtra("lastUpdated", game.lastUpdated)
+            resultIntent.putExtra("opponentName", opponentName)
+            resultIntent.putExtra("status", (game as MultiPlayerGame).status.toString())
+            resultIntent.putExtra("isPlayingWhite", isPlayingWhite)
+            resultIntent.putExtra("hasUpdate", true)
+            setResult(Activity.RESULT_OK, resultIntent)
+        } else {
+            setResult(Activity.RESULT_CANCELED, resultIntent)
+        }
+
         finish()
+    }
+
+    private fun finishActivity(status: GameStatus) {
+        if (game is MultiPlayerGame) {
+            (game as MultiPlayerGame).status = status
+        }
+        saveGames()
+//        saveGame()
+
+        val resultIntent = Intent()
+        resultIntent.putExtra("gameId", gameId)
+        resultIntent.putExtra("lastUpdated", game.lastUpdated)
+        resultIntent.putExtra("opponentName", opponentName)
+        resultIntent.putExtra("status", status)
+        resultIntent.putExtra("isPlayingWhite", isPlayingWhite)
+        resultIntent.putExtra("hasUpdate", true)
+        setResult(Activity.RESULT_OK, resultIntent)
+        finish()
+    }
+
+    private fun closeAndSaveGameAsWin() {
+        finishActivity(GameStatus.GAME_WON)
+//        SavedGames.get(gameId)?.status = GameStatus.GAME_WON
+//        finish()
     }
 
     private fun closeAndSaveGameAsDraw() {
-        SavedGames.get(gameId)?.status = GameStatus.GAME_DRAW
-        finish()
+        finishActivity(GameStatus.GAME_DRAW)
+//        SavedGames.get(gameId)?.status = GameStatus.GAME_DRAW
+//        finish()
     }
 
     private fun closeAndSaveGameAsLoss() {
-        SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
-        finish()
+        finishActivity(GameStatus.GAME_LOST)
+//        SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
+//        finish()
     }
 
     private fun acceptDraw() {
@@ -501,10 +565,10 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     private fun setOpponentStatusIcon(gameId: String) {
-        println("GETTING FRAGMENT")
+//        println("GETTING FRAGMENT")
         val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
 
-        println("TRYING TO SET STATUS: ${this.gameId} :: $gameId")
+//        println("TRYING TO SET STATUS: ${this.gameId} :: $gameId")
 
         when {
             this.gameId == gameId -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_GAME)
@@ -515,10 +579,11 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         }
     }
 
-    private fun saveGame() {
-        println("SAVING GAME: ${(game as MultiPlayerGame).chatMessages.size}")
-        SavedGames.put(gameId, game as MultiPlayerGame)
-    }
+//    private fun saveGame() {
+//        println("SAVING GAME: $gameId ${(game as MultiPlayerGame).status}")
+////        SavedGames.put(gameId, game as MultiPlayerGame)
+//        FileManager.write(this, "game.txt", (game as MultiPlayerGame).toString())
+//    }
 
     private fun registerReceivers() {
         registerReceiver(inviteReceiver, infoFilter)
@@ -537,6 +602,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
     override fun onResume() {
         super.onResume()
+        stayingInApp = false
         registerReceivers()
         NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId"))
 
@@ -545,7 +611,14 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         pieceChooserDialog.setLayout()
     }
 
-    override fun onStop() {
+    override fun onPause() {
+//        if (game is MultiPlayerGame) {
+//            saveGame()
+//        }
+
+        println("GAME ACTIVITY: saving games")
+        saveGames()
+
         unregisterReceiver(inviteReceiver)
         unregisterReceiver(newGameReceiver)
         unregisterReceiver(gameUpdateReceiver)
@@ -559,19 +632,20 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         unregisterReceiver(chatMessageReceiver)
         unregisterReceiver(userStatusReceiver)
 
+        if (!stayingInApp) {
+            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|away"))
+        }
+
         keyboardHeightProvider.observer = null
 
-        if (game is MultiPlayerGame) {
-            saveGame()
-        }
-        super.onStop()
+        super.onPause()
     }
 
     override fun onDestroy() {
         println("ON DESTROY GAME_ACTIVITY")
         glView.destroy()
         keyboardHeightProvider.close()
-        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|offline"))
+//        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|offline"))
 
         super.onDestroy()
     }
@@ -585,10 +659,43 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (isChatOpened()) {
             closeChat()
         } else {
+//            if (game is MultiPlayerGame) {
+//                saveGame()
+//            }
+
+            finishActivity()
+
+            stayingInApp = true
             NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|online"))
             super.onBackPressed()
         }
     }
+
+//    private fun parseSavedGames(content: String) {
+//        val gamesData = content.split(',')
+//
+//        for (gameData in gamesData) {
+//            val data = gameData.split('|')
+//            val gameId = data[0]
+//            val lastUpdated = data[1].toLong()
+//            val opponentName = data[2]
+//            val gameStatus = GameStatus.fromString(data[3])
+//            val isPlayingWhite = data[4].toBoolean()
+//            val hasUpdate = data[5].toBoolean()
+//
+//
+//        }
+//    }
+
+//    private fun gamesToString(): String {
+//        var data = ""
+//
+//        for (game in savedGames) {
+//            data += "${game.key}|${game.value.lastUpdated}|${game.value.opponentName}|${game.value.status}|${game.value.isPlayingWhite}|true,"
+//        }
+//
+//        return data
+//    }
 
     override fun onKeyboardHeightChanged(height: Int) {
         getChatFragment().translate(height)
@@ -635,6 +742,104 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         chatOpened = false
     }
 
+    private fun loadSavedGames() {
+        println("GAME ACTIVITY: Reading")
+        val lines = FileManager.read(this, MULTIPLAYER_GAME_FILE_NAME) ?: ArrayList()
+
+//        var content = ""
+
+        for (gameData in lines) {
+            if (gameData.isBlank()) {
+                continue
+            }
+
+            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
+            val gameId = data[0]
+            val lastUpdated = data[1].toLong()
+            val opponentName = data[2]
+            val isPlayerWhite = data[3].toBoolean()
+            val gameStatus = GameStatus.fromString(data[4])
+            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
+            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
+//            val winner = data[7]
+
+            val moves = ArrayList<Move>()
+
+            for (move in moveList) {
+                if (move.isNotBlank()) {
+                    moves += Move.fromChessNotation(move)
+                }
+            }
+
+            val messages = ArrayList<ChatMessage>()
+            for (message in chatMessages) {
+                if (message.isNotBlank()) {
+                    val messageData = message.split('~')
+                    val senderId = messageData[0]
+                    val timeStamp = messageData[1]
+                    val messageContent = messageData[2]
+
+                    val type = if (senderId == id) MessageType.SENT else MessageType.RECEIVED
+
+                    messages += ChatMessage(timeStamp, messageContent, type)
+                }
+            }
+
+//            val gameStatus = if (winner.isBlank()) {
+//                if (currentPlayerToMove == id) {
+//                    GameStatus.PLAYER_MOVE
+//                } else {
+//                    GameStatus.OPPONENT_MOVE
+//                }
+//            } else if (winner == id) {
+//                GameStatus.GAME_WON
+//            } else if (winner == "draw") {
+//                GameStatus.GAME_DRAW
+//            } else {
+//                GameStatus.GAME_LOST
+//            }
+
+//            content += "$gameId|$lastUpdated|$opponentName|$gameStatus|$isPlayerWhite|true\n"
+
+            val newGame = MultiPlayerGame(gameId, id, opponentName, isPlayerWhite, moves, messages)
+            newGame.status = gameStatus
+
+            savedGames[gameId] = newGame
+//            SavedGames.put(gameId, newGame)
+        }
+
+    }
+
+    private fun saveGames() {
+        var content = ""
+
+        for ((gameId, game) in savedGames) {
+            var moveData = "["
+
+            for ((i, move) in game.moves.withIndex()) {
+                moveData += move.toChessNotation()
+                if (i != game.moves.size - 1) {
+                    moveData += "\\"
+                }
+            }
+            moveData += "]"
+
+            var chatData = "["
+
+            for ((i, message) in game.chatMessages.withIndex()) {
+                chatData += message
+                if (i != game.chatMessages.size - 1) {
+                    chatData += "\\"
+                }
+            }
+            chatData += "]"
+
+            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData\n"
+        }
+
+        FileManager.write(this, MULTIPLAYER_GAME_FILE_NAME, content)
+    }
+
     private fun onButtonInitialized(textSize: Float) {
         if (textSize < maxTextSize) {
             maxTextSize = textSize
@@ -667,7 +872,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
                 resignDialog.show(gameId, id) {
                     NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "resign", "$gameId|$id"))
-                    SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
+//                    SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
                     finish()
                 }
             }
@@ -779,4 +984,5 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             chatOpened = !chatOpened
         }
     }
+
 }

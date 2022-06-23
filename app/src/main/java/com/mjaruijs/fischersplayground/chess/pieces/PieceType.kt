@@ -93,9 +93,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             val x = square.x.roundToInt()
             val y = square.y.roundToInt()
 
-            val direction = if (isSinglePlayer) {
-                if (piece.team == Team.WHITE) 1 else -1
-            } else if (piece.team == team) 1 else -1
+            val direction = if (piece.team == team) 1 else -1
 
             var firstSquareEmpty = false
             if (gameState[x, y + direction] == null) {
@@ -103,11 +101,15 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                 firstSquareEmpty = true
             }
 
+//            val pawnAtStartingSquare = y == 1
+
             val pawnAtStartingSquare = if (isSinglePlayer) {
-                (piece.team == Team.WHITE && y == 1) || (piece.team == Team.BLACK && y == 6)
+                (piece.team == team && y == 1) || (piece.team != team && y == 6)
             } else {
                 y == 1
             }
+
+//            println("$direction ${piece.team} $team $pawnAtStartingSquare $square")
 
 //            val pawnAtStartingSquare = (piece.team == Team.WHITE && y == 1) || (piece.team == Team.BLACK && y == 6)
 
@@ -147,11 +149,15 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                         if (pieceRightToPawn != null) {
                             if (pieceRightToPawn.team != piece.team && pieceRightToPawn.type == PAWN) {
                                 if (isSinglePlayer) {
-                                    if ((piece.team == Team.WHITE && lastMove.fromPosition.y.roundToInt() == 6) || (piece.team == Team.BLACK && lastMove.fromPosition.y.roundToInt() == 1)) {
+                                    if (lastMove.getFromPosition(piece.team).y.roundToInt() == 6) {
                                         possibleMoves += Vector2(x + 1, y + direction)
                                     }
+//                                    if ((piece.team == Team.WHITE && lastMove.fromPosition.y.roundToInt() == 6) || (piece.team == Team.BLACK && lastMove.fromPosition.y.roundToInt() == 1)) {
+//                                        possibleMoves += Vector2(x + 1, y + direction)
+//                                    }
                                 } else {
-                                    if (lastMove.fromPosition.y.roundToInt() == 6) {
+
+                                    if (lastMove.getFromPosition(piece.team).y.roundToInt() == 6) {
                                         possibleMoves += Vector2(x + 1, y + direction)
                                     }
                                 }
@@ -164,11 +170,14 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                         if (pieceLeftToPawn != null) {
                             if (pieceLeftToPawn.team != piece.team && pieceLeftToPawn.type == PAWN) {
                                 if (isSinglePlayer) {
-                                    if ((piece.team == Team.WHITE && lastMove.fromPosition.y.roundToInt() == 6) || (piece.team == Team.BLACK && lastMove.fromPosition.y.roundToInt() == 1)) {
+                                    if (lastMove.getFromPosition(piece.team).y.roundToInt() == 6) {
                                         possibleMoves += Vector2(x - 1, y + direction)
                                     }
+//                                    if ((piece.team == Team.WHITE && lastMove.fromPosition.y.roundToInt() == 6) || (piece.team == Team.BLACK && lastMove.fromPosition.y.roundToInt() == 1)) {
+//                                        possibleMoves += Vector2(x - 1, y + direction)
+//                                    }
                                 } else {
-                                    if (lastMove.fromPosition.y.roundToInt() == 6) {
+                                    if (lastMove.getFromPosition(piece.team).y.roundToInt() == 6) {
                                         possibleMoves += Vector2(x - 1, y + direction)
                                     }
                                 }
@@ -391,12 +400,15 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                     }
 
                     if (move.movedPiece == ROOK) {
-                        if (team == Team.WHITE && move.fromPosition == Vector2(7, kingY)) {
+                        if (move.getToPosition(team) == Vector2(7, kingY)) {
                             rookMoved = true
                         }
-                        if (team == Team.BLACK && move.fromPosition == Vector2(0, kingY)) {
-                            rookMoved = true
-                        }
+//                        if (team == Team.WHITE && move.fromPosition == Vector2(7, kingY)) {
+//                            rookMoved = true
+//                        }
+//                        if (team == Team.BLACK && move.fromPosition == Vector2(0, kingY)) {
+//                            rookMoved = true
+//                        }
                     }
                 }
             }
@@ -454,12 +466,15 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                     }
 
                     if (move.movedPiece == ROOK) {
-                        if (team == Team.WHITE && move.fromPosition == Vector2(0, kingY)) {
+                        if (move.getFromPosition(team) == Vector2(0, kingY)) {
                             rookMoved = true
                         }
-                        if (team == Team.BLACK && move.fromPosition == Vector2(7, kingY)) {
-                            rookMoved = true
-                        }
+//                        if (team == Team.WHITE && move.fromPosition == Vector2(0, kingY)) {
+//                            rookMoved = true
+//                        }
+//                        if (team == Team.BLACK && move.fromPosition == Vector2(7, kingY)) {
+//                            rookMoved = true
+//                        }
                     }
                 }
             }

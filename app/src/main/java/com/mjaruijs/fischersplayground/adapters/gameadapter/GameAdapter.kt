@@ -6,6 +6,7 @@ import android.view.View
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -18,7 +19,7 @@ import com.mjaruijs.fischersplayground.util.Time
 import kotlin.IllegalArgumentException
 import kotlin.collections.ArrayList
 
-class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerView.Adapter<GameAdapter.GameViewHolder>() {
+class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val onGameDeleted: (String) -> Unit) : RecyclerView.Adapter<GameAdapter.GameViewHolder>() {
 
     private val games = ArrayList<GameCardItem>()
 
@@ -109,6 +110,12 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
         }
     }
 
+    private fun delete(gameId: String) {
+        games.removeIf { gameCard -> gameCard.id == gameId }
+        notifyDataSetChanged()
+        onGameDeleted(gameId)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GameViewHolder {
         return GameViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.match_card, parent, false))
     }
@@ -121,6 +128,9 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
         holder.gameLayout.setOnClickListener {
             onGameClicked(gameCard)
         }
+        holder.deleteButton.setOnClickListener {
+            delete(gameCard.id)
+        }
     }
 
     override fun getItemCount() = games.size
@@ -130,6 +140,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
         val gameStatusView: View = view.findViewById(R.id.game_status_view)
         val gameLayout: ConstraintLayout = view.findViewById(R.id.game_layout)
         val updateIndicator: ImageView = view.findViewById(R.id.update_indicator)
+        val deleteButton: Button = view.findViewById(R.id.delete_match_button)
     }
 
 }

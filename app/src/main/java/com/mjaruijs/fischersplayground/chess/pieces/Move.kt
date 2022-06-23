@@ -2,7 +2,15 @@ package com.mjaruijs.fischersplayground.chess.pieces
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, val promotedPiece: PieceType?) {
+class Move(val timeStamp: Long, val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, val promotedPiece: PieceType?) {
+
+    fun getFromPosition(perspectiveOf: Team): Vector2 {
+        return if (perspectiveOf == Team.WHITE) fromPosition else Vector2(7, 7) - fromPosition
+    }
+
+    fun getToPosition(perspectiveOf: Team): Vector2 {
+        return if (perspectiveOf == Team.WHITE) toPosition else Vector2(7, 7) - toPosition
+    }
 
     fun toChessNotation(): String {
         var notation = "$timeStamp:"
@@ -35,34 +43,19 @@ class Move(val timeStamp: Long, val team: Team, val fromPosition: Vector2, val t
     }
 
     private fun getRowSign(square: Vector2): String {
-//        square.y.toInt().toString()
-        if (team == Team.WHITE) return square.y.toInt().toString()
-        return (7 - square.y.toInt()).toString()
+        return square.y.toInt().toString()
     }
 
     private fun getColSign(square: Vector2): String {
-        if (team == Team.WHITE) {
-            return when(square.x.toInt()) {
-                0 -> "a"
-                1 -> "b"
-                2 -> "c"
-                3 -> "d"
-                4 -> "e"
-                5 -> "f"
-                6 -> "g"
-                7 -> "h"
-                else -> throw IllegalArgumentException("Couldn't parse square to chess notation: $square")
-            }
-        }
         return when(square.x.toInt()) {
-            7 -> "a"
-            6 -> "b"
-            5 -> "c"
-            4 -> "d"
-            3 -> "e"
-            2 -> "f"
-            1 -> "g"
-            0 -> "h"
+            0 -> "a"
+            1 -> "b"
+            2 -> "c"
+            3 -> "d"
+            4 -> "e"
+            5 -> "f"
+            6 -> "g"
+            7 -> "h"
             else -> throw IllegalArgumentException("Couldn't parse square to chess notation: $square")
         }
     }

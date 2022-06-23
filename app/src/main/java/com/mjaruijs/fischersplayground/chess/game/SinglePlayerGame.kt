@@ -8,13 +8,13 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
 
-class SinglePlayerGame : Game(true) {
+class SinglePlayerGame : Game(false) {
 
     private var teamToMove = Team.WHITE
 
     override fun getCurrentTeam() = teamToMove
 
-    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(piece.team, piece, square, true, state, moves, lookingForCheck)
+    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(if (isPlayingWhite) Team.WHITE else Team.BLACK, piece, square, true, state, moves, lookingForCheck)
 
     override fun showPreviousMove(): Pair<Boolean, Boolean> {
         if (currentMoveIndex != -1) {
@@ -43,18 +43,18 @@ class SinglePlayerGame : Game(true) {
         }
         teamToMove = !teamToMove
 
-        return super.move(team, fromPosition, toPosition, runInBackground)
-    }
+        val actualFromPosition: Vector2
+        val actualToPosition: Vector2
 
-    private fun movePlayer(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
-        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+        if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
+            actualFromPosition = fromPosition
+            actualToPosition = toPosition
+        } else {
+            actualFromPosition = Vector2(7, 7) - fromPosition
+            actualToPosition = Vector2(7, 7) - toPosition
+        }
 
-        move(team, fromPosition, toPosition, runInBackground)
-
-//        val pieceAtNewPosition = state[toPosition]
-//        val move = finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
-
-//        move.movedPiece = state[toPosition]?.type ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+        return super.move(team, actualFromPosition, actualToPosition, runInBackground)
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {
@@ -62,18 +62,9 @@ class SinglePlayerGame : Game(true) {
             val previouslySelectedSquare = board.selectedSquare
 
             if (possibleMoves.contains(clickedSquare)) {
-
-//                val pieceAtSelectedSquare = state[selectedSquare] ?: return Action.NO_OP
-
-//                if (pieceAtSelectedSquare.type == PieceType.PAWN && (square.y == 0f || square.y == 7f)) {
-
-//                } else {
-//                println("TEAM TO MOVE: $teamToMove")
                 Thread {
                     move(teamToMove, previouslySelectedSquare, clickedSquare, false)
-//                    movePlayer(selectedSquare, square, false)
                 }.start()
-//                }
 
                 return Action.PIECE_MOVED
             }

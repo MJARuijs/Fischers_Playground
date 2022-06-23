@@ -6,7 +6,6 @@ import com.mjaruijs.fischersplayground.chess.Action
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
-import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Message
@@ -16,7 +15,7 @@ import com.mjaruijs.fischersplayground.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import com.mjaruijs.fischersplayground.util.Time
 
-class MultiPlayerGame(private val gameId: String, private val id: String, val opponentName: String, val isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf()) : Game(isPlayingWhite, moves) {
+class MultiPlayerGame(private val gameId: String, private val playerId: String, val opponentName: String, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf()) : Game(isPlayingWhite, moves) {
 
     var status: GameStatus
     var news = News(NewsType.NO_NEWS)
@@ -48,55 +47,29 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
 
     override fun getCurrentTeam() = team
 
-    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(this.team, piece, square, false, state, moves, lookingForCheck)
+    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(team, piece, square, false, state, moves, lookingForCheck)
 
     fun undoMoves(numberOfMoves: Int) {
         for (i in 0 until numberOfMoves) {
-            undoMove(moves.removeLast(), true)
+            undoMove(moves.removeLast())
             status = if (status == GameStatus.OPPONENT_MOVE) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
         }
     }
 
     fun moveOpponent(move: Move, runInBackground: Boolean) {
-//        val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
-//        val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
-
         if (!runInBackground) {
             if (status != GameStatus.OPPONENT_MOVE) {
                 return
             }
         }
 
-//        println("MOVING OPPONENT: $fromPosition $toPosition")
-
-//        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
-//        val pieceAtNewPosition = state[toPosition]
-
-
-
         move(move, runInBackground)
-
-
-//        if (move.promotedPiece != null) {
-//            state[move.toPosition] = Piece(move.promotedPiece, move.team)
-//        }
-
-
-//        finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
-
-//        println("MULTIPLAYER MOVING OPPONENT")
 
         status = GameStatus.PLAYER_MOVE
     }
 
     private fun movePlayer(move: Move) {
-//        val fromPosition = if (team == Team.WHITE) move.fromPosition else Vector2(7, 7) - move.fromPosition
-//        val toPosition = if (team == Team.WHITE) move.toPosition else Vector2(7, 7) - move.toPosition
-
-        val fromPosition = move.fromPosition
-        val toPosition = move.toPosition
-
-        movePlayer(fromPosition, toPosition, true)
+        movePlayer(move.getFromPosition(team), move.getToPosition(team), true)
     }
 
     private fun movePlayer(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
@@ -106,25 +79,11 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
             }
         }
 
-        println("MOVING PLAYER $fromPosition $toPosition")
-
-//        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
-        val pieceAtNewPosition = state[toPosition]
-
-        val actualFromPosition = if (team == Team.WHITE) fromPosition else Vector2(7, 7) - fromPosition
-        val actualToPosition = if (team == Team.WHITE) toPosition else Vector2(7, 7) - toPosition
-
-        val move = move(team, actualFromPosition, actualToPosition, runInBackground)
-
-//        finishMove(fromPosition, toPosition, currentPositionPiece, pieceAtNewPosition, runInBackground)
-
-//        move.movedPiece = state[toPosition]?.type ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+        val move = move(team, fromPosition, toPosition, runInBackground)
 
         if (!runInBackground) {
-            println("MULTIPLAYER FINALIZING MOVE ${pieceAtNewPosition?.type} ")
-
             val timeStamp = Time.getFullTimeStamp()
-            val positionUpdateMessage = "$gameId|$id|${move.toChessNotation()}|$timeStamp"
+            val positionUpdateMessage = "$gameId|$playerId|${move.toChessNotation()}|$timeStamp"
             val message = Message(Topic.GAME_UPDATE, "move", positionUpdateMessage)
 
             NetworkManager.sendMessage(message)
@@ -166,6 +125,10 @@ class MultiPlayerGame(private val gameId: String, private val id: String, val op
         }
 
         return Action.NO_OP
+    }
+
+    override fun toString(): String {
+        return "$gameId|$lastUpdated|$opponentName|$status|$isPlayingWhite|true"
     }
 
 }
