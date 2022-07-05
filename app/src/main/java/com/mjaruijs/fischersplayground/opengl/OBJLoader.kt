@@ -37,7 +37,7 @@ object OBJLoader {
         }
     }
 
-    fun preload(context: Context, location: Int, name: String) {
+    fun preload(context: Context, location: Int) {
         if (cache.containsKey(location)) {
             return
         }
@@ -46,7 +46,7 @@ object OBJLoader {
         currentlyLoading[location] = AtomicBoolean(true)
         val startTime = System.nanoTime()
 
-        val mesh = load(context, location, name)
+        val mesh = load(context, location)
 
         val endTime = System.nanoTime()
         cache[location] = mesh
@@ -55,7 +55,7 @@ object OBJLoader {
 //        println("DONE LOADING $location $name ${(endTime - startTime) / 1000000}")
     }
 
-    private fun load(context: Context, fileLocation: Int, name: String = ""): MeshData {
+    private fun load(context: Context, fileLocation: Int): MeshData {
         val inputStream = context.resources.openRawResource(fileLocation)
         val reader = BufferedInputStream(inputStream)
         val bytes = reader.readBytes()

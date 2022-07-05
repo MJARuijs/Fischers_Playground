@@ -41,6 +41,10 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
         return true
     }
 
+    fun containsCard(id: String): Boolean {
+        return games.any { gameCard -> gameCard.id == id }
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     fun updateGameCard(gameId: String, newStatus: GameStatus, isPlayerWhite: Boolean? = null): Boolean {
         val game = games.find { game -> game.id == gameId } ?: return false
@@ -87,7 +91,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
         val gameIndex = games.indexOf(gameCardItem)
         notifyItemChanged(gameIndex)
 
-        NetworkManager.sendMessage(Message(Topic.INFO, "clear_update", "$userId|${gameCardItem.id}"))
+//        NetworkManager.sendMessage(Message(Topic.INFO, "clear_update", "$userId|${gameCardItem.id}"))
     }
 
     private fun clearUpdate(gameId: String) {

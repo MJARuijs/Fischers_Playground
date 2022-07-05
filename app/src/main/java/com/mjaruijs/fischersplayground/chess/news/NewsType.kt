@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.news
+package com.mjaruijs.fischersplayground.chess.news
 
 enum class NewsType {
 
