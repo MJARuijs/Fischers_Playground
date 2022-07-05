@@ -14,4 +14,8 @@ class ChatMessage(val timeStamp: String, val message: String, val type: MessageT
 //        return convertedTimeNotation
 //    }
 
+    override fun toString(): String {
+        return "$timeStamp,$message,$type"
+    }
+
 }

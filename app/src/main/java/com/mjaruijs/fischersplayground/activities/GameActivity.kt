@@ -197,8 +197,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
         if (game is MultiPlayerGame) {
             runOnUiThread {
-                processNews((game as MultiPlayerGame).news)
-                (game as MultiPlayerGame).news = News(NewsType.NO_NEWS)
+                processNews((game as MultiPlayerGame))
             }
         }
     }
@@ -290,20 +289,23 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         }
     }
 
-    private fun processNews(news: News) {
-        when (news.newsType) {
-            NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show(opponentName, ::closeAndSaveGameAsWin)
-            NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, id, opponentName, ::acceptDraw)
-            NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
-            NewsType.OPPONENT_DECLINED_DRAW -> opponentDeclinedDrawDialog.show(opponentName)
-            NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
-            NewsType.OPPONENT_ACCEPTED_UNDO -> {
-                (game as MultiPlayerGame).undoMoves(news.data)
-                glView.requestRender()
+    private fun processNews(game: MultiPlayerGame) {
+        for (news in game.newsUpdates) {
+            when (news.newsType) {
+                NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show(opponentName, ::closeAndSaveGameAsWin)
+                NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, id, opponentName, ::acceptDraw)
+                NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
+                NewsType.OPPONENT_DECLINED_DRAW -> opponentDeclinedDrawDialog.show(opponentName)
+                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
+                NewsType.OPPONENT_ACCEPTED_UNDO -> {
+                    game.undoMoves(news.data)
+                    glView.requestRender()
+                }
+                NewsType.OPPONENT_REJECTED_UNDO -> undoRejectedDialog.show(opponentName)
+                NewsType.NO_NEWS -> {}
             }
-            NewsType.OPPONENT_REJECTED_UNDO -> undoRejectedDialog.show(opponentName)
-            NewsType.NO_NEWS -> {}
         }
+        game.clearNews()
     }
 
     private fun onNewGameStarted(content: String) {
@@ -326,7 +328,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             opponentResignedDialog.show(opponentUsername, ::closeAndSaveGameAsWin)
         } else {
             savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-            savedGames[gameId]?.news = News(NewsType.OPPONENT_RESIGNED)
+            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_RESIGNED))
         }
     }
 
@@ -340,7 +342,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             opponentOfferedDrawDialog.show(gameId, id, opponentUsername, ::acceptDraw)
         } else {
             savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-            savedGames[gameId]?.news = News(NewsType.OPPONENT_OFFERED_DRAW)
+            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_OFFERED_DRAW))
         }
     }
 
@@ -354,7 +356,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             opponentAcceptedDrawDialog.show(gameId, opponentUsername, ::closeAndSaveGameAsDraw)
         } else {
             savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-            savedGames[gameId]?.news = News(NewsType.OPPONENT_ACCEPTED_DRAW)
+            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_DRAW))
         }
     }
 
@@ -368,7 +370,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             opponentDeclinedDrawDialog.show(opponentUsername)
         } else {
             savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-            savedGames[gameId]?.news = News(NewsType.OPPONENT_DECLINED_DRAW)
+            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_DECLINED_DRAW))
         }
     }
 
@@ -408,7 +410,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             undoRequestedDialog.show(gameId, opponentUsername, id)
         } else {
-            savedGames[gameId]?.news = News(NewsType.OPPONENT_REQUESTED_UNDO)
+            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REQUESTED_UNDO))
         }
     }
 
@@ -421,7 +423,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             (game as MultiPlayerGame).undoMoves(numberOfMovesReversed)
             glView.requestRender()
         } else {
-            savedGames[gameId]?.news = News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed)
+            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
             savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
         }
     }
@@ -430,7 +432,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             undoRejectedDialog.show(opponentName)
         } else {
-            savedGames[gameId]?.news = News(NewsType.OPPONENT_REJECTED_UNDO)
+            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REJECTED_UNDO))
         }
     }
 
@@ -462,20 +464,20 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     private fun finishActivity() {
-        val resultIntent = Intent()
-//        resultIntent.putExtra("saved_games", gamesToString())
-
-        if (game is MultiPlayerGame) {
-            resultIntent.putExtra("gameId", gameId)
-            resultIntent.putExtra("lastUpdated", game.lastUpdated)
-            resultIntent.putExtra("opponentName", opponentName)
-            resultIntent.putExtra("status", (game as MultiPlayerGame).status.toString())
-            resultIntent.putExtra("isPlayingWhite", isPlayingWhite)
-            resultIntent.putExtra("hasUpdate", true)
-            setResult(Activity.RESULT_OK, resultIntent)
-        } else {
-            setResult(Activity.RESULT_CANCELED, resultIntent)
-        }
+//        val resultIntent = Intent()
+////        resultIntent.putExtra("saved_games", gamesToString())
+//
+//        if (game is MultiPlayerGame) {
+//            resultIntent.putExtra("gameId", gameId)
+//            resultIntent.putExtra("lastUpdated", game.lastUpdated)
+//            resultIntent.putExtra("opponentName", opponentName)
+//            resultIntent.putExtra("status", (game as MultiPlayerGame).status.toString())
+//            resultIntent.putExtra("isPlayingWhite", isPlayingWhite)
+//            resultIntent.putExtra("hasUpdate", true)
+////            setResult(Activity.RESULT_OK, resultIntent)
+//        } else {
+////            setResult(Activity.RESULT_CANCELED, resultIntent)
+//        }
 
         finish()
     }
@@ -729,6 +731,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             val gameStatus = GameStatus.fromString(data[4])
             val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
             val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
+            val newsData = data[7].removePrefix("[").removeSuffix("]").split("\\")
+
 //            val winner = data[7]
 
             val moves = ArrayList<Move>()
@@ -742,40 +746,29 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             val messages = ArrayList<ChatMessage>()
             for (message in chatMessages) {
                 if (message.isNotBlank()) {
-                    val messageData = message.split('~')
-                    val senderId = messageData[0]
-                    val timeStamp = messageData[1]
-                    val messageContent = messageData[2]
-
-                    val type = if (senderId == id) MessageType.SENT else MessageType.RECEIVED
+                    val messageData = message.split(',')
+                    val timeStamp = messageData[0]
+                    val messageContent = messageData[1]
+                    val type = MessageType.fromString(messageData[2])
 
                     messages += ChatMessage(timeStamp, messageContent, type)
                 }
             }
 
-//            val gameStatus = if (winner.isBlank()) {
-//                if (currentPlayerToMove == id) {
-//                    GameStatus.PLAYER_MOVE
-//                } else {
-//                    GameStatus.OPPONENT_MOVE
-//                }
-//            } else if (winner == id) {
-//                GameStatus.GAME_WON
-//            } else if (winner == "draw") {
-//                GameStatus.GAME_DRAW
-//            } else {
-//                GameStatus.GAME_LOST
-//            }
+            val newsUpdates = ArrayList<News>()
+            for (news in newsData) {
+                if (news.isBlank()) {
+                    continue
+                }
 
-//            content += "$gameId|$lastUpdated|$opponentName|$gameStatus|$isPlayerWhite|true\n"
+                newsUpdates += News.fromString(news)
+            }
 
-            val newGame = MultiPlayerGame(gameId, id, opponentName, isPlayerWhite, moves, messages)
+            val newGame = MultiPlayerGame(gameId, id, opponentName, isPlayerWhite, moves, messages, newsUpdates)
             newGame.status = gameStatus
 
             savedGames[gameId] = newGame
-//            SavedGames.put(gameId, newGame)
         }
-
     }
 
     private fun saveGames() {
@@ -802,7 +795,17 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             }
             chatData += "]"
 
-            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData\n"
+            var newsContent = "["
+
+            for ((i, news) in game.newsUpdates.withIndex()) {
+                newsContent += news.toString()
+                if (i != game.newsUpdates.size - 1) {
+                    newsContent += "\\"
+                }
+            }
+            newsContent += "]"
+
+            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
         }
 
         FileManager.write(this, MULTIPLAYER_GAME_FILE, content)

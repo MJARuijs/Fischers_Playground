@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 object NetworkManager {
 
     private const val PUBLIC_SERVER_IP = "217.101.191.23"
-    private const val LOCAL_SERVER_IP = "192.168.178.71"
+    private const val LOCAL_SERVER_IP = "192.168.178.18"
     private const val SERVER_PORT = 4500
 
     private val clientInitializing = AtomicBoolean(false)

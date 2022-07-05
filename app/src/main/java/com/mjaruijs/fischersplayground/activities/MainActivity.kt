@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.activities
 
-import android.app.Activity
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
@@ -175,6 +174,7 @@ class MainActivity : AppCompatActivity() {
     private fun onGameDeleted(gameId: String) {
         savedGames.remove(gameId)
         savedInvites.remove(gameId)
+        saveGames()
     }
 
     private fun onNewGameStarted(content: String) {
@@ -303,21 +303,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun processOpponentResigned(gameId: String) {
         val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.news = News(NewsType.OPPONENT_RESIGNED)
+        game.addNews(News(NewsType.OPPONENT_RESIGNED))
         savedGames[gameId] = game
         gameAdapter.updateCardStatus(gameId, GameStatus.GAME_WON)
     }
 
     private fun processOpponentOfferingDraw(gameId: String) {
         val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.news = News(NewsType.OPPONENT_OFFERED_DRAW)
+        game.addNews(News(NewsType.OPPONENT_OFFERED_DRAW))
         savedGames[gameId] = game
         gameAdapter.hasUpdate(gameId)
     }
 
     private fun processOpponentAcceptedDraw(gameId: String) {
         val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.news = News(NewsType.OPPONENT_ACCEPTED_DRAW)
+        game.addNews(News(NewsType.OPPONENT_ACCEPTED_DRAW))
 
         savedGames[gameId] = game
         gameAdapter.hasUpdate(gameId)
@@ -325,7 +325,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun processOpponentRejectedDraw(gameId: String) {
         val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.news = News(NewsType.OPPONENT_DECLINED_DRAW)
+        game.addNews(News(NewsType.OPPONENT_DECLINED_DRAW))
         savedGames[gameId] = game
 
         gameAdapter.hasUpdate(gameId)
@@ -333,18 +333,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun processOpponentRequestingUndo(gameId: String) {
         gameAdapter.hasUpdate(gameId)
-        savedGames[gameId]?.news = News(NewsType.OPPONENT_REQUESTED_UNDO)
+        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REQUESTED_UNDO))
     }
 
     private fun processUndoRequestAccepted(gameId: String, numberOfMovesReversed: Int) {
         gameAdapter.hasUpdate(gameId)
-        savedGames[gameId]?.news = News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed)
+        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
         savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
     }
 
     private fun processOpponentRejectedUndoRequest(gameId: String) {
         gameAdapter.hasUpdate(gameId)
-        savedGames[gameId]?.news = News(NewsType.OPPONENT_REJECTED_UNDO)
+        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REJECTED_UNDO))
     }
 
     private fun processChatMessage(gameId: String, messageContent: String, timeStamp: String) {
@@ -656,8 +657,9 @@ class MainActivity : AppCompatActivity() {
         unregisterReceiver(opponentDeclinedDrawReceiver)
         unregisterReceiver(chatMessageReceiver)
 
+        saveData()
+
         if (!stayingInApp) {
-            saveData()
             NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|away"))
         }
         super.onPause()
@@ -695,8 +697,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadSavedGames() {
-        println("MAIN ACTIVITY: Reading")
-
         val lines = FileManager.read(this, MULTIPLAYER_GAME_FILE) ?: ArrayList()
 
         for (gameData in lines) {
@@ -712,6 +712,7 @@ class MainActivity : AppCompatActivity() {
             val gameStatus = GameStatus.fromString(data[4])
             val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
             val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
+            val newsData = data[7].removePrefix("[").removeSuffix("]").split("\\")
 
             val moves = ArrayList<Move>()
 
@@ -724,18 +725,25 @@ class MainActivity : AppCompatActivity() {
             val messages = ArrayList<ChatMessage>()
             for (message in chatMessages) {
                 if (message.isNotBlank()) {
-                    val messageData = message.split('~')
-                    val senderId = messageData[0]
-                    val timeStamp = messageData[1]
-                    val messageContent = messageData[2]
-
-                    val type = if (senderId == id) MessageType.SENT else MessageType.RECEIVED
+                    val messageData = message.split(',')
+                    val timeStamp = messageData[0]
+                    val messageContent = messageData[1]
+                    val type = MessageType.fromString(messageData[2])
 
                     messages += ChatMessage(timeStamp, messageContent, type)
                 }
             }
 
-            val newGame = MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves, messages)
+            val newsUpdates = ArrayList<News>()
+            for (news in newsData) {
+                if (news.isBlank()) {
+                    continue
+                }
+
+                newsUpdates += News.fromString(news)
+            }
+
+            val newGame = MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves, messages, newsUpdates)
             newGame.status = gameStatus
 
             savedGames[gameId] = newGame
@@ -803,7 +811,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveGames() {
-        println("MAIN ACTIVITY: saving games")
         var content = ""
 
         for ((gameId, game) in savedGames) {
@@ -820,14 +827,24 @@ class MainActivity : AppCompatActivity() {
             var chatData = "["
 
             for ((i, message) in game.chatMessages.withIndex()) {
-                chatData += message
+                chatData += message.toString()
                 if (i != game.chatMessages.size - 1) {
                     chatData += "\\"
                 }
             }
             chatData += "]"
 
-            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData\n"
+            var newsContent = "["
+
+            for ((i, news) in game.newsUpdates.withIndex()) {
+                newsContent += news.toString()
+                if (i != game.newsUpdates.size - 1) {
+                    newsContent += "\\"
+                }
+            }
+            newsContent += "]"
+
+            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
         }
 
         FileManager.write(this, MULTIPLAYER_GAME_FILE, content)
@@ -928,8 +945,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-
-        private const val GAME_ACTIVITY_RESULT = 1
 
         const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
         const val INVITES_FILE = "received_invites.txt"
