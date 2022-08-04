@@ -131,7 +131,6 @@ class SettingsActivity : AppCompatActivity() {
         val transition = ChangeBounds()
         transition.duration = ANIMATION_DURATION
         transition.doOnEnd {
-            // TODO: Change visibility back to View.GONE
             graphicsSettingsButton.visibility = View.GONE
 
             glView3D.isActive = true
@@ -211,7 +210,7 @@ class SettingsActivity : AppCompatActivity() {
         val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
         val fullScreen = preferences.getBoolean(FULL_SCREEN_KEY, false)
 
-        hideActivityDecorations(fullScreen)
+        toggleActivityDecorations(fullScreen)
         fullScreenCheckbox.isChecked = fullScreen
     }
 
@@ -294,7 +293,7 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun hideActivityDecorations(isFullscreen: Boolean) {
+    private fun toggleActivityDecorations(isFullscreen: Boolean) {
         supportActionBar?.hide()
 
         if (isFullscreen) {
@@ -351,9 +350,17 @@ class SettingsActivity : AppCompatActivity() {
             }
         })
 
-        fullScreenCard.findViewById<CheckBox>(R.id.full_screen_checkbox).setOnCheckedChangeListener { _, isChecked ->
+        fullScreenCard.setOnClickListener {
+            val isFullscreen = fullScreenCheckbox.isChecked
+
+            savePreference(FULL_SCREEN_KEY, !isFullscreen)
+            toggleActivityDecorations(!isFullscreen)
+            fullScreenCheckbox.isChecked = !isFullscreen
+        }
+
+        fullScreenCheckbox.setOnCheckedChangeListener { _, isChecked ->
             savePreference(FULL_SCREEN_KEY, isChecked)
-            hideActivityDecorations(isChecked)
+            toggleActivityDecorations(isChecked)
         }
 
         collapseCardButton.setOnClickListener {

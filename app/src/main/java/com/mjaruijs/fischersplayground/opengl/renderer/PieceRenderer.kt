@@ -43,7 +43,7 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
         ShaderLoader.load(R.raw.piece_3d_vertex, ShaderType.VERTEX, context),
         ShaderLoader.load(R.raw.piece_3d_fragment, ShaderType.FRAGMENT, context)
     )
-//
+
 //    private val pawnMesh = Mesh(OBJLoader.get(context, R.raw.pawn_bytes))
 //    private val bishopMesh = Mesh(OBJLoader.get(context, R.raw.bishop_bytes))
 //    private val knightMesh = Mesh(OBJLoader.get(context, R.raw.knight_bytes))
