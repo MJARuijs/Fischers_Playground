@@ -8,6 +8,7 @@ import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
@@ -247,7 +248,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         buttonTextSize = size
         textPaint.textSize = size
 
-//        println("Setting $buttonText size: $size")
+        println("Setting $buttonText size: $size")
 //        setTextSize(buttonText, width.toFloat())
 
         invalidate()
@@ -285,14 +286,23 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
             canvas.drawBitmap(bitmap!!, null, rect, textPaint)
         }
 
-        canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
+//        println("$buttonText, ${xPos + textXOffset}, ${yPos + textYOffset} ${textPaint.ascent()} ${textPaint.descent()}")
+
+        if (bitmap == null) {
+            canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
+        } else {
+            canvas.drawText(buttonText, xPos + textXOffset, rect.height() + abs(textPaint.ascent()), textPaint)
+        }
     }
 
     private fun calculateMaxTextSize(): Float {
-        val size = 50f
+        val size = 35f
         val bounds = Rect()
         textPaint.getTextBounds(buttonText, 0, buttonText.length, bounds)
         maxTextSize = size * width.toFloat() / bounds.width()
+
+        println("Max text size for : $buttonText: $maxTextSize")
+
         return maxTextSize
     }
 

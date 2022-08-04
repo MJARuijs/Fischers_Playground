@@ -35,6 +35,7 @@ import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
 
@@ -72,6 +73,8 @@ class MainActivity : AppCompatActivity() {
 
     private val savedGames = HashMap<String, MultiPlayerGame>()
     private val savedInvites = HashMap<String, InviteData>()
+
+    private var maxTextSize = Float.MAX_VALUE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -871,29 +874,37 @@ class MainActivity : AppCompatActivity() {
     private fun preloadModels() {
         PieceTextures.init(this)
 
-        Thread {
-            OBJLoader.preload(this, R.raw.pawn_bytes)
-        }.start()
+//        Thread {
+//            OBJLoader.preload(this, R.raw.pawn_bytes)
+//        }.start()
+//
+//        Thread {
+//            OBJLoader.preload(this, R.raw.bishop_bytes)
+//        }.start()
+//
+//        Thread {
+//            OBJLoader.preload(this, R.raw.knight_bytes)
+//        }.start()
+//
+//        Thread {
+//            OBJLoader.preload(this, R.raw.rook_bytes)
+//        }.start()
+//
+//        Thread {
+//            OBJLoader.preload(this, R.raw.queen_bytes)
+//        }.start()
+//
+//        Thread {
+//            OBJLoader.preload(this, R.raw.king_bytes)
+//        }.start()
+    }
 
-        Thread {
-            OBJLoader.preload(this, R.raw.bishop_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(this, R.raw.knight_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(this, R.raw.rook_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(this, R.raw.queen_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(this, R.raw.king_bytes)
-        }.start()
+    private fun onButtonInitialized(textSize: Float) {
+        if (textSize < maxTextSize) {
+            maxTextSize = textSize
+            findViewById<UIButton>(R.id.start_new_game_button).setButtonTextSize(maxTextSize)
+            findViewById<UIButton>(R.id.single_player_button).setButtonTextSize(maxTextSize)
+        }
     }
 
     private fun initUIComponents() {
@@ -919,18 +930,20 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<UIButton>(R.id.start_new_game_button)
             .setText("Start new game")
-            .setButtonTextSize(100.0f)
+            .setButtonTextSize(70.0f)
             .setColor(235, 186, 145)
             .setCornerRadius(45.0f)
+            .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 createGameDialog.show()
             }
 
         findViewById<UIButton>(R.id.single_player_button)
             .setText("Single player")
-            .setButtonTextSize(100.0f)
+            .setButtonTextSize(70.0f)
             .setColor(Color.rgb(235, 186, 145))
             .setCornerRadius(45.0f)
+            .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 stayingInApp = true
                 val intent = Intent(this, GameActivity::class.java)
