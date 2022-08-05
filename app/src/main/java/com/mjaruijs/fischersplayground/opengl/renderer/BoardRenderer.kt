@@ -75,8 +75,9 @@ class BoardRenderer(context: Context) {
         board3DProgram.stop()
     }
 
-    fun render2D() {
+    fun render2D(aspectRatio: Float) {
         board2DProgram.start()
+        board2DProgram.set("aspectRatio", aspectRatio)
         diffuseSampler.bind(diffuseTexture)
         model2D.draw()
         board2DProgram.stop()

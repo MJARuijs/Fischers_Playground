@@ -102,11 +102,12 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
         isLocked.set(false)
     }
 
-    fun render2D(game: Game) {
+    fun render2D(game: Game, aspectRatio: Float) {
         startAnimations(game)
 
         piece2DProgram.start()
         piece2DProgram.set("textureMaps", sampler.index)
+        piece2DProgram.set("aspectRatio", aspectRatio)
 
         sampler.bind(PieceTextures.get2DTextureArray())
 
@@ -121,6 +122,9 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
                 } else {
                     (Vector2((row + animation.translation.x) * 2.0f, (col + animation.translation.y) * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
                 }
+
+                println(aspectRatio)
+//                translation.y /= 2.0f
 
                 piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
                 piece2DProgram.set("textureId", piece.textureId2D.toFloat())

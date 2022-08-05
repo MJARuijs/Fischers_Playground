@@ -30,6 +30,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
     private var displayWidth = 0
     private var displayHeight = 0
+    private var aspectRatio = 0f
 
     private var pixelsRequested = false
 
@@ -120,6 +121,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
 
         displayWidth = width
         displayHeight = height
+        aspectRatio = width.toFloat() / height.toFloat()
 
         onDisplaySizeChanged(displayWidth, displayHeight)
     }
@@ -141,9 +143,9 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
-            boardRenderer.render2D()
+            boardRenderer.render2D(aspectRatio)
             highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight)
-            pieceRenderer.render2D(game)
+            pieceRenderer.render2D(game, aspectRatio)
             highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight)
         }
 

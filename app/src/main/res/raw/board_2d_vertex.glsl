@@ -2,10 +2,16 @@
 
 layout (location = 0) in vec2 inPosition;
 
+uniform float aspectRatio;
+
 out vec2 textureCoordinates;
 
 void main() {
     textureCoordinates = inPosition.xy;
 
-    gl_Position = vec4(inPosition, 0, 1);
+    vec2 position = inPosition;
+    position.x /= aspectRatio;
+    position /= 2.0;
+
+    gl_Position = vec4(position, 0, 1);
 }
