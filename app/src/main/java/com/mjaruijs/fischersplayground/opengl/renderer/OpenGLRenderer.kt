@@ -146,7 +146,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
         displayWidth = width
         displayHeight = height
         aspectRatio = width.toFloat() / height.toFloat()
-//        camera.aspectRatio = aspectRatio
+        camera.aspectRatio = aspectRatio
 
         onDisplaySizeChanged(displayWidth, displayHeight)
     }

@@ -18,7 +18,7 @@ void main() {
     currentPoint /= viewPort;
     currentPoint = (currentPoint * 2.0) - 1.0;
     currentPoint /= vec2(1.0 / 8.0, 1.0 / 8.0);
-    currentPoint.y *= 2.0;
+//    currentPoint.y *= 2.0;
 
     float distance = distance(currentPoint, center);
 

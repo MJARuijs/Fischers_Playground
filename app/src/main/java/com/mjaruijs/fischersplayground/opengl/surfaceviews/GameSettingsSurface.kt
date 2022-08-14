@@ -31,7 +31,7 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
     init {
         setEGLContextClientVersion(3)
-
+        setEGLConfigChooser(ConfigChooser())
 //        renderer = OpenGLRenderer.getInstance(context, ::onContextCreated, true)
         renderer = OpenGLRenderer(context, resources, ::onContextCreated, true)
         setRenderer(renderer)

@@ -38,11 +38,11 @@ uniform vec3 cameraPosition;
 out vec4 outColor;
 
 vec4 computeAmbientColor(vec4 textureColor) {
-    if (textureId == -1.0) {
+//    if (textureId == -1.0) {
         return ambientLight.color * material.ambient;
-    } else {
-        return ambientLight.color * textureColor;
-    }
+//    } else {
+//        return ambientLight.color * textureColor;
+//    }
 }
 
 vec4 computeDirectionalColor(vec3 lightDirection, vec4 textureColor) {
@@ -54,11 +54,11 @@ vec4 computeDirectionalColor(vec3 lightDirection, vec4 textureColor) {
     float brightness = clamp(dot(lightDirection, normalDirection), 0.0, 1.0);
 
     vec4 diffuse;
-    if (textureId == -1.0) {
+//    if (textureId == -1.0) {
         diffuse = material.diffuse * sun.color * brightness;
-    } else {
-        diffuse = textureColor * sun.color * brightness;
-    }
+//    } else {
+//        diffuse = textureColor * sun.color * brightness;
+//    }
 
     // Specular
     vec3 position = worldPosition.xyz;
@@ -66,11 +66,11 @@ vec4 computeDirectionalColor(vec3 lightDirection, vec4 textureColor) {
     vec3 toCameraVector = normalize(cameraPosition - position);
 
     vec4 specular;
-    if (textureId == -1.0) {
+//    if (textureId == -1.0) {
         specular = material.specular * sun.color * clamp(pow(dot(reflectionVector, toCameraVector), material.shininess), 0.0, 1.0);
-    } else {
-        specular = textureColor * sun.color * clamp(pow(dot(reflectionVector, toCameraVector), material.shininess), 0.0, 1.0);
-    }
+//    } else {
+//        specular = textureColor * sun.color * clamp(pow(dot(reflectionVector, toCameraVector), material.shininess), 0.0, 1.0);
+//    }
 
     return diffuse + specular;
 }

@@ -67,8 +67,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
     private val ambientLight = AmbientLight(Color.DARK)
     private val directionalLight = DirectionalLight(Color.WHITE, Vector3(0.0f, -0.5f, 1f))
 
-    private val whiteMaterial = Material(Color(0.8f, 0.8f, 0.8f), Color(0.8f, 0.8f, 0.8f), Color.WHITE, 50.0f)
-    private val blackMaterial = Material(Color(0.2f, 0.2f, 0.2f), Color(0.2f, 0.2f, 0.2f), Color.WHITE, 50.0f)
+    private val whiteMaterial = Material(Color(213f / 255f, 184f / 255f, 147f / 255f), Color(213f / 255f, 184f / 255f, 147f / 255f), Color.GREY, 25.0f)
+    private val blackMaterial = Material(Color(66f / 255f, 40f / 255f, 14f / 255f), Color(66f / 255f, 40f / 255f, 14f / 255f), Color.GREY, 25.0f)
 
     private val whiteKnightRotation = if (isPlayerWhite) ROTATION_MATRIX else Matrix4()
     private val blackKnightRotation = if (isPlayerWhite) Matrix4() else ROTATION_MATRIX
@@ -113,7 +113,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
 
         piece2DProgram.start()
         piece2DProgram.set("textureMaps", sampler.index)
-        piece2DProgram.set("aspectRatio", aspectRatio)
+//        piece2DProgram.set("aspectRatio", aspectRatio)
 
         sampler.bind(PieceTextures.get2DTextureArray())
 
@@ -155,7 +155,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
         piece3DProgram.set("view", camera.viewMatrix)
         piece3DProgram.set("cameraPosition", camera.getPosition())
         piece3DProgram.set("textureMaps", sampler.index)
-        piece3DProgram.set("aspectRatio", aspectRatio)
+//        piece3DProgram.set("aspectRatio", aspectRatio)
 
         piece3DProgram.set("rChannel", rChannel)
         piece3DProgram.set("gChannel", gChannel)

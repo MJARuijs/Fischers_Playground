@@ -8,7 +8,7 @@ uniform vec2 checkedKingSquare;
 uniform mat4 projection;
 uniform mat4 view;
 
-uniform float aspectRatio;
+//uniform float aspectRatio;
 
 flat out int squareSelected;
 
@@ -33,6 +33,6 @@ void main() {
     worldPosition = inPosition.xyz;
 //    worldPosition.y /= 0.5;
     vec4 pos = projection * view * vec4(worldPosition, 1);
-    pos.y *= aspectRatio;
+//    pos.y *= aspectRatio;
     gl_Position = pos;
 }

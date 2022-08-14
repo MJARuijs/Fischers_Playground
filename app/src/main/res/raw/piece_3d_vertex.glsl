@@ -7,7 +7,7 @@ layout (location = 2) in vec2 inTextureCoordinates;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
-uniform float aspectRatio;
+//uniform float aspectRatio;
 
 out vec2 passTextureCoordinates;
 out vec4 worldPosition;
@@ -20,8 +20,8 @@ void main() {
     passNormal = mat3(model) * inNormal;
 
 //    worldPosition *= 0.0001;
-    vec4 pos = projection * view * vec4(worldPosition.xyz, 1);
-    pos.y *= aspectRatio;
+    vec4 pos = projection * view * worldPosition;
+//    pos.y *= aspectRatio;
 //    pos.xyz *= aspectRatio;
     gl_Position = pos;
 }

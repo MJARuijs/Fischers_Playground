@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
-import android.content.Context
 import android.content.res.Resources
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.Board
@@ -23,12 +22,12 @@ class BoardRenderer(resources: Resources) {
     private val model2D = BoardModel(false)
     private val model3D = BoardModel(true)
     private val diffuseTexture = TextureLoader.load(resources, R.drawable.wood_diffuse_texture)
-    private val normalTexture = TextureLoader.load(resources, R.drawable.wood_normal_texture)
-    private val specularTexture = TextureLoader.load(resources, R.drawable.wood_specular_texture)
+//    private val normalTexture = TextureLoader.load(resources, R.drawable.wood_normal_texture)
+//    private val specularTexture = TextureLoader.load(resources, R.drawable.wood_specular_texture)
 
     private val diffuseSampler = Sampler(0)
-    private val normalSampler = Sampler(1)
-    private val specularSampler = Sampler(2)
+//    private val normalSampler = Sampler(1)
+//    private val specularSampler = Sampler(2)
 
     private val ambientLight = AmbientLight(Color.DARK)
     private val directionalLight = DirectionalLight(Color.WHITE, Vector3(0.0f, -0.5f, 1f))
@@ -47,13 +46,13 @@ class BoardRenderer(resources: Resources) {
 
     init {
         diffuseTexture.init()
-        normalTexture.init()
-        specularTexture.init()
+//        normalTexture.init()
+//        specularTexture.init()
     }
 
     fun render2D(aspectRatio: Float) {
         board2DProgram.start()
-        board2DProgram.set("aspectRatio", aspectRatio)
+//        board2DProgram.set("aspectRatio", aspectRatio)
         board2DProgram.set("textureMap", diffuseSampler.index)
         diffuseSampler.bind(diffuseTexture)
         model2D.draw()
@@ -63,20 +62,20 @@ class BoardRenderer(resources: Resources) {
     fun render3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int, aspectRatio: Float) {
         board3DProgram.start()
         board3DProgram.set("diffuseTexture", diffuseSampler.index)
-        board3DProgram.set("normalTexture", normalSampler.index)
-        board3DProgram.set("specularTexture", specularSampler.index)
+//        board3DProgram.set("normalTexture", normalSampler.index)
+//        board3DProgram.set("specularTexture", specularSampler.index)
 
         board3DProgram.set("projection", camera.projectionMatrix)
-        board3DProgram.set("view", camera.getViewMatrix(true))
+        board3DProgram.set("view", camera.viewMatrix)
         board3DProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
         board3DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
         board3DProgram.set("cameraPosition", camera.getPosition())
         board3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
-        board3DProgram.set("aspectRatio", aspectRatio)
+//        board3DProgram.set("aspectRatio", aspectRatio)
 
         diffuseSampler.bind(diffuseTexture)
-        normalSampler.bind(normalTexture)
-        specularSampler.bind(specularTexture)
+//        normalSampler.bind(normalTexture)
+//        specularSampler.bind(specularTexture)
 
         ambientLight.applyTo(board3DProgram)
         directionalLight.applyTo(board3DProgram)

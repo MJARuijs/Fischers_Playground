@@ -23,14 +23,17 @@ class Camera(
         ))
 
     fun getViewMatrix(useLargeZoom: Boolean): Matrix4 {
-        return if (useLargeZoom) Matrix4()
-            .translate(-Vector3(0f, 0f, zoom * 2f))
-            .rotate(rotation)
-        else {
-            Matrix4()
+//        return if (useLargeZoom) Matrix4()
+//            .translate(-Vector3(0f, 0f, zoom * 2f))
+//            .rotate(rotation)
+//        else {
+//            Matrix4()
+//                .translate(-Vector3(0f, 0f, zoom))
+//                .rotate(rotation)
+//        }
+        return Matrix4()
                 .translate(-Vector3(0f, 0f, zoom))
                 .rotate(rotation)
-        }
     }
 
     val viewMatrix: Matrix4

@@ -18,7 +18,7 @@ void main() {
     currentPoint /= viewPort;
     currentPoint = (currentPoint * 2.0) - 1.0;
     currentPoint /= SQUARE_SIZE;
-    currentPoint.y *= 2.0;
+//    currentPoint.y *= 2.0;
 
     float maxDistance = distance(currentPoint, center) / 1.5;
 

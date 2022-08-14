@@ -27,8 +27,8 @@ flat in int squareSelected;
 in vec3 worldPosition;
 
 uniform highp sampler2D diffuseTexture;
-uniform highp sampler2D normalTexture;
-uniform highp sampler2D specularTexture;
+//uniform highp sampler2D normalTexture;
+//uniform highp sampler2D specularTexture;
 
 uniform AmbientLight ambientLight;
 uniform DirectionalLight sun;
@@ -98,8 +98,8 @@ void main() {
         vec2 position = (worldPosition.xy + vec2(1, 1)) / 2.0;
 
         vec4 textureColor = texture(diffuseTexture, position);
-        vec3 normal = normalize(texture(normalTexture, position).xyz);
-        float specularValue = texture(specularTexture, position).r;
+//        vec3 normal = normalize(texture(normalTexture, position).xyz);
+//        float specularValue = texture(specularTexture, position).r;
         float strength = (textureColor.r + textureColor.g + textureColor.b) / 2.0;
 
         float scale = 1.0 / 8.0;
@@ -126,14 +126,18 @@ void main() {
 
         if (remainderY == 0) {
             if (remainderX == 0) {
+//                squareColor.rgb = darkTile;
                 squareColor.rgb = darkTile * strength;
             } else {
+//                squareColor.rgb = whiteTile;
                 squareColor.rgb = whiteTile * strength;
             }
         } else {
             if (remainderX == 1) {
+//                squareColor.rgb = darkTile;
                 squareColor.rgb = darkTile * strength;
             } else {
+//                squareColor.rgb = whiteTile;
                 squareColor.rgb = whiteTile * strength;
             }
         }
