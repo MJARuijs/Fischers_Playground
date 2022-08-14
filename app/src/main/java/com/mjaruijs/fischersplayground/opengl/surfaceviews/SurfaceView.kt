@@ -22,7 +22,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
     init {
         setEGLContextClientVersion(3)
-//        setEGLConfigChooser(ConfigChooser())
+        setEGLConfigChooser(ConfigChooser())
 
         val preferences = context.getSharedPreferences("graphics_preferences", MODE_PRIVATE)
         val is3D = preferences.getBoolean(GRAPHICS_3D_KEY, false)

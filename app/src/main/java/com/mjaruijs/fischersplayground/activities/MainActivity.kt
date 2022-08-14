@@ -82,7 +82,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        println("MAIN_ACTIVITY: onCreate")
+        // TODO: Figure out why this invokes onStop(), and find a solution
+        AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES)
+
+        println("MAIN_ACTIVITY: onCreate")
         setContentView(R.layout.activity_main)
         hideActivityDecorations()
 
@@ -112,8 +115,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         initUIComponents()
-
-        AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES)
     }
 
     private fun isInitialized() = NetworkManager.isRunning()
@@ -638,19 +639,19 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-//        println("MAIN_ACTIVITY: onResume")
+        println("MAIN_ACTIVITY: onResume")
         stayingInApp = false
 
         if (isUserRegisteredAtServer()) {
             NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|online"))
         }
 
-        loadData()
+//        loadData()
 
         registerReceivers()
     }
 
-    override fun onPause() {
+    override fun onStop() {
         unregisterReceiver(idReceiver)
         unregisterReceiver(inviteReceiver)
         unregisterReceiver(playersReceiver)
@@ -668,11 +669,11 @@ class MainActivity : AppCompatActivity() {
 
         saveData()
 
-//        println("MAIN_ACTIVITY: onPause")
+        println("MAIN_ACTIVITY: onStop")
         if (!stayingInApp) {
             NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|away"))
         }
-        super.onPause()
+        super.onStop()
     }
 
     override fun onUserLeaveHint() {

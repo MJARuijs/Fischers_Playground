@@ -12,11 +12,10 @@
         android:id="@+id/opengl_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/opponent_fragment_container" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/opponent_fragment_container"
@@ -35,6 +34,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
+        app:layout_constraintTop_toBottomOf="@id/opengl_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/open_chat_button" />

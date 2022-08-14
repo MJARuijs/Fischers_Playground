@@ -22,21 +22,37 @@ class ConfigChooser : GLSurfaceView.EGLConfigChooser {
             EGL_GREEN_SIZE, 8,
             EGL_BLUE_SIZE, 8,
             EGL_DEPTH_SIZE, 16,
-            EGL_SAMPLE_BUFFERS, 1,
-            EGL_SAMPLES, 4,
             EGL_NONE
         )
 
-        val configurations = arrayOfNulls<EGLConfig>(3)
-        val numberOfConfigurations = intArrayOf(1)
-        egl.eglChooseConfig(display, attributes, configurations, 1, numberOfConfigurations)
+        val n = 20
+
+        val configurations = arrayOfNulls<EGLConfig>(n)
+        val numberOfConfigurations = intArrayOf(n)
+        egl.eglChooseConfig(display, attributes, configurations, n, numberOfConfigurations)
 
         if (numberOfConfigurations[0] == 0) {
-            println("Failed to retrieve an EGL configuration..")
             return null
         }
 
-        return configurations[0]!!
-    }
+        var maxSamples = -1
+        var bestConfigIndex = 0
 
+        for ((i, config) in configurations.withIndex()) {
+            if (config == null) {
+                continue
+            }
+
+            val attributeValue = IntArray(1)
+            egl.eglGetConfigAttrib(display, config, EGL_SAMPLES, attributeValue)
+
+            val configSamples = attributeValue[0]
+            if (configSamples > maxSamples) {
+                maxSamples = configSamples
+                bestConfigIndex = i
+            }
+        }
+
+        return configurations[bestConfigIndex]
+    }
 }
