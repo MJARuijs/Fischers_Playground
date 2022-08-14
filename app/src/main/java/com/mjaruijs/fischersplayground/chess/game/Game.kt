@@ -60,6 +60,7 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
 
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
         val selectedSquare = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
+        println("SELECTED SQUARE: $selectedSquare")
         val action = processOnClick(selectedSquare)
 
         if (action == Action.SQUARE_SELECTED) {
@@ -146,8 +147,8 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
     }
 
     private fun redoMove(move: Move) {
-        val fromPosition = move.getFromPosition(team)
-        val toPosition = move.getToPosition(team)
+        val fromPosition = move.getFromPosition(move.team)
+        val toPosition = move.getToPosition(move.team)
 
         val piece = Piece(move.movedPiece, move.team)
 
@@ -171,8 +172,10 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
     }
 
     protected fun undoMove(move: Move) {
-        val fromPosition = move.getToPosition(team)
-        val toPosition = move.getFromPosition(team)
+        val fromPosition = move.getToPosition(move.team)
+        val toPosition = move.getFromPosition(move.team)
+
+//        println("Undoing move from ${move.team}: from $fromPosition to $toPosition")
 
         val piece = Piece(move.movedPiece, move.team)
 
@@ -215,6 +218,8 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
 
     open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
         possibleMoves.clear()
+
+//        println("Moving $team from $fromPosition to $toPosition")
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
         val pieceAtNewPosition = state[toPosition]

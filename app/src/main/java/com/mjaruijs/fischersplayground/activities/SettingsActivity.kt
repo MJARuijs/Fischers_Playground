@@ -64,7 +64,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-        PieceTextures.init(this)
+        PieceTextures.init(resources)
 
         settingsLayout = findViewById(R.id.settings_layout)
         graphics3DLayout = findViewById(R.id.graphics_3d_layout)
@@ -117,6 +117,11 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        glView3D.destroy()
+        super.onDestroy()
+    }
+
     @SuppressLint("Recycle")
     private fun expand() {
         val animators = ArrayList<ObjectAnimator>()
@@ -132,7 +137,6 @@ class SettingsActivity : AppCompatActivity() {
         transition.duration = ANIMATION_DURATION
         transition.doOnEnd {
             graphicsSettingsButton.visibility = View.GONE
-
             glView3D.isActive = true
             expanded = true
         }
@@ -195,7 +199,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun onContextCreated() {
         runOnUiThread {
             glView3D.holder.setFixedSize(getDisplayWidth(), getDisplayWidth())
-
             game = SinglePlayerGame()
             glView3D.setGame(game)
             restorePreferences()
@@ -313,7 +316,6 @@ class SettingsActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 glView3D.getRenderer().setR(progress.toFloat() / 255f)
                 glView3D.requestRender()
-
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -340,7 +342,6 @@ class SettingsActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 glView3D.getRenderer().setB(progress.toFloat() / 255f)
                 glView3D.requestRender()
-
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {

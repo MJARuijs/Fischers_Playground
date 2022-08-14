@@ -8,7 +8,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
 
-class SinglePlayerGame : Game(false) {
+class SinglePlayerGame : Game(true) {
 
     private var teamToMove = Team.WHITE
 
@@ -50,9 +50,13 @@ class SinglePlayerGame : Game(false) {
             actualFromPosition = fromPosition
             actualToPosition = toPosition
         } else {
-            actualFromPosition = Vector2(7, 7) - fromPosition
-            actualToPosition = Vector2(7, 7) - toPosition
+//            actualFromPosition = Vector2(7, 7) - fromPosition
+//            actualToPosition = Vector2(7, 7) - toPosition
+            actualFromPosition = fromPosition
+            actualToPosition = toPosition
         }
+
+//        println("fromPosition: $fromPosition, toPosition: $toPosition, actualFromPosition: $actualFromPosition, actualToPosition: $actualToPosition")
 
         return super.move(team, actualFromPosition, actualToPosition, runInBackground)
     }

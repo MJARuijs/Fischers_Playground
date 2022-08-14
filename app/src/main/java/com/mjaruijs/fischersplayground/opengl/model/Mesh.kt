@@ -90,6 +90,7 @@ class Mesh(vertices: FloatArray, normals: FloatArray, textureCoordinates: FloatA
     }
 
     fun destroy() {
+//        println("Destroying mesh! $vao $vbo $nbo $tbo")
         glDeleteBuffers(1, IntBuffer.wrap(intArrayOf(tbo)))
         glDeleteBuffers(1, IntBuffer.wrap(intArrayOf(nbo)))
         glDeleteBuffers(1, IntBuffer.wrap(intArrayOf(vbo)))

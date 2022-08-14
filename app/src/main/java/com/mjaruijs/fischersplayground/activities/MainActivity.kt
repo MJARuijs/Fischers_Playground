@@ -29,6 +29,9 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
+import com.mjaruijs.fischersplayground.opengl.model.Mesh
+import com.mjaruijs.fischersplayground.opengl.model.MeshData
+import com.mjaruijs.fischersplayground.opengl.model.MeshLoader
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
@@ -78,6 +81,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+//        println("MAIN_ACTIVITY: onCreate")
         setContentView(R.layout.activity_main)
         hideActivityDecorations()
 
@@ -633,6 +638,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
+//        println("MAIN_ACTIVITY: onResume")
         stayingInApp = false
 
         if (isUserRegisteredAtServer()) {
@@ -662,6 +668,7 @@ class MainActivity : AppCompatActivity() {
 
         saveData()
 
+//        println("MAIN_ACTIVITY: onPause")
         if (!stayingInApp) {
             NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|away"))
         }
@@ -872,30 +879,54 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun preloadModels() {
-        PieceTextures.init(this)
+        PieceTextures.init(resources)
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.pawn_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.bishop_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.knight_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.rook_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.queen_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.king_bytes)
+        }.start()
 
 //        Thread {
-//            OBJLoader.preload(this, R.raw.pawn_bytes)
+//            MeshLoader.preload(this, R.raw.pawn_bytes)
+//        }.start()
+
+//        Thread {
+//            MeshLoader.preload(this, R.raw.bishop_bytes)
 //        }.start()
 //
 //        Thread {
-//            OBJLoader.preload(this, R.raw.bishop_bytes)
+//            MeshLoader.preload(this, R.raw.knight_bytes)
 //        }.start()
 //
 //        Thread {
-//            OBJLoader.preload(this, R.raw.knight_bytes)
+//            MeshLoader.preload(this, R.raw.rook_bytes)
 //        }.start()
 //
 //        Thread {
-//            OBJLoader.preload(this, R.raw.rook_bytes)
+//            MeshLoader.preload(this, R.raw.queen_bytes)
 //        }.start()
 //
 //        Thread {
-//            OBJLoader.preload(this, R.raw.queen_bytes)
-//        }.start()
-//
-//        Thread {
-//            OBJLoader.preload(this, R.raw.king_bytes)
+//            MeshLoader.preload(this, R.raw.king_bytes)
 //        }.start()
     }
 
@@ -933,6 +964,7 @@ class MainActivity : AppCompatActivity() {
             .setButtonTextSize(70.0f)
             .setColor(235, 186, 145)
             .setCornerRadius(45.0f)
+            .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 createGameDialog.show()
@@ -941,8 +973,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<UIButton>(R.id.single_player_button)
             .setText("Single player")
             .setButtonTextSize(70.0f)
-            .setColor(Color.rgb(235, 186, 145))
+            .setColor(235, 186, 145)
             .setCornerRadius(45.0f)
+            .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 stayingInApp = true
@@ -953,6 +986,7 @@ class MainActivity : AppCompatActivity() {
                     .putExtra("is_playing_white", true)
                     .putExtra("game_id", "test_game")
                     .putExtra("opponent_name", "Opponent")
+//                intent.flags =  Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }
     }

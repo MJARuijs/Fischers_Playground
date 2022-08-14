@@ -9,12 +9,13 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
 
-    private var iconHoverColor = Color.rgb(0.1f, 0.1f, 0.1f)
-    private var textHoverColor = Color.rgb(0.3f, 0.3f, 0.3f)
+    private var backgroundHoverColor = Color.argb(0.0f, 0.1f, 0.1f, 0.1f)
+    private var textHoverColor = Color.argb(0.5f, 0.3f, 0.3f, 0.3f)
 
     private val textPaint = Paint()
     private val paint = Paint()
@@ -35,11 +36,11 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     private var rect = Rect()
 
-    var centerVertically = true
+    private var centerVertically = true
     var disabled = false
     var buttonText = ""
 
-    private var changeTextColorOnHover = false
+    private var changeTextColorOnHover = true
     private var changeIconColorOnHover = true
 
     private var heldDown = false
@@ -64,6 +65,9 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         debugPaint.color = Color.GREEN
 
         setOnTouchListener { _, event ->
+            if (disabled) {
+                return@setOnTouchListener false
+            }
 
             when (event.action) {
                 MotionEvent.ACTION_BUTTON_PRESS -> performClick()
@@ -74,7 +78,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
                     if (changeIconColorOnHover || changeTextColorOnHover) {
                         if (changeIconColorOnHover) {
-                            paint.color = addColors(paint.color, iconHoverColor)
+                            paint.color = addColors(paint.color, backgroundHoverColor)
                         }
                         if (changeTextColorOnHover) {
                             textPaint.color = subtractColors(textPaint.color, textHoverColor)
@@ -94,7 +98,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
                 MotionEvent.ACTION_UP -> {
                     if (changeIconColorOnHover || changeTextColorOnHover) {
                         if (changeIconColorOnHover) {
-                            paint.color = subtractColors(paint.color, iconHoverColor)
+                            paint.color = subtractColors(paint.color, backgroundHoverColor)
                         }
                         if (changeTextColorOnHover) {
                             textPaint.color = addColors(textPaint.color, textHoverColor)
@@ -172,13 +176,15 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         super.onSizeChanged(w, h, oldw, oldh)
 
         if (bitmap != null) {
-            val scale = 0.6f
+            val scale = 0.5f
 
             val halfViewWidth = (w / 2)
             val halfDrawableWidth = (w * scale / 2)
 
             val left = ((halfViewWidth - halfDrawableWidth).roundToInt())
             val right = ((w * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
+
+            val drawableWidth = right - left
 
             val top: Int
             val bottom: Int
@@ -191,8 +197,11 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
                 bottom = ((h * scale + halfViewHeight - halfDrawableHeight)).roundToInt()
             } else {
                 top = 0
-                bottom = (h * scale).roundToInt()
+
+                val maxHeight = (h * scale).roundToInt()
+                bottom = max(maxHeight, drawableWidth)
             }
+
 //            val bottom = (h * scale).roundToInt()
 
             rect = Rect(left, top, right, bottom)
@@ -224,16 +233,12 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     }
 
     fun setColor(r: Int, g: Int, b: Int): UIButton {
-//        hoverColor = Color.rgb(r / 25, g / 25, b / 25)
-        paint.color = Color.rgb(r, g, b)
-
+        paint.color = Color.argb(1.0f, r.toFloat() / 255f, g.toFloat() / 255f, b.toFloat() / 255f)
         return this
     }
 
     fun setColor(color: Int): UIButton {
-//        defaultColor = color
         paint.color = color
-
         return this
     }
 
@@ -247,9 +252,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     fun setButtonTextSize(size: Float): UIButton {
         buttonTextSize = size
         textPaint.textSize = size
-
-        println("Setting $buttonText size: $size")
-//        setTextSize(buttonText, width.toFloat())
 
         invalidate()
         return this
@@ -282,11 +284,8 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         }
 
         if (bitmap != null) {
-//            textPaint.color = Color.rgb(1f, 0f, 0f)
             canvas.drawBitmap(bitmap!!, null, rect, textPaint)
         }
-
-//        println("$buttonText, ${xPos + textXOffset}, ${yPos + textYOffset} ${textPaint.ascent()} ${textPaint.descent()}")
 
         if (bitmap == null) {
             canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
@@ -301,7 +300,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         textPaint.getTextBounds(buttonText, 0, buttonText.length, bounds)
         maxTextSize = size * width.toFloat() / bounds.width()
 
-        println("Max text size for : $buttonText: $maxTextSize")
+//        println("Max text size for : $buttonText: $maxTextSize")
 
         return maxTextSize
     }
@@ -313,6 +312,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         var newR = colorA.red() + colorB.red()
         var newG = colorA.green() + colorB.green()
         var newB = colorA.blue() + colorB.blue()
+        var newA = colorA.alpha() + colorB.alpha()
 
         if (newR > 1.0f) {
             newR = 1.0f
@@ -323,8 +323,11 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         if (newB > 1.0f) {
             newB = 1.0f
         }
+        if (newA > 1.0f) {
+            newA = 1.0f
+        }
 
-        return Color.rgb(newR, newG, newB)
+        return Color.argb(newA, newR, newG, newB)
     }
 
     private fun subtractColors(a: Int, b: Int): Int {
@@ -334,6 +337,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         var newR = colorA.red() - colorB.red()
         var newG = colorA.green() - colorB.green()
         var newB = colorA.blue() - colorB.blue()
+        var newA = colorA.alpha() - colorB.alpha()
 
         if (newR < 0.0f) {
             newR = 0.0f
@@ -344,7 +348,10 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         if (newB < 0.0f) {
             newB = 0.0f
         }
+        if (newA < 0.0f) {
+            newA = 0.0f
+        }
 
-        return Color.rgb(newR, newG, newB)
+        return Color.argb(newA, newR, newG, newB)
     }
 }

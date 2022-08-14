@@ -7,6 +7,10 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 
 class Entity(private val mesh: Mesh) {
 
+    fun render() {
+        mesh.draw()
+    }
+
     fun render(shaderProgram: ShaderProgram, translation: Vector2, scale: Vector3) {
         val transformation = Matrix4().translate(translation).scale(scale)
         shaderProgram.set("model", transformation)

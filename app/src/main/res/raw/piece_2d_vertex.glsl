@@ -13,12 +13,13 @@ void main() {
     textureCoordinates = vec2(inPosition);
 
     vec2 position = inPosition;
+    position *= scale;
+
     position.x /= aspectRatio;
     position.y *= -1.0f;
 
-    position *= scale;
     position /= 2.0;
-    position += (translation );
+    position += (translation / vec2(1, 2.0));
 
     gl_Position = vec4(position, 0, 1);
 }

@@ -1,6 +1,8 @@
 package com.mjaruijs.fischersplayground.opengl
 
 import android.content.Context
+import android.content.res.Resources
+import com.mjaruijs.fischersplayground.opengl.model.Mesh
 import com.mjaruijs.fischersplayground.opengl.model.MeshData
 import java.io.BufferedInputStream
 import java.nio.ByteBuffer
@@ -8,10 +10,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 object OBJLoader {
 
-    private val cache = HashMap<Int, MeshData>()
+    private val cache = HashMap<Int, Pair<Thread, MeshData>>()
     private val currentlyLoading = HashMap<Int, AtomicBoolean>()
 
-    fun get(context: Context, location: Int): MeshData {
+    fun get(resources: Resources, location: Int): Pair<Thread, MeshData> {
         if (cache.contains(location)) {
             return cache[location]!!
         }
@@ -31,32 +33,34 @@ object OBJLoader {
         } else {
 //            println("LOADING MESH AGAIN $location")
 
-            val mesh = load(context, location)
-            cache[location] = mesh
-            mesh
+            val mesh = load(resources, location)
+            cache[location] = Pair(Thread.currentThread(), mesh)
+            Pair(Thread.currentThread(), mesh)
         }
     }
 
-    fun preload(context: Context, location: Int) {
+    fun preload(resources: Resources, location: Int): Pair<Thread, MeshData> {
         if (cache.containsKey(location)) {
-            return
+            return cache[location]!!
         }
 
 //        println("PRELOADING: $location $name")
         currentlyLoading[location] = AtomicBoolean(true)
-        val startTime = System.nanoTime()
+//        val startTime = System.nanoTime()
 
-        val mesh = load(context, location)
+        val mesh = load(resources, location)
 
-        val endTime = System.nanoTime()
-        cache[location] = mesh
+//        val endTime = System.nanoTime()
+        cache[location] = Pair(Thread.currentThread(), mesh)
 
         currentlyLoading[location]?.set(false)
+
+        return Pair(Thread.currentThread(), mesh)
 //        println("DONE LOADING $location $name ${(endTime - startTime) / 1000000}")
     }
 
-    private fun load(context: Context, fileLocation: Int): MeshData {
-        val inputStream = context.resources.openRawResource(fileLocation)
+    private fun load(resources: Resources, fileLocation: Int): MeshData {
+        val inputStream = resources.openRawResource(fileLocation)
         val reader = BufferedInputStream(inputStream)
         val bytes = reader.readBytes()
         val buffer = ByteBuffer.wrap(bytes)

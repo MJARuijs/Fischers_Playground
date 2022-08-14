@@ -22,11 +22,13 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
     init {
         setEGLContextClientVersion(3)
+//        setEGLConfigChooser(ConfigChooser())
 
         val preferences = context.getSharedPreferences("graphics_preferences", MODE_PRIVATE)
         val is3D = preferences.getBoolean(GRAPHICS_3D_KEY, false)
 
-        renderer = OpenGLRenderer(context, ::onContextCreated, is3D)
+        renderer = OpenGLRenderer(context, resources, ::onContextCreated, is3D)
+//        renderer = OpenGLRenderer.getInstance(context, ::onContextCreated, is3D)
         setRenderer(renderer)
 
         renderMode = RENDERMODE_WHEN_DIRTY

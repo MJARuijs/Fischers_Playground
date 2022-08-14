@@ -7,12 +7,12 @@ uniform float aspectRatio;
 out vec2 textureCoordinates;
 
 void main() {
-    textureCoordinates = inPosition.xy;
+    textureCoordinates = inPosition.xy ;
 
     vec2 position = inPosition;
-    position.x /= aspectRatio;
-    position /= 2.0;
-    position.y += 0.00001;
+    position -= vec2(0.5, 0.5);
+    position *= 2.0;
+    position.y *= -1.0;
 
     gl_Position = vec4(position, 0, 1);
 }

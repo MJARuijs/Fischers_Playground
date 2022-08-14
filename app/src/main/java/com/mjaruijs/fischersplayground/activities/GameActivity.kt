@@ -81,8 +81,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private var chatOpened = false
     private var chatTranslation = 0
 
-    private var isSinglePlayer = false
-    private var isPlayingWhite = false
+    private var isSinglePlayer = true
+    private var isPlayingWhite = true
 
     private lateinit var id: String
     private lateinit var userName: String
@@ -102,6 +102,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+//        println("GAME_ACTIVITY: onCreate")
 
         val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
         val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
@@ -136,8 +138,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         userName = intent.getStringExtra("user_name") ?: throw IllegalArgumentException("Missing essential information: user_name")
         opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information: opponent_name")
         gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
-        isSinglePlayer = intent.getBooleanExtra("is_single_player", false)
-        isPlayingWhite = intent.getBooleanExtra("is_playing_white", false)
+        isSinglePlayer = intent.getBooleanExtra("is_single_player", true)
+        isPlayingWhite = intent.getBooleanExtra("is_playing_white", true)
 
         loadSavedGames()
 
@@ -174,6 +176,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     private fun onContextCreated() {
+//        println("GAME_ACTIVITY: context created")
         if (isSinglePlayer) {
             game = SinglePlayerGame()
         } else {
@@ -463,7 +466,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         }
     }
 
-    private fun finishActivity() {
+//    private fun finishActivity() {
 //        val resultIntent = Intent()
 ////        resultIntent.putExtra("saved_games", gamesToString())
 //
@@ -479,8 +482,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 ////            setResult(Activity.RESULT_CANCELED, resultIntent)
 //        }
 
-        finish()
-    }
+//        finish()
+//    }
 
     private fun finishActivity(status: GameStatus) {
         if (game is MultiPlayerGame) {
@@ -497,6 +500,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         resultIntent.putExtra("isPlayingWhite", isPlayingWhite)
         resultIntent.putExtra("hasUpdate", true)
         setResult(Activity.RESULT_OK, resultIntent)
+
+//        println("GAME_ACTIVITY: finish")
         finish()
     }
 
@@ -574,6 +579,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     override fun onResume() {
+//        println("GAME_ACTIVITY: onResume")
         super.onResume()
         stayingInApp = false
         registerReceivers()
@@ -589,7 +595,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 //            saveGame()
 //        }
 
-        println("GAME ACTIVITY: saving games")
+//        println("GAME ACTIVITY: onPause")
         saveGames()
 
         unregisterReceiver(inviteReceiver)
@@ -615,7 +621,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     override fun onDestroy() {
-        println("ON DESTROY GAME_ACTIVITY")
+//        println("ON DESTROY GAME_ACTIVITY $isFinishing")
         glView.destroy()
         keyboardHeightProvider.close()
 //        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|offline"))
@@ -636,10 +642,15 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 //                saveGame()
 //            }
 
-            finishActivity()
+//            finish()
 
             stayingInApp = true
             NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|online"))
+
+//            val intent = Intent(applicationContext, MainActivity::class.java)
+//            intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
+//            startActivity(intent)
+//            moveTaskToBack(true)
             super.onBackPressed()
         }
     }
@@ -825,7 +836,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private fun initUIButtons() {
         val textOffset = 65
         val textColor = Color.WHITE
-        val buttonBackgroundColor = Color.rgb(0.25f, 0.25f, 0.25f)
+        val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
         val resignButton = findViewById<UIButton>(R.id.resign_button)
         resignButton
             .setTextYOffset(textOffset)
@@ -834,6 +845,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
+            .setChangeIconColorOnHover(false)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
@@ -853,9 +865,10 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         offerDrawButton
             .setText("Offer Draw")
             .setColor(buttonBackgroundColor)
-            .setColoredDrawable(R.drawable.handshake)
+            .setColoredDrawable(R.drawable.handshake_2)
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
+            .setChangeIconColorOnHover(false)
             .setTextYOffset(textOffset)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
@@ -874,6 +887,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextSize(50f)
             .setColor(buttonBackgroundColor)
             .setButtonTextColor(textColor)
+            .setChangeIconColorOnHover(false)
             .setTextYOffset(textOffset)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
@@ -892,6 +906,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
+            .setChangeIconColorOnHover(false)
             .setTextYOffset(textOffset)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
@@ -919,6 +934,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
+            .setChangeIconColorOnHover(false)
             .setTextYOffset(textOffset)
             .disable()
             .setCenterVertically(false)

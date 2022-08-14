@@ -15,5 +15,6 @@ void main() {
     vec4 textureColor = texture(textureMaps, vec3(textureCoordinates, int(textureId)));
 
     outColor = textureColor;
+//    outColor = vec4(1, 0, 0, 1);
 //    outColor = vec4(textureCoordinates, 0, 1);
 }

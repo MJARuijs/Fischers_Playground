@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
@@ -17,11 +18,28 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.PI
 
-class OpenGLRenderer(private val context: Context, private val onContextCreated: () -> Unit, private var is3D: Boolean) : GLSurfaceView.Renderer {
+class OpenGLRenderer(context: Context, private val resources: Resources, private var onContextCreated: () -> Unit, private var is3D: Boolean) : GLSurfaceView.Renderer {
+
+    companion object {
+
+        private var instance: OpenGLRenderer? = null
+
+        fun getInstance(context: Context, onContextCreated: () -> Unit, is3D: Boolean): OpenGLRenderer {
+            if (instance == null) {
+                instance = OpenGLRenderer(context, context.resources, onContextCreated, is3D)
+            } else {
+                instance!!.onContextCreated = onContextCreated
+                instance!!.is3D = is3D
+            }
+            return instance!!
+        }
+
+    }
 
     private lateinit var board: Board
     private lateinit var game: Game
 
+//    private lateinit var backgroundRenderer: BackgroundRenderer
     private lateinit var boardRenderer: BoardRenderer
     private lateinit var pieceRenderer: PieceRenderer
     private lateinit var highlightRenderer: HighlightRenderer
@@ -40,23 +58,28 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     var onPixelsRead: (ByteBuffer) -> Unit = {}
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
 
+    init {
+        val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
+        camera.setZoom(preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM))
+    }
+
     override fun onSurfaceCreated(p0: GL10?, config: EGLConfig?) {
         glClearColor(0.25f, 0.25f, 0.25f, 1f)
         glEnable(GL_BLEND)
         setOpenGLSettings()
+        println("CREATING OPENGL SURFACE")
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         PieceTextures.createTextureArrays()
 
-        pieceRenderer = PieceRenderer(context, isPlayerWhite)
-        boardRenderer = BoardRenderer(context)
-        highlightRenderer = HighlightRenderer(context)
+//        PieceRenderer.init(resources, isPlayerWhite)
+//        backgroundRenderer = BackgroundRenderer(context)
+        pieceRenderer = PieceRenderer(resources, isPlayerWhite)
+        boardRenderer = BoardRenderer(resources)
+        highlightRenderer = HighlightRenderer(resources)
 
         onContextCreated()
-
-        val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
-        camera.setZoom(preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM))
     }
 
     fun setR(r: Float) {
@@ -95,6 +118,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun setPieceScale(scale: Float) {
+//        PieceRenderer.pieceScale = Vector3(scale, scale, scale)
         pieceRenderer.pieceScale = Vector3(scale, scale, scale)
     }
 
@@ -122,6 +146,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         displayWidth = width
         displayHeight = height
         aspectRatio = width.toFloat() / height.toFloat()
+//        camera.aspectRatio = aspectRatio
 
         onDisplaySizeChanged(displayWidth, displayHeight)
     }
@@ -136,17 +161,20 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
         if (is3D) {
             glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-            boardRenderer.render3D(board, camera, displayWidth, displayHeight)
+//            backgroundRenderer.render3D(camera, aspectRatio)
+            boardRenderer.render3D(board, camera, displayWidth, displayHeight, aspectRatio)
             highlightRenderer.renderSelectedSquares3D(board, camera)
-            pieceRenderer.render3D(game, camera)
+
+            pieceRenderer.render3D(game, camera, aspectRatio)
             highlightRenderer.renderPossibleSquares3D(board, camera)
         } else {
             glClear(GL_COLOR_BUFFER_BIT)
 
+//            backgroundRenderer.render2D(aspectRatio)
             boardRenderer.render2D(aspectRatio)
-            highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight)
+            highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
             pieceRenderer.render2D(game, aspectRatio)
-            highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight)
+            highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
         }
 
         if (pixelsRequested) {
@@ -214,6 +242,7 @@ class OpenGLRenderer(private val context: Context, private val onContextCreated:
     }
 
     fun destroy() {
+//        backgroundRenderer.destroy()
         pieceRenderer.destroy()
         highlightRenderer.destroy()
         boardRenderer.destroy()

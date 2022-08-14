@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
 import android.content.Context
+import android.content.res.Resources
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.math.Color
@@ -14,35 +15,35 @@ import com.mjaruijs.fischersplayground.opengl.texture.Sampler
 import com.mjaruijs.fischersplayground.opengl.texture.TextureArray
 import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
 
-class HighlightRenderer(context: Context) {
+class HighlightRenderer(resources: Resources) {
 
     private val quad = Quad()
     private val circleSampler = Sampler(0)
     private val effectSampler = Sampler(1)
 
     private val highlight2DProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.possible_square_highlighter_2d_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.possible_square_highlighter_2d_fragment, ShaderType.FRAGMENT, context)
+        ShaderLoader.load(R.raw.possible_square_highlighter_2d_vertex, ShaderType.VERTEX, resources),
+        ShaderLoader.load(R.raw.possible_square_highlighter_2d_fragment, ShaderType.FRAGMENT, resources)
     )
 
     private val highlight3DProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.possible_square_highlighter_3d_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.possible_square_highlighter_3d_fragment, ShaderType.FRAGMENT, context)
+        ShaderLoader.load(R.raw.possible_square_highlighter_3d_vertex, ShaderType.VERTEX, resources),
+        ShaderLoader.load(R.raw.possible_square_highlighter_3d_fragment, ShaderType.FRAGMENT, resources)
     )
 
     private val selectedSquare2DProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.selected_square_highlighter_2d_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.selected_square_highlighter_2d_fragment, ShaderType.FRAGMENT, context)
+        ShaderLoader.load(R.raw.selected_square_highlighter_2d_vertex, ShaderType.VERTEX, resources),
+        ShaderLoader.load(R.raw.selected_square_highlighter_2d_fragment, ShaderType.FRAGMENT, resources)
     )
 
     private val selectedSquare3DProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.selected_square_highlighter_3d_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.selected_square_highlighter_3d_fragment, ShaderType.FRAGMENT, context)
+        ShaderLoader.load(R.raw.selected_square_highlighter_3d_vertex, ShaderType.VERTEX, resources),
+        ShaderLoader.load(R.raw.selected_square_highlighter_3d_fragment, ShaderType.FRAGMENT, resources)
     )
 
-    private val circleTexture = TextureLoader.loadFromBitmap(context, R.drawable.circle)
-    private val squareSelectedTexture = TextureLoader.load(context, R.drawable.square_selected, "Square Selected")
-    private val kingCheckedTexture = TextureLoader.load(context, R.drawable.king_checked, "King Checked")
+    private val circleTexture = TextureLoader.loadFromBitmap(resources, R.drawable.circle)
+    private val squareSelectedTexture = TextureLoader.load(resources, R.drawable.square_selected, "Square Selected")
+    private val kingCheckedTexture = TextureLoader.load(resources, R.drawable.king_checked, "King Checked")
     private val textureEffects = TextureArray(listOf(squareSelectedTexture, kingCheckedTexture))
 
     init {
@@ -51,9 +52,10 @@ class HighlightRenderer(context: Context) {
         squareSelectedTexture.init()
     }
 
-    fun renderPossibleSquares2D(board: Board, displayWidth: Int, displayHeight: Int) {
+    fun renderPossibleSquares2D(board: Board, displayWidth: Int, displayHeight: Int, aspectRatio: Float) {
         highlight2DProgram.start()
         highlight2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
+        highlight2DProgram.set("aspectRatio", aspectRatio)
 
         for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
             highlight2DProgram.set("translations[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
@@ -63,9 +65,10 @@ class HighlightRenderer(context: Context) {
         highlight2DProgram.stop()
     }
 
-    fun renderSelectedSquares2D(board: Board, displayWidth: Int, displayHeight: Int) {
+    fun renderSelectedSquares2D(board: Board, displayWidth: Int, displayHeight: Int, aspectRatio: Float) {
         selectedSquare2DProgram.start()
         selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
+        selectedSquare2DProgram.set("aspectRatio", aspectRatio)
 
         var i = 0
 

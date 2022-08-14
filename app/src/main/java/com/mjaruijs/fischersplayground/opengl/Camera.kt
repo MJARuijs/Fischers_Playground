@@ -7,7 +7,7 @@ import kotlin.math.tan
 
 class Camera(
     var fieldOfView: Float = 45.0f,
-    private var aspectRatio: Float = 1.0f,
+    var aspectRatio: Float = 1.0f,
     private var zNear: Float = 1f,
     private var zFar: Float = 1000.0f,
     private var zoom: Float = DEFAULT_ZOOM,
@@ -21,6 +21,17 @@ class Camera(
             0.0f, 0.0f, -(zFar + zNear) / (zFar - zNear), -(2.0f * zFar * zNear) / (zFar - zNear),
             0.0f, 0.0f, -1.0f, 0.0f
         ))
+
+    fun getViewMatrix(useLargeZoom: Boolean): Matrix4 {
+        return if (useLargeZoom) Matrix4()
+            .translate(-Vector3(0f, 0f, zoom * 2f))
+            .rotate(rotation)
+        else {
+            Matrix4()
+                .translate(-Vector3(0f, 0f, zoom))
+                .rotate(rotation)
+        }
+    }
 
     val viewMatrix: Matrix4
         get() = Matrix4()

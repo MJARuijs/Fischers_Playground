@@ -1,6 +1,6 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
-import android.content.Context
+import android.content.res.Resources
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
@@ -11,13 +11,12 @@ import com.mjaruijs.fischersplayground.math.matrices.Matrix4
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.Camera
-import com.mjaruijs.fischersplayground.opengl.OBJLoader
 import com.mjaruijs.fischersplayground.opengl.Quad
 import com.mjaruijs.fischersplayground.opengl.light.AmbientLight
 import com.mjaruijs.fischersplayground.opengl.light.DirectionalLight
 import com.mjaruijs.fischersplayground.opengl.model.Entity
 import com.mjaruijs.fischersplayground.opengl.model.Material
-import com.mjaruijs.fischersplayground.opengl.model.Mesh
+import com.mjaruijs.fischersplayground.opengl.model.MeshLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
@@ -27,22 +26,29 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
-    
+class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
+
     private val quad = Quad()
     private val sampler = Sampler(0)
 
     private val isLocked = AtomicBoolean(false)
 
     private val piece2DProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.piece_2d_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.piece_2d_fragment, ShaderType.FRAGMENT, context)
+        ShaderLoader.load(R.raw.piece_2d_vertex, ShaderType.VERTEX, resources),
+        ShaderLoader.load(R.raw.piece_2d_fragment, ShaderType.FRAGMENT, resources)
     )
 
     private val piece3DProgram = ShaderProgram(
-        ShaderLoader.load(R.raw.piece_3d_vertex, ShaderType.VERTEX, context),
-        ShaderLoader.load(R.raw.piece_3d_fragment, ShaderType.FRAGMENT, context)
+        ShaderLoader.load(R.raw.piece_3d_vertex, ShaderType.VERTEX, resources),
+        ShaderLoader.load(R.raw.piece_3d_fragment, ShaderType.FRAGMENT, resources)
     )
+
+    private val pawnMesh = MeshLoader.preload(resources, R.raw.pawn_bytes).second
+    private val bishopMesh = MeshLoader.preload(resources, R.raw.bishop_bytes).second
+    private val knightMesh = MeshLoader.preload(resources, R.raw.knight_bytes).second
+    private val rookMesh = MeshLoader.preload(resources, R.raw.rook_bytes).second
+    private val queenMesh = MeshLoader.preload(resources, R.raw.queen_bytes).second
+    private val kingMesh = MeshLoader.preload(resources, R.raw.king_bytes).second
 
 //    private val pawnMesh = Mesh(OBJLoader.get(context, R.raw.pawn_bytes))
 //    private val bishopMesh = Mesh(OBJLoader.get(context, R.raw.bishop_bytes))
@@ -50,13 +56,13 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
 //    private val rookMesh = Mesh(OBJLoader.get(context, R.raw.rook_bytes))
 //    private val queenMesh = Mesh(OBJLoader.get(context, R.raw.queen_bytes))
 //    private val kingMesh = Mesh(OBJLoader.get(context, R.raw.king_bytes))
-//
-//    private val pawn = Entity(pawnMesh)
-//    private val bishop = Entity(bishopMesh)
-//    private val knight = Entity(knightMesh)
-//    private val rook = Entity(rookMesh)
-//    private val queen = Entity(queenMesh)
-//    private val king = Entity(kingMesh)
+
+    private val pawn = Entity(pawnMesh)
+    private val bishop = Entity(bishopMesh)
+    private val knight = Entity(knightMesh)
+    private val rook = Entity(rookMesh)
+    private val queen = Entity(queenMesh)
+    private val king = Entity(kingMesh)
 
     private val ambientLight = AmbientLight(Color.DARK)
     private val directionalLight = DirectionalLight(Color.WHITE, Vector3(0.0f, -0.5f, 1f))
@@ -123,9 +129,6 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
                     (Vector2((row + animation.translation.x) * 2.0f, (col + animation.translation.y) * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
                 }
 
-                println(aspectRatio)
-//                translation.y /= 2.0f
-
                 piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
                 piece2DProgram.set("textureId", piece.textureId2D.toFloat())
                 piece2DProgram.set("translation", translation)
@@ -144,8 +147,7 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
         piece2DProgram.stop()
     }
 
-
-    fun render3D(game: Game, camera: Camera) {
+    fun render3D(game: Game, camera: Camera, aspectRatio: Float) {
         startAnimations(game)
 
         piece3DProgram.start()
@@ -153,6 +155,7 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
         piece3DProgram.set("view", camera.viewMatrix)
         piece3DProgram.set("cameraPosition", camera.getPosition())
         piece3DProgram.set("textureMaps", sampler.index)
+        piece3DProgram.set("aspectRatio", aspectRatio)
 
         piece3DProgram.set("rChannel", rChannel)
         piece3DProgram.set("gChannel", gChannel)
@@ -184,16 +187,18 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
                 piece3DProgram.set("isWhite", if (piece.team == Team.WHITE) 1f else 0f)
                 piece3DProgram.set("textureId", piece.textureId3D.toFloat())
 
+//                println("Mesh trying to render on thread: ${Thread.currentThread().id}")
+
                 when (piece.type) {
-//                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.KNIGHT -> {
-//                        val rotation = if (piece.team == Team.WHITE) whiteKnightRotation else blackKnightRotation
-//                        knight.render(piece3DProgram, translation, rotation, pieceScale)
-//                    }
-//                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
+                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
+                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
+                    PieceType.KNIGHT -> {
+                        val rotation = if (piece.team == Team.WHITE) whiteKnightRotation else blackKnightRotation
+                        knight.render(piece3DProgram, translation, rotation, pieceScale)
+                    }
+                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
+                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
+                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
                 }
             }
         }
@@ -225,11 +230,27 @@ class PieceRenderer(context: Context, isPlayerWhite: Boolean) {
     }
 
     fun destroy() {
+        println("destroying pieceRenderer")
         quad.destroy()
+        pawnMesh.destroy()
+        knightMesh.destroy()
+        bishopMesh.destroy()
+        rookMesh.destroy()
+        queenMesh.destroy()
+        kingMesh.destroy()
         piece2DProgram.destroy()
+        piece3DProgram.destroy()
     }
 
     companion object {
         private val ROTATION_MATRIX = Matrix4().rotateZ(PI.toFloat())
+//        private var instance: PieceRenderer? = null
+//
+//        fun getInstance(resources: Resources, isPlayerWhite: Boolean): PieceRenderer {
+//            if (instance == null) {
+//                instance = PieceRenderer(resources, isPlayerWhite)
+//            }
+//            return instance!!
+//        }
     }
 }

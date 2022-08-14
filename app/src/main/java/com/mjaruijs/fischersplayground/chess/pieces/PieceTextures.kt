@@ -1,10 +1,11 @@
 package com.mjaruijs.fischersplayground.chess.pieces
 
-import android.content.Context
+import android.content.res.Resources
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.opengl.texture.Texture
 import com.mjaruijs.fischersplayground.opengl.texture.TextureArray
 import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
+import java.util.concurrent.atomic.AtomicBoolean
 
 object PieceTextures {
 
@@ -13,28 +14,34 @@ object PieceTextures {
     private var textureArray2D: TextureArray? = null
     private var textureArray3D: TextureArray? = null
 
-    fun init(context: Context) {
-        pieceTextures2D += Triple(PieceType.PAWN, Team.WHITE, TextureLoader.load(context, R.drawable.white_pawn))
-        pieceTextures2D += Triple(PieceType.KNIGHT, Team.WHITE, TextureLoader.load(context, R.drawable.white_knight))
-        pieceTextures2D += Triple(PieceType.BISHOP, Team.WHITE, TextureLoader.load(context, R.drawable.white_bishop))
-        pieceTextures2D += Triple(PieceType.ROOK, Team.WHITE, TextureLoader.load(context, R.drawable.white_rook))
-        pieceTextures2D += Triple(PieceType.KING, Team.WHITE, TextureLoader.load(context, R.drawable.white_king))
-        pieceTextures2D += Triple(PieceType.QUEEN, Team.WHITE, TextureLoader.load(context, R.drawable.white_queen))
-        pieceTextures2D += Triple(PieceType.PAWN, Team.BLACK, TextureLoader.load(context, R.drawable.black_pawn))
-        pieceTextures2D += Triple(PieceType.KNIGHT, Team.BLACK, TextureLoader.load(context, R.drawable.black_knight))
-        pieceTextures2D += Triple(PieceType.BISHOP, Team.BLACK, TextureLoader.load(context, R.drawable.black_bishop))
-        pieceTextures2D += Triple(PieceType.ROOK, Team.BLACK, TextureLoader.load(context, R.drawable.black_rook))
-        pieceTextures2D += Triple(PieceType.KING, Team.BLACK, TextureLoader.load(context, R.drawable.black_king))
-        pieceTextures2D += Triple(PieceType.QUEEN, Team.BLACK, TextureLoader.load(context, R.drawable.black_queen))
+    private val initialized = AtomicBoolean(false)
 
-        pieceTextures3D += Pair(PieceType.PAWN, TextureLoader.load(context, R.drawable.diffuse_map_pawn))
-        pieceTextures3D += Pair(PieceType.KNIGHT, TextureLoader.load(context, R.drawable.diffuse_map_knight))
-        pieceTextures3D += Pair(PieceType.BISHOP, TextureLoader.load(context, R.drawable.diffuse_map_bishop))
-        pieceTextures3D += Pair(PieceType.ROOK, TextureLoader.load(context, R.drawable.diffuse_map_rook))
-        pieceTextures3D += Pair(PieceType.QUEEN, TextureLoader.load(context, R.drawable.diffuse_map_queen))
-        pieceTextures3D += Pair(PieceType.KING, TextureLoader.load(context, R.drawable.diffuse_map_king))
+    fun init(resources: Resources) {
+        if (initialized.get()) {
+            return
+        }
 
+        pieceTextures2D += Triple(PieceType.PAWN, Team.WHITE, TextureLoader.load(resources, R.drawable.white_pawn))
+        pieceTextures2D += Triple(PieceType.KNIGHT, Team.WHITE, TextureLoader.load(resources, R.drawable.white_knight))
+        pieceTextures2D += Triple(PieceType.BISHOP, Team.WHITE, TextureLoader.load(resources, R.drawable.white_bishop))
+        pieceTextures2D += Triple(PieceType.ROOK, Team.WHITE, TextureLoader.load(resources, R.drawable.white_rook))
+        pieceTextures2D += Triple(PieceType.KING, Team.WHITE, TextureLoader.load(resources, R.drawable.white_king))
+        pieceTextures2D += Triple(PieceType.QUEEN, Team.WHITE, TextureLoader.load(resources, R.drawable.white_queen))
+        pieceTextures2D += Triple(PieceType.PAWN, Team.BLACK, TextureLoader.load(resources, R.drawable.black_pawn))
+        pieceTextures2D += Triple(PieceType.KNIGHT, Team.BLACK, TextureLoader.load(resources, R.drawable.black_knight))
+        pieceTextures2D += Triple(PieceType.BISHOP, Team.BLACK, TextureLoader.load(resources, R.drawable.black_bishop))
+        pieceTextures2D += Triple(PieceType.ROOK, Team.BLACK, TextureLoader.load(resources, R.drawable.black_rook))
+        pieceTextures2D += Triple(PieceType.KING, Team.BLACK, TextureLoader.load(resources, R.drawable.black_king))
+        pieceTextures2D += Triple(PieceType.QUEEN, Team.BLACK, TextureLoader.load(resources, R.drawable.black_queen))
 
+        pieceTextures3D += Pair(PieceType.PAWN, TextureLoader.load(resources, R.drawable.diffuse_map_pawn))
+        pieceTextures3D += Pair(PieceType.KNIGHT, TextureLoader.load(resources, R.drawable.diffuse_map_knight))
+        pieceTextures3D += Pair(PieceType.BISHOP, TextureLoader.load(resources, R.drawable.diffuse_map_bishop))
+        pieceTextures3D += Pair(PieceType.ROOK, TextureLoader.load(resources, R.drawable.diffuse_map_rook))
+        pieceTextures3D += Pair(PieceType.QUEEN, TextureLoader.load(resources, R.drawable.diffuse_map_queen))
+        pieceTextures3D += Pair(PieceType.KING, TextureLoader.load(resources, R.drawable.diffuse_map_king))
+
+        initialized.set(true)
     }
 
     fun createTextureArrays() {

@@ -18,11 +18,12 @@ void main() {
     currentPoint /= viewPort;
     currentPoint = (currentPoint * 2.0) - 1.0;
     currentPoint /= vec2(1.0 / 8.0, 1.0 / 8.0);
+    currentPoint.y *= 2.0;
 
     float distance = distance(currentPoint, center);
 
     if (distance > radius + ringSize) {
-        outColor = vec4(0, 1, 0, 1);
+        outColor = vec4(1, 0, 0, 1);
         discard;
 //    } else if (distance > radius) {
 //        outColor = vec4(1, 1, 1, 1);
