@@ -3,7 +3,7 @@ package com.mjaruijs.fischersplayground.dialogs
 import android.app.AlertDialog
 import android.content.Context
 import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 
 class OpponentOfferedDrawDialog {
@@ -21,7 +21,7 @@ class OpponentOfferedDrawDialog {
             onAccept()
         }
         dialogBuilder.setNegativeButton("Decline") { _, _ ->
-            NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "declined_draw", gameId))
+            NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "declined_draw", gameId))
         }
 
         dialog = dialogBuilder.show()

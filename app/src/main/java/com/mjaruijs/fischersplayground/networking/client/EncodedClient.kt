@@ -1,7 +1,7 @@
 package com.mjaruijs.fischersplayground.networking.client
 
 import android.content.Context
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.nio.NonBlockingClient
 import java.net.InetSocketAddress
 import java.nio.Buffer
@@ -9,9 +9,9 @@ import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 import java.util.*
 
-open class EncodedClient(channel: SocketChannel, val address: String, val callback: (Message, Context) -> Unit) : NonBlockingClient(channel) {
+open class EncodedClient(channel: SocketChannel, val address: String, val callback: (NetworkMessage, Context) -> Unit) : NonBlockingClient(channel) {
 
-    constructor(address: String, port: Int, callback: (Message, Context) -> Unit): this(SocketChannel.open(InetSocketAddress(address, port)), address, callback)
+    constructor(address: String, port: Int, callback: (NetworkMessage, Context) -> Unit): this(SocketChannel.open(InetSocketAddress(address, port)), address, callback)
 
     final override fun write(bytes: ByteArray) {
         try {
@@ -73,7 +73,7 @@ open class EncodedClient(channel: SocketChannel, val address: String, val callba
         val message = readMessage()
 
         Thread {
-            callback(Message.fromString(message), context)
+            callback(NetworkMessage.fromString(message), context)
         }.start()
     }
 

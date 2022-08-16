@@ -8,10 +8,9 @@ import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.chess.news.News
-import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import com.mjaruijs.fischersplayground.util.Time
 
@@ -93,7 +92,7 @@ class MultiPlayerGame(private val gameId: String, private val playerId: String, 
         if (!runInBackground) {
             val timeStamp = Time.getFullTimeStamp()
             val positionUpdateMessage = "$gameId|$playerId|${move.toChessNotation()}|$timeStamp"
-            val message = Message(Topic.GAME_UPDATE, "move", positionUpdateMessage)
+            val message = NetworkMessage(Topic.GAME_UPDATE, "move", positionUpdateMessage)
 
             NetworkManager.sendMessage(message)
         }

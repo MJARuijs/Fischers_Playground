@@ -1,7 +1,7 @@
 package com.mjaruijs.fischersplayground.networking.client
 
 import android.content.Context
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.util.Logger
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets.UTF_8
@@ -13,7 +13,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
-class SecureClient(channel: SocketChannel, address: String, callback: (Message, Context) -> Unit) : EncodedClient(channel, address, callback) {
+class SecureClient(channel: SocketChannel, address: String, callback: (NetworkMessage, Context) -> Unit) : EncodedClient(channel, address, callback) {
 
     private companion object {
         val symmetricGenerator: KeyGenerator = KeyGenerator.getInstance("AES")
@@ -47,7 +47,7 @@ class SecureClient(channel: SocketChannel, address: String, callback: (Message, 
         val message = decodeMessage()
 
         Thread {
-            callback(Message.fromString(message), context)
+            callback(NetworkMessage.fromString(message), context)
         }.start()
     }
 

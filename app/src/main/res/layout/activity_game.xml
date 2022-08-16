@@ -6,12 +6,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#3F3F3F"
-    tools:context=".activities.GameActivity">
+    tools:context=".activities.game.GameActivity">
 
     <com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
         android:id="@+id/opengl_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -34,10 +35,9 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
-        app:layout_constraintTop_toBottomOf="@id/opengl_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/open_chat_button" />
+        app:layout_constraintTop_toBottomOf="@id/opengl_view" />
 
     <ImageView
         android:id="@+id/open_chat_button"
@@ -46,63 +46,17 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
         android:background="#808080"
-        app:layout_constraintBottom_toTopOf="@+id/forward_button"
+        app:layout_constraintBottom_toTopOf="@+id/action_buttons_fragment"
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/arrow_forward" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
-        android:id="@+id/forward_button"
-        android:layout_width="0dp"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/action_buttons_fragment"
+        android:layout_width="match_parent"
         android:layout_height="60dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/back_button"
-        app:srcCompat="@drawable/arrow_forward" />
-
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
-        android:id="@+id/back_button"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/forward_button"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/request_redo_button"
-        app:layout_constraintTop_toTopOf="@+id/forward_button"
-        app:srcCompat="@drawable/arrow_back" />
-
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
-        android:id="@+id/request_redo_button"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/back_button"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/offer_draw_button"
-        app:layout_constraintTop_toTopOf="@+id/back_button"
-        app:srcCompat="@drawable/rewind" />
-
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
-        android:id="@+id/offer_draw_button"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/request_redo_button"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/resign_button"
-        app:layout_constraintTop_toTopOf="@+id/request_redo_button"
-        app:srcCompat="@drawable/handshake" />
-
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
-        android:id="@+id/resign_button"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/offer_draw_button"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/offer_draw_button"
-        app:srcCompat="@drawable/resign" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/chat_container"

@@ -2,6 +2,10 @@ package com.mjaruijs.fischersplayground.userinterface
 
 import android.content.Context
 import android.graphics.*
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -37,6 +41,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     private var rect = Rect()
 
     private var centerVertically = true
+
     var disabled = false
     var buttonText = ""
 
@@ -51,6 +56,16 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     var onButtonInitialized: (Float) -> Unit = {}
 
     private var holding = AtomicBoolean(false)
+
+    private val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        vibratorManager.defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(Context.VIBRATOR_SERVICE)
+    }
+
+    private var vibrateOnTrigger = false
 
     init {
         paint.isAntiAlias = true
@@ -70,7 +85,12 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
             }
 
             when (event.action) {
-                MotionEvent.ACTION_BUTTON_PRESS -> performClick()
+                MotionEvent.ACTION_BUTTON_PRESS -> {
+                    if (vibrateOnTrigger) {
+                        vibrate()
+                    }
+                    performClick()
+                }
                 MotionEvent.ACTION_DOWN -> {
                     startClickTimer = System.currentTimeMillis()
                     heldDown = true
@@ -109,6 +129,9 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
                     val buttonReleasedTime = System.currentTimeMillis()
                     if (buttonReleasedTime - startClickTimer < 500) {
+                        if (vibrateOnTrigger) {
+                            vibrate()
+                        }
                         performClick()
                     }
 
@@ -119,6 +142,10 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
             return@setOnTouchListener true
         }
+    }
+
+    private fun vibrate() {
+        (vibrator as Vibrator).vibrate(VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
     fun setOnHoldListener(onHold: () -> Unit): UIButton {
@@ -143,6 +170,11 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     fun setCornerRadius(radius: Float): UIButton {
         cornerRadius = radius
+        return this
+    }
+
+    fun setVibrateOnTrigger(vibrate: Boolean): UIButton {
+        vibrateOnTrigger = vibrate
         return this
     }
 

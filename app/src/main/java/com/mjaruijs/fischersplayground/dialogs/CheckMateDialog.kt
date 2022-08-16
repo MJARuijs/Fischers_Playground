@@ -2,9 +2,6 @@ package com.mjaruijs.fischersplayground.dialogs
 
 import android.app.AlertDialog
 import android.content.Context
-import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
-import com.mjaruijs.fischersplayground.networking.message.Topic
 
 class CheckMateDialog {
 

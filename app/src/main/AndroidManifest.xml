@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <application
         android:allowBackup="true"
@@ -21,8 +22,9 @@
             android:exported="true">
 
         </activity>
+
         <activity
-            android:name=".activities.GameActivity"
+            android:name=".activities.game.GameActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustNothing" />
         <activity
@@ -35,5 +37,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".activities.game.MultiplayerGameActivity" />
+        <activity android:name=".activities.game.SinglePlayerGameActivity" />
+        <activity android:name=".activities.game.PractiseGameActivity" />
+
+        <service android:name=".services.DataManagerService" />
     </application>
 </manifest>

@@ -12,9 +12,6 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
-import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.util.Time
 import kotlin.IllegalArgumentException
 import kotlin.collections.ArrayList

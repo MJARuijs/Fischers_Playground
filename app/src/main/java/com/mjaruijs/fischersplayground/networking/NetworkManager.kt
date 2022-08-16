@@ -3,10 +3,9 @@ package com.mjaruijs.fischersplayground.networking
 import android.content.Context
 import android.content.Intent
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
-import com.mjaruijs.fischersplayground.util.Logger
 import java.util.concurrent.atomic.AtomicBoolean
 
 object NetworkManager {
@@ -55,7 +54,7 @@ object NetworkManager {
         }.start()
     }
 
-    fun sendMessage(message: Message) {
+    fun sendMessage(message: NetworkMessage) {
 
         Thread {
             while (clientInitializing.get()) {}
@@ -68,7 +67,7 @@ object NetworkManager {
         }.start()
     }
 
-    private fun onRead(message: Message, context: Context) {
+    private fun onRead(message: NetworkMessage, context: Context) {
         println("Received message: $message")
 
         if (message.topic == Topic.INFO) {

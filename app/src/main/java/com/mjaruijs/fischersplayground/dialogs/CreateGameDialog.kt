@@ -9,7 +9,7 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerAdapter
 import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerCardItem
 import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.listeners.OnSearchViewChangedListener
 import java.util.*
@@ -34,7 +34,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
 
         searchBar.setOnQueryTextListener(OnSearchViewChangedListener {
             if (searchBar.query.isNotBlank()) {
-                NetworkManager.sendMessage(Message(Topic.INFO, "search_players", "${searchBar.query}"))
+                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "search_players", "${searchBar.query}"))
             }
         })
 

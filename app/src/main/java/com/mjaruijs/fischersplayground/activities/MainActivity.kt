@@ -1,9 +1,10 @@
 package com.mjaruijs.fischersplayground.activities
 
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.graphics.Color
 import android.os.Bundle
+import android.os.IBinder
+import android.os.Messenger
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -14,6 +15,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
+import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
@@ -24,21 +27,18 @@ import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
 import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
-import com.mjaruijs.fischersplayground.opengl.model.Mesh
-import com.mjaruijs.fischersplayground.opengl.model.MeshData
-import com.mjaruijs.fischersplayground.opengl.model.MeshLoader
+import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
 
@@ -79,6 +79,22 @@ class MainActivity : AppCompatActivity() {
 
     private var maxTextSize = Float.MAX_VALUE
 
+    private var dataServiceMessenger: Messenger? = null
+    var serviceBound = false
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder) {
+//            val binder = service as DataManagerService.LocalBinder
+            dataServiceMessenger = Messenger(service)
+            serviceBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            dataServiceMessenger = null
+            serviceBound = false
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -101,7 +117,7 @@ class MainActivity : AppCompatActivity() {
             NetworkManager.run(this)
 
             if (id != null && id!!.isNotBlank()) {
-                NetworkManager.sendMessage(Message(Topic.INFO, "id", "$id"))
+                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "id", "$id"))
             }
         }
 
@@ -169,7 +185,7 @@ class MainActivity : AppCompatActivity() {
             incomingInviteDialog.showInvite(gameCard.opponentName, gameCard.id)
         } else if (gameCard.gameStatus != GameStatus.INVITE_PENDING) {
             saveData()
-            val intent = Intent(this, GameActivity::class.java)
+            val intent = Intent(this, MultiplayerGameActivity::class.java)
                 .putExtra("id", id)
                 .putExtra("user_name", userName)
                 .putExtra("is_playing_white", gameCard.isPlayingWhite)
@@ -368,7 +384,7 @@ class MainActivity : AppCompatActivity() {
         savePreference("USER_NAME", userName)
 
         findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
-        NetworkManager.sendMessage(Message(Topic.INFO, "user_name", userName))
+        NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "user_name", userName))
     }
 
     private fun onPlayersReceived(content: String) {
@@ -636,14 +652,23 @@ class MainActivity : AppCompatActivity() {
         registerReceiver(chatMessageReceiver, chatFilter)
     }
 
+    override fun onStart() {
+        super.onStart()
+        val intent = Intent(this, DataManagerService::class.java)
+            .putExtra("id", id)
+
+        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+//        bindService(Intent(this, DataManagerService::class.java), connection, Context.BIND_AUTO_CREATE)
+    }
+
     override fun onResume() {
         super.onResume()
 
-        println("MAIN_ACTIVITY: onResume")
+//        println("MAIN_ACTIVITY: onResume")
         stayingInApp = false
 
         if (isUserRegisteredAtServer()) {
-            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|online"))
+            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|online"))
         }
 
 //        loadData()
@@ -669,16 +694,19 @@ class MainActivity : AppCompatActivity() {
 
         saveData()
 
-        println("MAIN_ACTIVITY: onStop")
+        unbindService(connection)
+        serviceBound = false
+
+//        println("MAIN_ACTIVITY: onStop")
         if (!stayingInApp) {
-            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|away"))
+            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
         }
         super.onStop()
     }
 
     override fun onUserLeaveHint() {
         if (!stayingInApp) {
-            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|away"))
+            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
         }
 
         super.onUserLeaveHint()
@@ -960,6 +988,26 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
             }
 
+        findViewById<UIButton>(R.id.single_player_button)
+            .setText("Practice Mode")
+            .setButtonTextSize(70.0f)
+            .setColor(235, 186, 145)
+            .setCornerRadius(45.0f)
+            .setChangeTextColorOnHover(false)
+            .setOnButtonInitialized(::onButtonInitialized)
+            .setOnClickListener {
+                stayingInApp = true
+                val intent = Intent(this, PractiseGameActivity::class.java)
+                    .putExtra("id", id)
+                    .putExtra("user_name", userName)
+                    .putExtra("is_single_player", true)
+                    .putExtra("is_playing_white", true)
+                    .putExtra("game_id", "test_game")
+                    .putExtra("opponent_name", "Opponent")
+//                intent.flags =  Intent.FLAG_ACTIVITY_SINGLE_TOP
+                startActivity(intent)
+            }
+
         findViewById<UIButton>(R.id.start_new_game_button)
             .setText("Start new game")
             .setButtonTextSize(70.0f)
@@ -969,26 +1017,6 @@ class MainActivity : AppCompatActivity() {
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
                 createGameDialog.show()
-            }
-
-        findViewById<UIButton>(R.id.single_player_button)
-            .setText("Single player")
-            .setButtonTextSize(70.0f)
-            .setColor(235, 186, 145)
-            .setCornerRadius(45.0f)
-            .setChangeTextColorOnHover(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
-                stayingInApp = true
-                val intent = Intent(this, GameActivity::class.java)
-                    .putExtra("id", id)
-                    .putExtra("user_name", userName)
-                    .putExtra("is_single_player", true)
-                    .putExtra("is_playing_white", true)
-                    .putExtra("game_id", "test_game")
-                    .putExtra("opponent_name", "Opponent")
-//                intent.flags =  Intent.FLAG_ACTIVITY_SINGLE_TOP
-                startActivity(intent)
             }
     }
 

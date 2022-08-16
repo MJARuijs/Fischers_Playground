@@ -3,7 +3,7 @@ package com.mjaruijs.fischersplayground.dialogs
 import android.app.AlertDialog
 import android.content.Context
 import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 
 class OfferDrawDialog {
@@ -18,7 +18,7 @@ class OfferDrawDialog {
 
     fun show(gameId: String, id: String) {
         dialogBuilder.setPositiveButton("Yes") { _, _ ->
-            NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "offer_draw", "$gameId|$id"))
+            NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "offer_draw", "$gameId|$id"))
         }
         dialogBuilder.setNegativeButton("No") { _, _ ->
 

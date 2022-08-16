@@ -45,6 +45,8 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
 //    var onCheckCleared: () -> Unit = {}
     var onCheckMate: (Team) -> Unit = {}
 
+    var onMoveMade: (Move) -> Unit = {}
+
     init {
         board.requestPossibleMoves = { square ->
             val possibleMoves = determinePossibleMoves(square, getCurrentTeam())
@@ -266,6 +268,8 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
             }
             moves += move
         }
+
+        onMoveMade(move)
 
         return move
     }

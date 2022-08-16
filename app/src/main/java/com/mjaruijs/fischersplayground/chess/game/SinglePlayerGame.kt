@@ -58,6 +58,8 @@ class SinglePlayerGame : Game(true) {
 
 //        println("fromPosition: $fromPosition, toPosition: $toPosition, actualFromPosition: $actualFromPosition, actualToPosition: $actualToPosition")
 
+
+
         return super.move(team, actualFromPosition, actualToPosition, runInBackground)
     }
 

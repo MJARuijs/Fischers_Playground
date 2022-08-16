@@ -1,48 +1,41 @@
-package com.mjaruijs.fischersplayground.activities
+package com.mjaruijs.fischersplayground.activities.game
 
-import android.animation.ObjectAnimator
 import android.app.Activity
-import android.content.Intent
-import android.content.IntentFilter
-import android.graphics.Color
-import android.os.Bundle
-import android.view.View
-import android.widget.ImageView
+import android.content.*
+import android.os.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.MainActivity.Companion.MULTIPLAYER_GAME_FILE
-import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightObserver
-import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvider
+import com.mjaruijs.fischersplayground.activities.MessageReceiver
+import com.mjaruijs.fischersplayground.activities.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
+import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.*
-import com.mjaruijs.fischersplayground.fragments.ChatFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.chess.news.News
-import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
+import com.mjaruijs.fischersplayground.services.DataManagerService
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.REGISTER_CLIENT_VALUE
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.FileManager
 
-class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightObserver {
+abstract class GameActivity : AppCompatActivity(R.layout.activity_game) {
 
     private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
     private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
@@ -63,42 +56,82 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     private val statusFilter = IntentFilter("mjaruijs.fischers_playground.USER_STATUS")
 
     private val incomingInviteDialog = IncomingInviteDialog()
-    private val undoRequestedDialog = UndoRequestedDialog()
-    private val undoRejectedDialog = UndoRejectedDialog()
-    private val resignDialog = ResignDialog()
-    private val offerDrawDialog = OfferDrawDialog()
-    private val opponentResignedDialog = OpponentResignedDialog()
-    private val opponentOfferedDrawDialog = OpponentOfferedDrawDialog()
-    private val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
-    private val opponentDeclinedDrawDialog = OpponentDeclinedDrawDialog()
+    val undoRequestedDialog = UndoRequestedDialog()
+    val undoRejectedDialog = UndoRejectedDialog()
+    val resignDialog = ResignDialog()
+    val offerDrawDialog = OfferDrawDialog()
+    val opponentResignedDialog = OpponentResignedDialog()
+    val opponentOfferedDrawDialog = OpponentOfferedDrawDialog()
+    val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
+    val opponentDeclinedDrawDialog = OpponentDeclinedDrawDialog()
+
     private val checkMateDialog = CheckMateDialog()
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
     private var displayWidth = 0
     private var displayHeight = 0
 
-    private var chatInitialized = false
-    private var chatOpened = false
-    private var chatTranslation = 0
+//    private var chatInitialized = false
+//    private var chatOpened = false
+//    private var chatTranslation = 0
 
     private var isSinglePlayer = true
-    private var isPlayingWhite = true
+    var isPlayingWhite = true
 
-    private lateinit var id: String
-    private lateinit var userName: String
-    private lateinit var gameId: String
-    private lateinit var opponentName: String
-    private lateinit var game: Game
+    lateinit var gameId: String
+    lateinit var id: String
+    lateinit var userName: String
+    lateinit var opponentName: String
 
-    private lateinit var glView: SurfaceView
+    open lateinit var game: Game
 
-    private lateinit var keyboardHeightProvider: KeyboardHeightProvider
+    lateinit var glView: SurfaceView
 
-    private var maxTextSize = Float.MAX_VALUE
+
+//    private var maxTextSize = Float.MAX_VALUE
 
     private var stayingInApp = false
 
-    private val savedGames = HashMap<String, MultiPlayerGame>()
+    lateinit var dataService: DataManagerService
+    private var dataServiceMessenger: Messenger? = null
+    var serviceBound = false
+
+    internal class IncomingHandler : Handler() {
+        override fun handleMessage(msg: Message) {
+            println("Received in Activity: ${msg.obj}")
+//            msg.replyTo.send(Message.obtain(null, 0, "Hello!"))
+//            when (msg.what) {
+//                0 -> {
+//                    println("HELLO")
+////                    msg.
+//                }
+//                else -> super.handleMessage(msg)
+//            }
+        }
+
+
+    }
+
+    private var messenger = Messenger(IncomingHandler())
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder) {
+//            val binder = service as DataManagerService.LocalBinder
+            dataServiceMessenger = Messenger(service)
+            serviceBound = true
+
+            val message = Message.obtain(null, REGISTER_CLIENT_VALUE)
+            message.replyTo = messenger
+            dataServiceMessenger!!.send(message)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            dataServiceMessenger = null
+            serviceBound = false
+        }
+    }
+
+//    private val savedGames = HashMap<String, MultiPlayerGame>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,17 +144,9 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         hideActivityDecorations(fullScreen)
         registerReceivers()
 
-        keyboardHeightProvider = KeyboardHeightProvider(this)
-        findViewById<View>(R.id.game_layout).post {
-            Runnable {
-                keyboardHeightProvider.start()
-            }.run()
-        }
-
         incomingInviteDialog.create(this)
         undoRequestedDialog.create(this)
         undoRejectedDialog.create(this)
-        resignDialog.create(this)
         offerDrawDialog.create(this)
         opponentResignedDialog.create(this)
         opponentOfferedDrawDialog.create(this)
@@ -137,11 +162,11 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         id = intent.getStringExtra("id") ?: throw IllegalArgumentException("Missing essential information: id")
         userName = intent.getStringExtra("user_name") ?: throw IllegalArgumentException("Missing essential information: user_name")
         opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information: opponent_name")
-        gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
+//        gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
         isSinglePlayer = intent.getBooleanExtra("is_single_player", true)
         isPlayingWhite = intent.getBooleanExtra("is_playing_white", true)
 
-        loadSavedGames()
+//        loadSavedGames()
 
 //        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId"))
 
@@ -149,7 +174,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         glView.init(::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
 
         initUIButtons()
-        initChatBox()
+//        initChatBox()
 
         if (savedInstanceState == null) {
             val playerBundle = Bundle()
@@ -162,30 +187,25 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             opponentBundle.putString("team", if (isPlayingWhite) "BLACK" else "WHITE")
             opponentBundle.putBoolean("hide_status_icon", isSinglePlayer)
 
-            val chatBundle = Bundle()
-            chatBundle.putString("game_id", gameId)
-            chatBundle.putString("user_id", id)
-
             supportFragmentManager.commit {
                 setReorderingAllowed(true)
                 replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
                 replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
-                replace(R.id.chat_container, ChatFragment(::onChatMessageSent, ::translateChat, ::closeChat))
             }
         }
     }
 
-    private fun onContextCreated() {
+    open fun onContextCreated() {
 //        println("GAME_ACTIVITY: context created")
-        if (isSinglePlayer) {
-            game = SinglePlayerGame()
-        } else {
-            game = savedGames[gameId] ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
+//        if (isSinglePlayer) {
+//            game = SinglePlayerGame()
+//        } else {
+//            game = savedGames[gameId] ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
 
-            runOnUiThread {
-                getChatFragment().addMessages((game as MultiPlayerGame).chatMessages)
-            }
-        }
+//            runOnUiThread {
+//                getChatFragment().addMessages((game as MultiPlayerGame).chatMessages)
+//            }
+//        }
 
         game.onPawnPromoted = ::onPawnPromoted
         game.enableBackButton = ::enableBackButton
@@ -193,15 +213,27 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         game.onPieceTaken = ::onPieceTaken
         game.onPieceRegained = ::onPieceRegained
         game.onCheckMate = ::onCheckMate
+        game.onMoveMade = ::onMoveMade
 
         glView.setGame(game)
 
         restorePreferences()
 
-        if (game is MultiPlayerGame) {
-            runOnUiThread {
-                processNews((game as MultiPlayerGame))
-            }
+//        if (game is MultiPlayerGame) {
+//            runOnUiThread {
+//                processNews((game as MultiPlayerGame))
+//            }
+//        }
+    }
+
+    fun onMoveMade(move: Move) {
+        val message = Message.obtain(null, 0, "Move made!")
+        message.replyTo = messenger
+
+        try {
+            dataServiceMessenger!!.send(message)
+        } catch (e: RemoteException) {
+            e.printStackTrace()
         }
     }
 
@@ -229,36 +261,12 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         }.start()
     }
 
-    private fun getChatFragment(): ChatFragment {
-        return (supportFragmentManager.fragments.find { fragment -> fragment is ChatFragment } as ChatFragment)
-    }
-
-    private fun isChatOpened(): Boolean {
-        return chatOpened
-    }
-
-    private fun onDisplaySizeChanged(width: Int, height: Int) {
+    open fun onDisplaySizeChanged(width: Int, height: Int) {
         displayWidth = width
         displayHeight = height
-
-        if (!chatInitialized) {
-            val chatFragment = findViewById<FragmentContainerView>(R.id.chat_container)
-
-            val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
-            val chatButtonWidth = openChatButton.width
-            chatTranslation = displayWidth - chatButtonWidth
-
-            chatFragment.translationX -= chatTranslation
-            openChatButton.translationX -= chatTranslation
-            chatInitialized = true
-        }
     }
 
-    private fun onClick(x: Float, y: Float) {
-        if (isChatOpened()) {
-            return
-        }
-
+    open fun onClick(x: Float, y: Float) {
         game.onClick(x, y, displayWidth, displayHeight)
     }
 
@@ -292,24 +300,24 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         }
     }
 
-    private fun processNews(game: MultiPlayerGame) {
-        for (news in game.newsUpdates) {
-            when (news.newsType) {
-                NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show(opponentName, ::closeAndSaveGameAsWin)
-                NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, id, opponentName, ::acceptDraw)
-                NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
-                NewsType.OPPONENT_DECLINED_DRAW -> opponentDeclinedDrawDialog.show(opponentName)
-                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
-                NewsType.OPPONENT_ACCEPTED_UNDO -> {
-                    game.undoMoves(news.data)
-                    glView.requestRender()
-                }
-                NewsType.OPPONENT_REJECTED_UNDO -> undoRejectedDialog.show(opponentName)
-                NewsType.NO_NEWS -> {}
-            }
-        }
-        game.clearNews()
-    }
+//    private fun processNews(game: MultiPlayerGame) {
+//        for (news in game.newsUpdates) {
+//            when (news.newsType) {
+//                NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show(opponentName, ::closeAndSaveGameAsWin)
+//                NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, id, opponentName, ::acceptDraw)
+//                NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
+//                NewsType.OPPONENT_DECLINED_DRAW -> opponentDeclinedDrawDialog.show(opponentName)
+//                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
+//                NewsType.OPPONENT_ACCEPTED_UNDO -> {
+//                    game.undoMoves(news.data)
+//                    glView.requestRender()
+//                }
+//                NewsType.OPPONENT_REJECTED_UNDO -> undoRejectedDialog.show(opponentName)
+//                NewsType.NO_NEWS -> {}
+//            }
+//        }
+//        game.clearNews()
+//    }
 
     private fun onNewGameStarted(content: String) {
         val data = content.split('|')
@@ -318,8 +326,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         val opponentName = data[1]
         val playingWhite = data[2].toBoolean()
 
-        val newGame = MultiPlayerGame(inviteId, id, opponentName, playingWhite)
-        savedGames[inviteId] = newGame
+//        val newGame = MultiPlayerGame(inviteId, id, opponentName, playingWhite)
+//        savedGames[inviteId] = newGame
     }
 
     private fun onOpponentResigned(content: String) {
@@ -330,8 +338,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             opponentResignedDialog.show(opponentUsername, ::closeAndSaveGameAsWin)
         } else {
-            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_RESIGNED))
+//            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_RESIGNED))
         }
     }
 
@@ -344,8 +352,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             opponentOfferedDrawDialog.show(gameId, id, opponentUsername, ::acceptDraw)
         } else {
-            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_OFFERED_DRAW))
+//            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_OFFERED_DRAW))
         }
     }
 
@@ -358,8 +366,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             opponentAcceptedDrawDialog.show(gameId, opponentUsername, ::closeAndSaveGameAsDraw)
         } else {
-            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_DRAW))
+//            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_DRAW))
         }
     }
 
@@ -372,8 +380,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             opponentDeclinedDrawDialog.show(opponentUsername)
         } else {
-            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_DECLINED_DRAW))
+//            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_DECLINED_DRAW))
         }
     }
 
@@ -388,11 +396,9 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             (game as MultiPlayerGame).moveOpponent(move, false)
             glView.requestRender()
         } else {
-
-            val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-            game.moveOpponent(move, false)
-
-            savedGames[gameId] = game
+//            val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+//            game.moveOpponent(move, false)
+//            savedGames[gameId] = game
         }
     }
 
@@ -413,7 +419,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             undoRequestedDialog.show(gameId, opponentUsername, id)
         } else {
-            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REQUESTED_UNDO))
+//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REQUESTED_UNDO))
         }
     }
 
@@ -426,8 +432,8 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
             (game as MultiPlayerGame).undoMoves(numberOfMovesReversed)
             glView.requestRender()
         } else {
-            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
-            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
+//            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
         }
     }
 
@@ -435,7 +441,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         if (this.gameId == gameId) {
             undoRejectedDialog.show(opponentName)
         } else {
-            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REJECTED_UNDO))
+//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REJECTED_UNDO))
         }
     }
 
@@ -452,19 +458,18 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         val message = ChatMessage(timeStamp, messageContent, MessageType.RECEIVED)
 
         if (this.gameId == gameId) {
-            getChatFragment().addReceivedMessage(message)
+//            getChatFragment().addReceivedMessage(message)
         } else {
-            savedGames[gameId]?.chatMessages?.add(message)
-//            SavedGames.get(gameId)?.chatMessages?.add(message)
+//            savedGames[gameId]?.chatMessages?.add(message)
         }
     }
 
-    private fun onChatMessageSent(message: ChatMessage) {
-        NetworkManager.sendMessage(Message(Topic.CHAT_MESSAGE, "", "$gameId|$id|${message.timeStamp}|${message.message}"))
-        if (game is MultiPlayerGame) {
-            (game as MultiPlayerGame).chatMessages += message
-        }
-    }
+//    private fun onChatMessageSent(message: ChatMessage) {
+//        NetworkManager.sendMessage(Message(Topic.CHAT_MESSAGE, "", "$gameId|$id|${message.timeStamp}|${message.message}"))
+//        if (game is MultiPlayerGame) {
+//            (game as MultiPlayerGame).chatMessages += message
+//        }
+//    }
 
 //    private fun finishActivity() {
 //        val resultIntent = Intent()
@@ -505,26 +510,26 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         finish()
     }
 
-    private fun closeAndSaveGameAsWin() {
+    fun closeAndSaveGameAsWin() {
         finishActivity(GameStatus.GAME_WON)
 //        SavedGames.get(gameId)?.status = GameStatus.GAME_WON
 //        finish()
     }
 
-    private fun closeAndSaveGameAsDraw() {
+    fun closeAndSaveGameAsDraw() {
         finishActivity(GameStatus.GAME_DRAW)
 //        SavedGames.get(gameId)?.status = GameStatus.GAME_DRAW
 //        finish()
     }
 
-    private fun closeAndSaveGameAsLoss() {
+    fun closeAndSaveGameAsLoss() {
         finishActivity(GameStatus.GAME_LOST)
 //        SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
 //        finish()
     }
 
-    private fun acceptDraw() {
-        NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$id"))
+    fun acceptDraw() {
+        NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$id"))
         closeAndSaveGameAsDraw()
     }
 
@@ -549,7 +554,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 //        println("TRYING TO SET STATUS: ${this.gameId} :: $gameId")
 
         when {
-            this.gameId == gameId -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_GAME)
+//            this.gameId == gameId -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_GAME)
             gameId == "online" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_OTHER_GAME)
             gameId == "away" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.AWAY)
             gameId == "offline" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.OFFLINE)
@@ -578,14 +583,20 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         registerReceiver(userStatusReceiver, statusFilter)
     }
 
+    override fun onStart() {
+        super.onStart()
+        val intent = Intent(this, DataManagerService::class.java)
+            .putExtra("id", id)
+
+        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+    }
+
     override fun onResume() {
 //        println("GAME_ACTIVITY: onResume")
         super.onResume()
+
         stayingInApp = false
         registerReceivers()
-        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId"))
-
-        keyboardHeightProvider.observer = this
 
         pieceChooserDialog.setLayout()
     }
@@ -611,49 +622,29 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
         unregisterReceiver(chatMessageReceiver)
         unregisterReceiver(userStatusReceiver)
 
-        if (!stayingInApp) {
-            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|away"))
-        }
-
-        keyboardHeightProvider.observer = null
-
         super.onPause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
+        serviceBound = false
     }
 
     override fun onDestroy() {
 //        println("ON DESTROY GAME_ACTIVITY $isFinishing")
         glView.destroy()
-        keyboardHeightProvider.close()
 //        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|offline"))
 
         super.onDestroy()
     }
 
     override fun onUserLeaveHint() {
-        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|away"))
+        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|$gameId|away"))
         super.onUserLeaveHint()
     }
 
-    override fun onBackPressed() {
-        if (isChatOpened()) {
-            closeChat()
-        } else {
-//            if (game is MultiPlayerGame) {
-//                saveGame()
-//            }
 
-//            finish()
-
-            stayingInApp = true
-            NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|online"))
-
-//            val intent = Intent(applicationContext, MainActivity::class.java)
-//            intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
-//            startActivity(intent)
-//            moveTaskToBack(true)
-            super.onBackPressed()
-        }
-    }
 
 //    private fun parseSavedGames(content: String) {
 //        val gamesData = content.split(',')
@@ -681,9 +672,7 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
 //        return data
 //    }
 
-    override fun onKeyboardHeightChanged(height: Int) {
-        getChatFragment().translate(height)
-    }
+
 
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
         runOnUiThread { pieceChooserDialog.show(square, team) }
@@ -691,286 +680,286 @@ class GameActivity : AppCompatActivity(R.layout.activity_game), KeyboardHeightOb
     }
 
     private fun enableBackButton() {
-        findViewById<UIButton>(R.id.back_button).enable()
+//        findViewById<UIButton>(R.id.back_button).enable()
         glView.requestRender()
     }
 
     private fun enableForwardButton() {
-        findViewById<UIButton>(R.id.forward_button).enable()
+//        findViewById<UIButton>(R.id.forward_button).enable()
     }
 
-    private fun translateChat(translation: Float) {
-        val chatContainer = findViewById<FragmentContainerView>(R.id.chat_container)
-        val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
-        chatContainer.x -= translation
-        openChatButton.x -= translation
+//    private fun translateChat(translation: Float) {
+//        val chatContainer = findViewById<FragmentContainerView>(R.id.chat_container)
+//        val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
+//        chatContainer.x -= translation
+//        openChatButton.x -= translation
+//
+//        if (chatContainer.x > 0.0f) {
+//            chatContainer.x = 0.0f
+//        }
+//        if (openChatButton.x > chatTranslation.toFloat()) {
+//            openChatButton.x = chatTranslation.toFloat()
+//        }
+//    }
 
-        if (chatContainer.x > 0.0f) {
-            chatContainer.x = 0.0f
-        }
-        if (openChatButton.x > chatTranslation.toFloat()) {
-            openChatButton.x = chatTranslation.toFloat()
-        }
-    }
+//    private fun closeChat() {
+//        val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", -chatTranslation.toFloat())
+//        val chatButtonAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.open_chat_button), "x", 0.0f)
+//
+//        chatBoxAnimator.duration = 500L
+//        chatButtonAnimator.duration = 500L
+//
+//        chatBoxAnimator.start()
+//        chatButtonAnimator.start()
+//
+//        chatOpened = false
+//    }
 
-    private fun closeChat() {
-        val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", -chatTranslation.toFloat())
-        val chatButtonAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.open_chat_button), "x", 0.0f)
-
-        chatBoxAnimator.duration = 500L
-        chatButtonAnimator.duration = 500L
-
-        chatBoxAnimator.start()
-        chatButtonAnimator.start()
-
-        chatOpened = false
-    }
-
-    private fun loadSavedGames() {
-        val lines = FileManager.read(this, MULTIPLAYER_GAME_FILE) ?: ArrayList()
-
-        for (gameData in lines) {
-            if (gameData.isBlank()) {
-                continue
-            }
-
-            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
-            val gameId = data[0]
-            val lastUpdated = data[1].toLong()
-            val opponentName = data[2]
-            val isPlayerWhite = data[3].toBoolean()
-            val gameStatus = GameStatus.fromString(data[4])
-            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
-            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
-            val newsData = data[7].removePrefix("[").removeSuffix("]").split("\\")
-
-//            val winner = data[7]
-
-            val moves = ArrayList<Move>()
-
-            for (move in moveList) {
-                if (move.isNotBlank()) {
-                    moves += Move.fromChessNotation(move)
-                }
-            }
-
-            val messages = ArrayList<ChatMessage>()
-            for (message in chatMessages) {
-                if (message.isNotBlank()) {
-                    val messageData = message.split(',')
-                    val timeStamp = messageData[0]
-                    val messageContent = messageData[1]
-                    val type = MessageType.fromString(messageData[2])
-
-                    messages += ChatMessage(timeStamp, messageContent, type)
-                }
-            }
-
-            val newsUpdates = ArrayList<News>()
-            for (news in newsData) {
-                if (news.isBlank()) {
-                    continue
-                }
-
-                newsUpdates += News.fromString(news)
-            }
-
-            val newGame = MultiPlayerGame(gameId, id, opponentName, isPlayerWhite, moves, messages, newsUpdates)
-            newGame.status = gameStatus
-
-            savedGames[gameId] = newGame
-        }
-    }
+//    private fun loadSavedGames() {
+//        val lines = FileManager.read(this, MULTIPLAYER_GAME_FILE) ?: ArrayList()
+//
+//        for (gameData in lines) {
+//            if (gameData.isBlank()) {
+//                continue
+//            }
+//
+//            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
+//            val gameId = data[0]
+//            val lastUpdated = data[1].toLong()
+//            val opponentName = data[2]
+//            val isPlayerWhite = data[3].toBoolean()
+//            val gameStatus = GameStatus.fromString(data[4])
+//            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
+//            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
+//            val newsData = data[7].removePrefix("[").removeSuffix("]").split("\\")
+//
+////            val winner = data[7]
+//
+//            val moves = ArrayList<Move>()
+//
+//            for (move in moveList) {
+//                if (move.isNotBlank()) {
+//                    moves += Move.fromChessNotation(move)
+//                }
+//            }
+//
+//            val messages = ArrayList<ChatMessage>()
+//            for (message in chatMessages) {
+//                if (message.isNotBlank()) {
+//                    val messageData = message.split(',')
+//                    val timeStamp = messageData[0]
+//                    val messageContent = messageData[1]
+//                    val type = MessageType.fromString(messageData[2])
+//
+//                    messages += ChatMessage(timeStamp, messageContent, type)
+//                }
+//            }
+//
+//            val newsUpdates = ArrayList<News>()
+//            for (news in newsData) {
+//                if (news.isBlank()) {
+//                    continue
+//                }
+//
+//                newsUpdates += News.fromString(news)
+//            }
+//
+//            val newGame = MultiPlayerGame(gameId, id, opponentName, isPlayerWhite, moves, messages, newsUpdates)
+//            newGame.status = gameStatus
+//
+//            savedGames[gameId] = newGame
+//        }
+//    }
 
     private fun saveGames() {
-        var content = ""
-
-        for ((gameId, game) in savedGames) {
-            var moveData = "["
-
-            for ((i, move) in game.moves.withIndex()) {
-                moveData += move.toChessNotation()
-                if (i != game.moves.size - 1) {
-                    moveData += "\\"
-                }
-            }
-            moveData += "]"
-
-            var chatData = "["
-
-            for ((i, message) in game.chatMessages.withIndex()) {
-                chatData += message
-                if (i != game.chatMessages.size - 1) {
-                    chatData += "\\"
-                }
-            }
-            chatData += "]"
-
-            var newsContent = "["
-
-            for ((i, news) in game.newsUpdates.withIndex()) {
-                newsContent += news.toString()
-                if (i != game.newsUpdates.size - 1) {
-                    newsContent += "\\"
-                }
-            }
-            newsContent += "]"
-
-            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
-        }
-
-        FileManager.write(this, MULTIPLAYER_GAME_FILE, content)
+//        var content = ""
+//
+//        for ((gameId, game) in savedGames) {
+//            var moveData = "["
+//
+//            for ((i, move) in game.moves.withIndex()) {
+//                moveData += move.toChessNotation()
+//                if (i != game.moves.size - 1) {
+//                    moveData += "\\"
+//                }
+//            }
+//            moveData += "]"
+//
+//            var chatData = "["
+//
+//            for ((i, message) in game.chatMessages.withIndex()) {
+//                chatData += message
+//                if (i != game.chatMessages.size - 1) {
+//                    chatData += "\\"
+//                }
+//            }
+//            chatData += "]"
+//
+//            var newsContent = "["
+//
+//            for ((i, news) in game.newsUpdates.withIndex()) {
+//                newsContent += news.toString()
+//                if (i != game.newsUpdates.size - 1) {
+//                    newsContent += "\\"
+//                }
+//            }
+//            newsContent += "]"
+//
+//            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
+//        }
+//
+//        FileManager.write(this, MULTIPLAYER_GAME_FILE, content)
     }
 
-    private fun onButtonInitialized(textSize: Float) {
-        if (textSize < maxTextSize) {
-            maxTextSize = textSize
-            findViewById<UIButton>(R.id.resign_button).setButtonTextSize(maxTextSize)
-            findViewById<UIButton>(R.id.offer_draw_button).setButtonTextSize(maxTextSize)
-            findViewById<UIButton>(R.id.request_redo_button).setButtonTextSize(maxTextSize)
-            findViewById<UIButton>(R.id.back_button).setButtonTextSize(maxTextSize)
-            findViewById<UIButton>(R.id.forward_button).setButtonTextSize(maxTextSize)
-        }
-    }
+//    private fun onButtonInitialized(textSize: Float) {
+//        if (textSize < maxTextSize) {
+//            maxTextSize = textSize
+//            findViewById<UIButton>(R.id.resign_button).setButtonTextSize(maxTextSize)
+//            findViewById<UIButton>(R.id.offer_draw_button).setButtonTextSize(maxTextSize)
+//            findViewById<UIButton>(R.id.request_redo_button).setButtonTextSize(maxTextSize)
+//            findViewById<UIButton>(R.id.back_button).setButtonTextSize(maxTextSize)
+//            findViewById<UIButton>(R.id.forward_button).setButtonTextSize(maxTextSize)
+//        }
+//    }
 
     private fun initUIButtons() {
-        val textOffset = 65
-        val textColor = Color.WHITE
-        val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
-        val resignButton = findViewById<UIButton>(R.id.resign_button)
-        resignButton
-            .setTextYOffset(textOffset)
-            .setText("Resign")
-            .setColoredDrawable(R.drawable.resign)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColor(buttonBackgroundColor)
-            .setChangeIconColorOnHover(false)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
-                if (isChatOpened()) {
-                    return@setOnClickListener
-                }
-
-                resignDialog.show(gameId, id) {
-                    NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "resign", "$gameId|$id"))
-//                    SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
-
-                    finishActivity(GameStatus.GAME_LOST)
-                }
-            }
-
-        val offerDrawButton = findViewById<UIButton>(R.id.offer_draw_button)
-        offerDrawButton
-            .setText("Offer Draw")
-            .setColor(buttonBackgroundColor)
-            .setColoredDrawable(R.drawable.handshake_2)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
-                if (isChatOpened()) {
-                    return@setOnClickListener
-                }
-
-                offerDrawDialog.show(gameId, id)
-            }
-
-        val redoButton = findViewById<UIButton>(R.id.request_redo_button)
-        redoButton
-            .setText("Undo")
-            .setColoredDrawable(R.drawable.rewind)
-            .setButtonTextSize(50f)
-            .setColor(buttonBackgroundColor)
-            .setButtonTextColor(textColor)
-            .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
-                if (isChatOpened()) {
-                    return@setOnClickListener
-                }
-
-                NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "request_undo", "$gameId|$id"))
-            }
-
-        val backButton = findViewById<UIButton>(R.id.back_button)
-        backButton
-            .setText("Back")
-            .setColoredDrawable(R.drawable.arrow_back)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColor(buttonBackgroundColor)
-            .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .disable()
-            .setOnClickListener {
-                if ((it as UIButton).disabled || isChatOpened()) {
-                    return@setOnClickListener
-                }
-
-                val buttonStates = game.showPreviousMove()
-                if (buttonStates.first) {
-                    it.disable()
-                }
-                if (buttonStates.second) {
-                    game.clearBoardData()
-                    findViewById<UIButton>(R.id.forward_button)?.enable()
-                }
-                glView.requestRender()
-            }
-
-        val forwardButton = findViewById<UIButton>(R.id.forward_button)
-        forwardButton
-            .setText("Forward")
-            .setColoredDrawable(R.drawable.arrow_forward)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColor(buttonBackgroundColor)
-            .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
-            .disable()
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
-                if ((it as UIButton).disabled || isChatOpened()) {
-                    return@setOnClickListener
-                }
-
-                val buttonStates = game.showNextMove()
-                if (buttonStates.first) {
-                    it.disable()
-                }
-                if (buttonStates.second) {
-                    findViewById<UIButton>(R.id.back_button)?.enable()
-                }
-                glView.requestRender()
-            }
+//        val textOffset = 65
+//        val textColor = Color.WHITE
+//        val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
+//        val resignButton = findViewById<UIButton>(R.id.resign_button)
+//        resignButton
+//            .setTextYOffset(textOffset)
+//            .setText("Resign")
+//            .setColoredDrawable(R.drawable.resign)
+//            .setButtonTextSize(50f)
+//            .setButtonTextColor(textColor)
+//            .setColor(buttonBackgroundColor)
+//            .setChangeIconColorOnHover(false)
+//            .setCenterVertically(false)
+//            .setOnButtonInitialized(::onButtonInitialized)
+//            .setOnClickListener {
+//                if (isChatOpened()) {
+//                    return@setOnClickListener
+//                }
+//
+//                resignDialog.show(gameId, id) {
+//                    NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "resign", "$gameId|$id"))
+////                    SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
+//
+//                    finishActivity(GameStatus.GAME_LOST)
+//                }
+//            }
+//
+//        val offerDrawButton = findViewById<UIButton>(R.id.offer_draw_button)
+//        offerDrawButton
+//            .setText("Offer Draw")
+//            .setColor(buttonBackgroundColor)
+//            .setColoredDrawable(R.drawable.handshake_2)
+//            .setButtonTextSize(50f)
+//            .setButtonTextColor(textColor)
+//            .setChangeIconColorOnHover(false)
+//            .setTextYOffset(textOffset)
+//            .setCenterVertically(false)
+//            .setOnButtonInitialized(::onButtonInitialized)
+//            .setOnClickListener {
+//                if (isChatOpened()) {
+//                    return@setOnClickListener
+//                }
+//
+//                offerDrawDialog.show(gameId, id)
+//            }
+//
+//        val redoButton = findViewById<UIButton>(R.id.request_redo_button)
+//        redoButton
+//            .setText("Undo")
+//            .setColoredDrawable(R.drawable.rewind)
+//            .setButtonTextSize(50f)
+//            .setColor(buttonBackgroundColor)
+//            .setButtonTextColor(textColor)
+//            .setChangeIconColorOnHover(false)
+//            .setTextYOffset(textOffset)
+//            .setCenterVertically(false)
+//            .setOnButtonInitialized(::onButtonInitialized)
+//            .setOnClickListener {
+//                if (isChatOpened()) {
+//                    return@setOnClickListener
+//                }
+//
+//                NetworkManager.sendMessage(Message(Topic.GAME_UPDATE, "request_undo", "$gameId|$id"))
+//            }
+//
+//        val backButton = findViewById<UIButton>(R.id.back_button)
+//        backButton
+//            .setText("Back")
+//            .setColoredDrawable(R.drawable.arrow_back)
+//            .setButtonTextSize(50f)
+//            .setButtonTextColor(textColor)
+//            .setColor(buttonBackgroundColor)
+//            .setChangeIconColorOnHover(false)
+//            .setTextYOffset(textOffset)
+//            .setCenterVertically(false)
+//            .setOnButtonInitialized(::onButtonInitialized)
+//            .disable()
+//            .setOnClickListener {
+//                if ((it as UIButton).disabled || isChatOpened()) {
+//                    return@setOnClickListener
+//                }
+//
+//                val buttonStates = game.showPreviousMove()
+//                if (buttonStates.first) {
+//                    it.disable()
+//                }
+//                if (buttonStates.second) {
+//                    game.clearBoardData()
+//                    findViewById<UIButton>(R.id.forward_button)?.enable()
+//                }
+//                glView.requestRender()
+//            }
+//
+//        val forwardButton = findViewById<UIButton>(R.id.forward_button)
+//        forwardButton
+//            .setText("Forward")
+//            .setColoredDrawable(R.drawable.arrow_forward)
+//            .setButtonTextSize(50f)
+//            .setButtonTextColor(textColor)
+//            .setColor(buttonBackgroundColor)
+//            .setChangeIconColorOnHover(false)
+//            .setTextYOffset(textOffset)
+//            .disable()
+//            .setCenterVertically(false)
+//            .setOnButtonInitialized(::onButtonInitialized)
+//            .setOnClickListener {
+//                if ((it as UIButton).disabled || isChatOpened()) {
+//                    return@setOnClickListener
+//                }
+//
+//                val buttonStates = game.showNextMove()
+//                if (buttonStates.first) {
+//                    it.disable()
+//                }
+//                if (buttonStates.second) {
+//                    findViewById<UIButton>(R.id.back_button)?.enable()
+//                }
+//                glView.requestRender()
+//            }
     }
 
-    private fun initChatBox() {
-        findViewById<ImageView>(R.id.open_chat_button).setOnClickListener {
-            val chatBoxEndX = if (chatOpened) -chatTranslation else 0
-            val chatButtonEndX = if (chatOpened) 0 else chatTranslation
-
-            val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", chatBoxEndX.toFloat())
-            val chatButtonAnimator = ObjectAnimator.ofFloat(it, "x", chatButtonEndX.toFloat())
-
-            chatBoxAnimator.duration = 500L
-            chatButtonAnimator.duration = 500L
-
-            chatBoxAnimator.start()
-            chatButtonAnimator.start()
-
-            chatOpened = !chatOpened
-        }
-    }
+//    private fun initChatBox() {
+//        findViewById<ImageView>(R.id.open_chat_button).setOnClickListener {
+//            val chatBoxEndX = if (chatOpened) -chatTranslation else 0
+//            val chatButtonEndX = if (chatOpened) 0 else chatTranslation
+//
+//            val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", chatBoxEndX.toFloat())
+//            val chatButtonAnimator = ObjectAnimator.ofFloat(it, "x", chatButtonEndX.toFloat())
+//
+//            chatBoxAnimator.duration = 500L
+//            chatButtonAnimator.duration = 500L
+//
+//            chatBoxAnimator.start()
+//            chatButtonAnimator.start()
+//
+//            chatOpened = !chatOpened
+//        }
+//    }
 
 }

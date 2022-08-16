@@ -1,7 +1,7 @@
 package com.mjaruijs.fischersplayground.util
 
 import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.Message
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 
 object ErrorHandler {
@@ -15,7 +15,7 @@ object ErrorHandler {
 
     private fun reportToServer(e: Exception): Boolean {
         if (NetworkManager.isRunning()) {
-            NetworkManager.sendMessage(Message(Topic.CRASH_REPORT, "", e.toString()))
+            NetworkManager.sendMessage(NetworkMessage(Topic.CRASH_REPORT, "", e.toString()))
             return true
         }
         return false
