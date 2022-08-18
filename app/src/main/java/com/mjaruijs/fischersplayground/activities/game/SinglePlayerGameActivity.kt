@@ -8,6 +8,8 @@ import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 
 class SinglePlayerGameActivity : GameActivity() {
 
+    override var activityName = "single_player_activity"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE

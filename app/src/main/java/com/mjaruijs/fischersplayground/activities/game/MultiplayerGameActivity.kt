@@ -20,6 +20,8 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 
 class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
+    override var activityName = "multiplayer_activity"
+
     private var stayingInApp = false
     private var chatInitialized = false
     private var chatOpened = false

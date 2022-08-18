@@ -9,6 +9,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.MainActivity.Companion.MULTIPLAYER_GAME_FILE
 import com.mjaruijs.fischersplayground.activities.MessageReceiver
 import com.mjaruijs.fischersplayground.activities.SettingsActivity
@@ -31,29 +32,29 @@ import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.services.DataManagerService
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.REGISTER_CLIENT_VALUE
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_REGISTER_CLIENT
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.FileManager
 
-abstract class GameActivity : AppCompatActivity(R.layout.activity_game) {
+abstract class GameActivity : ClientActivity() {
 
-    private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
-    private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
-    private val gameUpdateReceiver = MessageReceiver(Topic.GAME_UPDATE, "move", ::onOpponentMoved)
-    private val requestUndoReceiver = MessageReceiver(Topic.GAME_UPDATE, "request_undo", ::onUndoRequested)
-    private val undoAcceptedReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_undo", ::onUndoAccepted)
-    private val undoRejectedReceiver = MessageReceiver(Topic.GAME_UPDATE, "rejected_undo", ::onUndoRejected)
-    private val opponentResignedReceiver = MessageReceiver(Topic.GAME_UPDATE, "opponent_resigned", ::onOpponentResigned)
-    private val opponentOfferedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "opponent_offered_draw", ::onOpponentOfferedDraw)
-    private val opponentAcceptedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_draw", ::onOpponentAcceptedDraw)
-    private val opponentDeclinedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "declined_draw", ::onOpponentDeclinedDraw)
-    private val chatMessageReceiver = MessageReceiver(Topic.CHAT_MESSAGE, "", ::onChatMessageReceived)
-    private val userStatusReceiver = MessageReceiver(Topic.USER_STATUS, "status", ::onUserStatusReceived)
+//    private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
+//    private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
+//    private val gameUpdateReceiver = MessageReceiver(Topic.GAME_UPDATE, "move", ::onOpponentMoved)
+//    private val requestUndoReceiver = MessageReceiver(Topic.GAME_UPDATE, "request_undo", ::onUndoRequested)
+//    private val undoAcceptedReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_undo", ::onUndoAccepted)
+//    private val undoRejectedReceiver = MessageReceiver(Topic.GAME_UPDATE, "rejected_undo", ::onUndoRejected)
+//    private val opponentResignedReceiver = MessageReceiver(Topic.GAME_UPDATE, "opponent_resigned", ::onOpponentResigned)
+//    private val opponentOfferedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "opponent_offered_draw", ::onOpponentOfferedDraw)
+//    private val opponentAcceptedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_draw", ::onOpponentAcceptedDraw)
+//    private val opponentDeclinedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "declined_draw", ::onOpponentDeclinedDraw)
+//    private val chatMessageReceiver = MessageReceiver(Topic.CHAT_MESSAGE, "", ::onChatMessageReceived)
+//    private val userStatusReceiver = MessageReceiver(Topic.USER_STATUS, "status", ::onUserStatusReceived)
 
-    private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
-    private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
-    private val chatFilter = IntentFilter("mjaruijs.fischers_playground.CHAT_MESSAGE")
-    private val statusFilter = IntentFilter("mjaruijs.fischers_playground.USER_STATUS")
+//    private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
+//    private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
+//    private val chatFilter = IntentFilter("mjaruijs.fischers_playground.CHAT_MESSAGE")
+//    private val statusFilter = IntentFilter("mjaruijs.fischers_playground.USER_STATUS")
 
     private val incomingInviteDialog = IncomingInviteDialog()
     val undoRequestedDialog = UndoRequestedDialog()
@@ -92,50 +93,13 @@ abstract class GameActivity : AppCompatActivity(R.layout.activity_game) {
 
     private var stayingInApp = false
 
-    lateinit var dataService: DataManagerService
-    private var dataServiceMessenger: Messenger? = null
-    var serviceBound = false
 
-    internal class IncomingHandler : Handler() {
-        override fun handleMessage(msg: Message) {
-            println("Received in Activity: ${msg.obj}")
-//            msg.replyTo.send(Message.obtain(null, 0, "Hello!"))
-//            when (msg.what) {
-//                0 -> {
-//                    println("HELLO")
-////                    msg.
-//                }
-//                else -> super.handleMessage(msg)
-//            }
-        }
-
-
-    }
-
-    private var messenger = Messenger(IncomingHandler())
-
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder) {
-//            val binder = service as DataManagerService.LocalBinder
-            dataServiceMessenger = Messenger(service)
-            serviceBound = true
-
-            val message = Message.obtain(null, REGISTER_CLIENT_VALUE)
-            message.replyTo = messenger
-            dataServiceMessenger!!.send(message)
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            dataServiceMessenger = null
-            serviceBound = false
-        }
-    }
 
 //    private val savedGames = HashMap<String, MultiPlayerGame>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        setContentView(R.layout.activity_game)
 //        println("GAME_ACTIVITY: onCreate")
 
         val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
@@ -227,14 +191,14 @@ abstract class GameActivity : AppCompatActivity(R.layout.activity_game) {
     }
 
     fun onMoveMade(move: Move) {
-        val message = Message.obtain(null, 0, "Move made!")
-        message.replyTo = messenger
-
-        try {
-            dataServiceMessenger!!.send(message)
-        } catch (e: RemoteException) {
-            e.printStackTrace()
-        }
+//        val message = Message.obtain(null, 0, "Move made!")
+//        message.replyTo = messenger
+//
+//        try {
+//            dataServiceMessenger!!.send(message)
+//        } catch (e: RemoteException) {
+//            e.printStackTrace()
+//        }
     }
 
     private fun restorePreferences() {
@@ -569,26 +533,18 @@ abstract class GameActivity : AppCompatActivity(R.layout.activity_game) {
 //    }
 
     private fun registerReceivers() {
-        registerReceiver(inviteReceiver, infoFilter)
-        registerReceiver(newGameReceiver, infoFilter)
-        registerReceiver(gameUpdateReceiver, gameUpdateFilter)
-        registerReceiver(requestUndoReceiver, gameUpdateFilter)
-        registerReceiver(undoAcceptedReceiver, gameUpdateFilter)
-        registerReceiver(undoRejectedReceiver, gameUpdateFilter)
-        registerReceiver(opponentResignedReceiver, gameUpdateFilter)
-        registerReceiver(opponentOfferedDrawReceiver, gameUpdateFilter)
-        registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
-        registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
-        registerReceiver(chatMessageReceiver, chatFilter)
-        registerReceiver(userStatusReceiver, statusFilter)
-    }
-
-    override fun onStart() {
-        super.onStart()
-        val intent = Intent(this, DataManagerService::class.java)
-            .putExtra("id", id)
-
-        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+//        registerReceiver(inviteReceiver, infoFilter)
+//        registerReceiver(newGameReceiver, infoFilter)
+//        registerReceiver(gameUpdateReceiver, gameUpdateFilter)
+//        registerReceiver(requestUndoReceiver, gameUpdateFilter)
+//        registerReceiver(undoAcceptedReceiver, gameUpdateFilter)
+//        registerReceiver(undoRejectedReceiver, gameUpdateFilter)
+//        registerReceiver(opponentResignedReceiver, gameUpdateFilter)
+//        registerReceiver(opponentOfferedDrawReceiver, gameUpdateFilter)
+//        registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
+//        registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
+//        registerReceiver(chatMessageReceiver, chatFilter)
+//        registerReceiver(userStatusReceiver, statusFilter)
     }
 
     override fun onResume() {
@@ -609,26 +565,20 @@ abstract class GameActivity : AppCompatActivity(R.layout.activity_game) {
 //        println("GAME ACTIVITY: onPause")
         saveGames()
 
-        unregisterReceiver(inviteReceiver)
-        unregisterReceiver(newGameReceiver)
-        unregisterReceiver(gameUpdateReceiver)
-        unregisterReceiver(requestUndoReceiver)
-        unregisterReceiver(undoAcceptedReceiver)
-        unregisterReceiver(undoRejectedReceiver)
-        unregisterReceiver(opponentResignedReceiver)
-        unregisterReceiver(opponentOfferedDrawReceiver)
-        unregisterReceiver(opponentAcceptedDrawReceiver)
-        unregisterReceiver(opponentDeclinedDrawReceiver)
-        unregisterReceiver(chatMessageReceiver)
-        unregisterReceiver(userStatusReceiver)
+//        unregisterReceiver(inviteReceiver)
+//        unregisterReceiver(newGameReceiver)
+//        unregisterReceiver(gameUpdateReceiver)
+//        unregisterReceiver(requestUndoReceiver)
+//        unregisterReceiver(undoAcceptedReceiver)
+//        unregisterReceiver(undoRejectedReceiver)
+//        unregisterReceiver(opponentResignedReceiver)
+//        unregisterReceiver(opponentOfferedDrawReceiver)
+//        unregisterReceiver(opponentAcceptedDrawReceiver)
+//        unregisterReceiver(opponentDeclinedDrawReceiver)
+//        unregisterReceiver(chatMessageReceiver)
+//        unregisterReceiver(userStatusReceiver)
 
         super.onPause()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        unbindService(connection)
-        serviceBound = false
     }
 
     override fun onDestroy() {

@@ -12,7 +12,6 @@ import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -28,7 +27,7 @@ import com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
 import kotlin.math.roundToInt
 
 @Suppress("SameParameterValue", "ControlFlowWithEmptyBody")
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : ClientActivity() {
 
     private lateinit var game: SinglePlayerGame
 
