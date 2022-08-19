@@ -11,10 +11,11 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.chess.news.News
+import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import com.mjaruijs.fischersplayground.util.Time
 
-class MultiPlayerGame(private val gameId: String, private val playerId: String, val opponentName: String, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, moves) {
+class MultiPlayerGame(val gameId: String, private val playerId: String, val opponentName: String, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, moves) {
 
     var status: GameStatus
 
@@ -41,6 +42,10 @@ class MultiPlayerGame(private val gameId: String, private val playerId: String, 
                 moveOpponent(move, true)
             }
         }
+    }
+
+    fun addNews(type: NewsType) {
+        newsUpdates += News(type)
     }
 
     fun addNews(news: News) {

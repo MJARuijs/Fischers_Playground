@@ -15,7 +15,7 @@ class OpponentOfferedDrawDialog {
         dialogBuilder = AlertDialog.Builder(context)
     }
 
-    fun show(gameId: String, id: String, opponentName: String, onAccept: () -> Unit) {
+    fun show(gameId: String, opponentName: String, onAccept: () -> Unit) {
         dialogBuilder.setMessage("$opponentName is offering a draw!")
         dialogBuilder.setPositiveButton("Accept") { _, _ ->
             onAccept()

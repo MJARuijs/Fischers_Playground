@@ -15,9 +15,9 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.News
+import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
-import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
@@ -28,6 +28,14 @@ class DataManagerService : Service() {
     private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
     private val gameUpdateReceiver = MessageReceiver(Topic.GAME_UPDATE, "move", ::onOpponentMoved)
     private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
+    private val requestUndoReceiver = MessageReceiver(Topic.GAME_UPDATE, "request_undo", ::onUndoRequested)
+    private val undoAcceptedReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_undo", ::onUndoAccepted)
+    private val undoRejectedReceiver = MessageReceiver(Topic.GAME_UPDATE, "rejected_undo", ::onUndoRejected)
+    private val opponentResignedReceiver = MessageReceiver(Topic.GAME_UPDATE, "opponent_resigned", ::onOpponentResigned)
+    private val opponentOfferedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "opponent_offered_draw", ::onOpponentOfferedDraw)
+    private val opponentAcceptedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_draw", ::onOpponentAcceptedDraw)
+    private val opponentDeclinedDrawReceiver = MessageReceiver(Topic.GAME_UPDATE, "declined_draw", ::onOpponentDeclinedDraw)
+    private val chatMessageReceiver = MessageReceiver(Topic.CHAT_MESSAGE, "", ::onChatMessageReceived)
 
     private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
@@ -40,9 +48,6 @@ class DataManagerService : Service() {
 
     lateinit var mainActivityClient: Messenger
     var currentClient: Messenger? = null
-
-//    private val incomingInviteDialog = IncomingInviteDialog()
-
 
     private lateinit var serviceMessenger: Messenger
 
@@ -70,18 +75,38 @@ class DataManagerService : Service() {
         val preferences = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE)
         id = preferences.getString("ID", "")!!
 
-//        incomingInviteDialog.create(applicationContext)
-
-
         registerReceiver(newGameReceiver, infoFilter)
         registerReceiver(inviteReceiver, infoFilter)
+        registerReceiver(gameUpdateReceiver, gameUpdateFilter)
+        registerReceiver(requestUndoReceiver, gameUpdateFilter)
+        registerReceiver(undoAcceptedReceiver, gameUpdateFilter)
+        registerReceiver(undoRejectedReceiver, gameUpdateFilter)
+        registerReceiver(opponentResignedReceiver, gameUpdateFilter)
+        registerReceiver(opponentOfferedDrawReceiver, gameUpdateFilter)
+        registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
+        registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
+        registerReceiver(chatMessageReceiver, chatFilter)
     }
 
     override fun onDestroy() {
         Toast.makeText(applicationContext, "Service destroyed..", Toast.LENGTH_SHORT).show()
         unregisterReceiver(newGameReceiver)
         unregisterReceiver(inviteReceiver)
+//        unregisterReceiver(newsReceiver)
+        unregisterReceiver(gameUpdateReceiver)
+        unregisterReceiver(requestUndoReceiver)
+        unregisterReceiver(undoAcceptedReceiver)
+        unregisterReceiver(undoRejectedReceiver)
+        unregisterReceiver(opponentResignedReceiver)
+        unregisterReceiver(opponentOfferedDrawReceiver)
+        unregisterReceiver(opponentAcceptedDrawReceiver)
+        unregisterReceiver(opponentDeclinedDrawReceiver)
+        unregisterReceiver(chatMessageReceiver)
         super.onDestroy()
+    }
+
+    private fun sendMessage(flag: Int, data: Any?) {
+        currentClient!!.send(Message.obtain(null, flag, data))
     }
 
     class IncomingHandler(service: DataManagerService) : Handler() {
@@ -92,20 +117,10 @@ class DataManagerService : Service() {
 
             val service = serviceReference.get()!!
 
-            println("${msg.what} Setting currentMessenger to: ${msg.replyTo}")
             service.currentClient = msg.replyTo
 
             when (msg.what) {
-//                FLAG_REGISTER_CLIENT -> {
-//                    val activityName = msg.obj as String
-//                    if (activityName == "main_activity") {
-//                        mainActivityClient = msg.replyTo
-//                        mainActivityClient.send(Message.obtain(null, FLAG_GET_MULTIPLAYER_GAMES, savedGames))
-//                    } else {
-//                    currentMessenger = msg.replyTo
-//                    }
-//                }
-
+                //TODO: Can this be removed? (probably)
                 FLAG_SET_ID -> {
                     if (msg.obj is String) {
                         service.id = msg.obj as String
@@ -114,12 +129,87 @@ class DataManagerService : Service() {
 
                 FLAG_GET_MULTIPLAYER_GAMES -> msg.replyTo.send(Message.obtain(null, FLAG_GET_MULTIPLAYER_GAMES, service.savedGames))
                 FLAG_GET_GAMES_AND_INVITES -> msg.replyTo.send(Message.obtain(null, FLAG_GET_GAMES_AND_INVITES, Pair(service.savedGames, service.savedInvites)))
+                FLAG_SET_GAME_STATUS -> {
+                    val data = msg.obj as? Pair<*, *> ?: return
+                    if (data.first is String && data.second is GameStatus) {
+                        service.savedGames[data.first]?.status = data.second as GameStatus
+                    } else {
+                        throw IllegalArgumentException("Got invalid arguments for FLAG_SET_GAME_STATUS")
+                    }
+                }
+                FLAG_SAVE_GAME -> {
+                    val game = msg.obj as? MultiPlayerGame ?: return
+                    service.savedGames[game.gameId] = game
+                }
+                FLAG_GET_GAME -> {
+                    val gameId = msg.obj as String
+                    msg.replyTo.send(Message.obtain(null, FLAG_GET_GAME, service.savedGames[gameId]))
+                }
             }
         }
     }
 
-    private fun sendMessage(flag: Int, data: Any?) {
-        currentClient!!.send(Message.obtain(null, flag, data))
+    private fun onUndoRequested(content: String) {
+        val data = content.split('|')
+        val gameId = data[0]
+
+        savedGames[gameId]?.addNews(NewsType.OPPONENT_REQUESTED_UNDO)
+
+        sendMessage(FLAG_UNDO_REQUESTED, gameId)
+    }
+
+    private fun onUndoAccepted(content: String) {
+        val data = content.split('|')
+        val gameId = data[0]
+        val numberOfMovesReversed = data[1].toInt()
+
+        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
+        savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+
+        sendMessage(FLAG_UNDO_ACCEPTED, gameId)
+    }
+
+    private fun onUndoRejected(gameId: String) {
+        savedGames[gameId]?.addNews(NewsType.OPPONENT_REJECTED_UNDO)
+
+        sendMessage(FLAG_UNDO_REJECTED, gameId)
+    }
+
+    private fun onOpponentResigned(content: String) {
+        val data = content.split('|')
+        val gameId = data[0]
+
+        sendMessage(FLAG_OPPONENT_RESIGNED, gameId)
+    }
+
+    private fun onOpponentOfferedDraw(content: String) {
+        val data = content.split('|')
+        val gameId = data[0]
+
+        sendMessage(FLAG_OPPONENT_OFFERED_DRAW, gameId)
+    }
+
+    private fun onOpponentAcceptedDraw(content: String) {
+        val data = content.split('|')
+        val gameId = data[0]
+
+        sendMessage(FLAG_OPPONENT_ACCEPTED_DRAW, gameId)
+    }
+
+    private fun onOpponentDeclinedDraw(content: String) {
+        val data = content.split('|')
+        val gameId = data[0]
+
+        sendMessage(FLAG_OPPONENT_REJECTED_DRAW, gameId)
+    }
+
+    private fun onChatMessageReceived(content: String) {
+        val data = content.split('|')
+        val gameId = data[0]
+        val timeStamp = data[1]
+        val messageContent = data[2]
+
+        sendMessage(FLAG_CHAT_MESSAGE_RECEIVED, Triple(gameId, timeStamp, messageContent))
     }
 
     private fun onNewGameStarted(content: String) {
@@ -164,10 +254,6 @@ class DataManagerService : Service() {
 
         val gameId = data[0]
         val moveNotation = data[1]
-        processOpponentMove(gameId, moveNotation)
-    }
-
-    private fun processOpponentMove(gameId: String, moveNotation: String) {
         val move = Move.fromChessNotation(moveNotation)
 
         val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
@@ -176,7 +262,6 @@ class DataManagerService : Service() {
         savedGames[gameId] = game
 
         sendMessage(FLAG_OPPONENT_MOVED, MoveData(gameId, GameStatus.PLAYER_MOVE, move.timeStamp))
-//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE, move.timeStamp)
     }
 
     private fun loadSavedGames() {
@@ -246,6 +331,18 @@ class DataManagerService : Service() {
         const val FLAG_GET_GAMES_AND_INVITES = 4
         const val FLAG_NEW_GAME = 5
         const val FLAG_OPPONENT_MOVED = 6
+        const val FLAG_UNDO_REQUESTED = 7
+        const val FLAG_UNDO_ACCEPTED = 8
+        const val FLAG_UNDO_REJECTED = 9
+        const val FLAG_OPPONENT_RESIGNED = 10
+        const val FLAG_OPPONENT_OFFERED_DRAW = 11
+        const val FLAG_OPPONENT_ACCEPTED_DRAW = 12
+        const val FLAG_OPPONENT_REJECTED_DRAW = 13
+        const val FLAG_CHAT_MESSAGE_RECEIVED = 14
+        const val FLAG_SET_GAME_STATUS = 15
+        const val FLAG_SAVE_GAME = 16
+        const val FLAG_GET_GAME = 17
+
 
     }
 }

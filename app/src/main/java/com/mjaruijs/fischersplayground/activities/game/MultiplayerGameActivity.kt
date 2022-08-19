@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.activities.game
 
 import android.animation.ObjectAnimator
 import android.os.Bundle
+import android.os.Messenger
 import android.view.View
 import android.widget.ImageView
 import androidx.fragment.app.FragmentContainerView
@@ -10,6 +11,8 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightObserver
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvider
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
+import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
+import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.fragments.ChatFragment
@@ -17,10 +20,14 @@ import com.mjaruijs.fischersplayground.fragments.actionbars.MultiplayerActionBut
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SAVE_GAME
 
 class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override var activityName = "multiplayer_activity"
+
+    override var clientMessenger = Messenger(IncomingHandler(this))
 
     private var stayingInApp = false
     private var chatInitialized = false
@@ -29,12 +36,13 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private lateinit var keyboardHeightProvider: KeyboardHeightProvider
 
-    private val savedGames = HashMap<String, MultiPlayerGame>()
+//    private val savedGames = HashMap<String, MultiPlayerGame>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
+        sendMessage(FLAG_GET_GAME, gameId)
 
         initChatBox()
 
@@ -69,6 +77,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|$gameId|away"))
         }
 
+        sendMessage(FLAG_SAVE_GAME, game)
+
         keyboardHeightProvider.observer = null
         super.onPause()
     }
@@ -78,16 +88,30 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         super.onDestroy()
     }
 
+    override fun setGame(game: MultiPlayerGame) {
+        this.game = game
+
+        runOnUiThread {
+            getChatFragment().addMessages(game.chatMessages)
+        }
+
+        runOnUiThread {
+            processNews(game)
+        }
+
+        setGameCallbacks()
+    }
+
     override fun onContextCreated() {
-        game = savedGames[gameId] ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
+//        game = savedGames[gameId] ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
 
-        runOnUiThread {
-            getChatFragment().addMessages((game as MultiPlayerGame).chatMessages)
-        }
-
-        runOnUiThread {
-            processNews((game as MultiPlayerGame))
-        }
+//        runOnUiThread {
+//            getChatFragment().addMessages((game as MultiPlayerGame).chatMessages)
+//        }
+//
+//        runOnUiThread {
+//            processNews((game as MultiPlayerGame))
+//        }
 
         super.onContextCreated()
     }
@@ -119,9 +143,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         for (news in game.newsUpdates) {
             when (news.newsType) {
                 NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show(opponentName, ::closeAndSaveGameAsWin)
-                NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, id, opponentName, ::acceptDraw)
+                NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw)
                 NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
-                NewsType.OPPONENT_DECLINED_DRAW -> opponentDeclinedDrawDialog.show(opponentName)
+                NewsType.OPPONENT_DECLINED_DRAW -> opponentRejectedDrawDialog.show(opponentName)
                 NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
                 NewsType.OPPONENT_ACCEPTED_UNDO -> {
                     game.undoMoves(news.data)
@@ -176,6 +200,81 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         chatButtonAnimator.start()
 
         chatOpened = false
+    }
+
+    override fun onUndoRequested(gameId: String) {
+        if (this.gameId == gameId) {
+            undoRequestedDialog.show(gameId, opponentName, id)
+        }
+    }
+
+    override fun onUndoRequestAccepted(data: Pair<String, Int>?) {
+        if (data == null) {
+            return
+        }
+
+        if (this.gameId == data.first) {
+            (game as MultiPlayerGame).undoMoves(data.second)
+            glView.requestRender()
+        }
+    }
+
+    override fun onUndoRequestRejected(gameId: String) {
+        if (this.gameId == gameId) {
+            undoRejectedDialog.show(opponentName)
+        }
+    }
+
+    override fun onOpponentMoved(data: Triple<String, GameStatus, Long>?) {
+        if (data == null) {
+            return
+        }
+
+        if (this.gameId != data.first) {
+            return
+        }
+    }
+
+    override fun onOpponentResigned(gameId: String) {
+        if (this.gameId == gameId) {
+            opponentResignedDialog.show(userName, ::closeAndSaveGameAsWin)
+        }
+    }
+
+    override fun onOpponentOfferedDraw(gameId: String) {
+        if (this.gameId == gameId) {
+            opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw)
+        }
+    }
+
+    private fun acceptDraw() {
+        NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$id"))
+        closeAndSaveGameAsDraw()
+    }
+
+    override fun onOpponentAcceptedDraw(gameId: String) {
+        if (this.gameId == gameId) {
+            opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
+        }
+    }
+
+    override fun onOpponentRejectedDraw(gameId: String) {
+        if (this.gameId == gameId) {
+            opponentRejectedDrawDialog.show(opponentName)
+        }
+    }
+
+    override fun onChatMessageReceived(data: Triple<String, String, String>?) {
+        if (data == null) {
+            return
+        }
+
+        if (this.gameId != data.first) {
+            return
+        }
+
+        val message = ChatMessage(data.second, data.third, MessageType.RECEIVED)
+        getChatFragment().addReceivedMessage(message)
     }
 
     override fun onBackPressed() {

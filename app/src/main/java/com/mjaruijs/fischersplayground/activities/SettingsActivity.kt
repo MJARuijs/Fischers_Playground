@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.Point
 import android.os.Bundle
+import android.os.Messenger
 import android.transition.ChangeBounds
 import android.transition.TransitionManager
 import android.view.View
@@ -28,6 +29,8 @@ import kotlin.math.roundToInt
 
 @Suppress("SameParameterValue", "ControlFlowWithEmptyBody")
 class SettingsActivity : ClientActivity() {
+
+    override var clientMessenger = Messenger(IncomingHandler(this))
 
     private lateinit var game: SinglePlayerGame
 

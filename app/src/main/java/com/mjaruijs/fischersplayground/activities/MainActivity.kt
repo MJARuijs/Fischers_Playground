@@ -48,12 +48,14 @@ class MainActivity : ClientActivity() {
 
     override var activityName = "main_activity"
 
+    override var clientMessenger = Messenger(IncomingHandler(this))
+
     private var id: String? = null
     private var userName: String? = null
 
     private val idReceiver = MessageReceiver(Topic.INFO, "id", ::onIdReceived)
     private val playersReceiver = MessageReceiver(Topic.INFO, "search_players_result", ::onPlayersReceived)
-    private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
+//    private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
 
 //    private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
 //    private val newsReceiver = MessageReceiver(Topic.INFO, "news", ::onNewsReceived)
@@ -183,7 +185,7 @@ class MainActivity : ClientActivity() {
         if (gameCard.gameStatus == GameStatus.INVITE_RECEIVED) {
 //            incomingInviteDialog.showInvite(gameCard.opponentName, gameCard.id)
         } else if (gameCard.gameStatus != GameStatus.INVITE_PENDING) {
-            saveData()
+//            saveData()
             val intent = Intent(this, MultiplayerGameActivity::class.java)
                 .putExtra("id", id)
                 .putExtra("user_name", userName)
@@ -201,181 +203,203 @@ class MainActivity : ClientActivity() {
         saveGames()
     }
 
-    private fun onNewGameStarted(content: String) {
-        val data = content.split('|')
+//    private fun onNewGameStarted(content: String) {
+//        val data = content.split('|')
+//
+//        val inviteId = data[0]
+//        val opponentName = data[1]
+//        val playingWhite = data[2].toBoolean()
+//
+//        val underscoreIndex = inviteId.indexOf('_')
+//        val opponentId = inviteId.substring(0, underscoreIndex)
+//
+//        val timeStamp = Time.getFullTimeStamp()
+//        val newGameStatus = if (playingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
+//
+//        val newGame = MultiPlayerGame(inviteId, id!!, opponentName, playingWhite)
+//        savedGames[inviteId] = newGame
+//        savedInvites.remove(inviteId)
+//
+//        val hasUpdate = newGameStatus == GameStatus.PLAYER_MOVE
+//        val doesCardExist = gameAdapter.updateGameCard(inviteId, newGameStatus, playingWhite, hasUpdate)
+//
+//        if (!doesCardExist) {
+//            gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, hasUpdate)
+//        }
+//
+//        updateRecentOpponents(Pair(opponentName, opponentId))
+//    }
+//
+//    private fun onNewsReceived(content: String) {
+//        val data = content.split('|')
+//
+//        for (news in data) {
+//            if (news.isBlank()) {
+//                continue
+//            }
+//
+//            val newsData = news.split(',')
+//            val id = newsData[0]
+//            val type = newsData[1]
+//
+//            val extraData = if (newsData.size == 3) newsData[2] else ""
+//
+////            processNews(id, type, extraData)
+//        }
+////        val startIndex = content.indexOf('{') + 1
+////        val endIndex = content.indexOf('}')
+////        val activeGamesData = content.substring(startIndex, endIndex)
+////        parseActiveGameData(activeGamesData)
+////
+////        val receivedInvitesStartIndex = content.indexOf('{', endIndex) + 1
+////        val receivedInvitesEndIndex = content.indexOf('}', receivedInvitesStartIndex)
+////        val receivedInvitesData = content.substring(receivedInvitesStartIndex, receivedInvitesEndIndex)
+////        parseReceivedInvitesData(receivedInvitesData)
+////
+////        val pendingInvitesStartIndex = content.indexOf('{', receivedInvitesEndIndex) + 1
+////        val pendingInvitesEndIndex = content.indexOf('}', pendingInvitesStartIndex)
+////        val pendingInvitesData = content.substring(pendingInvitesStartIndex, pendingInvitesEndIndex)
+////        parsePendingInvitesData(pendingInvitesData)
+////
+////        val recentOpponentsStartIndex = content.indexOf('{', pendingInvitesEndIndex) + 1
+////        val recentOpponentsEndIndex = content.indexOf('}', recentOpponentsStartIndex)
+////        val recentOpponentsData = content.substring(recentOpponentsStartIndex, recentOpponentsEndIndex)
+////        parseRecentOpponents(recentOpponentsData)
+////
+////        val updatedGameStartIndex = content.indexOf('{', recentOpponentsEndIndex) + 1
+////        val updatedGameEndIndex = content.indexOf('}', updatedGameStartIndex)
+////        val updatedGamesData = content.substring(updatedGameStartIndex, updatedGameEndIndex)
+////        processUpdatedGames(updatedGamesData)
+//    }
 
-        val inviteId = data[0]
-        val opponentName = data[1]
-        val playingWhite = data[2].toBoolean()
+//    private fun processNews(id: String, type: String, extraData: String) {
+//        when (type) {
+//            "OPPONENT_INVITED" -> {
+//                val data = extraData.split(':')
+//                val opponentName = data[0]
+//                val timeStamp = data[1].toLong()
+//
+//                processIncomingInvite(id, opponentName, timeStamp)
+//            }
+//            "OPPONENT_MOVED" -> processOpponentMove(id, extraData)
+//            "OPPONENT_RESIGNED" -> processOpponentResigned(id)
+//            "OPPONENT_OFFERED_DRAW" -> processOpponentOfferingDraw(id)
+//            "OPPONENT_ACCEPTED_DRAW" -> processOpponentAcceptedDraw(id)
+//            "OPPONENT_REJECTED_DRAW" -> processOpponentRejectedDraw(id)
+//            "OPPONENT_REQUESTED_UNDO" -> processOpponentRequestingUndo(id)
+//            "UNDO_REQUEST_ACCEPTED" -> processUndoRequestAccepted(id, extraData.toInt())
+//            "OPPONENT_REJECTED_UNDO_REQUEST" -> processOpponentRejectedUndoRequest(id)
+//            "CHAT_MESSAGE" -> {
+//                val data = extraData.split(':')
+//                val messageContent = data[0]
+//                val timeStamp = data[1]
+//                processChatMessage(id, messageContent, timeStamp)
+//            }
+//        }
+//    }
 
-        val underscoreIndex = inviteId.indexOf('_')
-        val opponentId = inviteId.substring(0, underscoreIndex)
+//    private fun onIncomingInvite(content: String) {
+//        val data = content.split('|')
+//
+//        val opponentName = data[0]
+//        val inviteId = data[1]
+//        val timeStamp = data[2].toLong()
+//
+//        processIncomingInvite(inviteId, opponentName, timeStamp)
+//    }
 
-        val timeStamp = Time.getFullTimeStamp()
-        val newGameStatus = if (playingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
+//    private fun processIncomingInvite(inviteId: String, opponentName: String, timeStamp: Long) {
+//        savedInvites[inviteId] = InviteData(opponentName, timeStamp, InviteType.RECEIVED)
+//
+////        incomingInviteDialog.showInvite(opponentName, inviteId)
+//        gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
+//    }
+//
+//    private fun processOpponentMove(gameId: String, moveNotation: String) {
+//        val move = Move.fromChessNotation(moveNotation)
+//
+//        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+//        game.moveOpponent(move, false)
+//
+//        savedGames[gameId] = game
+//
+//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE, move.timeStamp)
+//    }
 
-        val newGame = MultiPlayerGame(inviteId, id!!, opponentName, playingWhite)
-        savedGames[inviteId] = newGame
-        savedInvites.remove(inviteId)
-
-        val hasUpdate = newGameStatus == GameStatus.PLAYER_MOVE
-        val doesCardExist = gameAdapter.updateGameCard(inviteId, newGameStatus, playingWhite, hasUpdate)
-
-        if (!doesCardExist) {
-            gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, hasUpdate)
+    override fun onOpponentMoved(data: Triple<String, GameStatus, Long>?) {
+        if (data == null) {
+            return
         }
 
-        updateRecentOpponents(Pair(opponentName, opponentId))
+        gameAdapter.updateCardStatus(data.first, data.second, data.third)
     }
 
-    private fun onNewsReceived(content: String) {
-        val data = content.split('|')
+//    private fun processOpponentResigned(gameId: String) {
+//        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+//        game.addNews(News(NewsType.OPPONENT_RESIGNED))
+//        savedGames[gameId] = game
+//        gameAdapter.updateCardStatus(gameId, GameStatus.GAME_WON)
+//    }
+//
+//    private fun processOpponentOfferingDraw(gameId: String) {
+//        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+//        game.addNews(News(NewsType.OPPONENT_OFFERED_DRAW))
+//        savedGames[gameId] = game
+//        gameAdapter.hasUpdate(gameId)
+//    }
+//
+//    private fun processOpponentAcceptedDraw(gameId: String) {
+//        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+//        game.addNews(News(NewsType.OPPONENT_ACCEPTED_DRAW))
+//
+//        savedGames[gameId] = game
+//        gameAdapter.hasUpdate(gameId)
+//    }
+//
+//    private fun processOpponentRejectedDraw(gameId: String) {
+//        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+//        game.addNews(News(NewsType.OPPONENT_DECLINED_DRAW))
+//        savedGames[gameId] = game
+//
+//        gameAdapter.hasUpdate(gameId)
+//    }
 
-        for (news in data) {
-            if (news.isBlank()) {
-                continue
-            }
+    override fun onUndoRequested(gameId: String) {
+        gameAdapter.hasUpdate(gameId)
+    }
 
-            val newsData = news.split(',')
-            val id = newsData[0]
-            val type = newsData[1]
-
-            val extraData = if (newsData.size == 3) newsData[2] else ""
-
-            processNews(id, type, extraData)
+    override fun onUndoRequestAccepted(data: Pair<String, Int>?) {
+        if (data == null) {
+            return
         }
-//        val startIndex = content.indexOf('{') + 1
-//        val endIndex = content.indexOf('}')
-//        val activeGamesData = content.substring(startIndex, endIndex)
-//        parseActiveGameData(activeGamesData)
+        gameAdapter.hasUpdate(data.first)
+    }
+
+    override fun onUndoRequestRejected(gameId: String) {
+        gameAdapter.hasUpdate(gameId)
+    }
+
+//    private fun processOpponentRequestingUndo(gameId: String) {
+//        gameAdapter.hasUpdate(gameId)
+////        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REQUESTED_UNDO))
+//    }
 //
-//        val receivedInvitesStartIndex = content.indexOf('{', endIndex) + 1
-//        val receivedInvitesEndIndex = content.indexOf('}', receivedInvitesStartIndex)
-//        val receivedInvitesData = content.substring(receivedInvitesStartIndex, receivedInvitesEndIndex)
-//        parseReceivedInvitesData(receivedInvitesData)
+//    private fun processUndoRequestAccepted(gameId: String, numberOfMovesReversed: Int) {
+////        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
+////        savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+//        gameAdapter.hasUpdate(gameId)
+//        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
+//    }
 //
-//        val pendingInvitesStartIndex = content.indexOf('{', receivedInvitesEndIndex) + 1
-//        val pendingInvitesEndIndex = content.indexOf('}', pendingInvitesStartIndex)
-//        val pendingInvitesData = content.substring(pendingInvitesStartIndex, pendingInvitesEndIndex)
-//        parsePendingInvitesData(pendingInvitesData)
+//    private fun processOpponentRejectedUndoRequest(gameId: String) {
+//        gameAdapter.hasUpdate(gameId)
+////        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REJECTED_UNDO))
+//    }
 //
-//        val recentOpponentsStartIndex = content.indexOf('{', pendingInvitesEndIndex) + 1
-//        val recentOpponentsEndIndex = content.indexOf('}', recentOpponentsStartIndex)
-//        val recentOpponentsData = content.substring(recentOpponentsStartIndex, recentOpponentsEndIndex)
-//        parseRecentOpponents(recentOpponentsData)
-//
-//        val updatedGameStartIndex = content.indexOf('{', recentOpponentsEndIndex) + 1
-//        val updatedGameEndIndex = content.indexOf('}', updatedGameStartIndex)
-//        val updatedGamesData = content.substring(updatedGameStartIndex, updatedGameEndIndex)
-//        processUpdatedGames(updatedGamesData)
-    }
-
-    private fun processNews(id: String, type: String, extraData: String) {
-        when (type) {
-            "OPPONENT_INVITED" -> {
-                val data = extraData.split(':')
-                val opponentName = data[0]
-                val timeStamp = data[1].toLong()
-
-                processIncomingInvite(id, opponentName, timeStamp)
-            }
-            "OPPONENT_MOVED" -> processOpponentMove(id, extraData)
-            "OPPONENT_RESIGNED" -> processOpponentResigned(id)
-            "OPPONENT_OFFERED_DRAW" -> processOpponentOfferingDraw(id)
-            "OPPONENT_ACCEPTED_DRAW" -> processOpponentAcceptedDraw(id)
-            "OPPONENT_REJECTED_DRAW" -> processOpponentRejectedDraw(id)
-            "OPPONENT_REQUESTED_UNDO" -> processOpponentRequestingUndo(id)
-            "UNDO_REQUEST_ACCEPTED" -> processUndoRequestAccepted(id, extraData.toInt())
-            "OPPONENT_REJECTED_UNDO_REQUEST" -> processOpponentRejectedUndoRequest(id)
-            "CHAT_MESSAGE" -> {
-                val data = extraData.split(':')
-                val messageContent = data[0]
-                val timeStamp = data[1]
-                processChatMessage(id, messageContent, timeStamp)
-            }
-        }
-    }
-
-    private fun onIncomingInvite(content: String) {
-        val data = content.split('|')
-
-        val opponentName = data[0]
-        val inviteId = data[1]
-        val timeStamp = data[2].toLong()
-
-        processIncomingInvite(inviteId, opponentName, timeStamp)
-    }
-
-    private fun processIncomingInvite(inviteId: String, opponentName: String, timeStamp: Long) {
-
-        savedInvites[inviteId] = InviteData(opponentName, timeStamp, InviteType.RECEIVED)
-
-//        incomingInviteDialog.showInvite(opponentName, inviteId)
-        gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
-    }
-
-    private fun processOpponentMove(gameId: String, moveNotation: String) {
-        val move = Move.fromChessNotation(moveNotation)
-
-        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.moveOpponent(move, false)
-
-        savedGames[gameId] = game
-
-        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE, move.timeStamp)
-    }
-
-    private fun processOpponentResigned(gameId: String) {
-        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.addNews(News(NewsType.OPPONENT_RESIGNED))
-        savedGames[gameId] = game
-        gameAdapter.updateCardStatus(gameId, GameStatus.GAME_WON)
-    }
-
-    private fun processOpponentOfferingDraw(gameId: String) {
-        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.addNews(News(NewsType.OPPONENT_OFFERED_DRAW))
-        savedGames[gameId] = game
-        gameAdapter.hasUpdate(gameId)
-    }
-
-    private fun processOpponentAcceptedDraw(gameId: String) {
-        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.addNews(News(NewsType.OPPONENT_ACCEPTED_DRAW))
-
-        savedGames[gameId] = game
-        gameAdapter.hasUpdate(gameId)
-    }
-
-    private fun processOpponentRejectedDraw(gameId: String) {
-        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.addNews(News(NewsType.OPPONENT_DECLINED_DRAW))
-        savedGames[gameId] = game
-
-        gameAdapter.hasUpdate(gameId)
-    }
-
-    private fun processOpponentRequestingUndo(gameId: String) {
-        gameAdapter.hasUpdate(gameId)
-        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REQUESTED_UNDO))
-    }
-
-    private fun processUndoRequestAccepted(gameId: String, numberOfMovesReversed: Int) {
-        gameAdapter.hasUpdate(gameId)
-        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
-        savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
-    }
-
-    private fun processOpponentRejectedUndoRequest(gameId: String) {
-        gameAdapter.hasUpdate(gameId)
-        savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REJECTED_UNDO))
-    }
-
-    private fun processChatMessage(gameId: String, messageContent: String, timeStamp: String) {
-        val message = ChatMessage(timeStamp, messageContent, MessageType.RECEIVED)
-        savedGames[gameId]?.chatMessages?.add(message)
-    }
+//    private fun processChatMessage(gameId: String, messageContent: String, timeStamp: String) {
+//        val message = ChatMessage(timeStamp, messageContent, MessageType.RECEIVED)
+//        savedGames[gameId]?.chatMessages?.add(message)
+//    }
 
     private fun setUserName(userName: String) {
         this.userName = userName
@@ -410,227 +434,185 @@ class MainActivity : ClientActivity() {
         createGameDialog.updateId(id)
     }
 
-    private fun onOpponentMoved(content: String) {
-        val data = content.split('|')
-
-        val gameId = data[0]
-        val moveNotation = data[1]
-        processOpponentMove(gameId, moveNotation)
-    }
-
-    private fun onOpponentResigned(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-
-        processOpponentResigned(gameId)
-    }
-
-    private fun onOpponentOfferedDraw(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-
-        processOpponentOfferingDraw(gameId)
-    }
-
-    private fun onOpponentAcceptedDraw(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-
-        processOpponentAcceptedDraw(gameId)
-    }
-
-    private fun onOpponentDeclinedDraw(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-
-        processOpponentRejectedDraw(gameId)
-    }
-
-    private fun onUndoRequested(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-
-        processOpponentRequestingUndo(gameId)
-    }
-
-    private fun onUndoAccepted(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-        val numberOfMovesReversed = data[1].toInt()
-
-        processUndoRequestAccepted(gameId, numberOfMovesReversed)
-    }
-
-    private fun onUndoRejected(gameId: String) {
-        processOpponentRejectedUndoRequest(gameId)
-    }
-
-    private fun onChatMessageReceived(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-        val timeStamp = data[1]
-        val messageContent = data[2]
-
-        processChatMessage(gameId, messageContent, timeStamp)
-    }
-
-    private fun parseActiveGameData(activeGamesData: String) {
-        val gamesData = activeGamesData.split(',')
-
-        var content = ""
-
-        for (gameData in gamesData) {
-            if (gameData.isBlank()) {
-                continue
-            }
-
-            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
-            val gameId = data[0]
-            val lastUpdated = data[1].toLong()
-            val opponentName = data[2]
-            val isPlayerWhite = data[3].toBoolean()
-            val currentPlayerToMove = data[4]
-            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
-            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
-            val winner = data[7]
-
-            val moves = ArrayList<Move>()
-
-            for (move in moveList) {
-                if (move.isNotBlank()) {
-                    moves += Move.fromChessNotation(move)
-                }
-            }
-
-            val messages = ArrayList<ChatMessage>()
-            for (message in chatMessages) {
-                if (message.isNotBlank()) {
-                    val messageData = message.split('~')
-                    val senderId = messageData[0]
-                    val timeStamp = messageData[1]
-                    val messageContent = messageData[2]
-
-                    val type = if (senderId == id) MessageType.SENT else MessageType.RECEIVED
-
-                    messages += ChatMessage(timeStamp, messageContent, type)
-                }
-            }
-
-            val gameStatus = if (winner.isBlank()) {
-                if (currentPlayerToMove == id) {
-                    GameStatus.PLAYER_MOVE
-                } else {
-                    GameStatus.OPPONENT_MOVE
-                }
-            } else if (winner == id) {
-                GameStatus.GAME_WON
-            } else if (winner == "draw") {
-                GameStatus.GAME_DRAW
-            } else {
-                GameStatus.GAME_LOST
-            }
-
-            content += "$gameId|$lastUpdated|$opponentName|$gameStatus|$isPlayerWhite|true\n"
-
-            val newGame = MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves, messages)
-            newGame.status = gameStatus
-
-            savedGames[gameId] = newGame
-            gameAdapter += GameCardItem(gameId, lastUpdated, opponentName, gameStatus, isPlayerWhite, hasUpdate = false)
-        }
-
-        FileManager.write(this, "game.txt", content)
-    }
-
-    private fun parseReceivedInvitesData(receivedInviteData: String) {
-        val invitesData = receivedInviteData.split(',')
-
-        for (inviteData in invitesData) {
-            if (inviteData.isBlank()) {
-                continue
-            }
-
-            val data = inviteData.split('|')
-            val gameId = data[0]
-            val timeStamp = data[1].toLong()
-            val invitingUsername = data[2]
-
-            gameAdapter += GameCardItem(gameId, timeStamp, invitingUsername, GameStatus.INVITE_RECEIVED, hasUpdate = false)
-        }
-    }
-
-    private fun parsePendingInvitesData(pendingInvitesData: String) {
-        val invitesData = pendingInvitesData.split(',')
-
-        for (inviteData in invitesData) {
-            if (inviteData.isBlank()) {
-                continue
-            }
-
-            val data = inviteData.split('|')
-            val gameId = data[0]
-            val timeStamp = data[1].toLong()
-            val invitingUsername = data[2]
-
-            gameAdapter += GameCardItem(gameId, timeStamp, invitingUsername, GameStatus.INVITE_PENDING, hasUpdate = false)
-        }
-    }
-
-    private fun parseRecentOpponents(recentOpponentsData: String) {
-        val opponentsData = recentOpponentsData.split(',')
-
-        for (opponentData in opponentsData) {
-            if (opponentData.isBlank()) {
-                continue
-            }
-
-            val data = opponentData.split('|')
-            val opponentName = data[0]
-            val opponentId = data[1]
-
-            updateRecentOpponents(Pair(opponentName, opponentId))
-        }
-    }
-
-    private fun processUpdatedGames(updatedGameData: String) {
-        val updatedGameIds = updatedGameData.split(' ')
-
-        for (gameId in updatedGameIds) {
-            if (gameId.isBlank()) {
-                continue
-            }
-
-            gameAdapter.hasUpdate(gameId)
-        }
-    }
-
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
+//    private fun onOpponentMoved(content: String) {
+//        val data = content.split('|')
 //
-//        if (data == null) {
-//            return
+//        val gameId = data[0]
+//        val moveNotation = data[1]
+//        processOpponentMove(gameId, moveNotation)
+//    }
+
+    override fun onOpponentResigned(gameId: String) {
+        gameAdapter.updateCardStatus(gameId, GameStatus.GAME_WON)
+    }
+
+    override fun onOpponentOfferedDraw(gameId: String) {
+        gameAdapter.hasUpdate(gameId)
+    }
+
+    override fun onOpponentAcceptedDraw(gameId: String) {
+        gameAdapter.hasUpdate(gameId)
+    }
+
+    override fun onOpponentRejectedDraw(gameId: String) {
+        gameAdapter.hasUpdate(gameId)
+    }
+
+//    private fun onUndoRequested(content: String) {
+//        val data = content.split('|')
+//        val gameId = data[0]
+//
+//        processOpponentRequestingUndo(gameId)
+//    }
+
+//    private fun onUndoAccepted(content: String) {
+//        val data = content.split('|')
+//        val gameId = data[0]
+//        val numberOfMovesReversed = data[1].toInt()
+//
+//        processUndoRequestAccepted(gameId, numberOfMovesReversed)
+//    }
+
+//    private fun onUndoRejected(gameId: String) {
+//        processOpponentRejectedUndoRequest(gameId)
+//    }
+//
+//    private fun onChatMessageReceived(content: String) {
+//        val data = content.split('|')
+//        val gameId = data[0]
+//        val timeStamp = data[1]
+//        val messageContent = data[2]
+//
+//        processChatMessage(gameId, messageContent, timeStamp)
+//    }
+//
+//    private fun parseActiveGameData(activeGamesData: String) {
+//        val gamesData = activeGamesData.split(',')
+//
+//        var content = ""
+//
+//        for (gameData in gamesData) {
+//            if (gameData.isBlank()) {
+//                continue
+//            }
+//
+//            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
+//            val gameId = data[0]
+//            val lastUpdated = data[1].toLong()
+//            val opponentName = data[2]
+//            val isPlayerWhite = data[3].toBoolean()
+//            val currentPlayerToMove = data[4]
+//            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
+//            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
+//            val winner = data[7]
+//
+//            val moves = ArrayList<Move>()
+//
+//            for (move in moveList) {
+//                if (move.isNotBlank()) {
+//                    moves += Move.fromChessNotation(move)
+//                }
+//            }
+//
+//            val messages = ArrayList<ChatMessage>()
+//            for (message in chatMessages) {
+//                if (message.isNotBlank()) {
+//                    val messageData = message.split('~')
+//                    val senderId = messageData[0]
+//                    val timeStamp = messageData[1]
+//                    val messageContent = messageData[2]
+//
+//                    val type = if (senderId == id) MessageType.SENT else MessageType.RECEIVED
+//
+//                    messages += ChatMessage(timeStamp, messageContent, type)
+//                }
+//            }
+//
+//            val gameStatus = if (winner.isBlank()) {
+//                if (currentPlayerToMove == id) {
+//                    GameStatus.PLAYER_MOVE
+//                } else {
+//                    GameStatus.OPPONENT_MOVE
+//                }
+//            } else if (winner == id) {
+//                GameStatus.GAME_WON
+//            } else if (winner == "draw") {
+//                GameStatus.GAME_DRAW
+//            } else {
+//                GameStatus.GAME_LOST
+//            }
+//
+//            content += "$gameId|$lastUpdated|$opponentName|$gameStatus|$isPlayerWhite|true\n"
+//
+//            val newGame = MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves, messages)
+//            newGame.status = gameStatus
+//
+//            savedGames[gameId] = newGame
+//            gameAdapter += GameCardItem(gameId, lastUpdated, opponentName, gameStatus, isPlayerWhite, hasUpdate = false)
 //        }
 //
-//        if (requestCode == GAME_ACTIVITY_RESULT) {
-//            if (resultCode == Activity.RESULT_OK) {
-////                val gameId = data.getStringExtra("gameId") ?: throw IllegalArgumentException("Missing essential information: gameId")
-////                val lastUpdated = data.getLongExtra("lastUpdated", 0)
-////                val opponentName = data.getStringExtra("opponentName") ?: throw IllegalArgumentException("Missing essential information: opponentName")
-////                val gameStatus = data.getStringExtra("status") ?: throw IllegalArgumentException("Missing essential information: gameStatus")
-////                val isPlayingWhite = data.getBooleanExtra("isPlayingWhite", true)
-////                val hasUpdate = data.getBooleanExtra("hasUpdate",  true)
-////
-////                val gameCard = GameCardItem(gameId, lastUpdated, opponentName, GameStatus.fromString(gameStatus), isPlayingWhite, hasUpdate)
-////                val doesGameExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.isPlayingWhite)
-////                if (!doesGameExist) {
-////                    gameAdapter += gameCard
-////                }
-////
-////
-////                println("STORING NEW STATUS: $gameId $gameStatus")
+//        FileManager.write(this, "game.txt", content)
+//    }
 //
-////                SavedGames.get(gameId)?.status = GameStatus.fromString(gameStatus)
+//    private fun parseReceivedInvitesData(receivedInviteData: String) {
+//        val invitesData = receivedInviteData.split(',')
+//
+//        for (inviteData in invitesData) {
+//            if (inviteData.isBlank()) {
+//                continue
 //            }
+//
+//            val data = inviteData.split('|')
+//            val gameId = data[0]
+//            val timeStamp = data[1].toLong()
+//            val invitingUsername = data[2]
+//
+//            gameAdapter += GameCardItem(gameId, timeStamp, invitingUsername, GameStatus.INVITE_RECEIVED, hasUpdate = false)
+//        }
+//    }
+//
+//    private fun parsePendingInvitesData(pendingInvitesData: String) {
+//        val invitesData = pendingInvitesData.split(',')
+//
+//        for (inviteData in invitesData) {
+//            if (inviteData.isBlank()) {
+//                continue
+//            }
+//
+//            val data = inviteData.split('|')
+//            val gameId = data[0]
+//            val timeStamp = data[1].toLong()
+//            val invitingUsername = data[2]
+//
+//            gameAdapter += GameCardItem(gameId, timeStamp, invitingUsername, GameStatus.INVITE_PENDING, hasUpdate = false)
+//        }
+//    }
+//
+//    private fun parseRecentOpponents(recentOpponentsData: String) {
+//        val opponentsData = recentOpponentsData.split(',')
+//
+//        for (opponentData in opponentsData) {
+//            if (opponentData.isBlank()) {
+//                continue
+//            }
+//
+//            val data = opponentData.split('|')
+//            val opponentName = data[0]
+//            val opponentId = data[1]
+//
+//            updateRecentOpponents(Pair(opponentName, opponentId))
+//        }
+//    }
+//
+//    private fun processUpdatedGames(updatedGameData: String) {
+//        val updatedGameIds = updatedGameData.split(' ')
+//
+//        for (gameId in updatedGameIds) {
+//            if (gameId.isBlank()) {
+//                continue
+//            }
+//
+//            gameAdapter.hasUpdate(gameId)
 //        }
 //    }
 
@@ -722,119 +704,119 @@ class MainActivity : ClientActivity() {
         supportActionBar?.hide()
     }
 
-    private fun loadData() {
-        loadSavedGames()
-        loadReceivedInvites()
-        loadRecentOpponents()
-    }
+//    private fun loadData() {
+//        loadSavedGames()
+//        loadReceivedInvites()
+//        loadRecentOpponents()
+//    }
 
-    private fun loadSavedGames() {
-        val lines = FileManager.read(this, MULTIPLAYER_GAME_FILE) ?: ArrayList()
-
-        for (gameData in lines) {
-            if (gameData.isBlank()) {
-                continue
-            }
-
-            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
-            val gameId = data[0]
-            val lastUpdated = data[1].toLong()
-            val opponentName = data[2]
-            val isPlayerWhite = data[3].toBoolean()
-            val gameStatus = GameStatus.fromString(data[4])
-            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
-            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
-            val newsData = data[7].removePrefix("[").removeSuffix("]").split("\\")
-
-            val moves = ArrayList<Move>()
-
-            for (move in moveList) {
-                if (move.isNotBlank()) {
-                    moves += Move.fromChessNotation(move)
-                }
-            }
-
-            val messages = ArrayList<ChatMessage>()
-            for (message in chatMessages) {
-                if (message.isNotBlank()) {
-                    val messageData = message.split(',')
-                    val timeStamp = messageData[0]
-                    val messageContent = messageData[1]
-                    val type = MessageType.fromString(messageData[2])
-
-                    messages += ChatMessage(timeStamp, messageContent, type)
-                }
-            }
-
-            val newsUpdates = ArrayList<News>()
-            for (news in newsData) {
-                if (news.isBlank()) {
-                    continue
-                }
-
-                newsUpdates += News.fromString(news)
-            }
-
-            val newGame = MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves, messages, newsUpdates)
-            newGame.status = gameStatus
-
-            savedGames[gameId] = newGame
-
-            val doesCardExist = gameAdapter.updateGameCard(gameId, gameStatus, isPlayerWhite, false)
-
-            if (!doesCardExist) {
-                gameAdapter += GameCardItem(gameId, lastUpdated, opponentName, gameStatus, isPlayerWhite, false)
-            }
-        }
-    }
-
-    private fun loadReceivedInvites() {
-        val lines = FileManager.read(this, INVITES_FILE) ?: ArrayList()
-
-        for (line in lines) {
-            if (line.isBlank()) {
-                continue
-            }
-
-            val data = line.split('|')
-            val inviteId = data[0]
-            val opponentName = data[1]
-            val timeStamp = data[2].toLong()
-            val type = InviteType.fromString(data[3])
-
-            savedInvites[inviteId] = InviteData(opponentName, timeStamp, type)
-
-            val status = when (type) {
-                InviteType.PENDING -> GameStatus.INVITE_PENDING
-                InviteType.RECEIVED -> GameStatus.INVITE_RECEIVED
-            }
-
-            val hasUpdate = when (type) {
-                InviteType.PENDING -> false
-                InviteType.RECEIVED -> true
-            }
-
-            val doesCardExist = gameAdapter.containsCard(inviteId)
-            if (!doesCardExist) {
-                gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, status, null, hasUpdate)
-            }
-        }
-    }
-
-    private fun loadRecentOpponents() {
-        val lines = FileManager.read(this, RECENT_OPPONENTS_FILE) ?: ArrayList()
-
-        for (line in lines) {
-            if (line.isBlank()) {
-                continue
-            }
-
-            val data = line.split('|')
-            val opponentName = data[0]
-            val opponentId = data[1]
-            updateRecentOpponents(Pair(opponentName, opponentId))
-        }
-    }
+//    private fun loadSavedGames() {
+//        val lines = FileManager.read(this, MULTIPLAYER_GAME_FILE) ?: ArrayList()
+//
+//        for (gameData in lines) {
+//            if (gameData.isBlank()) {
+//                continue
+//            }
+//
+//            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
+//            val gameId = data[0]
+//            val lastUpdated = data[1].toLong()
+//            val opponentName = data[2]
+//            val isPlayerWhite = data[3].toBoolean()
+//            val gameStatus = GameStatus.fromString(data[4])
+//            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
+//            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
+//            val newsData = data[7].removePrefix("[").removeSuffix("]").split("\\")
+//
+//            val moves = ArrayList<Move>()
+//
+//            for (move in moveList) {
+//                if (move.isNotBlank()) {
+//                    moves += Move.fromChessNotation(move)
+//                }
+//            }
+//
+//            val messages = ArrayList<ChatMessage>()
+//            for (message in chatMessages) {
+//                if (message.isNotBlank()) {
+//                    val messageData = message.split(',')
+//                    val timeStamp = messageData[0]
+//                    val messageContent = messageData[1]
+//                    val type = MessageType.fromString(messageData[2])
+//
+//                    messages += ChatMessage(timeStamp, messageContent, type)
+//                }
+//            }
+//
+//            val newsUpdates = ArrayList<News>()
+//            for (news in newsData) {
+//                if (news.isBlank()) {
+//                    continue
+//                }
+//
+//                newsUpdates += News.fromString(news)
+//            }
+//
+//            val newGame = MultiPlayerGame(gameId, id!!, opponentName, isPlayerWhite, moves, messages, newsUpdates)
+//            newGame.status = gameStatus
+//
+//            savedGames[gameId] = newGame
+//
+//            val doesCardExist = gameAdapter.updateGameCard(gameId, gameStatus, isPlayerWhite, false)
+//
+//            if (!doesCardExist) {
+//                gameAdapter += GameCardItem(gameId, lastUpdated, opponentName, gameStatus, isPlayerWhite, false)
+//            }
+//        }
+//    }
+//
+//    private fun loadReceivedInvites() {
+//        val lines = FileManager.read(this, INVITES_FILE) ?: ArrayList()
+//
+//        for (line in lines) {
+//            if (line.isBlank()) {
+//                continue
+//            }
+//
+//            val data = line.split('|')
+//            val inviteId = data[0]
+//            val opponentName = data[1]
+//            val timeStamp = data[2].toLong()
+//            val type = InviteType.fromString(data[3])
+//
+//            savedInvites[inviteId] = InviteData(opponentName, timeStamp, type)
+//
+//            val status = when (type) {
+//                InviteType.PENDING -> GameStatus.INVITE_PENDING
+//                InviteType.RECEIVED -> GameStatus.INVITE_RECEIVED
+//            }
+//
+//            val hasUpdate = when (type) {
+//                InviteType.PENDING -> false
+//                InviteType.RECEIVED -> true
+//            }
+//
+//            val doesCardExist = gameAdapter.containsCard(inviteId)
+//            if (!doesCardExist) {
+//                gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, status, null, hasUpdate)
+//            }
+//        }
+//    }
+//
+//    private fun loadRecentOpponents() {
+//        val lines = FileManager.read(this, RECENT_OPPONENTS_FILE) ?: ArrayList()
+//
+//        for (line in lines) {
+//            if (line.isBlank()) {
+//                continue
+//            }
+//
+//            val data = line.split('|')
+//            val opponentName = data[0]
+//            val opponentId = data[1]
+//            updateRecentOpponents(Pair(opponentName, opponentId))
+//        }
+//    }
 
     private fun saveData() {
         saveGames()
@@ -989,8 +971,7 @@ class MainActivity : ClientActivity() {
             }
     }
 
-
-    fun newGameStarted(gameData: Pair<String, GameCardItem>?) {
+    override fun newGameStarted(gameData: Pair<String, GameCardItem>?) {
         if (gameData == null) {
             return
         }
@@ -1020,7 +1001,7 @@ class MainActivity : ClientActivity() {
         }
     }
 
-    fun updateInvites(invites: HashMap<String, InviteData>?) {
+    override fun updateInvites(invites: HashMap<String, InviteData>?) {
         if (invites == null) {
             return
         }
@@ -1030,7 +1011,7 @@ class MainActivity : ClientActivity() {
         }
     }
 
-    fun updateGamesAndInvites(data: Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>?) {
+    override fun updateGamesAndInvites(data: Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>?) {
         if (data == null) {
             return
         }
@@ -1038,7 +1019,6 @@ class MainActivity : ClientActivity() {
         updateGames(data.first)
         updateInvites(data.second)
     }
-
 
     companion object {
 
