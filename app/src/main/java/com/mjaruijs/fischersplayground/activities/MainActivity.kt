@@ -3,11 +3,8 @@ package com.mjaruijs.fischersplayground.activities
 import android.content.*
 import android.graphics.Color
 import android.os.Bundle
-import android.os.IBinder
-import android.os.Message
 import android.os.Messenger
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.core.view.ViewCompat
@@ -18,30 +15,21 @@ import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
-import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
-import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
-import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.chess.news.News
-import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
-import com.mjaruijs.fischersplayground.services.DataManagerService
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_DELETE_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAMES_AND_INVITES
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_MULTIPLAYER_GAMES
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_ID
 import com.mjaruijs.fischersplayground.userinterface.UIButton
-import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class MainActivity : ClientActivity() {
@@ -83,8 +71,8 @@ class MainActivity : ClientActivity() {
 
     private var stayingInApp = false
 
-    private val savedGames = HashMap<String, MultiPlayerGame>()
-    private val savedInvites = HashMap<String, InviteData>()
+//    private val savedGames = HashMap<String, MultiPlayerGame>()
+//    private val savedInvites = HashMap<String, InviteData>()
 
     private var maxTextSize = Float.MAX_VALUE
 
@@ -174,7 +162,7 @@ class MainActivity : ClientActivity() {
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
-        savedInvites[inviteId] = InviteData(opponentName, timeStamp, InviteType.PENDING)
+//        savedInvites[inviteId] = InviteData(opponentName, timeStamp, InviteType.PENDING)
         updateRecentOpponents(Pair(opponentName, opponentId))
     }
 
@@ -198,9 +186,10 @@ class MainActivity : ClientActivity() {
     }
 
     private fun onGameDeleted(gameId: String) {
-        savedGames.remove(gameId)
-        savedInvites.remove(gameId)
-        saveGames()
+        sendMessage(FLAG_DELETE_GAME, gameId)
+//        savedGames.remove(gameId)
+//        savedInvites.remove(gameId)
+//        saveGames()
     }
 
 //    private fun onNewGameStarted(content: String) {
@@ -326,12 +315,14 @@ class MainActivity : ClientActivity() {
 //        gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE, move.timeStamp)
 //    }
 
-    override fun onOpponentMoved(data: Triple<String, GameStatus, Long>?) {
+    override fun onOpponentMoved(data: MoveData?) {
         if (data == null) {
+            println("returning: Data is null")
+
             return
         }
 
-        gameAdapter.updateCardStatus(data.first, data.second, data.third)
+        gameAdapter.updateCardStatus(data.gameId, data.status, data.timeStamp)
     }
 
 //    private fun processOpponentResigned(gameId: String) {
@@ -637,10 +628,12 @@ class MainActivity : ClientActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (serviceBound) {
-//            serviceMessenger!!.send(Message.obtain(null, FLAG_GET_GAMES_AND_INVITES))
+        Thread {
+            while (!serviceBound) {
+                Thread.sleep(10)
+            }
             sendMessage(FLAG_GET_GAMES_AND_INVITES)
-        }
+        }.start()
 
         stayingInApp = false
 
@@ -670,7 +663,7 @@ class MainActivity : ClientActivity() {
 //        unregisterReceiver(opponentDeclinedDrawReceiver)
 //        unregisterReceiver(chatMessageReceiver)
 
-        saveData()
+//        saveData()
 
 //        println("MAIN_ACTIVITY: onStop")
         if (!stayingInApp) {
@@ -818,68 +811,68 @@ class MainActivity : ClientActivity() {
 //        }
 //    }
 
-    private fun saveData() {
-        saveGames()
-        saveReceivedInvites()
-        saveRecentOpponents()
-    }
-
-    private fun saveGames() {
-        var content = ""
-
-        for ((gameId, game) in savedGames) {
-            var moveData = "["
-
-            for ((i, move) in game.moves.withIndex()) {
-                moveData += move.toChessNotation()
-                if (i != game.moves.size - 1) {
-                    moveData += "\\"
-                }
-            }
-            moveData += "]"
-
-            var chatData = "["
-
-            for ((i, message) in game.chatMessages.withIndex()) {
-                chatData += message.toString()
-                if (i != game.chatMessages.size - 1) {
-                    chatData += "\\"
-                }
-            }
-            chatData += "]"
-
-            var newsContent = "["
-
-            for ((i, news) in game.newsUpdates.withIndex()) {
-                newsContent += news.toString()
-                if (i != game.newsUpdates.size - 1) {
-                    newsContent += "\\"
-                }
-            }
-            newsContent += "]"
-
-            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
-        }
-
-        FileManager.write(this, MULTIPLAYER_GAME_FILE, content)
-    }
-
-    private fun saveReceivedInvites() {
-        var content = ""
-
-        for ((inviteId, invite) in savedInvites) {
-            content += "$inviteId|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
-        }
-
-        FileManager.write(this, INVITES_FILE, content)
-    }
+//    private fun saveData() {
+//        saveGames()
+//        saveReceivedInvites()
+//        saveRecentOpponents()
+//    }
+//
+//    private fun saveGames() {
+//        var content = ""
+//
+//        for ((gameId, game) in savedGames) {
+//            var moveData = "["
+//
+//            for ((i, move) in game.moves.withIndex()) {
+//                moveData += move.toChessNotation()
+//                if (i != game.moves.size - 1) {
+//                    moveData += "\\"
+//                }
+//            }
+//            moveData += "]"
+//
+//            var chatData = "["
+//
+//            for ((i, message) in game.chatMessages.withIndex()) {
+//                chatData += message.toString()
+//                if (i != game.chatMessages.size - 1) {
+//                    chatData += "\\"
+//                }
+//            }
+//            chatData += "]"
+//
+//            var newsContent = "["
+//
+//            for ((i, news) in game.newsUpdates.withIndex()) {
+//                newsContent += news.toString()
+//                if (i != game.newsUpdates.size - 1) {
+//                    newsContent += "\\"
+//                }
+//            }
+//            newsContent += "]"
+//
+//            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
+//        }
+//
+////        FileManager.write(this, MULTIPLAYER_GAME_FILE, content)
+//    }
+//
+//    private fun saveReceivedInvites() {
+//        var content = ""
+//
+//        for ((inviteId, invite) in savedInvites) {
+//            content += "$inviteId|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
+//        }
+//
+////        FileManager.write(this, INVITES_FILE, content)
+//    }
 
     private fun saveRecentOpponents() {
         var data = ""
         for (recentOpponent in recentOpponents) {
             data += "${recentOpponent.first}|${recentOpponent.second}\n"
         }
-        FileManager.write(this, RECENT_OPPONENTS_FILE, data)
+//        FileManager.write(this, RECENT_OPPONENTS_FILE, data)
     }
 
     private fun preloadModels() {
@@ -987,7 +980,7 @@ class MainActivity : ClientActivity() {
         updateRecentOpponents(Pair(gameCard.opponentName, opponentId))
     }
 
-    override fun updateGames(games: HashMap<String, MultiPlayerGame>?) {
+    override fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
         if (games == null) {
             return
         }
@@ -1001,30 +994,51 @@ class MainActivity : ClientActivity() {
         }
     }
 
-    override fun updateInvites(invites: HashMap<String, InviteData>?) {
+    private fun restoreSavedInvites(invites: HashMap<String, InviteData>?) {
         if (invites == null) {
             return
         }
 
-        for ((inviteId, invite) in invites) {
-            gameAdapter += GameCardItem(inviteId, invite.timeStamp, invite.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
+        for ((inviteId, inviteData) in invites) {
+
+            val status = when (inviteData.type) {
+                InviteType.PENDING -> GameStatus.INVITE_PENDING
+                InviteType.RECEIVED -> GameStatus.INVITE_RECEIVED
+            }
+
+            val hasUpdate = when (inviteData.type) {
+                InviteType.PENDING -> false
+                InviteType.RECEIVED -> true
+            }
+
+            gameAdapter += GameCardItem(inviteId, inviteData.timeStamp, inviteData.opponentName, status, hasUpdate = hasUpdate)
         }
     }
 
-    override fun updateGamesAndInvites(data: Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>?) {
+    override fun onInviteReceived(inviteData: Pair<String, InviteData>?) {
+        super.onInviteReceived(inviteData)
+
+        if (inviteData == null) {
+            return
+        }
+
+        gameAdapter += GameCardItem(inviteData.first, inviteData.second.timeStamp, inviteData.second.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
+    }
+
+    override fun restoreSavedData(data: Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>?) {
         if (data == null) {
             return
         }
 
-        updateGames(data.first)
-        updateInvites(data.second)
+        restoreSavedGames(data.first)
+        restoreSavedInvites(data.second)
     }
 
     companion object {
 
-        const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
-        const val INVITES_FILE = "received_invites.txt"
-        const val RECENT_OPPONENTS_FILE = "recent_opponents.txt"
+//        const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
+//        const val INVITES_FILE = "received_invites.txt"
+//        const val RECENT_OPPONENTS_FILE = "recent_opponents.txt"
 
     }
 }

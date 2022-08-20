@@ -149,8 +149,8 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
     }
 
     private fun redoMove(move: Move) {
-        val fromPosition = move.getFromPosition(move.team)
-        val toPosition = move.getToPosition(move.team)
+        val fromPosition = move.getFromPosition(team)
+        val toPosition = move.getToPosition(team)
 
         val piece = Piece(move.movedPiece, move.team)
 
@@ -174,10 +174,10 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
     }
 
     protected fun undoMove(move: Move) {
-        val fromPosition = move.getToPosition(move.team)
-        val toPosition = move.getFromPosition(move.team)
+        val fromPosition = move.getToPosition(team)
+        val toPosition = move.getFromPosition(team)
 
-//        println("Undoing move from ${move.team}: from $fromPosition to $toPosition")
+        println("Undoing move from ${move.team}: from $fromPosition to $toPosition")
 
         val piece = Piece(move.movedPiece, move.team)
 
@@ -253,13 +253,15 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
         val actualFromPosition: Vector2
         val actualToPosition: Vector2
 
-        if (team == Team.WHITE) {
+        if (this.team == Team.WHITE) {
             actualFromPosition = fromPosition
             actualToPosition = toPosition
         } else {
             actualFromPosition = Vector2(7, 7) - fromPosition
             actualToPosition = Vector2(7, 7) - toPosition
         }
+
+        println("Move made from: $actualFromPosition, to: $actualToPosition")
 
         val move = Move(Time.getFullTimeStamp(), team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type, promotedPiece)
         if (!runInBackground) {

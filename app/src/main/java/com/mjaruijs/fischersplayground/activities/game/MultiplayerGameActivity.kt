@@ -12,7 +12,6 @@ import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightObserve
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvider
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
-import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.fragments.ChatFragment
@@ -42,7 +41,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         super.onCreate(savedInstanceState)
 
         gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
-        sendMessage(FLAG_GET_GAME, gameId)
 
         initChatBox()
 
@@ -62,19 +60,27 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         supportFragmentManager.commit {
             setReorderingAllowed(true)
             replace(R.id.chat_container, ChatFragment(::onChatMessageSent, ::translateChat, ::closeChat))
-            replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment())
+            replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, playerId, ::isChatOpened) {
+                glView.requestRender()
+            })
         }
     }
 
     override fun onResume() {
-        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|$gameId"))
+        Thread {
+            while (!serviceBound) {
+                Thread.sleep(10)
+            }
+            sendMessage(FLAG_GET_GAME, gameId)
+        }.start()
+        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId"))
         keyboardHeightProvider.observer = this
         super.onResume()
     }
 
     override fun onPause() {
         if (!stayingInApp) {
-            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|$gameId|away"))
+            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
         }
 
         sendMessage(FLAG_SAVE_GAME, game)
@@ -93,6 +99,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         runOnUiThread {
             getChatFragment().addMessages(game.chatMessages)
+            getActionBarFragment().game = game
         }
 
         runOnUiThread {
@@ -146,7 +153,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw)
                 NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
                 NewsType.OPPONENT_DECLINED_DRAW -> opponentRejectedDrawDialog.show(opponentName)
-                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
+                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, playerId)
                 NewsType.OPPONENT_ACCEPTED_UNDO -> {
                     game.undoMoves(news.data)
                     glView.requestRender()
@@ -167,7 +174,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun onChatMessageSent(message: ChatMessage) {
-        NetworkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "", "$gameId|$id|${message.timeStamp}|${message.message}"))
+        NetworkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "", "$gameId|$playerId|${message.timeStamp}|${message.message}"))
         (game as MultiPlayerGame).chatMessages += message
     }
 
@@ -204,7 +211,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onUndoRequested(gameId: String) {
         if (this.gameId == gameId) {
-            undoRequestedDialog.show(gameId, opponentName, id)
+            undoRequestedDialog.show(gameId, opponentName, playerId)
         }
     }
 
@@ -225,15 +232,15 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }
     }
 
-    override fun onOpponentMoved(data: Triple<String, GameStatus, Long>?) {
-        if (data == null) {
-            return
-        }
-
-        if (this.gameId != data.first) {
-            return
-        }
-    }
+//    override fun onOpponentMoved(data: MoveData?) {
+//        if (data == null) {
+//            return
+//        }
+//
+//        if (this.gameId != data.first) {
+//            return
+//        }
+//    }
 
     override fun onOpponentResigned(gameId: String) {
         if (this.gameId == gameId) {
@@ -248,7 +255,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun acceptDraw() {
-        NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$id"))
+        NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$playerId"))
         closeAndSaveGameAsDraw()
     }
 
@@ -288,7 +295,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 //            finish()
 
             stayingInApp = true
-            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|$gameId|online"))
+            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|online"))
 
 //            val intent = Intent(applicationContext, MainActivity::class.java)
 //            intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -313,6 +320,12 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             chatButtonAnimator.start()
 
             chatOpened = !chatOpened
+
+            if (chatOpened) {
+                getActionBarFragment().disableButtons()
+            } else {
+                getActionBarFragment().enableButtons()
+            }
         }
     }
 }

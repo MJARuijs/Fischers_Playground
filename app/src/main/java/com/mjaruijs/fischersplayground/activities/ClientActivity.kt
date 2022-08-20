@@ -7,15 +7,15 @@ import android.content.ServiceConnection
 import android.os.*
 import androidx.appcompat.app.AppCompatActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
-import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
+import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
 import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_CHAT_MESSAGE_RECEIVED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAMES_AND_INVITES
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_INVITES
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_INVITE
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_MULTIPLAYER_GAMES
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_ACCEPTED_DRAW
@@ -62,8 +62,8 @@ abstract class ClientActivity : AppCompatActivity() {
         serviceMessenger!!.send(message)
     }
 
-    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-        super.onCreate(savedInstanceState, persistentState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         incomingInviteDialog.create(this)
     }
 
@@ -79,11 +79,16 @@ abstract class ClientActivity : AppCompatActivity() {
         serviceBound = false
     }
 
-    open fun updateGames(games: HashMap<String, MultiPlayerGame>?) {}
+    open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}
 
-    open fun updateInvites(invites: HashMap<String, InviteData>?) {}
+    open fun onInviteReceived(inviteData: Pair<String, InviteData>?) {
+        if (inviteData == null) {
+            return
+        }
+        incomingInviteDialog.showInvite(inviteData.second.opponentName, inviteData.first)
+    }
 
-    open fun updateGamesAndInvites(data: Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>?) {}
+    open fun restoreSavedData(data: Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>?) {}
 
     open fun newGameStarted(gameData: Pair<String, GameCardItem>?) {}
 
@@ -93,7 +98,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open fun onUndoRequestRejected(gameId: String) {}
 
-    open fun onOpponentMoved(data: Triple<String, GameStatus, Long>?) {}
+    open fun onOpponentMoved(data: MoveData?) {}
 
     open fun onOpponentResigned(gameId: String) {}
 
@@ -117,11 +122,11 @@ abstract class ClientActivity : AppCompatActivity() {
             println("Received in Activity: ${msg.obj}")
 
             when (msg.what) {
-                FLAG_GET_MULTIPLAYER_GAMES -> activity.updateGames(msg.obj as? HashMap<String, MultiPlayerGame>)
-                FLAG_GET_INVITES -> activity.updateInvites(msg.obj as? HashMap<String, InviteData>)
-                FLAG_GET_GAMES_AND_INVITES -> activity.updateGamesAndInvites(msg.obj as? Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>)
+                FLAG_GET_MULTIPLAYER_GAMES -> activity.restoreSavedGames(msg.obj as? HashMap<String, MultiPlayerGame>)
+                FLAG_NEW_INVITE -> activity.onInviteReceived(msg.obj as? Pair<String, InviteData>)
+                FLAG_GET_GAMES_AND_INVITES -> activity.restoreSavedData(msg.obj as? Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>)
                 FLAG_NEW_GAME -> activity.newGameStarted(msg.obj as? Pair<String, GameCardItem>)
-                FLAG_OPPONENT_MOVED -> activity.onOpponentMoved(msg.obj as? Triple<String, GameStatus, Long>)
+                FLAG_OPPONENT_MOVED -> activity.onOpponentMoved(msg.obj as MoveData)
                 FLAG_UNDO_REQUESTED -> activity.onUndoRequested(msg.obj as String)
                 FLAG_UNDO_ACCEPTED -> activity.onUndoRequestAccepted(msg.obj as Pair<String, Int>?)
                 FLAG_UNDO_REJECTED -> activity.onUndoRequestRejected(msg.obj as String)

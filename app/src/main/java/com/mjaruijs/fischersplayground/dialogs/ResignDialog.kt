@@ -15,7 +15,7 @@ class ResignDialog {
 //        dialog = dialogBuilder.create()
     }
 
-    fun show(gameId: String, id: String, onResign: () -> Unit) {
+    fun show(onResign: () -> Unit) {
         dialogBuilder.setPositiveButton("Yes") { _, _ ->
             onResign()
         }

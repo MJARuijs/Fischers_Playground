@@ -24,6 +24,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.fragments.PlayerStatus
+import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_GAME_STATUS
 
@@ -70,7 +71,7 @@ abstract class GameActivity : ClientActivity() {
     var isPlayingWhite = true
 
     lateinit var gameId: String
-    lateinit var id: String
+    lateinit var playerId: String
     lateinit var userName: String
     lateinit var opponentName: String
 
@@ -112,7 +113,7 @@ abstract class GameActivity : ClientActivity() {
             throw IllegalArgumentException("Missing essential information: is_player_white")
         }
 
-        id = intent.getStringExtra("id") ?: throw IllegalArgumentException("Missing essential information: id")
+        playerId = intent.getStringExtra("id") ?: throw IllegalArgumentException("Missing essential information: id")
         userName = intent.getStringExtra("user_name") ?: throw IllegalArgumentException("Missing essential information: user_name")
         opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information: opponent_name")
 //        gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
@@ -146,6 +147,10 @@ abstract class GameActivity : ClientActivity() {
                 replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
             }
         }
+    }
+
+    fun getActionBarFragment(): ActionButtonsFragment {
+        return (supportFragmentManager.fragments.find { fragment -> fragment is ActionButtonsFragment } as ActionButtonsFragment)
     }
 
     open fun onContextCreated() {
@@ -582,7 +587,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     override fun onUserLeaveHint() {
-        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|$gameId|away"))
+        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
         super.onUserLeaveHint()
     }
 
@@ -622,11 +627,14 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun enableBackButton() {
+        getActionBarFragment().enableBackButton()
 //        findViewById<UIButton>(R.id.back_button).enable()
         glView.requestRender()
     }
 
     private fun enableForwardButton() {
+        getActionBarFragment().enableForwardButton()
+        glView.requestRender()
 //        findViewById<UIButton>(R.id.forward_button).enable()
     }
 

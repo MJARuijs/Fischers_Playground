@@ -12,6 +12,7 @@ class IncomingInviteDialog {
     private lateinit var dialogBuilder: AlertDialog.Builder
 
     fun create(context: Context) {
+        println("CREATING INVITE DIALOG")
         dialogBuilder = AlertDialog.Builder(context)
         dialogBuilder.setTitle("Incoming invite!")
     }

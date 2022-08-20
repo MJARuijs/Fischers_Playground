@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
 import android.widget.Toast
-import com.mjaruijs.fischersplayground.activities.MainActivity
 import com.mjaruijs.fischersplayground.activities.MessageReceiver
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
@@ -22,6 +21,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
 
 class DataManagerService : Service() {
 
@@ -51,13 +51,17 @@ class DataManagerService : Service() {
 
     private lateinit var serviceMessenger: Messenger
 
+    private val loadingData = AtomicBoolean(false)
+
     override fun onBind(intent: Intent?): IBinder {
         Toast.makeText(applicationContext, "Binding service.. ${intent?.getStringExtra("id")}", Toast.LENGTH_SHORT).show()
 
         serviceMessenger = Messenger(IncomingHandler(this))
 
         Thread {
-            loadSavedGames()
+            loadingData.set(true)
+            loadData()
+            loadingData.set(false)
         }.start()
 
         return serviceMessenger.binder
@@ -102,6 +106,9 @@ class DataManagerService : Service() {
         unregisterReceiver(opponentAcceptedDrawReceiver)
         unregisterReceiver(opponentDeclinedDrawReceiver)
         unregisterReceiver(chatMessageReceiver)
+
+        saveData()
+
         super.onDestroy()
     }
 
@@ -128,7 +135,12 @@ class DataManagerService : Service() {
                 }
 
                 FLAG_GET_MULTIPLAYER_GAMES -> msg.replyTo.send(Message.obtain(null, FLAG_GET_MULTIPLAYER_GAMES, service.savedGames))
-                FLAG_GET_GAMES_AND_INVITES -> msg.replyTo.send(Message.obtain(null, FLAG_GET_GAMES_AND_INVITES, Pair(service.savedGames, service.savedInvites)))
+                FLAG_GET_GAMES_AND_INVITES -> {
+                    while (service.loadingData.get()) {
+                        Thread.sleep(1)
+                    }
+                    msg.replyTo.send(Message.obtain(null, FLAG_GET_GAMES_AND_INVITES, Pair(service.savedGames, service.savedInvites)))
+                }
                 FLAG_SET_GAME_STATUS -> {
                     val data = msg.obj as? Pair<*, *> ?: return
                     if (data.first is String && data.second is GameStatus) {
@@ -144,6 +156,12 @@ class DataManagerService : Service() {
                 FLAG_GET_GAME -> {
                     val gameId = msg.obj as String
                     msg.replyTo.send(Message.obtain(null, FLAG_GET_GAME, service.savedGames[gameId]))
+                }
+                FLAG_DELETE_GAME -> {
+                    val id = msg.obj as String
+                    service.savedGames.remove(id)
+                    service.savedInvites.remove(id)
+                    service.saveData()
                 }
             }
         }
@@ -166,7 +184,7 @@ class DataManagerService : Service() {
         savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
         savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
 
-        sendMessage(FLAG_UNDO_ACCEPTED, gameId)
+        sendMessage(FLAG_UNDO_ACCEPTED, Pair(gameId, numberOfMovesReversed))
     }
 
     private fun onUndoRejected(gameId: String) {
@@ -240,12 +258,14 @@ class DataManagerService : Service() {
         val inviteId = data[1]
         val timeStamp = data[2].toLong()
 
-        savedInvites[inviteId] = InviteData(opponentName, timeStamp, InviteType.RECEIVED)
+        val inviteData = InviteData(opponentName, timeStamp, InviteType.RECEIVED)
+
+        savedInvites[inviteId] = inviteData
 
 //        incomingInviteDialog.showInvite(opponentName, inviteId)
 
 //        currentMessenger!!.send(Message.obtain(null, FLAG_GET_INVITES, savedInvites))
-        sendMessage(FLAG_GET_INVITES, savedInvites)
+        sendMessage(FLAG_NEW_INVITE, Pair(inviteId, inviteData))
 //        processIncomingInvite(inviteId, opponentName, timeStamp)
     }
 
@@ -264,8 +284,13 @@ class DataManagerService : Service() {
         sendMessage(FLAG_OPPONENT_MOVED, MoveData(gameId, GameStatus.PLAYER_MOVE, move.timeStamp))
     }
 
+    private fun loadData() {
+        loadSavedGames()
+        loadReceivedInvites()
+    }
+
     private fun loadSavedGames() {
-        val lines = FileManager.read(this, MainActivity.MULTIPLAYER_GAME_FILE) ?: ArrayList()
+        val lines = FileManager.read(this, MULTIPLAYER_GAME_FILE) ?: ArrayList()
 
         for (gameData in lines) {
             if (gameData.isBlank()) {
@@ -322,12 +347,111 @@ class DataManagerService : Service() {
 //        mainActivityClient.send(Message.obtain(null, FLAG_GET_MULTIPLAYER_GAMES, savedGames))
     }
 
+    private fun loadReceivedInvites() {
+        val lines = FileManager.read(this, INVITES_FILE) ?: ArrayList()
+
+        for (line in lines) {
+            if (line.isBlank()) {
+                continue
+            }
+
+            val data = line.split('|')
+            val inviteId = data[0]
+            val opponentName = data[1]
+            val timeStamp = data[2].toLong()
+            val type = InviteType.fromString(data[3])
+
+            savedInvites[inviteId] = InviteData(opponentName, timeStamp, type)
+
+//            val status = when (type) {
+//                InviteType.PENDING -> GameStatus.INVITE_PENDING
+//                InviteType.RECEIVED -> GameStatus.INVITE_RECEIVED
+//            }
+//
+//            val hasUpdate = when (type) {
+//                InviteType.PENDING -> false
+//                InviteType.RECEIVED -> true
+//            }
+//
+//            val doesCardExist = gameAdapter.containsCard(inviteId)
+//            if (!doesCardExist) {
+//                gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, status, null, hasUpdate)
+//            }
+        }
+    }
+
+    private fun saveData() {
+        saveGames()
+        saveReceivedInvites()
+    }
+
+    private fun saveGames() {
+        var content = ""
+
+        for ((gameId, game) in savedGames) {
+            var moveData = "["
+
+            for ((i, move) in game.moves.withIndex()) {
+                moveData += move.toChessNotation()
+                if (i != game.moves.size - 1) {
+                    moveData += "\\"
+                }
+            }
+            moveData += "]"
+
+            var chatData = "["
+
+            for ((i, message) in game.chatMessages.withIndex()) {
+                chatData += message.toString()
+                if (i != game.chatMessages.size - 1) {
+                    chatData += "\\"
+                }
+            }
+            chatData += "]"
+
+            var newsContent = "["
+
+            for ((i, news) in game.newsUpdates.withIndex()) {
+                newsContent += news.toString()
+                if (i != game.newsUpdates.size - 1) {
+                    newsContent += "\\"
+                }
+            }
+            newsContent += "]"
+
+            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
+        }
+
+        FileManager.write(this, MULTIPLAYER_GAME_FILE, content)
+    }
+
+    private fun saveReceivedInvites() {
+        var content = ""
+
+        for ((inviteId, invite) in savedInvites) {
+            content += "$inviteId|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
+        }
+
+        FileManager.write(this, INVITES_FILE, content)
+    }
+
+//    private fun saveRecentOpponents() {
+//        var data = ""
+//        for (recentOpponent in recentOpponents) {
+//            data += "${recentOpponent.first}|${recentOpponent.second}\n"
+//        }
+//        FileManager.write(this, MainActivity.RECENT_OPPONENTS_FILE, data)
+//    }
+
     companion object {
+        const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
+        const val INVITES_FILE = "received_invites.txt"
+        const val RECENT_OPPONENTS_FILE = "recent_opponents.txt"
 
         const val FLAG_REGISTER_CLIENT = 0
         const val FLAG_SET_ID = 1
         const val FLAG_GET_MULTIPLAYER_GAMES = 2
-        const val FLAG_GET_INVITES = 3
+        const val FLAG_NEW_INVITE = 3
         const val FLAG_GET_GAMES_AND_INVITES = 4
         const val FLAG_NEW_GAME = 5
         const val FLAG_OPPONENT_MOVED = 6
@@ -342,6 +466,7 @@ class DataManagerService : Service() {
         const val FLAG_SET_GAME_STATUS = 15
         const val FLAG_SAVE_GAME = 16
         const val FLAG_GET_GAME = 17
+        const val FLAG_DELETE_GAME = 18
 
 
     }
