@@ -29,6 +29,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override var clientMessenger = Messenger(IncomingHandler(this))
 
     private var stayingInApp = false
+
     private var chatInitialized = false
     private var chatOpened = false
     private var chatTranslation = 0
@@ -107,6 +108,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }
 
         setGameCallbacks()
+        super.setGame(game)
     }
 
     override fun onContextCreated() {

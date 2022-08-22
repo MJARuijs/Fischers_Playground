@@ -14,6 +14,7 @@ import androidx.core.graphics.drawable.toBitmap
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
@@ -27,6 +28,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     private val debugPaint = Paint()
 
     private var bitmap: Bitmap? = null
+    private var bitmapBounds = Rect()
 
     private var maxTextSize = 0f
     private var buttonTextSize = 200.0f
@@ -38,18 +40,17 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     private var cornerRadius = 0.0f
 
-    private var rect = Rect()
-
     private var centerVertically = true
-
-    var disabled = false
-    var buttonText = ""
+    private var textAlignment = TextAlignment.CENTER
 
     private var changeTextColorOnHover = true
     private var changeIconColorOnHover = true
 
     private var heldDown = false
     private var startClickTimer = -1L
+
+    var disabled = false
+    var buttonText = ""
 
     var onHold: () -> Unit = {}
     var onRelease: () -> Unit = {}
@@ -195,52 +196,15 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     fun setColoredDrawable(resourceId: Int): UIButton {
         val drawable = ResourcesCompat.getDrawable(resources, resourceId, null)
         bitmap = drawable!!.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ALPHA_8)
+        textAlignment = TextAlignment.BOTTOM
         return this
     }
 
     fun setTexturedDrawable(resourceId: Int): UIButton {
         val drawable = ResourcesCompat.getDrawable(resources, resourceId, null)
         bitmap = drawable!!.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        textAlignment = TextAlignment.BOTTOM
         return this
-    }
-
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-
-        if (bitmap != null) {
-            val scale = 0.5f
-
-            val halfViewWidth = (w / 2)
-            val halfDrawableWidth = (w * scale / 2)
-
-            val left = ((halfViewWidth - halfDrawableWidth).roundToInt())
-            val right = ((w * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
-
-            val drawableWidth = right - left
-
-            val top: Int
-            val bottom: Int
-
-            if (centerVertically) {
-                val halfViewHeight = (h / 2)
-                val halfDrawableHeight = (h * scale / 2)
-
-                top = ((halfViewHeight - halfDrawableHeight).roundToInt())
-                bottom = ((h * scale + halfViewHeight - halfDrawableHeight)).roundToInt()
-            } else {
-                top = 0
-
-                val maxHeight = (h * scale).roundToInt()
-                bottom = max(maxHeight, drawableWidth)
-            }
-
-//            val bottom = (h * scale).roundToInt()
-
-            rect = Rect(left, top, right, bottom)
-        }
-
-        val maxTextSize = calculateMaxTextSize()
-        onButtonInitialized(maxTextSize)
     }
 
     fun setOnButtonInitialized(onButtonInitialized: (Float) -> Unit): UIButton {
@@ -284,8 +248,18 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     fun setButtonTextSize(size: Float): UIButton {
         buttonTextSize = size
         textPaint.textSize = size
-
         invalidate()
+
+        calculateBitmapBounds()
+        return this
+    }
+
+    fun setFinalTextSize(size: Float): UIButton {
+        buttonTextSize = size
+        textPaint.textSize = size
+        invalidate()
+
+        calculateBitmapBounds()
         return this
     }
 
@@ -299,6 +273,65 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         return this
     }
 
+    private fun calculateBitmapBounds() {
+        val bottom = measuredHeight - abs(textPaint.descent()) - abs(textPaint.ascent())
+        val maxDimension = min(measuredWidth.toFloat(), bottom)
+
+        val left: Float
+        val right: Float
+
+        if (measuredWidth.toFloat() > maxDimension) {
+            val difference = measuredWidth.toFloat() - maxDimension
+            left = difference / 2f
+            right = measuredWidth.toFloat() - difference / 2f
+        } else {
+            left = 0f
+            right = measuredWidth.toFloat()
+        }
+
+        bitmapBounds = Rect(left.roundToInt(), 0, right.roundToInt(), bottom.roundToInt())
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+
+        if (bitmap != null) {
+            val scale = 0.5f
+
+            val halfViewWidth = (w / 2)
+            val halfDrawableWidth = (w * scale / 2)
+
+            val left = ((halfViewWidth - halfDrawableWidth).roundToInt())
+            val right = ((w * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
+
+            val drawableWidth = right - left
+
+            val top: Int
+            val bottom: Int
+
+            if (centerVertically) {
+                val halfViewHeight = (h / 2)
+                val halfDrawableHeight = (h * scale / 2)
+
+                top = ((halfViewHeight - halfDrawableHeight).roundToInt())
+                bottom = ((h * scale + halfViewHeight - halfDrawableHeight)).roundToInt()
+            } else {
+                top = 0
+
+                val maxHeight = (h * scale).roundToInt()
+                bottom = max(maxHeight, drawableWidth)
+            }
+
+//            val bottom = (h * scale).roundToInt()
+
+            bitmapBounds = Rect(left, top, right, bottom)
+//            println("OnSizeChanged: $buttonText")
+        }
+
+        val maxTextSize = calculateMaxTextSize()
+        onButtonInitialized(maxTextSize)
+    }
+
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
 
@@ -306,31 +339,45 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
             return
         }
 
-        val xPos = width / 2.0f
-        val yPos = (height / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)
+        val xPos = measuredWidth / 2.0f
+        val yPos = (measuredHeight / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)
 
         if (cornerRadius == 0.0f) {
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+            canvas.drawRect(0f, 0f, measuredWidth.toFloat(), measuredHeight.toFloat(), paint)
         } else {
-            canvas.drawRoundRect(0f, 0f, width.toFloat(), height.toFloat(), cornerRadius, cornerRadius, paint)
+            canvas.drawRoundRect(0f, 0f, measuredWidth.toFloat(), measuredHeight.toFloat(), cornerRadius, cornerRadius, paint)
         }
 
         if (bitmap != null) {
-            canvas.drawBitmap(bitmap!!, null, rect, textPaint)
+//            println("Bounds for $buttonText: ${bitmapBounds.left}, ${bitmapBounds.top}, ${bitmapBounds.right}, ${bitmapBounds.bottom}")
+//            canvas.drawRect(bitmapBounds, debugPaint)
+            canvas.drawBitmap(bitmap!!, null, bitmapBounds, textPaint)
         }
 
-        if (bitmap == null) {
-            canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
-        } else {
-            canvas.drawText(buttonText, xPos + textXOffset, rect.height() + abs(textPaint.ascent()), textPaint)
+        if (textAlignment == TextAlignment.CENTER) {
+//            println("$buttonText : Center $height ${textPaint.ascent()}")
+            canvas.drawText(buttonText, xPos + textXOffset, measuredHeight.toFloat() / 2f - (textPaint.ascent() + textPaint.descent()) / 2f, textPaint)
+        } else if (textAlignment == TextAlignment.BOTTOM) {
+//            println("$buttonText : bottom $height ${textPaint.ascent()} ${textPaint.descent()}")
+            canvas.drawText(buttonText, xPos + textXOffset, measuredHeight.toFloat() - textPaint.descent(), textPaint)
         }
+
+//        if (bitmap == null) {
+//            println("DRAWING TEXT NULL: $buttonText")
+//            canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
+//        } else {
+//            println("DRAWING TEXT : $buttonText")
+//
+//            canvas.drawText(buttonText, xPos + textXOffset, rect.height() + abs(textPaint.ascent()), textPaint)
+////            canvas.drawText(buttonText, 0f, 0f, textPaint)
+//        }
     }
 
     private fun calculateMaxTextSize(): Float {
         val size = 35f
         val bounds = Rect()
         textPaint.getTextBounds(buttonText, 0, buttonText.length, bounds)
-        maxTextSize = size * width.toFloat() / bounds.width()
+        maxTextSize = size * measuredWidth.toFloat() / bounds.width()
 
 //        println("Max text size for : $buttonText: $maxTextSize")
 

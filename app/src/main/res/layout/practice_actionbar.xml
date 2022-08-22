@@ -14,7 +14,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/stop_recording_button"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/record_icon" />
 
     <com.mjaruijs.fischersplayground.userinterface.UIButton
         android:id="@+id/stop_recording_button"
@@ -24,7 +25,8 @@
         app:layout_constraintEnd_toStartOf="@id/back_button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/start_recording_button"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/stop_icon" />
 
     <com.mjaruijs.fischersplayground.userinterface.UIButton
         android:id="@+id/back_button"
@@ -34,7 +36,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/stop_recording_button"
         app:layout_constraintEnd_toStartOf="@id/forward_button"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/arrow_back" />
 
     <com.mjaruijs.fischersplayground.userinterface.UIButton
         android:id="@+id/forward_button"
@@ -44,5 +47,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/back_button"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/arrow_forward" />
 </androidx.constraintlayout.widget.ConstraintLayout>

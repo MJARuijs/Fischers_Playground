@@ -4,7 +4,6 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.dialogs.OfferDrawDialog
 import com.mjaruijs.fischersplayground.dialogs.ResignDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
@@ -14,37 +13,13 @@ import com.mjaruijs.fischersplayground.userinterface.UIButton
 
 class MultiplayerActionButtonsFragment(private val gameId: String, private val playerId: String, private val isChatOpened: () -> Boolean, requestRender: () -> Unit) : ActionButtonsFragment(R.layout.multiplayer_actionbar, requestRender) {
 
-//    private var maxTextSize = Float.MAX_VALUE
-
     private lateinit var resignButton: UIButton
     private lateinit var offerDrawButton: UIButton
     private lateinit var redoButton: UIButton
-//    private lateinit var backButton: UIButton
-//    private lateinit var forwardButton: UIButton
     private val resignDialog = ResignDialog()
     private val offerDrawDialog = OfferDrawDialog()
 
-//    lateinit var game: MultiPlayerGame
-
-//    fun enableBackButton() {
-//        backButton.enable()
-//    }
-//
-//    fun enableForwardButton() {
-//        forwardButton.enable()
-//    }
-
-    override fun onButtonInitialized(textSize: Float) {
-        if (textSize < maxTextSize) {
-            maxTextSize = textSize
-
-            resignButton.setButtonTextSize(maxTextSize)
-            offerDrawButton.setButtonTextSize(maxTextSize)
-            redoButton.setButtonTextSize(maxTextSize)
-            backButton.setButtonTextSize(maxTextSize)
-            forwardButton.setButtonTextSize(maxTextSize)
-        }
-    }
+    override var numberOfButtons = 5
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -97,7 +72,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val p
 
                 offerDrawDialog.show(gameId, playerId)
             }
-//
+
         redoButton = view.findViewById(R.id.request_redo_button)
         redoButton
             .setText("Undo")
@@ -117,65 +92,8 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val p
                 NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "request_undo", "$gameId|$playerId"))
             }
 
-        backButton = view.findViewById(R.id.back_button)
-        backButton
-            .setText("Back")
-            .setColoredDrawable(R.drawable.arrow_back)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColor(buttonBackgroundColor)
-            .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .disable()
-            .setOnClickListener {
-                if ((it as UIButton).disabled || isChatOpened()) {
-                    return@setOnClickListener
-                }
-
-                val buttonStates = game.showPreviousMove()
-                if (buttonStates.first) {
-                    it.disable()
-                }
-                if (buttonStates.second) {
-                    game.clearBoardData()
-                    enableForwardButton()
-//                    view.findViewById<UIButton>(R.id.forward_button)?.enable()
-//                    forwardButton.enable()
-                }
-                requestRender()
-            }
-//
-        forwardButton = view.findViewById(R.id.forward_button)
-        forwardButton
-            .setText("Forward")
-            .setColoredDrawable(R.drawable.arrow_forward)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColor(buttonBackgroundColor)
-            .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
-            .disable()
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
-                if ((it as UIButton).disabled || isChatOpened()) {
-                    return@setOnClickListener
-                }
-
-                val buttonStates = game.showNextMove()
-                if (buttonStates.first) {
-                    it.disable()
-                }
-                if (buttonStates.second) {
-                    enableBackButton()
-//                    view.findViewById<UIButton>(R.id.back_button)?.enable()
-//                    backButton.enable()
-                }
-                requestRender()
-            }
+        buttons += resignButton
+        buttons += offerDrawButton
+        buttons += redoButton
     }
-
-
 }

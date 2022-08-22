@@ -4,7 +4,6 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
-import android.widget.Toast
 import com.mjaruijs.fischersplayground.activities.MessageReceiver
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
@@ -21,7 +20,10 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
 import java.lang.ref.WeakReference
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class DataManagerService : Service() {
 
@@ -45,8 +47,8 @@ class DataManagerService : Service() {
 
     private val savedGames = HashMap<String, MultiPlayerGame>()
     private val savedInvites = HashMap<String, InviteData>()
+    private val recentOpponents = Stack<Pair<String, String>>()
 
-    lateinit var mainActivityClient: Messenger
     var currentClient: Messenger? = null
 
     private lateinit var serviceMessenger: Messenger
@@ -54,7 +56,7 @@ class DataManagerService : Service() {
     private val loadingData = AtomicBoolean(false)
 
     override fun onBind(intent: Intent?): IBinder {
-        Toast.makeText(applicationContext, "Binding service.. ${intent?.getStringExtra("id")}", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(applicationContext, "Binding service.. ${intent?.getStringExtra("id")}", Toast.LENGTH_SHORT).show()
 
         serviceMessenger = Messenger(IncomingHandler(this))
 
@@ -68,14 +70,14 @@ class DataManagerService : Service() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        Toast.makeText(applicationContext, "Unbound service..", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(applicationContext, "Unbound service..", Toast.LENGTH_SHORT).show()
 
         return super.onUnbind(intent)
     }
 
     override fun onCreate() {
         super.onCreate()
-        Toast.makeText(applicationContext, "Service created..", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(applicationContext, "Service created..", Toast.LENGTH_SHORT).show()
         val preferences = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE)
         id = preferences.getString("ID", "")!!
 
@@ -93,7 +95,7 @@ class DataManagerService : Service() {
     }
 
     override fun onDestroy() {
-        Toast.makeText(applicationContext, "Service destroyed..", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(applicationContext, "Service destroyed..", Toast.LENGTH_SHORT).show()
         unregisterReceiver(newGameReceiver)
         unregisterReceiver(inviteReceiver)
 //        unregisterReceiver(newsReceiver)
@@ -135,11 +137,11 @@ class DataManagerService : Service() {
                 }
 
                 FLAG_GET_MULTIPLAYER_GAMES -> msg.replyTo.send(Message.obtain(null, FLAG_GET_MULTIPLAYER_GAMES, service.savedGames))
-                FLAG_GET_GAMES_AND_INVITES -> {
+                FLAG_GET_ALL_DATA -> {
                     while (service.loadingData.get()) {
                         Thread.sleep(1)
                     }
-                    msg.replyTo.send(Message.obtain(null, FLAG_GET_GAMES_AND_INVITES, Pair(service.savedGames, service.savedInvites)))
+                    msg.replyTo.send(Message.obtain(null, FLAG_GET_ALL_DATA, Triple(service.savedGames, service.savedInvites, service.recentOpponents)))
                 }
                 FLAG_SET_GAME_STATUS -> {
                     val data = msg.obj as? Pair<*, *> ?: return
@@ -162,6 +164,15 @@ class DataManagerService : Service() {
                     service.savedGames.remove(id)
                     service.savedInvites.remove(id)
                     service.saveData()
+                }
+                FLAG_ADD_RECENT_OPPONENT -> {
+                    val data = msg.obj as Pair<*, *>
+                    if (data.first is String && data.second is String) {
+                        service.updateRecentOpponents(data as Pair<String, String>)
+                    }
+                }
+                FLAG_GET_RECENT_OPPONENTS -> {
+                    msg.replyTo.send(Message.obtain(null, FLAG_GET_RECENT_OPPONENTS, service.recentOpponents))
                 }
             }
         }
@@ -246,9 +257,14 @@ class DataManagerService : Service() {
         val newGame = MultiPlayerGame(inviteId, id, opponentName, playingWhite)
         savedGames[inviteId] = newGame
         savedInvites.remove(inviteId)
+        updateRecentOpponents(Pair(opponentName, opponentId))
 
         val hasUpdate = newGameStatus == GameStatus.PLAYER_MOVE
         sendMessage(FLAG_NEW_GAME, Pair(opponentId, GameCardItem(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, hasUpdate)))
+
+        Thread {
+            saveData()
+        }.start()
     }
 
     private fun onIncomingInvite(content: String) {
@@ -284,9 +300,44 @@ class DataManagerService : Service() {
         sendMessage(FLAG_OPPONENT_MOVED, MoveData(gameId, GameStatus.PLAYER_MOVE, move.timeStamp))
     }
 
+    private fun updateRecentOpponents(newOpponent: Pair<String, String>?) {
+        if (newOpponent == null) {
+            return
+        }
+        if (newOpponent.second == id) {
+            return
+        }
+
+        val temp = Stack<Pair<String, String>>()
+
+        while (temp.size < 2 && recentOpponents.isNotEmpty()) {
+            val opponent = recentOpponents.pop()
+
+            if (opponent == newOpponent) {
+                continue
+            }
+
+            temp.push(opponent)
+        }
+
+        while (recentOpponents.isNotEmpty()) {
+            recentOpponents.pop()
+        }
+
+        for (i in 0 until temp.size) {
+            recentOpponents.push(temp.pop())
+        }
+
+        recentOpponents.push(newOpponent)
+        saveRecentOpponents()
+
+//        createGameDialog.setRecentOpponents(recentOpponents)
+    }
+
     private fun loadData() {
         loadSavedGames()
         loadReceivedInvites()
+        loadRecentOpponents()
     }
 
     private fun loadSavedGames() {
@@ -380,9 +431,25 @@ class DataManagerService : Service() {
         }
     }
 
+    private fun loadRecentOpponents() {
+        val lines = FileManager.read(this, RECENT_OPPONENTS_FILE) ?: ArrayList()
+
+        for (line in lines) {
+            if (line.isBlank()) {
+                continue
+            }
+
+            val data = line.split('|')
+            val opponentName = data[0]
+            val opponentId = data[1]
+            updateRecentOpponents(Pair(opponentName, opponentId))
+        }
+    }
+
     private fun saveData() {
         saveGames()
         saveReceivedInvites()
+        saveRecentOpponents()
     }
 
     private fun saveGames() {
@@ -435,13 +502,13 @@ class DataManagerService : Service() {
         FileManager.write(this, INVITES_FILE, content)
     }
 
-//    private fun saveRecentOpponents() {
-//        var data = ""
-//        for (recentOpponent in recentOpponents) {
-//            data += "${recentOpponent.first}|${recentOpponent.second}\n"
-//        }
-//        FileManager.write(this, MainActivity.RECENT_OPPONENTS_FILE, data)
-//    }
+    private fun saveRecentOpponents() {
+        var data = ""
+        for (recentOpponent in recentOpponents) {
+            data += "${recentOpponent.first}|${recentOpponent.second}\n"
+        }
+        FileManager.write(this, RECENT_OPPONENTS_FILE, data)
+    }
 
     companion object {
         const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
@@ -452,7 +519,7 @@ class DataManagerService : Service() {
         const val FLAG_SET_ID = 1
         const val FLAG_GET_MULTIPLAYER_GAMES = 2
         const val FLAG_NEW_INVITE = 3
-        const val FLAG_GET_GAMES_AND_INVITES = 4
+        const val FLAG_GET_ALL_DATA = 4
         const val FLAG_NEW_GAME = 5
         const val FLAG_OPPONENT_MOVED = 6
         const val FLAG_UNDO_REQUESTED = 7
@@ -467,6 +534,8 @@ class DataManagerService : Service() {
         const val FLAG_SAVE_GAME = 16
         const val FLAG_GET_GAME = 17
         const val FLAG_DELETE_GAME = 18
+        const val FLAG_ADD_RECENT_OPPONENT = 19
+        const val FLAG_GET_RECENT_OPPONENTS = 20
 
 
     }

@@ -45,7 +45,7 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
 //    var onCheckCleared: () -> Unit = {}
     var onCheckMate: (Team) -> Unit = {}
 
-    var onMoveMade: (Move) -> Unit = {}
+//    var onMoveMade: (Move) -> Unit = {}
 
     init {
         board.requestPossibleMoves = { square ->
@@ -62,7 +62,6 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
 
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
         val selectedSquare = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
-        println("SELECTED SQUARE: $selectedSquare")
         val action = processOnClick(selectedSquare)
 
         if (action == Action.SQUARE_SELECTED) {
@@ -71,6 +70,8 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
             board.deselectSquare()
         }
     }
+
+    fun getMoveIndex() = currentMoveIndex
 
     private fun incrementMoveCounter(): Int {
         currentMoveIndex++
@@ -117,7 +118,7 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
         return Pair(shouldDisableForwardButton, shouldEnableBackButton)
     }
 
-    protected fun isShowingCurrentMove(): Boolean {
+    fun isShowingCurrentMove(): Boolean {
         return if (moves.isEmpty()) {
             true
         } else {
@@ -271,7 +272,7 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
             moves += move
         }
 
-        onMoveMade(move)
+//        onMoveMade(move)
 
         return move
     }

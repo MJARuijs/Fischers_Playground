@@ -17,6 +17,11 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
 
     lateinit var game: Game
 
+    open var numberOfButtons: Int = 2
+    var numberOfButtonsInitialized = 0
+
+    val buttons = ArrayList<UIButton>()
+
     fun enableBackButton() {
         backButton.enable()
     }
@@ -69,7 +74,7 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
                 }
                 requestRender()
             }
-//
+
         forwardButton = view.findViewById(R.id.forward_button)
         forwardButton
             .setText("Forward")
@@ -96,14 +101,22 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
                 }
                 requestRender()
             }
+
+        buttons += backButton
+        buttons += forwardButton
     }
 
-    open fun onButtonInitialized(textSize: Float) {
+    fun onButtonInitialized(textSize: Float) {
         if (textSize < maxTextSize) {
             maxTextSize = textSize
+        }
 
-            backButton.setButtonTextSize(maxTextSize)
-            forwardButton.setButtonTextSize(maxTextSize)
+        numberOfButtonsInitialized++
+
+        if (numberOfButtonsInitialized == numberOfButtons) {
+            for (button in buttons) {
+                button.setFinalTextSize(maxTextSize)
+            }
         }
     }
 

@@ -14,9 +14,10 @@ import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
 import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_CHAT_MESSAGE_RECEIVED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAMES_AND_INVITES
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_ALL_DATA
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_INVITE
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_MULTIPLAYER_GAMES
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_RECENT_OPPONENTS
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_ACCEPTED_DRAW
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_MOVED
@@ -27,6 +28,8 @@ import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLA
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_REJECTED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_REQUESTED
 import java.lang.ref.WeakReference
+import java.util.*
+import kotlin.collections.HashMap
 
 abstract class ClientActivity : AppCompatActivity() {
 
@@ -88,7 +91,7 @@ abstract class ClientActivity : AppCompatActivity() {
         incomingInviteDialog.showInvite(inviteData.second.opponentName, inviteData.first)
     }
 
-    open fun restoreSavedData(data: Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>?) {}
+    open fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {}
 
     open fun newGameStarted(gameData: Pair<String, GameCardItem>?) {}
 
@@ -112,6 +115,8 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open fun setGame(game: MultiPlayerGame) {}
 
+    open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
+
     class IncomingHandler(activity: ClientActivity) : Handler() {
 
         private val activityReference = WeakReference(activity)
@@ -124,7 +129,7 @@ abstract class ClientActivity : AppCompatActivity() {
             when (msg.what) {
                 FLAG_GET_MULTIPLAYER_GAMES -> activity.restoreSavedGames(msg.obj as? HashMap<String, MultiPlayerGame>)
                 FLAG_NEW_INVITE -> activity.onInviteReceived(msg.obj as? Pair<String, InviteData>)
-                FLAG_GET_GAMES_AND_INVITES -> activity.restoreSavedData(msg.obj as? Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>)
+                FLAG_GET_ALL_DATA -> activity.restoreSavedData(msg.obj as? Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>)
                 FLAG_NEW_GAME -> activity.newGameStarted(msg.obj as? Pair<String, GameCardItem>)
                 FLAG_OPPONENT_MOVED -> activity.onOpponentMoved(msg.obj as MoveData)
                 FLAG_UNDO_REQUESTED -> activity.onUndoRequested(msg.obj as String)
@@ -135,6 +140,7 @@ abstract class ClientActivity : AppCompatActivity() {
                 FLAG_OPPONENT_REJECTED_DRAW -> activity.onOpponentRejectedDraw(msg.obj as String)
                 FLAG_CHAT_MESSAGE_RECEIVED -> activity.onChatMessageReceived(msg.obj as? Triple<String, String, String>)
                 FLAG_GET_GAME -> activity.setGame(msg.obj as MultiPlayerGame)
+                FLAG_GET_RECENT_OPPONENTS -> activity.updateRecentOpponents(msg.obj as Stack<Pair<String, String>>)
             }
 
         }

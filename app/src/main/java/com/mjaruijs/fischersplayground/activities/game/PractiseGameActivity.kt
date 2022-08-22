@@ -27,11 +27,17 @@ class PractiseGameActivity : GameActivity() {
         }
     }
 
-    override fun onContextCreated() {
-        super.onContextCreated()
+//    override fun onContextCreated() {
+//        super.onContextCreated()
+//        game = SinglePlayerGame()
+//        getActionBarFragment().game = game
+//        setGameCallbacks()
+//    }
+
+    override fun onResume() {
         game = SinglePlayerGame()
         getActionBarFragment().game = game
         setGameCallbacks()
+        super.onResume()
     }
-
 }

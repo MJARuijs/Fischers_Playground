@@ -25,8 +25,9 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_ADD_RECENT_OPPONENT
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_DELETE_GAME
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAMES_AND_INVITES
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_ALL_DATA
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_ID
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import java.util.*
@@ -67,7 +68,7 @@ class MainActivity : ClientActivity() {
 
     private lateinit var gameAdapter: GameAdapter
 
-    private val recentOpponents = Stack<Pair<String, String>>()
+//    private val recentOpponents = Stack<Pair<String, String>>()
 
     private var stayingInApp = false
 
@@ -128,42 +129,43 @@ class MainActivity : ClientActivity() {
         val preferences = getSharedPreferences("user_data", MODE_PRIVATE)
         return preferences.contains("ID")
     }
-
-    private fun updateRecentOpponents(newOpponent: Pair<String, String>) {
-        if (newOpponent.second == id) {
-            return
-        }
-
-        val temp = Stack<Pair<String, String>>()
-
-        while (temp.size < 2 && recentOpponents.isNotEmpty()) {
-            val opponent = recentOpponents.pop()
-
-            if (opponent == newOpponent) {
-                continue
-            }
-
-            temp.push(opponent)
-        }
-
-        while (recentOpponents.isNotEmpty()) {
-            recentOpponents.pop()
-        }
-
-        for (i in 0 until temp.size) {
-            recentOpponents.push(temp.pop())
-        }
-
-        recentOpponents.push(newOpponent)
-        saveRecentOpponents()
-
-        createGameDialog.setRecentOpponents(recentOpponents)
-    }
+//
+//    private fun updateRecentOpponents(newOpponent: Pair<String, String>) {
+//        if (newOpponent.second == id) {
+//            return
+//        }
+//
+//        val temp = Stack<Pair<String, String>>()
+//
+//        while (temp.size < 2 && recentOpponents.isNotEmpty()) {
+//            val opponent = recentOpponents.pop()
+//
+//            if (opponent == newOpponent) {
+//                continue
+//            }
+//
+//            temp.push(opponent)
+//        }
+//
+//        while (recentOpponents.isNotEmpty()) {
+//            recentOpponents.pop()
+//        }
+//
+//        for (i in 0 until temp.size) {
+//            recentOpponents.push(temp.pop())
+//        }
+//
+//        recentOpponents.push(newOpponent)
+//        saveRecentOpponents()
+//
+//        createGameDialog.setRecentOpponents(recentOpponents)
+//    }
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
+        sendMessage(FLAG_ADD_RECENT_OPPONENT, Pair(opponentName, opponentId))
 //        savedInvites[inviteId] = InviteData(opponentName, timeStamp, InviteType.PENDING)
-        updateRecentOpponents(Pair(opponentName, opponentId))
+//        updateRecentOpponents(Pair(opponentName, opponentId))
     }
 
     private fun onGameClicked(gameCard: GameCardItem) {
@@ -171,7 +173,7 @@ class MainActivity : ClientActivity() {
         gameAdapter.clearUpdate(gameCard, id!!)
 
         if (gameCard.gameStatus == GameStatus.INVITE_RECEIVED) {
-//            incomingInviteDialog.showInvite(gameCard.opponentName, gameCard.id)
+            incomingInviteDialog.showInvite(gameCard.opponentName, gameCard.id)
         } else if (gameCard.gameStatus != GameStatus.INVITE_PENDING) {
 //            saveData()
             val intent = Intent(this, MultiplayerGameActivity::class.java)
@@ -317,8 +319,6 @@ class MainActivity : ClientActivity() {
 
     override fun onOpponentMoved(data: MoveData?) {
         if (data == null) {
-            println("returning: Data is null")
-
             return
         }
 
@@ -632,7 +632,7 @@ class MainActivity : ClientActivity() {
             while (!serviceBound) {
                 Thread.sleep(10)
             }
-            sendMessage(FLAG_GET_GAMES_AND_INVITES)
+            sendMessage(FLAG_GET_ALL_DATA)
         }.start()
 
         stayingInApp = false
@@ -867,13 +867,13 @@ class MainActivity : ClientActivity() {
 ////        FileManager.write(this, INVITES_FILE, content)
 //    }
 
-    private fun saveRecentOpponents() {
-        var data = ""
-        for (recentOpponent in recentOpponents) {
-            data += "${recentOpponent.first}|${recentOpponent.second}\n"
-        }
-//        FileManager.write(this, RECENT_OPPONENTS_FILE, data)
-    }
+//    private fun saveRecentOpponents() {
+//        var data = ""
+//        for (recentOpponent in recentOpponents) {
+//            data += "${recentOpponent.first}|${recentOpponent.second}\n"
+//        }
+////        FileManager.write(this, RECENT_OPPONENTS_FILE, data)
+//    }
 
     private fun preloadModels() {
         PieceTextures.init(resources)
@@ -918,7 +918,7 @@ class MainActivity : ClientActivity() {
         gameRecyclerView.layoutManager = LinearLayoutManager(this)
         gameRecyclerView.adapter = gameAdapter
 
-//        incomingInviteDialog.create(this)
+        incomingInviteDialog.create(this)
         createGameDialog.create(id!!, this)
 
         findViewById<UIButton>(R.id.settings_button)
@@ -965,11 +965,7 @@ class MainActivity : ClientActivity() {
     }
 
     override fun newGameStarted(gameData: Pair<String, GameCardItem>?) {
-        if (gameData == null) {
-            return
-        }
-
-        val opponentId = gameData.first
+        val opponentId = gameData?.first ?: return
         val gameCard = gameData.second
 
         val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.isPlayingWhite, gameCard.hasUpdate)
@@ -977,15 +973,11 @@ class MainActivity : ClientActivity() {
             gameAdapter += gameCard
         }
 
-        updateRecentOpponents(Pair(gameCard.opponentName, opponentId))
+//        updateRecentOpponents(Pair(gameCard.opponentName, opponentId))
     }
 
     override fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
-        if (games == null) {
-            return
-        }
-
-        for ((gameId, game) in games) {
+        for ((gameId, game) in games ?: return) {
             val doesCardExist = gameAdapter.updateGameCard(gameId, game.status, game.isPlayingWhite, false)
 
             if (!doesCardExist) {
@@ -995,11 +987,7 @@ class MainActivity : ClientActivity() {
     }
 
     private fun restoreSavedInvites(invites: HashMap<String, InviteData>?) {
-        if (invites == null) {
-            return
-        }
-
-        for ((inviteId, inviteData) in invites) {
+        for ((inviteId, inviteData) in invites ?: return) {
 
             val status = when (inviteData.type) {
                 InviteType.PENDING -> GameStatus.INVITE_PENDING
@@ -1018,20 +1006,17 @@ class MainActivity : ClientActivity() {
     override fun onInviteReceived(inviteData: Pair<String, InviteData>?) {
         super.onInviteReceived(inviteData)
 
-        if (inviteData == null) {
-            return
-        }
-
-        gameAdapter += GameCardItem(inviteData.first, inviteData.second.timeStamp, inviteData.second.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
+        gameAdapter += GameCardItem(inviteData?.first ?: return, inviteData.second.timeStamp, inviteData.second.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
     }
 
-    override fun restoreSavedData(data: Pair<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>>?) {
-        if (data == null) {
-            return
-        }
-
-        restoreSavedGames(data.first)
+    override fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {
+        restoreSavedGames(data?.first ?: return)
         restoreSavedInvites(data.second)
+        updateRecentOpponents(data.third)
+    }
+
+    override fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {
+        createGameDialog.setRecentOpponents(opponents ?: return)
     }
 
     companion object {

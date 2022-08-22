@@ -185,20 +185,8 @@ abstract class GameActivity : ClientActivity() {
         game.onPieceTaken = ::onPieceTaken
         game.onPieceRegained = ::onPieceRegained
         game.onCheckMate = ::onCheckMate
-        game.onMoveMade = ::onMoveMade
 
         glView.setGame(game)
-    }
-
-    fun onMoveMade(move: Move) {
-//        val message = Message.obtain(null, 0, "Move made!")
-//        message.replyTo = messenger
-//
-//        try {
-//            dataServiceMessenger!!.send(message)
-//        } catch (e: RemoteException) {
-//            e.printStackTrace()
-//        }
     }
 
     private fun restorePreferences() {
@@ -505,7 +493,6 @@ abstract class GameActivity : ClientActivity() {
             val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
-
     }
 
     private fun setOpponentStatusIcon(gameId: String) {
@@ -544,8 +531,19 @@ abstract class GameActivity : ClientActivity() {
 //        registerReceiver(userStatusReceiver, statusFilter)
     }
 
+    override fun setGame(game: MultiPlayerGame) {
+        super.setGame(game)
+        if (game.moves.isNotEmpty()) {
+            if (game.getMoveIndex() != -1) {
+                getActionBarFragment().enableBackButton()
+            }
+            if (!game.isShowingCurrentMove()) {
+                getActionBarFragment().enableForwardButton()
+            }
+        }
+    }
+
     override fun onResume() {
-//        println("GAME_ACTIVITY: onResume")
         super.onResume()
 
         stayingInApp = false

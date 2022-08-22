@@ -37,9 +37,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activities.game.MultiplayerGameActivity" />
-        <activity android:name=".activities.game.SinglePlayerGameActivity" />
-        <activity android:name=".activities.game.PractiseGameActivity" />
+        <activity
+            android:name=".activities.game.MultiplayerGameActivity"
+            android:windowSoftInputMode="adjustNothing" />
+
+        <activity android:name=".activities.game.SinglePlayerGameActivity"
+            android:windowSoftInputMode="adjustNothing"/>
+        <activity android:name=".activities.game.PractiseGameActivity"
+            android:windowSoftInputMode="adjustNothing"/>
 
         <service android:name=".services.DataManagerService" />
     </application>
