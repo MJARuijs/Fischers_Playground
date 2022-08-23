@@ -126,7 +126,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
     override fun onBindViewHolder(holder: GameViewHolder, position: Int) {
         val gameCard = games[position]
         holder.gameStatusView.setBackgroundColor(gameCard.gameStatus.color)
-        holder.opponentNameView.text = gameCard.opponentName
+        holder.opponentNameView.text = "${gameCard.opponentName} : ${gameCard.lastUpdated}"
         holder.updateIndicator.visibility = if (gameCard.hasUpdate) VISIBLE else INVISIBLE
         holder.gameLayout.setOnClickListener {
             onGameClicked(gameCard)

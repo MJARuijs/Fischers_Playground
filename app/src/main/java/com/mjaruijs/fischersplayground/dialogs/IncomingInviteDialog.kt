@@ -12,12 +12,13 @@ class IncomingInviteDialog {
     private lateinit var dialogBuilder: AlertDialog.Builder
 
     fun create(context: Context) {
-        println("CREATING INVITE DIALOG")
         dialogBuilder = AlertDialog.Builder(context)
         dialogBuilder.setTitle("Incoming invite!")
+        dialog = dialogBuilder.create()
     }
 
     fun showInvite(invitingUser: String, inviteId: String) {
+        println("TRYING TO SHOW DIALOG")
         dialogBuilder.setMessage("$invitingUser is challenging you for a match!")
         dialogBuilder.setPositiveButton("Accept") { _, _ ->
             NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "accept_invite", inviteId))
@@ -27,6 +28,13 @@ class IncomingInviteDialog {
         }
 
         dialog = dialogBuilder.show()
+    }
+
+    fun dismiss() {
+        if (this::dialog.isInitialized) {
+            println("DISMISSING DIALOG")
+            dialog.dismiss()
+        }
     }
 
 }

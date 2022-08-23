@@ -1,9 +1,12 @@
 package com.mjaruijs.fischersplayground.services
 
-import android.app.Service
+import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
+import android.widget.Toast
+import com.mjaruijs.fischersplayground.activities.MainActivity
 import com.mjaruijs.fischersplayground.activities.MessageReceiver
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
@@ -19,6 +22,9 @@ import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -43,20 +49,58 @@ class DataManagerService : Service() {
     private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
     private val chatFilter = IntentFilter("mjaruijs.fischers_playground.CHAT_MESSAGE")
 
-    private lateinit var id: String
-
     private val savedGames = HashMap<String, MultiPlayerGame>()
     private val savedInvites = HashMap<String, InviteData>()
     private val recentOpponents = Stack<Pair<String, String>>()
 
-    var currentClient: Messenger? = null
-
-    private lateinit var serviceMessenger: Messenger
-
     private val loadingData = AtomicBoolean(false)
 
+    private var currentClient: Messenger? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var isServiceStarted = false
+
+    private lateinit var serviceMessenger: Messenger
+    private lateinit var id: String
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        startService()
+        return START_STICKY
+    }
+
+    private fun startService() {
+        if (isServiceStarted) return
+
+        Toast.makeText(this, "Service starting task", Toast.LENGTH_SHORT).show()
+        isServiceStarted = true
+        wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FischersPlayground::lock").apply {
+                acquire()
+            }
+        }
+
+//        GlobalScope.launch(Dispatchers.IO) {
+//
+//        }
+    }
+
+    private fun stopService() {
+        Toast.makeText(this, "Service stopping task", Toast.LENGTH_SHORT).show()
+
+        try {
+            wakeLock?.let {
+                if (it.isHeld) {
+                    it.release()
+                }
+            }
+            stopForeground(true)
+        } catch (e: Exception) {
+            println("Stopped without being started: ${e.message}")
+        }
+
+    }
+
     override fun onBind(intent: Intent?): IBinder {
-//        Toast.makeText(applicationContext, "Binding service.. ${intent?.getStringExtra("id")}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(applicationContext, "Binding service..", Toast.LENGTH_SHORT).show()
 
         serviceMessenger = Messenger(IncomingHandler(this))
 
@@ -70,14 +114,14 @@ class DataManagerService : Service() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-//        Toast.makeText(applicationContext, "Unbound service..", Toast.LENGTH_SHORT).show()
+        Toast.makeText(applicationContext, "Unbound service..", Toast.LENGTH_SHORT).show()
 
         return super.onUnbind(intent)
     }
 
     override fun onCreate() {
         super.onCreate()
-//        Toast.makeText(applicationContext, "Service created..", Toast.LENGTH_SHORT).show()
+        Toast.makeText(applicationContext, "Service created..", Toast.LENGTH_SHORT).show()
         val preferences = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE)
         id = preferences.getString("ID", "")!!
 
@@ -92,10 +136,13 @@ class DataManagerService : Service() {
         registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
         registerReceiver(chatMessageReceiver, chatFilter)
+
+        val notification = createNotification()
+        startForeground(1, notification)
     }
 
     override fun onDestroy() {
-//        Toast.makeText(applicationContext, "Service destroyed..", Toast.LENGTH_SHORT).show()
+        Toast.makeText(applicationContext, "Service destroyed..", Toast.LENGTH_SHORT).show()
         unregisterReceiver(newGameReceiver)
         unregisterReceiver(inviteReceiver)
 //        unregisterReceiver(newsReceiver)
@@ -118,6 +165,32 @@ class DataManagerService : Service() {
         currentClient!!.send(Message.obtain(null, flag, data))
     }
 
+    private fun createNotification(): Notification {
+        val channelId = "Fischers_server_connection"
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channel = NotificationChannel(channelId, "Fischers Notification Channel", NotificationManager.IMPORTANCE_HIGH).let {
+            it.description = "Fischers server connection"
+            it.enableVibration(true)
+            it
+        }
+
+        notificationManager.createNotificationChannel(channel)
+
+        val intent: PendingIntent = Intent(this, MainActivity::class.java).let { notificationIntent ->
+            PendingIntent.getActivity(this, 0, notificationIntent, 0)
+        }
+
+        val builder: Notification.Builder = Notification.Builder(this, channelId)
+
+        return builder
+            .setContentTitle("Fischers Playground")
+            .setContentText("It's your move!")
+            .setContentIntent(intent)
+            .setTicker("Tickie!")
+            .build()
+    }
+
     class IncomingHandler(service: DataManagerService) : Handler() {
 
         private val serviceReference = WeakReference(service)
@@ -129,12 +202,12 @@ class DataManagerService : Service() {
             service.currentClient = msg.replyTo
 
             when (msg.what) {
-                //TODO: Can this be removed? (probably)
-                FLAG_SET_ID -> {
-                    if (msg.obj is String) {
-                        service.id = msg.obj as String
-                    }
-                }
+//                //TODO: Can this be removed? (probably)
+//                FLAG_SET_ID -> {
+//                    if (msg.obj is String) {
+//                        service.id = msg.obj as String
+//                    }
+//                }
 
                 FLAG_GET_MULTIPLAYER_GAMES -> msg.replyTo.send(Message.obtain(null, FLAG_GET_MULTIPLAYER_GAMES, service.savedGames))
                 FLAG_GET_ALL_DATA -> {
@@ -165,10 +238,14 @@ class DataManagerService : Service() {
                     service.savedInvites.remove(id)
                     service.saveData()
                 }
-                FLAG_ADD_RECENT_OPPONENT -> {
-                    val data = msg.obj as Pair<*, *>
-                    if (data.first is String && data.second is String) {
-                        service.updateRecentOpponents(data as Pair<String, String>)
+                FLAG_STORE_SENT_INVITE -> {
+                    val data = msg.obj as Triple<*, *, *>
+                    if (data.first is String && data.second is String && data.third is InviteData) {
+                        val inviteId = data.first as String
+                        val opponentId = data.second as String
+                        val opponentName = (data.third as InviteData).opponentName
+                        service.updateRecentOpponents(Pair(opponentName, opponentId))
+                        service.savedInvites[inviteId] = data.third as InviteData
                     }
                 }
                 FLAG_GET_RECENT_OPPONENTS -> {
@@ -260,7 +337,7 @@ class DataManagerService : Service() {
         updateRecentOpponents(Pair(opponentName, opponentId))
 
         val hasUpdate = newGameStatus == GameStatus.PLAYER_MOVE
-        sendMessage(FLAG_NEW_GAME, Pair(opponentId, GameCardItem(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, hasUpdate)))
+        sendMessage(FLAG_NEW_GAME, GameCardItem(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, hasUpdate))
 
         Thread {
             saveData()
@@ -275,6 +352,10 @@ class DataManagerService : Service() {
         val timeStamp = data[2].toLong()
 
         val inviteData = InviteData(opponentName, timeStamp, InviteType.RECEIVED)
+
+        println("Got invite in service")
+
+        Toast.makeText(applicationContext, "GOT INVITE", Toast.LENGTH_SHORT).show()
 
         savedInvites[inviteId] = inviteData
 
@@ -330,8 +411,6 @@ class DataManagerService : Service() {
 
         recentOpponents.push(newOpponent)
         saveRecentOpponents()
-
-//        createGameDialog.setRecentOpponents(recentOpponents)
     }
 
     private fun loadData() {
@@ -394,8 +473,6 @@ class DataManagerService : Service() {
 
             savedGames[gameId] = newGame
         }
-
-//        mainActivityClient.send(Message.obtain(null, FLAG_GET_MULTIPLAYER_GAMES, savedGames))
     }
 
     private fun loadReceivedInvites() {
@@ -413,21 +490,6 @@ class DataManagerService : Service() {
             val type = InviteType.fromString(data[3])
 
             savedInvites[inviteId] = InviteData(opponentName, timeStamp, type)
-
-//            val status = when (type) {
-//                InviteType.PENDING -> GameStatus.INVITE_PENDING
-//                InviteType.RECEIVED -> GameStatus.INVITE_RECEIVED
-//            }
-//
-//            val hasUpdate = when (type) {
-//                InviteType.PENDING -> false
-//                InviteType.RECEIVED -> true
-//            }
-//
-//            val doesCardExist = gameAdapter.containsCard(inviteId)
-//            if (!doesCardExist) {
-//                gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, status, null, hasUpdate)
-//            }
         }
     }
 
@@ -447,9 +509,11 @@ class DataManagerService : Service() {
     }
 
     private fun saveData() {
-        saveGames()
-        saveReceivedInvites()
-        saveRecentOpponents()
+        Thread {
+            saveGames()
+            saveReceivedInvites()
+            saveRecentOpponents()
+        }.start()
     }
 
     private fun saveGames() {
@@ -534,7 +598,7 @@ class DataManagerService : Service() {
         const val FLAG_SAVE_GAME = 16
         const val FLAG_GET_GAME = 17
         const val FLAG_DELETE_GAME = 18
-        const val FLAG_ADD_RECENT_OPPONENT = 19
+        const val FLAG_STORE_SENT_INVITE = 19
         const val FLAG_GET_RECENT_OPPONENTS = 20
 
 

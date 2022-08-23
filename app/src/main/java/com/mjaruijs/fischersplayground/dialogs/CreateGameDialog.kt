@@ -1,17 +1,17 @@
 package com.mjaruijs.fischersplayground.dialogs
 
+import android.app.Activity
 import android.app.Dialog
-import android.content.Context
 import android.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerAdapter
 import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerCardItem
+import com.mjaruijs.fischersplayground.listeners.OnSearchViewChangedListener
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.listeners.OnSearchViewChangedListener
 import java.util.*
 
 class CreateGameDialog(private val onInvite: (String, Long, String, String) -> Unit) {
@@ -19,9 +19,11 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
     private lateinit var dialog: Dialog
     private lateinit var playerCardList: PlayerAdapter
 
+    private var recentOpponents = Stack<Pair<String, String>>()
+
     private var initialized = false
 
-    fun create(id: String, context: Context) {
+    fun create(id: String, context: Activity) {
         dialog = Dialog(context)
         dialog.setContentView(R.layout.create_game_dialog)
 
@@ -35,6 +37,10 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
         searchBar.setOnQueryTextListener(OnSearchViewChangedListener {
             if (searchBar.query.isNotBlank()) {
                 NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "search_players", "${searchBar.query}"))
+            } else {
+                context.runOnUiThread {
+                    loadRecentPlayers()
+                }
             }
         })
 
@@ -52,6 +58,8 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
     }
 
     fun setRecentOpponents(opponents: Stack<Pair<String, String>>) {
+        recentOpponents = opponents
+
         playerCardList.clear()
         for (opponent in opponents.reversed()) {
             playerCardList += PlayerCardItem(opponent.first, opponent.second)
@@ -63,10 +71,18 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
         onInvite(inviteId, timeStamp, opponentName, opponentId)
     }
 
+    private fun loadRecentPlayers() {
+        playerCardList.clear()
+        for (opponent in recentOpponents.reversed()) {
+            playerCardList += PlayerCardItem(opponent.first, opponent.second)
+        }
+    }
+
     fun show() {
         if (initialized) {
             val searchBar = dialog.findViewById<SearchView>(R.id.search_bar) ?: return
             searchBar.setQuery("", false)
+            loadRecentPlayers()
             dialog.show()
         }
     }
@@ -76,7 +92,6 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
     }
 
     fun addPlayers(name: String, id: String) {
-        println("ADDING PLAYERS: $name $id")
         playerCardList += PlayerCardItem(name, id)
     }
 

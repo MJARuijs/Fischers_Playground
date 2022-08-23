@@ -70,15 +70,21 @@ abstract class ClientActivity : AppCompatActivity() {
         incomingInviteDialog.create(this)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        incomingInviteDialog.dismiss()
+    }
+
     override fun onStart() {
         super.onStart()
-        bindService(Intent(this, DataManagerService::class.java), connection, Context.BIND_AUTO_CREATE)
+//        bindService(Intent(this, DataManagerService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
 
     override fun onStop() {
         super.onStop()
 
-        unbindService(connection)
+        incomingInviteDialog.dismiss()
+//        unbindService(connection)
         serviceBound = false
     }
 
@@ -93,7 +99,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {}
 
-    open fun newGameStarted(gameData: Pair<String, GameCardItem>?) {}
+    open fun newGameStarted(gameCard: GameCardItem) {}
 
     open fun onUndoRequested(gameId: String) {}
 
@@ -130,7 +136,7 @@ abstract class ClientActivity : AppCompatActivity() {
                 FLAG_GET_MULTIPLAYER_GAMES -> activity.restoreSavedGames(msg.obj as? HashMap<String, MultiPlayerGame>)
                 FLAG_NEW_INVITE -> activity.onInviteReceived(msg.obj as? Pair<String, InviteData>)
                 FLAG_GET_ALL_DATA -> activity.restoreSavedData(msg.obj as? Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>)
-                FLAG_NEW_GAME -> activity.newGameStarted(msg.obj as? Pair<String, GameCardItem>)
+                FLAG_NEW_GAME -> activity.newGameStarted(msg.obj as GameCardItem)
                 FLAG_OPPONENT_MOVED -> activity.onOpponentMoved(msg.obj as MoveData)
                 FLAG_UNDO_REQUESTED -> activity.onUndoRequested(msg.obj as String)
                 FLAG_UNDO_ACCEPTED -> activity.onUndoRequestAccepted(msg.obj as Pair<String, Int>?)
