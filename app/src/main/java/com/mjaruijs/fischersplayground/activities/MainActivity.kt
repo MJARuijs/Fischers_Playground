@@ -72,17 +72,12 @@ class MainActivity : ClientActivity() {
         id = preferences.getString("ID", "")
         userName = preferences.getString("USER_NAME", "")
 
-        Intent(this, FirebaseService::class.java).also {
-            startService(it)
-        }
+//        Intent(this, FirebaseService::class.java).also {
+//            startService(it)
+//        }
 
-        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
-            val token = result.token
-            println("GOT NEW TOKEN: $token")
-            getSharedPreferences("test", MODE_PRIVATE).edit().putString("token", token).apply()
-        }
-
-        FirebaseService.getToken(this)
+//        FirebaseService.getToken(this)
+//        FirebaseInstanceId.getInstance().instanceId
 //        startDataService()
 //        startService(Intent(this, DataManagerService::class.java))
 
@@ -100,6 +95,16 @@ class MainActivity : ClientActivity() {
 
             if (id != null && id!!.isNotBlank()) {
                 NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "id", "$id"))
+            }
+        }
+
+        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
+            val token = result.token
+            val currentToken = getSharedPreferences("firebase", MODE_PRIVATE).getString("token", "")!!
+
+            if (token != currentToken) {
+                getSharedPreferences("firebase", MODE_PRIVATE).edit().putString("token", token).apply()
+                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "token", "$id|$token"))
             }
         }
 

@@ -48,9 +48,9 @@ abstract class ClientActivity : AppCompatActivity() {
             serviceMessenger = Messenger(service)
             serviceBound = true
 
-            val registrationMessage = Message.obtain(null, FLAG_REGISTER_CLIENT, activityName)
-            registrationMessage.replyTo = clientMessenger
-            serviceMessenger!!.send(registrationMessage)
+//            val registrationMessage = Message.obtain(null, FLAG_REGISTER_CLIENT, activityName)
+//            registrationMessage.replyTo = clientMessenger
+//            serviceMessenger!!.send(registrationMessage)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -70,22 +70,22 @@ abstract class ClientActivity : AppCompatActivity() {
         incomingInviteDialog.create(this)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        incomingInviteDialog.dismiss()
-    }
-
     override fun onStart() {
         super.onStart()
-//        bindService(Intent(this, DataManagerService::class.java), connection, Context.BIND_AUTO_CREATE)
+        bindService(Intent(this, DataManagerService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
 
     override fun onStop() {
         super.onStop()
 
         incomingInviteDialog.dismiss()
-//        unbindService(connection)
+        unbindService(connection)
         serviceBound = false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        incomingInviteDialog.dismiss()
     }
 
     open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}

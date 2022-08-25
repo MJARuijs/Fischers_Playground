@@ -67,7 +67,6 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
         glClearColor(0.25f, 0.25f, 0.25f, 1f)
         glEnable(GL_BLEND)
         setOpenGLSettings()
-        println("CREATING OPENGL SURFACE")
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 

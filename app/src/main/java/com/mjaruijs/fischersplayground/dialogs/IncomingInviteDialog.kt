@@ -18,7 +18,6 @@ class IncomingInviteDialog {
     }
 
     fun showInvite(invitingUser: String, inviteId: String) {
-        println("TRYING TO SHOW DIALOG")
         dialogBuilder.setMessage("$invitingUser is challenging you for a match!")
         dialogBuilder.setPositiveButton("Accept") { _, _ ->
             NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "accept_invite", inviteId))
@@ -32,7 +31,6 @@ class IncomingInviteDialog {
 
     fun dismiss() {
         if (this::dialog.isInitialized) {
-            println("DISMISSING DIALOG")
             dialog.dismiss()
         }
     }

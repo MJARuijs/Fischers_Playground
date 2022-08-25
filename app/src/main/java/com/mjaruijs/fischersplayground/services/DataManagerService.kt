@@ -1,12 +1,10 @@
 package com.mjaruijs.fischersplayground.services
 
 import android.app.*
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
 import android.widget.Toast
-import com.mjaruijs.fischersplayground.activities.MainActivity
 import com.mjaruijs.fischersplayground.activities.MessageReceiver
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
@@ -22,9 +20,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -34,7 +29,7 @@ import kotlin.collections.HashMap
 class DataManagerService : Service() {
 
     private val newGameReceiver = MessageReceiver(Topic.INFO, "new_game", ::onNewGameStarted)
-    private val gameUpdateReceiver = MessageReceiver(Topic.GAME_UPDATE, "move", ::onOpponentMoved)
+    private val opponentMovedReceiver = MessageReceiver(Topic.GAME_UPDATE, "move", ::onOpponentMoved)
     private val inviteReceiver = MessageReceiver(Topic.INFO, "invite", ::onIncomingInvite)
     private val requestUndoReceiver = MessageReceiver(Topic.GAME_UPDATE, "request_undo", ::onUndoRequested)
     private val undoAcceptedReceiver = MessageReceiver(Topic.GAME_UPDATE, "accepted_undo", ::onUndoAccepted)
@@ -56,65 +51,63 @@ class DataManagerService : Service() {
     private val loadingData = AtomicBoolean(false)
 
     private var currentClient: Messenger? = null
-    private var wakeLock: PowerManager.WakeLock? = null
+//    private var wakeLock: PowerManager.WakeLock? = null
     private var isServiceStarted = false
 
     private lateinit var serviceMessenger: Messenger
     private lateinit var id: String
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startService()
-        return START_STICKY
-    }
+    private var dataLoaded = false
 
-    private fun startService() {
-        if (isServiceStarted) return
-
-        Toast.makeText(this, "Service starting task", Toast.LENGTH_SHORT).show()
-        isServiceStarted = true
-        wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FischersPlayground::lock").apply {
-                acquire()
-            }
-        }
-
-//        GlobalScope.launch(Dispatchers.IO) {
+//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+////        startService()
+//        return START_STICKY
+//    }
 //
+//    private fun startService() {
+//        if (isServiceStarted) return
+//
+//        Toast.makeText(this, "Service starting task", Toast.LENGTH_SHORT).show()
+//        isServiceStarted = true
+//        wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+//            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FischersPlayground::lock").apply {
+//                acquire()
+//            }
 //        }
-    }
+//
+////        GlobalScope.launch(Dispatchers.IO) {
+////
+////        }
+//    }
 
-    private fun stopService() {
-        Toast.makeText(this, "Service stopping task", Toast.LENGTH_SHORT).show()
-
-        try {
-            wakeLock?.let {
-                if (it.isHeld) {
-                    it.release()
-                }
-            }
-            stopForeground(true)
-        } catch (e: Exception) {
-            println("Stopped without being started: ${e.message}")
-        }
-
-    }
+//    private fun stopService() {
+//        Toast.makeText(this, "Service stopping task", Toast.LENGTH_SHORT).show()
+//
+//        try {
+//            wakeLock?.let {
+//                if (it.isHeld) {
+//                    it.release()
+//                }
+//            }
+//            stopForeground(true)
+//        } catch (e: Exception) {
+//            println("Stopped without being started: ${e.message}")
+//        }
+//
+//    }
 
     override fun onBind(intent: Intent?): IBinder {
         Toast.makeText(applicationContext, "Binding service..", Toast.LENGTH_SHORT).show()
 
         serviceMessenger = Messenger(IncomingHandler(this))
 
-        Thread {
-            loadingData.set(true)
-            loadData()
-            loadingData.set(false)
-        }.start()
 
         return serviceMessenger.binder
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
         Toast.makeText(applicationContext, "Unbound service..", Toast.LENGTH_SHORT).show()
+        saveData()
 
         return super.onUnbind(intent)
     }
@@ -125,9 +118,18 @@ class DataManagerService : Service() {
         val preferences = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE)
         id = preferences.getString("ID", "")!!
 
+        if (!dataLoaded) {
+            dataLoaded = true
+            Thread {
+                loadingData.set(true)
+                loadData()
+                loadingData.set(false)
+            }.start()
+        }
+
         registerReceiver(newGameReceiver, infoFilter)
         registerReceiver(inviteReceiver, infoFilter)
-        registerReceiver(gameUpdateReceiver, gameUpdateFilter)
+        registerReceiver(opponentMovedReceiver, gameUpdateFilter)
         registerReceiver(requestUndoReceiver, gameUpdateFilter)
         registerReceiver(undoAcceptedReceiver, gameUpdateFilter)
         registerReceiver(undoRejectedReceiver, gameUpdateFilter)
@@ -137,8 +139,8 @@ class DataManagerService : Service() {
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
         registerReceiver(chatMessageReceiver, chatFilter)
 
-        val notification = createNotification()
-        startForeground(1, notification)
+//        val notification = createNotification()
+//        startForeground(1, notification)
     }
 
     override fun onDestroy() {
@@ -146,7 +148,7 @@ class DataManagerService : Service() {
         unregisterReceiver(newGameReceiver)
         unregisterReceiver(inviteReceiver)
 //        unregisterReceiver(newsReceiver)
-        unregisterReceiver(gameUpdateReceiver)
+        unregisterReceiver(opponentMovedReceiver)
         unregisterReceiver(requestUndoReceiver)
         unregisterReceiver(undoAcceptedReceiver)
         unregisterReceiver(undoRejectedReceiver)
@@ -156,7 +158,6 @@ class DataManagerService : Service() {
         unregisterReceiver(opponentDeclinedDrawReceiver)
         unregisterReceiver(chatMessageReceiver)
 
-        saveData()
 
         super.onDestroy()
     }
@@ -165,31 +166,31 @@ class DataManagerService : Service() {
         currentClient!!.send(Message.obtain(null, flag, data))
     }
 
-    private fun createNotification(): Notification {
-        val channelId = "Fischers_server_connection"
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channel = NotificationChannel(channelId, "Fischers Notification Channel", NotificationManager.IMPORTANCE_HIGH).let {
-            it.description = "Fischers server connection"
-            it.enableVibration(true)
-            it
-        }
-
-        notificationManager.createNotificationChannel(channel)
-
-        val intent: PendingIntent = Intent(this, MainActivity::class.java).let { notificationIntent ->
-            PendingIntent.getActivity(this, 0, notificationIntent, 0)
-        }
-
-        val builder: Notification.Builder = Notification.Builder(this, channelId)
-
-        return builder
-            .setContentTitle("Fischers Playground")
-            .setContentText("It's your move!")
-            .setContentIntent(intent)
-            .setTicker("Tickie!")
-            .build()
-    }
+//    private fun createNotification(): Notification {
+//        val channelId = "Fischers_server_connection"
+//
+//        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+//        val channel = NotificationChannel(channelId, "Fischers Notification Channel", NotificationManager.IMPORTANCE_HIGH).let {
+//            it.description = "Fischers server connection"
+//            it.enableVibration(true)
+//            it
+//        }
+//
+//        notificationManager.createNotificationChannel(channel)
+//
+//        val intent: PendingIntent = Intent(this, MainActivity::class.java).let { notificationIntent ->
+//            PendingIntent.getActivity(this, 0, notificationIntent, 0)
+//        }
+//
+//        val builder: Notification.Builder = Notification.Builder(this, channelId)
+//
+//        return builder
+//            .setContentTitle("Fischers Playground")
+//            .setContentText("It's your move!")
+//            .setContentIntent(intent)
+//            .setTicker("Tickie!")
+//            .build()
+//    }
 
     class IncomingHandler(service: DataManagerService) : Handler() {
 
@@ -198,8 +199,9 @@ class DataManagerService : Service() {
         override fun handleMessage(msg: Message) {
 
             val service = serviceReference.get()!!
-
-            service.currentClient = msg.replyTo
+            if (msg.replyTo != null) {
+                service.currentClient = msg.replyTo
+            }
 
             when (msg.what) {
 //                //TODO: Can this be removed? (probably)
@@ -251,6 +253,9 @@ class DataManagerService : Service() {
                 FLAG_GET_RECENT_OPPONENTS -> {
                     msg.replyTo.send(Message.obtain(null, FLAG_GET_RECENT_OPPONENTS, service.recentOpponents))
                 }
+                FLAG_OPPONENT_MOVED -> {
+                    service.onOpponentMoved(msg.obj as String)
+                }
             }
         }
     }
@@ -260,6 +265,8 @@ class DataManagerService : Service() {
         val gameId = data[0]
 
         savedGames[gameId]?.addNews(NewsType.OPPONENT_REQUESTED_UNDO)
+
+        saveData()
 
         sendMessage(FLAG_UNDO_REQUESTED, gameId)
     }
@@ -272,11 +279,14 @@ class DataManagerService : Service() {
         savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
         savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
 
+        saveData()
+
         sendMessage(FLAG_UNDO_ACCEPTED, Pair(gameId, numberOfMovesReversed))
     }
 
     private fun onUndoRejected(gameId: String) {
         savedGames[gameId]?.addNews(NewsType.OPPONENT_REJECTED_UNDO)
+        saveData()
 
         sendMessage(FLAG_UNDO_REJECTED, gameId)
     }
@@ -339,9 +349,7 @@ class DataManagerService : Service() {
         val hasUpdate = newGameStatus == GameStatus.PLAYER_MOVE
         sendMessage(FLAG_NEW_GAME, GameCardItem(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, hasUpdate))
 
-        Thread {
-            saveData()
-        }.start()
+        saveData()
     }
 
     private fun onIncomingInvite(content: String) {
@@ -360,6 +368,7 @@ class DataManagerService : Service() {
         savedInvites[inviteId] = inviteData
 
 //        incomingInviteDialog.showInvite(opponentName, inviteId)
+        saveData()
 
 //        currentMessenger!!.send(Message.obtain(null, FLAG_GET_INVITES, savedInvites))
         sendMessage(FLAG_NEW_INVITE, Pair(inviteId, inviteData))
@@ -377,6 +386,8 @@ class DataManagerService : Service() {
         game.moveOpponent(move, false)
 
         savedGames[gameId] = game
+
+        saveData()
 
         sendMessage(FLAG_OPPONENT_MOVED, MoveData(gameId, GameStatus.PLAYER_MOVE, move.timeStamp))
     }
@@ -509,6 +520,7 @@ class DataManagerService : Service() {
     }
 
     private fun saveData() {
+        println("SAVING DATA")
         Thread {
             saveGames()
             saveReceivedInvites()

@@ -61,8 +61,6 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
         game.hasUpdate = true
         game.lastUpdated = timeStamp
 
-        println("Updating card! $newStatus")
-
         sort()
         notifyDataSetChanged()
     }
