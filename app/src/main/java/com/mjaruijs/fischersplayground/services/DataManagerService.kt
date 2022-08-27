@@ -1,10 +1,14 @@
 package com.mjaruijs.fischersplayground.services
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_ID_KEY
 import com.mjaruijs.fischersplayground.activities.MessageReceiver
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
@@ -57,17 +61,51 @@ class DataManagerService : Service() {
 
     private var dataLoaded = false
 
+    private var bindCount = 0
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent != null) {
+
+            loadingData.set(true)
+            Thread {
+                loadData()
+                loadingData.set(false)
+                log("Done loading data")
+            }.start()
+
+            val topic = intent.getStringExtra("topic") ?: ""
+            val data = intent.getStringExtra("data") ?: ""
+
+            while (loadingData.get()) {
+                Thread.sleep(10)
+            }
+
+            when (topic) {
+                "move" -> onOpponentMoved(data)
+            }
+        }
+
+//        startForeground(1, buildNotification())
+//        stopSelf()
+
+        return START_NOT_STICKY
+    }
+
     override fun onBind(intent: Intent?): IBinder {
-        Toast.makeText(applicationContext, "Binding service..", Toast.LENGTH_SHORT).show()
+        val caller = intent?.getStringExtra("caller") ?: ""
+
+        bindCount++
+        Toast.makeText(applicationContext, "Binding service to $caller. $bindCount", Toast.LENGTH_SHORT).show()
 
         serviceMessenger = Messenger(IncomingHandler(this))
-
 
         return serviceMessenger.binder
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        Toast.makeText(applicationContext, "Unbound service..", Toast.LENGTH_SHORT).show()
+        bindCount--
+
+        Toast.makeText(applicationContext, "Unbound service.. $bindCount", Toast.LENGTH_SHORT).show()
         saveData()
 
         return super.onUnbind(intent)
@@ -77,10 +115,9 @@ class DataManagerService : Service() {
         super.onCreate()
         Toast.makeText(applicationContext, "Service created..", Toast.LENGTH_SHORT).show()
         val preferences = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE)
-        id = preferences.getString("ID", "")!!
+        id = preferences.getString(USER_ID_KEY, "")!!
 
         load()
-
 
         registerReceiver(newGameReceiver, infoFilter)
         registerReceiver(inviteReceiver, infoFilter)
@@ -93,6 +130,9 @@ class DataManagerService : Service() {
         registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
         registerReceiver(chatMessageReceiver, chatFilter)
+
+//        startForeground(1, buildNotification())
+//        stopSelf()
     }
 
     override fun onDestroy() {
@@ -109,38 +149,17 @@ class DataManagerService : Service() {
         unregisterReceiver(opponentDeclinedDrawReceiver)
         unregisterReceiver(chatMessageReceiver)
 
+        dataLoaded = false
+
         super.onDestroy()
     }
 
     private fun sendMessage(flag: Int, data: Any?) {
+        if (currentClient == null) {
+            println("Tried to send message: $flag")
+        }
         currentClient?.send(Message.obtain(null, flag, data))
     }
-
-//    private fun createNotification(): Notification {
-//        val channelId = "Fischers_server_connection"
-//
-//        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//        val channel = NotificationChannel(channelId, "Fischers Notification Channel", NotificationManager.IMPORTANCE_HIGH).let {
-//            it.description = "Fischers server connection"
-//            it.enableVibration(true)
-//            it
-//        }
-//
-//        notificationManager.createNotificationChannel(channel)
-//
-//        val intent: PendingIntent = Intent(this, MainActivity::class.java).let { notificationIntent ->
-//            PendingIntent.getActivity(this, 0, notificationIntent, 0)
-//        }
-//
-//        val builder: Notification.Builder = Notification.Builder(this, channelId)
-//
-//        return builder
-//            .setContentTitle("Fischers Playground")
-//            .setContentText("It's your move!")
-//            .setContentIntent(intent)
-//            .setTicker("Tickie!")
-//            .build()
-//    }
 
     private fun load() {
         if (!dataLoaded) {
@@ -152,6 +171,29 @@ class DataManagerService : Service() {
                 loadingData.set(false)
             }.start()
         }
+    }
+
+    private fun log(message: String) {
+        FileManager.append(applicationContext, "log.txt", "$message\n")
+    }
+
+    private fun buildNotification(): Notification {
+        val channelId = "Fetching updates"
+
+        val notificationBuilder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.black_queen)
+            .setContentTitle("Title")
+            .setContentText("Fetching game updates")
+            .setAutoCancel(true)
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "Opponent moved", NotificationManager.IMPORTANCE_DEFAULT)
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        return notificationBuilder.build()
     }
 
     class IncomingHandler(service: DataManagerService) : Handler() {
@@ -340,9 +382,7 @@ class DataManagerService : Service() {
 
         val inviteData = InviteData(opponentName, timeStamp, InviteType.RECEIVED)
 
-        println("Got invite in service")
-
-        Toast.makeText(applicationContext, "GOT INVITE", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(applicationContext, "GOT INVITE", Toast.LENGTH_SHORT).show()
 
         savedInvites[inviteId] = inviteData
 
@@ -362,13 +402,12 @@ class DataManagerService : Service() {
         val move = Move.fromChessNotation(moveNotation)
 
         try {
-            val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+//            val game = savedGames[gameId] ?: return
+            val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId. DataLoaded: $dataLoaded")
             game.moveOpponent(move, false)
-
             savedGames[gameId] = game
 
             saveData()
-
         } catch (e: Exception) {
             FileManager.write(applicationContext, "crash_log.txt", e.stackTraceToString())
         }
@@ -410,9 +449,13 @@ class DataManagerService : Service() {
 
     private fun loadData() {
         println("LOADING DATA")
-        loadSavedGames()
-        loadReceivedInvites()
-        loadRecentOpponents()
+        try {
+            loadSavedGames()
+            loadReceivedInvites()
+            loadRecentOpponents()
+        } catch (e: Exception) {
+            FileManager.write(applicationContext, "file_loading_crash.txt", e.stackTraceToString())
+        }
     }
 
     private fun loadSavedGames() {
@@ -510,6 +553,7 @@ class DataManagerService : Service() {
             saveGames()
             saveReceivedInvites()
             saveRecentOpponents()
+            log("Done saving data")
         }.start()
     }
 

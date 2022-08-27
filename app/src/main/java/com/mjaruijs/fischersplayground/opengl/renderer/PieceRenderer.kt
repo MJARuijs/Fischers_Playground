@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.opengl.renderer
 import android.content.res.Resources
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
@@ -43,6 +44,9 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
         ShaderLoader.load(R.raw.piece_3d_fragment, ShaderType.FRAGMENT, resources)
     )
 
+    private val pieceTextures2D = HashMap<Piece, Int>()
+    private val pieceTextures3D = HashMap<Piece, Int>()
+
 //    private val pawnMesh = MeshLoader.preload(resources, R.raw.pawn_bytes).second
 //    private val bishopMesh = MeshLoader.preload(resources, R.raw.bishop_bytes).second
 //    private val knightMesh = MeshLoader.preload(resources, R.raw.knight_bytes).second
@@ -73,6 +77,26 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
     var rChannel = 1.0f
     var gChannel = 1.0f
     var bChannel = 1.0f
+
+    private fun getPieceTexture2d(piece: Piece): Int {
+        if (pieceTextures2D.contains(piece)) {
+            return pieceTextures2D[piece]!!
+        }
+
+        pieceTextures2D[piece] = PieceTextures.get2DTextureId(piece.type, piece.team)
+
+        return pieceTextures2D[piece]!!
+    }
+
+    private fun getPieceTexture3d(piece: Piece): Int {
+        if (pieceTextures3D.contains(piece)) {
+            return pieceTextures3D[piece]!!
+        }
+
+        pieceTextures3D[piece] = PieceTextures.get3DTextureId(piece.type)
+
+        return pieceTextures3D[piece]!!
+    }
 
     private fun startAnimation(animationData: AnimationData) {
         val toPosition = animationData.toPosition
@@ -123,7 +147,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
                 }
 
                 piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
-                piece2DProgram.set("textureId", piece.textureId2D.toFloat())
+                piece2DProgram.set("textureId", getPieceTexture2d(piece).toFloat())
                 piece2DProgram.set("translation", translation)
                 quad.draw()
             }
@@ -178,7 +202,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
                 }
 
                 piece3DProgram.set("isWhite", if (piece.team == Team.WHITE) 1f else 0f)
-                piece3DProgram.set("textureId", piece.textureId3D.toFloat())
+                piece3DProgram.set("textureId", getPieceTexture3d(piece).toFloat())
 
 //                println("Mesh trying to render on thread: ${Thread.currentThread().id}")
 

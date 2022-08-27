@@ -5,6 +5,21 @@ import java.io.*
 
 object FileManager {
 
+    fun append(context: Context, fileName: String, content: String): Boolean {
+        return try {
+            val currentLines = read(context, fileName) ?: return write(context, fileName, content)
+            var currentContent = ""
+            for (line in currentLines) {
+                currentContent += "$line\n"
+            }
+            val newContent = "$currentContent\n$content"
+            return write(context, fileName, newContent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     fun write(context: Context, fileName: String, content: String): Boolean {
         return try {
             val writer = OutputStreamWriter(context.openFileOutput(fileName, Context.MODE_PRIVATE))
@@ -32,7 +47,6 @@ object FileManager {
 
             lines
         } catch (e: FileNotFoundException) {
-            e.printStackTrace()
             null
         }
     }

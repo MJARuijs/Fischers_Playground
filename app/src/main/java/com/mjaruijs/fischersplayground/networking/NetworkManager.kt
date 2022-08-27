@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 object NetworkManager {
 
     private const val PUBLIC_SERVER_IP = "217.101.191.23"
-    private const val LOCAL_SERVER_IP = "192.168.178.17"
+    private const val LOCAL_SERVER_IP = "192.168.178.18"
     private const val SERVER_PORT = 4500
 
     private val clientInitializing = AtomicBoolean(false)
@@ -57,11 +57,17 @@ object NetworkManager {
     fun sendMessage(message: NetworkMessage) {
 
         Thread {
-            while (clientInitializing.get()) {}
+            while (clientInitializing.get()) {
+                Thread.sleep(1)
+            }
 
             if (initialized.get()) {
                 println("Sending message: $message")
-                client.write(message.toString())
+                try {
+                    client.write(message.toString())
+                } catch (e: Exception) {
+
+                }
             }
 
         }.start()

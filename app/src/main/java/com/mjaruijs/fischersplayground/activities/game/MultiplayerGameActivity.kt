@@ -21,6 +21,7 @@ import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SAVE_GAME
+import com.mjaruijs.fischersplayground.util.FileManager
 
 class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
@@ -28,7 +29,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override var clientMessenger = Messenger(IncomingHandler(this))
 
-    private var stayingInApp = false
+//    private var stayingInApp = false
 
     private var chatInitialized = false
     private var chatOpened = false
@@ -36,34 +37,29 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private lateinit var keyboardHeightProvider: KeyboardHeightProvider
 
-//    private val savedGames = HashMap<String, MultiPlayerGame>()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
+        try {
+            gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
+            initChatBox()
 
-        initChatBox()
+            keyboardHeightProvider = KeyboardHeightProvider(this)
+            findViewById<View>(R.id.game_layout).post {
+                Runnable {
+                    keyboardHeightProvider.start()
+                }.run()
+            }
 
-        keyboardHeightProvider = KeyboardHeightProvider(this)
-        findViewById<View>(R.id.game_layout).post {
-            Runnable {
-                keyboardHeightProvider.start()
-            }.run()
-        }
-
-//        if (savedInstanceState == null) {
-//            val chatBundle = Bundle()
-//            chatBundle.putString("game_id", gameId)
-//            chatBundle.putString("user_id", id)
-//        }
-
-        supportFragmentManager.commit {
-            setReorderingAllowed(true)
-            replace(R.id.chat_container, ChatFragment(::onChatMessageSent, ::translateChat, ::closeChat))
-            replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, playerId, ::isChatOpened) {
-                glView.requestRender()
-            })
+            supportFragmentManager.commit {
+                setReorderingAllowed(true)
+                replace(R.id.chat_container, ChatFragment(::onChatMessageSent, ::translateChat, ::closeChat))
+                replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, ::isChatOpened) {
+                    glView.requestRender()
+                })
+            }
+        } catch (e: Exception) {
+            FileManager.append(this,  "mp_game_activity_crash_report.txt", e.stackTraceToString())
         }
     }
 
@@ -97,6 +93,12 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun setGame(game: MultiPlayerGame) {
         this.game = game
+        opponentName = game.opponentName
+        isPlayingWhite = game.isPlayingWhite
+
+        if (loadFragments) {
+            loadFragments()
+        }
 
         runOnUiThread {
             getChatFragment().addMessages(game.chatMessages)
@@ -109,20 +111,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         setGameCallbacks()
         super.setGame(game)
-    }
-
-    override fun onContextCreated() {
-//        game = savedGames[gameId] ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
-
-//        runOnUiThread {
-//            getChatFragment().addMessages((game as MultiPlayerGame).chatMessages)
-//        }
-//
-//        runOnUiThread {
-//            processNews((game as MultiPlayerGame))
-//        }
-
-        super.onContextCreated()
     }
 
     override fun onDisplaySizeChanged(width: Int, height: Int) {
@@ -155,7 +143,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw)
                 NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
                 NewsType.OPPONENT_DECLINED_DRAW -> opponentRejectedDrawDialog.show(opponentName)
-                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, playerId)
+                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, userId)
                 NewsType.OPPONENT_ACCEPTED_UNDO -> {
                     game.undoMoves(news.data)
                     glView.requestRender()
@@ -176,7 +164,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun onChatMessageSent(message: ChatMessage) {
-        NetworkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "", "$gameId|$playerId|${message.timeStamp}|${message.message}"))
+        NetworkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "", "$gameId|$userId|${message.timeStamp}|${message.message}"))
         (game as MultiPlayerGame).chatMessages += message
     }
 
@@ -213,7 +201,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onUndoRequested(gameId: String) {
         if (this.gameId == gameId) {
-            undoRequestedDialog.show(gameId, opponentName, playerId)
+            undoRequestedDialog.show(gameId, opponentName, userId)
         }
     }
 
@@ -257,7 +245,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun acceptDraw() {
-        NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$playerId"))
+        NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$userId"))
         closeAndSaveGameAsDraw()
     }
 
@@ -296,7 +284,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
 //            finish()
 
-            stayingInApp = true
+//            stayingInApp = true
 
             //TODO: uncomment status shizzle
 //            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|online"))
@@ -310,7 +298,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun initChatBox() {
-        findViewById<ImageView>(R.id.open_chat_button).setOnClickListener {
+        val chatBox = findViewById<ImageView>(R.id.open_chat_button) ?: return
+
+        chatBox.setOnClickListener {
             val chatBoxEndX = if (chatOpened) -chatTranslation else 0
             val chatButtonEndX = if (chatOpened) 0 else chatTranslation
 

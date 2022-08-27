@@ -1,9 +1,6 @@
 package com.mjaruijs.fischersplayground.activities
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
 import android.os.*
 import androidx.appcompat.app.AppCompatActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
@@ -11,6 +8,9 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
+import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_CHAT_MESSAGE_RECEIVED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
@@ -23,7 +23,6 @@ import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLA
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_MOVED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_OFFERED_DRAW
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_REJECTED_DRAW
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_REGISTER_CLIENT
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_ACCEPTED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_REJECTED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_REQUESTED
@@ -33,13 +32,18 @@ import kotlin.collections.HashMap
 
 abstract class ClientActivity : AppCompatActivity() {
 
-//    private var clientMessenger = Messenger(IncomingHandler(this))
+    protected var userId: String = "default_user_id"
+    protected var userName = "default_user_name"
+
+    //    private var clientMessenger = Messenger(IncomingHandler(this))
     abstract var clientMessenger: Messenger
 
     private var serviceMessenger: Messenger? = null
     var serviceBound = false
 
     val incomingInviteDialog = IncomingInviteDialog()
+
+    var stayingInApp = false
 
     open var activityName: String = ""
 
@@ -65,14 +69,36 @@ abstract class ClientActivity : AppCompatActivity() {
         serviceMessenger!!.send(message)
     }
 
+    private fun isUserRegisteredAtServer(): Boolean {
+        return getPreference(USER_PREFERENCE_FILE).contains(USER_ID_KEY)
+    }
+
+    protected fun getPreference(name: String): SharedPreferences {
+        return getSharedPreferences(name, MODE_PRIVATE)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         incomingInviteDialog.create(this)
+
+        val preferences = getPreference(USER_PREFERENCE_FILE)
+        userId = preferences.getString(USER_ID_KEY, "")!!
+        userName = preferences.getString(USER_NAME_KEY, "")!!
     }
 
     override fun onStart() {
         super.onStart()
-        bindService(Intent(this, DataManagerService::class.java), connection, Context.BIND_AUTO_CREATE)
+        val intent = Intent(this, DataManagerService::class.java)
+        intent.putExtra("caller", activityName)
+        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (isUserRegisteredAtServer()) {
+//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|online"))
+        }
     }
 
     override fun onStop() {
@@ -81,11 +107,23 @@ abstract class ClientActivity : AppCompatActivity() {
         incomingInviteDialog.dismiss()
         unbindService(connection)
         serviceBound = false
+
+        if (!stayingInApp) {
+//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|away"))
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        if (!stayingInApp) {
+            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|offline"))
+        }
         incomingInviteDialog.dismiss()
+    }
+
+    override fun onBackPressed() {
+        stayingInApp = true
+        super.onBackPressed()
     }
 
     open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}
@@ -150,5 +188,14 @@ abstract class ClientActivity : AppCompatActivity() {
             }
 
         }
+    }
+
+    companion object {
+        const val FIRE_BASE_PREFERENCE_FILE = "fire_base"
+        const val USER_PREFERENCE_FILE = "user_data"
+
+        const val USER_ID_KEY = "user_id"
+        const val USER_NAME_KEY = "user_name"
+
     }
 }

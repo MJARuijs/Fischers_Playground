@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.activities
 
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Messenger
@@ -33,7 +32,9 @@ import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLA
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_ID
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_STORE_SENT_INVITE
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
+import kotlin.math.log
 
 class MainActivity : ClientActivity() {
 
@@ -41,8 +42,6 @@ class MainActivity : ClientActivity() {
 
     override var clientMessenger = Messenger(IncomingHandler(this))
 
-    private var id: String? = null
-    private var userName: String? = null
 
     private val idReceiver = MessageReceiver(Topic.INFO, "id", ::onIdReceived)
     private val playersReceiver = MessageReceiver(Topic.INFO, "search_players_result", ::onPlayersReceived)
@@ -54,7 +53,6 @@ class MainActivity : ClientActivity() {
 
     private lateinit var gameAdapter: GameAdapter
 
-    private var stayingInApp = false
     private var hasNewToken = false
 
     private var maxTextSize = Float.MAX_VALUE
@@ -68,9 +66,7 @@ class MainActivity : ClientActivity() {
 
         registerReceivers()
 
-        val preferences = getPreference(USER_PREFERENCE_FILE)
-        id = preferences.getString("ID", "")
-        userName = preferences.getString("USER_NAME", "")
+
 
 //        Intent(this, FirebaseService::class.java).also {
 //            startService(it)
@@ -79,17 +75,15 @@ class MainActivity : ClientActivity() {
 //        FirebaseService.getToken(this)
 //        FirebaseInstanceId.getInstance().instanceId
 //        startDataService()
-//        startService(Intent(this, DataManagerService::class.java))
-
-
+//        startService(Intent(this, FirebaseService::class.java))
 
         if (!isInitialized()) {
             preloadModels()
 
             NetworkManager.run(this)
 
-            if (id != null && id!!.isNotBlank()) {
-                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "id", "$id"))
+            if (userId != "default_user_id") {
+                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "id", userId))
             }
         }
 
@@ -101,10 +95,10 @@ class MainActivity : ClientActivity() {
                 println("GOT NEW TOKEN: $token")
                 getPreference(FIRE_BASE_PREFERENCE_FILE).edit().putString("token", token).apply()
 
-                if (userName == null || userName!!.isBlank()) {
+                if (userName == "default_user_name") {
                     hasNewToken = true
                 } else {
-                    NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "token", "$id|$token"))
+                    NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "token", "$userId|$token"))
                 }
             }
         }
@@ -112,8 +106,8 @@ class MainActivity : ClientActivity() {
         createUsernameDialog.create(this)
         createUsernameDialog.setLayout()
 
-        if (userName == null || userName!!.isBlank()) {
-            createUsernameDialog.show(::setUserName)
+        if (userName == "default_user_name") {
+            createUsernameDialog.show(::saveUserName)
         } else {
             findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
         }
@@ -121,16 +115,12 @@ class MainActivity : ClientActivity() {
         initUIComponents()
     }
 
-    private fun getPreference(name: String): SharedPreferences {
-        return getSharedPreferences(name, MODE_PRIVATE)
-    }
-
     private fun isInitialized() = NetworkManager.isRunning()
 
     private fun onIdReceived(id: String) {
-        this.id = id
+        this.userId = id
 
-        savePreference("ID", id)
+        savePreference(USER_ID_KEY, id)
         Thread {
             while (!serviceBound) {
                 Thread.sleep(10)
@@ -146,10 +136,6 @@ class MainActivity : ClientActivity() {
         createGameDialog.updateId(id)
     }
 
-    private fun isUserRegisteredAtServer(): Boolean {
-        return getPreference(USER_PREFERENCE_FILE).contains("ID")
-    }
-
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
         sendMessage(FLAG_STORE_SENT_INVITE, Triple(inviteId, opponentId, InviteData(opponentName, timeStamp, InviteType.PENDING)))
@@ -157,13 +143,13 @@ class MainActivity : ClientActivity() {
 
     private fun onGameClicked(gameCard: GameCardItem) {
         stayingInApp = true
-        gameAdapter.clearUpdate(gameCard, id!!)
+        gameAdapter.clearUpdate(gameCard, userId)
 
         if (gameCard.gameStatus == GameStatus.INVITE_RECEIVED) {
             incomingInviteDialog.showInvite(gameCard.opponentName, gameCard.id)
         } else if (gameCard.gameStatus != GameStatus.INVITE_PENDING) {
             val intent = Intent(this, MultiplayerGameActivity::class.java)
-                .putExtra("id", id)
+                .putExtra("id", userId)
                 .putExtra("user_name", userName)
                 .putExtra("is_playing_white", gameCard.isPlayingWhite)
                 .putExtra("game_id", gameCard.id)
@@ -199,10 +185,10 @@ class MainActivity : ClientActivity() {
         gameAdapter.hasUpdate(gameId)
     }
 
-    private fun setUserName(userName: String) {
+    private fun saveUserName(userName: String) {
         this.userName = userName
 
-        savePreference("USER_NAME", userName)
+        savePreference(USER_NAME_KEY, userName)
 
         findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
         NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "user_name", userName))
@@ -244,7 +230,9 @@ class MainActivity : ClientActivity() {
         registerReceiver(idReceiver, infoFilter)
         registerReceiver(playersReceiver, infoFilter)
     }
-
+    private fun log(message: String) {
+        FileManager.append(applicationContext, "log.txt", "$message\n")
+    }
     override fun onResume() {
         super.onResume()
 
@@ -257,9 +245,9 @@ class MainActivity : ClientActivity() {
 
         stayingInApp = false
 
-        if (isUserRegisteredAtServer()) {
+//        if (isUserRegisteredAtServer()) {
 //            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|online"))
-        }
+//        }
 
         registerReceivers()
     }
@@ -268,15 +256,25 @@ class MainActivity : ClientActivity() {
         unregisterReceiver(idReceiver)
         unregisterReceiver(playersReceiver)
 
-        if (!stayingInApp) {
+//        if (!stayingInApp) {
 //            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
-        }
+//        }
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        createGameDialog.dismiss()
+
+//        if (!stayingInApp) {
+//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|offline"))
+//        }
+
+        super.onDestroy()
     }
 
     override fun onUserLeaveHint() {
         if (!stayingInApp) {
-//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
+            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|away"))
         }
 
         super.onUserLeaveHint()
@@ -292,11 +290,20 @@ class MainActivity : ClientActivity() {
     }
 
     private fun hideActivityDecorations() {
-        val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
-        windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val isFullscreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
 
         supportActionBar?.hide()
+
+        if (isFullscreen) {
+            val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
+            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
+            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+        }
+
     }
 
     private fun preloadModels() {
@@ -343,7 +350,7 @@ class MainActivity : ClientActivity() {
         gameRecyclerView.adapter = gameAdapter
 
         incomingInviteDialog.create(this)
-        createGameDialog.create(id!!, this)
+        createGameDialog.create(userId!!, this)
 
         findViewById<UIButton>(R.id.settings_button)
             .setColoredDrawable(R.drawable.settings_solid_icon)
@@ -366,7 +373,7 @@ class MainActivity : ClientActivity() {
             .setOnClickListener {
                 stayingInApp = true
                 val intent = Intent(this, PractiseGameActivity::class.java)
-                    .putExtra("id", id)
+                    .putExtra("id", userId)
                     .putExtra("user_name", userName)
                     .putExtra("is_single_player", true)
                     .putExtra("is_playing_white", true)
@@ -440,8 +447,4 @@ class MainActivity : ClientActivity() {
         createGameDialog.setRecentOpponents(opponents ?: return)
     }
 
-    companion object {
-        const val FIRE_BASE_PREFERENCE_FILE = "fire_base"
-        const val USER_PREFERENCE_FILE = "user_data"
-    }
 }

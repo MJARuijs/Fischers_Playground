@@ -51,7 +51,9 @@
             android:enabled="true"/>
         <service
             android:name=".services.FirebaseService"
-            android:exported="false">
+            android:exported="false"
+            android:enabled="true"
+            android:directBootAware="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>

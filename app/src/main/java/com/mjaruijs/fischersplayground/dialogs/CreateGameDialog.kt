@@ -87,6 +87,12 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
         }
     }
 
+    fun dismiss() {
+        if (this::dialog.isInitialized) {
+            dialog.dismiss()
+        }
+    }
+
     fun clearPlayers() {
         playerCardList.clear()
     }
