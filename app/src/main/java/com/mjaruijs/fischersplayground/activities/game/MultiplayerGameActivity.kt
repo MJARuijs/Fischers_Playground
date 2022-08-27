@@ -74,14 +74,14 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             }
             sendMessage(FLAG_GET_GAME, gameId)
         }.start()
-        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId"))
+//        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId"))
         keyboardHeightProvider.observer = this
         super.onResume()
     }
 
     override fun onPause() {
         if (!stayingInApp) {
-            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
+//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
         }
 
         sendMessage(FLAG_SAVE_GAME, game)
@@ -297,7 +297,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 //            finish()
 
             stayingInApp = true
-            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|online"))
+
+            //TODO: uncomment status shizzle
+//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|online"))
 
 //            val intent = Intent(applicationContext, MainActivity::class.java)
 //            intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP

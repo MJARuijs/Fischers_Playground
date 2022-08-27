@@ -26,6 +26,7 @@ import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_MOVE_MADE
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_GAME_STATUS
 
 abstract class GameActivity : ClientActivity() {
@@ -185,6 +186,7 @@ abstract class GameActivity : ClientActivity() {
         game.onPieceTaken = ::onPieceTaken
         game.onPieceRegained = ::onPieceRegained
         game.onCheckMate = ::onCheckMate
+        game.onMoveMade = ::onMoveMade
 
         glView.setGame(game)
     }
@@ -220,6 +222,10 @@ abstract class GameActivity : ClientActivity() {
 
     open fun onClick(x: Float, y: Float) {
         game.onClick(x, y, displayWidth, displayHeight)
+    }
+
+    private fun onMoveMade(move: Move) {
+        sendMessage(FLAG_MOVE_MADE, Pair(gameId, move))
     }
 
     private fun onCheckMate(team: Team) {
@@ -585,7 +591,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     override fun onUserLeaveHint() {
-        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
+//        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
         super.onUserLeaveHint()
     }
 

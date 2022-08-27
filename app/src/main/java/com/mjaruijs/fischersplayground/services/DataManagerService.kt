@@ -51,50 +51,11 @@ class DataManagerService : Service() {
     private val loadingData = AtomicBoolean(false)
 
     private var currentClient: Messenger? = null
-//    private var wakeLock: PowerManager.WakeLock? = null
-    private var isServiceStarted = false
 
     private lateinit var serviceMessenger: Messenger
     private lateinit var id: String
 
     private var dataLoaded = false
-
-//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-////        startService()
-//        return START_STICKY
-//    }
-//
-//    private fun startService() {
-//        if (isServiceStarted) return
-//
-//        Toast.makeText(this, "Service starting task", Toast.LENGTH_SHORT).show()
-//        isServiceStarted = true
-//        wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-//            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FischersPlayground::lock").apply {
-//                acquire()
-//            }
-//        }
-//
-////        GlobalScope.launch(Dispatchers.IO) {
-////
-////        }
-//    }
-
-//    private fun stopService() {
-//        Toast.makeText(this, "Service stopping task", Toast.LENGTH_SHORT).show()
-//
-//        try {
-//            wakeLock?.let {
-//                if (it.isHeld) {
-//                    it.release()
-//                }
-//            }
-//            stopForeground(true)
-//        } catch (e: Exception) {
-//            println("Stopped without being started: ${e.message}")
-//        }
-//
-//    }
 
     override fun onBind(intent: Intent?): IBinder {
         Toast.makeText(applicationContext, "Binding service..", Toast.LENGTH_SHORT).show()
@@ -118,14 +79,8 @@ class DataManagerService : Service() {
         val preferences = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE)
         id = preferences.getString("ID", "")!!
 
-        if (!dataLoaded) {
-            dataLoaded = true
-            Thread {
-                loadingData.set(true)
-                loadData()
-                loadingData.set(false)
-            }.start()
-        }
+        load()
+
 
         registerReceiver(newGameReceiver, infoFilter)
         registerReceiver(inviteReceiver, infoFilter)
@@ -138,16 +93,12 @@ class DataManagerService : Service() {
         registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
         registerReceiver(chatMessageReceiver, chatFilter)
-
-//        val notification = createNotification()
-//        startForeground(1, notification)
     }
 
     override fun onDestroy() {
         Toast.makeText(applicationContext, "Service destroyed..", Toast.LENGTH_SHORT).show()
         unregisterReceiver(newGameReceiver)
         unregisterReceiver(inviteReceiver)
-//        unregisterReceiver(newsReceiver)
         unregisterReceiver(opponentMovedReceiver)
         unregisterReceiver(requestUndoReceiver)
         unregisterReceiver(undoAcceptedReceiver)
@@ -158,12 +109,11 @@ class DataManagerService : Service() {
         unregisterReceiver(opponentDeclinedDrawReceiver)
         unregisterReceiver(chatMessageReceiver)
 
-
         super.onDestroy()
     }
 
     private fun sendMessage(flag: Int, data: Any?) {
-        currentClient!!.send(Message.obtain(null, flag, data))
+        currentClient?.send(Message.obtain(null, flag, data))
     }
 
 //    private fun createNotification(): Notification {
@@ -192,6 +142,18 @@ class DataManagerService : Service() {
 //            .build()
 //    }
 
+    private fun load() {
+        if (!dataLoaded) {
+            dataLoaded = true
+            loadingData.set(true)
+
+            Thread {
+                loadData()
+                loadingData.set(false)
+            }.start()
+        }
+    }
+
     class IncomingHandler(service: DataManagerService) : Handler() {
 
         private val serviceReference = WeakReference(service)
@@ -201,15 +163,16 @@ class DataManagerService : Service() {
             val service = serviceReference.get()!!
             if (msg.replyTo != null) {
                 service.currentClient = msg.replyTo
+//                service.load()
             }
 
             when (msg.what) {
-//                //TODO: Can this be removed? (probably)
-//                FLAG_SET_ID -> {
-//                    if (msg.obj is String) {
-//                        service.id = msg.obj as String
-//                    }
-//                }
+                //TODO: Can this be removed? (probably)
+                FLAG_SET_ID -> {
+                    if (msg.obj is String) {
+                        service.id = msg.obj as String
+                    }
+                }
 
                 FLAG_GET_MULTIPLAYER_GAMES -> msg.replyTo.send(Message.obtain(null, FLAG_GET_MULTIPLAYER_GAMES, service.savedGames))
                 FLAG_GET_ALL_DATA -> {
@@ -256,8 +219,24 @@ class DataManagerService : Service() {
                 FLAG_OPPONENT_MOVED -> {
                     service.onOpponentMoved(msg.obj as String)
                 }
+                FLAG_MOVE_MADE -> {
+                    val data = msg.obj as? Pair<*, *> ?: return
+                    if (data.first is String && data.second is Move) {
+                        val gameId = data.first as String
+                        val move = data.second as Move
+                        service.onMoveMade(gameId, move)
+                    }
+                }
+                FLAG_NEW_GAME -> service.onNewGameStarted(msg.obj as String)
+                FLAG_NEW_INVITE -> service.onIncomingInvite(msg.obj as String)
             }
         }
+    }
+
+    private fun onMoveMade(gameId: String, move: Move) {
+//        savedGames[gameId]?.move(move, true)
+//        savedGames[gameId]!!.addMove(move)
+        saveData()
     }
 
     private fun onUndoRequested(content: String) {
@@ -382,12 +361,17 @@ class DataManagerService : Service() {
         val moveNotation = data[1]
         val move = Move.fromChessNotation(moveNotation)
 
-        val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-        game.moveOpponent(move, false)
+        try {
+            val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+            game.moveOpponent(move, false)
 
-        savedGames[gameId] = game
+            savedGames[gameId] = game
 
-        saveData()
+            saveData()
+
+        } catch (e: Exception) {
+            FileManager.write(applicationContext, "crash_log.txt", e.stackTraceToString())
+        }
 
         sendMessage(FLAG_OPPONENT_MOVED, MoveData(gameId, GameStatus.PLAYER_MOVE, move.timeStamp))
     }
@@ -425,6 +409,7 @@ class DataManagerService : Service() {
     }
 
     private fun loadData() {
+        println("LOADING DATA")
         loadSavedGames()
         loadReceivedInvites()
         loadRecentOpponents()
@@ -612,6 +597,7 @@ class DataManagerService : Service() {
         const val FLAG_DELETE_GAME = 18
         const val FLAG_STORE_SENT_INVITE = 19
         const val FLAG_GET_RECENT_OPPONENTS = 20
+        const val FLAG_MOVE_MADE = 21
 
 
     }

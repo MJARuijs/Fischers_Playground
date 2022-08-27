@@ -1,17 +1,24 @@
 package com.mjaruijs.fischersplayground.services
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.NotificationManager.IMPORTANCE_DEFAULT
+import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.IBinder
-import android.os.Looper
-import android.os.Message
-import android.os.Messenger
+import android.os.*
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.MainActivity
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_GAME
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_INVITE
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_MOVED
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_REQUESTED
 
 class FirebaseService : FirebaseMessagingService() {
 
@@ -55,16 +62,49 @@ class FirebaseService : FirebaseMessagingService() {
 //        super.onMessageReceived(message)
 //        Looper.prepare()
 //        Toast.makeText(this, "${message.data["topic"]}", Toast.LENGTH_SHORT).show()
-        println("Received message:")
+        println("Received Firebase message:")
         for (entry in message.data) {
             println("${entry.key} : ${entry.value}")
         }
         val topic = message.data["topic"] ?: throw IllegalArgumentException("No data was found with name: topic..")
         val data = message.data["data"] ?: throw IllegalArgumentException("No data was found with name: data..")
 
-        if (topic == "move") {
-            sendMessage(FLAG_OPPONENT_MOVED, data)
+        when (topic) {
+            "new_game" -> sendMessage(FLAG_NEW_GAME, data)
+            "move" -> sendMessage(FLAG_OPPONENT_MOVED, data)
+            "invite" -> sendMessage(FLAG_NEW_INVITE, data)
+            "request_undo" -> sendMessage(FLAG_UNDO_REQUESTED, data)
         }
+
+//        val content = getSharedPreferences("test", MODE_PRIVATE).getString("value", "")
+//        getSharedPreferences("test", MODE_PRIVATE).edit().putString("value", "$content|1").apply()
+
+        sendNotification()
+    }
+
+    private fun sendNotification() {
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+        val channelId = getString(R.string.default_notification_channel_id)
+        val notificationBuilder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.black_queen)
+            .setContentTitle("Title")
+            .setContentText("Content")
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "Channel human readable title", IMPORTANCE_DEFAULT)
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        notificationManager.notify(0, notificationBuilder.build())
     }
 
     companion object {

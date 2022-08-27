@@ -18,6 +18,8 @@ class PractiseGameActivity : GameActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
+        game = SinglePlayerGame()
+        setGameCallbacks()
 
         supportFragmentManager.commit {
             setReorderingAllowed(true)
@@ -25,6 +27,7 @@ class PractiseGameActivity : GameActivity() {
                 glView.requestRender()
             })
         }
+
     }
 
 //    override fun onContextCreated() {
@@ -35,9 +38,7 @@ class PractiseGameActivity : GameActivity() {
 //    }
 
     override fun onResume() {
-        game = SinglePlayerGame()
         getActionBarFragment().game = game
-        setGameCallbacks()
         super.onResume()
     }
 }

@@ -45,7 +45,7 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
 //    var onCheckCleared: () -> Unit = {}
     var onCheckMate: (Team) -> Unit = {}
 
-//    var onMoveMade: (Move) -> Unit = {}
+    var onMoveMade: (Move) -> Unit = {}
 
     init {
         board.requestPossibleMoves = { square ->
@@ -72,6 +72,10 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
     }
 
     fun getMoveIndex() = currentMoveIndex
+
+    fun addMove(move: Move){
+        moves += move
+    }
 
     private fun incrementMoveCounter(): Int {
         currentMoveIndex++
@@ -272,7 +276,7 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
             moves += move
         }
 
-//        onMoveMade(move)
+        onMoveMade(move)
 
         return move
     }

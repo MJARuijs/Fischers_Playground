@@ -1,6 +1,8 @@
 package com.mjaruijs.fischersplayground.activities
 
-import android.content.*
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Messenger
@@ -26,15 +28,12 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
-import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_DELETE_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_ALL_DATA
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_ID
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_STORE_SENT_INVITE
-import com.mjaruijs.fischersplayground.services.FirebaseService
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import java.util.*
-import kotlin.collections.HashMap
 
 class MainActivity : ClientActivity() {
 
@@ -56,6 +55,7 @@ class MainActivity : ClientActivity() {
     private lateinit var gameAdapter: GameAdapter
 
     private var stayingInApp = false
+    private var hasNewToken = false
 
     private var maxTextSize = Float.MAX_VALUE
 
@@ -68,7 +68,7 @@ class MainActivity : ClientActivity() {
 
         registerReceivers()
 
-        val preferences = getSharedPreferences("user_data", MODE_PRIVATE)
+        val preferences = getPreference(USER_PREFERENCE_FILE)
         id = preferences.getString("ID", "")
         userName = preferences.getString("USER_NAME", "")
 
@@ -81,12 +81,7 @@ class MainActivity : ClientActivity() {
 //        startDataService()
 //        startService(Intent(this, DataManagerService::class.java))
 
-//        Thread {
-//            while (!serviceBound) {
-//                Thread.sleep(10)
-//            }
-//            sendMessage(FLAG_SET_ID, id)
-//        }.start()
+
 
         if (!isInitialized()) {
             preloadModels()
@@ -100,11 +95,17 @@ class MainActivity : ClientActivity() {
 
         FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
             val token = result.token
-            val currentToken = getSharedPreferences("firebase", MODE_PRIVATE).getString("token", "")!!
+            val currentToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
 
             if (token != currentToken) {
-                getSharedPreferences("firebase", MODE_PRIVATE).edit().putString("token", token).apply()
-                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "token", "$id|$token"))
+                println("GOT NEW TOKEN: $token")
+                getPreference(FIRE_BASE_PREFERENCE_FILE).edit().putString("token", token).apply()
+
+                if (userName == null || userName!!.isBlank()) {
+                    hasNewToken = true
+                } else {
+                    NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "token", "$id|$token"))
+                }
             }
         }
 
@@ -120,19 +121,33 @@ class MainActivity : ClientActivity() {
         initUIComponents()
     }
 
-    private fun startDataService() {
-        Intent(this, DataManagerService::class.java).also {
-            it.action = "wtf?"
-            startForegroundService(it)
-            return
-        }
+    private fun getPreference(name: String): SharedPreferences {
+        return getSharedPreferences(name, MODE_PRIVATE)
     }
 
     private fun isInitialized() = NetworkManager.isRunning()
 
+    private fun onIdReceived(id: String) {
+        this.id = id
+
+        savePreference("ID", id)
+        Thread {
+            while (!serviceBound) {
+                Thread.sleep(10)
+            }
+            sendMessage(FLAG_SET_ID, id)
+        }.start()
+
+        if (hasNewToken) {
+            val token = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
+            println("SENDING NEW TOKEN: $token")
+            NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "token", "$id|$token"))
+        }
+        createGameDialog.updateId(id)
+    }
+
     private fun isUserRegisteredAtServer(): Boolean {
-        val preferences = getSharedPreferences("user_data", MODE_PRIVATE)
-        return preferences.contains("ID")
+        return getPreference(USER_PREFERENCE_FILE).contains("ID")
     }
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
@@ -209,14 +224,6 @@ class MainActivity : ClientActivity() {
         }
     }
 
-    private fun onIdReceived(id: String) {
-        this.id = id
-
-        savePreference("ID", id)
-
-        createGameDialog.updateId(id)
-    }
-
     override fun onOpponentResigned(gameId: String) {
         gameAdapter.updateCardStatus(gameId, GameStatus.GAME_WON)
     }
@@ -251,7 +258,7 @@ class MainActivity : ClientActivity() {
         stayingInApp = false
 
         if (isUserRegisteredAtServer()) {
-            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|online"))
+//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|online"))
         }
 
         registerReceivers()
@@ -262,21 +269,21 @@ class MainActivity : ClientActivity() {
         unregisterReceiver(playersReceiver)
 
         if (!stayingInApp) {
-            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
+//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
         }
         super.onStop()
     }
 
     override fun onUserLeaveHint() {
         if (!stayingInApp) {
-            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
+//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
         }
 
         super.onUserLeaveHint()
     }
 
     private fun savePreference(key: String, value: String) {
-        val preferences = getSharedPreferences("user_data", MODE_PRIVATE)
+        val preferences = getPreference(USER_PREFERENCE_FILE)
 
         with(preferences.edit()) {
             putString(key, value)
@@ -431,5 +438,10 @@ class MainActivity : ClientActivity() {
 
     override fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {
         createGameDialog.setRecentOpponents(opponents ?: return)
+    }
+
+    companion object {
+        const val FIRE_BASE_PREFERENCE_FILE = "fire_base"
+        const val USER_PREFERENCE_FILE = "user_data"
     }
 }
