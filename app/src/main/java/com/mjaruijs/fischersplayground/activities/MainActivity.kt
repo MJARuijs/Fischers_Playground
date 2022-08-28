@@ -27,6 +27,7 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
+import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_DELETE_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_ALL_DATA
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_ID
@@ -77,15 +78,7 @@ class MainActivity : ClientActivity() {
 //        startDataService()
 //        startService(Intent(this, FirebaseService::class.java))
 
-        if (!isInitialized()) {
-            preloadModels()
 
-            NetworkManager.run(this)
-
-            if (userId != "default_user_id") {
-                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "id", userId))
-            }
-        }
 
         FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
             val token = result.token
@@ -103,6 +96,8 @@ class MainActivity : ClientActivity() {
             }
         }
 
+//        stopService(Intent(this, DataManagerService::class.java))
+
         createUsernameDialog.create(this)
         createUsernameDialog.setLayout()
 
@@ -114,8 +109,6 @@ class MainActivity : ClientActivity() {
 
         initUIComponents()
     }
-
-    private fun isInitialized() = NetworkManager.isRunning()
 
     private fun onIdReceived(id: String) {
         this.userId = id
@@ -265,9 +258,10 @@ class MainActivity : ClientActivity() {
     override fun onDestroy() {
         createGameDialog.dismiss()
 
-//        if (!stayingInApp) {
+        if (!stayingInApp) {
+            NetworkManager.stop()
 //            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|offline"))
-//        }
+        }
 
         super.onDestroy()
     }
@@ -275,6 +269,7 @@ class MainActivity : ClientActivity() {
     override fun onUserLeaveHint() {
         if (!stayingInApp) {
             NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|away"))
+            NetworkManager.stop()
         }
 
         super.onUserLeaveHint()
@@ -304,34 +299,6 @@ class MainActivity : ClientActivity() {
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
 
-    }
-
-    private fun preloadModels() {
-        PieceTextures.init(resources)
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.pawn_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.bishop_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.knight_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.rook_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.queen_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.king_bytes)
-        }.start()
     }
 
     private fun onButtonInitialized(textSize: Float) {

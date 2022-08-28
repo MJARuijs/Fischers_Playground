@@ -3,14 +3,17 @@ package com.mjaruijs.fischersplayground.activities
 import android.content.*
 import android.os.*
 import androidx.appcompat.app.AppCompatActivity
+import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
+import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.opengl.OBJLoader
 import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_CHAT_MESSAGE_RECEIVED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
@@ -69,6 +72,8 @@ abstract class ClientActivity : AppCompatActivity() {
         serviceMessenger!!.send(message)
     }
 
+    private fun isInitialized() = NetworkManager.isRunning()
+
     private fun isUserRegisteredAtServer(): Boolean {
         return getPreference(USER_PREFERENCE_FILE).contains(USER_ID_KEY)
     }
@@ -79,11 +84,22 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        incomingInviteDialog.create(this)
 
         val preferences = getPreference(USER_PREFERENCE_FILE)
         userId = preferences.getString(USER_ID_KEY, "")!!
         userName = preferences.getString(USER_NAME_KEY, "")!!
+
+        if (!isInitiali()) {
+            preloadModels()
+
+            NetworkManager.run(this)
+
+            if (userId != "default_user_id") {
+                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "id", userId))
+            }
+        }
+
+        incomingInviteDialog.create(this)
     }
 
     override fun onStart() {
@@ -188,6 +204,34 @@ abstract class ClientActivity : AppCompatActivity() {
             }
 
         }
+    }
+
+    private fun preloadModels() {
+        PieceTextures.init(resources)
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.pawn_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.bishop_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.knight_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.rook_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.queen_bytes)
+        }.start()
+
+        Thread {
+            OBJLoader.preload(resources, R.raw.king_bytes)
+        }.start()
     }
 
     companion object {

@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.util
 
+import android.content.Context
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -20,6 +21,10 @@ object Logger {
     private var printTag = true
     private var printColored = false
     private var printTimeStamp = false
+
+    fun log(context: Context, message: String, fileName: String = "log.txt") {
+        FileManager.append(context, fileName, "$message\n")
+    }
 
     /**
      * Log a text with certain severity.

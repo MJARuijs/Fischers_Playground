@@ -85,8 +85,9 @@ class DataManagerService : Service() {
             }
         }
 
-//        startForeground(1, buildNotification())
+        startForeground(100, buildNotification())
 //        stopSelf()
+//        stopForeground(true)
 
         return START_NOT_STICKY
     }
@@ -117,6 +118,8 @@ class DataManagerService : Service() {
         val preferences = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE)
         id = preferences.getString(USER_ID_KEY, "")!!
 
+//        stopForeground(true)
+//        stopSelf()
         load()
 
         registerReceiver(newGameReceiver, infoFilter)
@@ -131,7 +134,7 @@ class DataManagerService : Service() {
         registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
         registerReceiver(chatMessageReceiver, chatFilter)
 
-//        startForeground(1, buildNotification())
+//        startForeground(100, buildNotification())
 //        stopSelf()
     }
 

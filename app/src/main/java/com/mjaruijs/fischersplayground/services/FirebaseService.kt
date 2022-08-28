@@ -12,8 +12,10 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.MainActivity
+import com.mjaruijs.fischersplayground.activities.MainActivity2
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 
 class FirebaseService : FirebaseMessagingService() {
 
@@ -93,6 +95,7 @@ class FirebaseService : FirebaseMessagingService() {
             val dataServiceIntent = Intent(this, DataManagerService::class.java)
             dataServiceIntent.putExtra("topic", topic)
             dataServiceIntent.putExtra("data", data)
+
             startForegroundService(dataServiceIntent)
 
             sendNotification(notificationMessage, extraData)
@@ -103,31 +106,36 @@ class FirebaseService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(message: String, extraData: HashMap<String, String>) {
-        val intent = Intent(applicationContext, MainActivity::class.java)
+        try {
+            val intent = Intent(applicationContext, MultiplayerGameActivity::class.java)
 
-        for (data in extraData) {
-            intent.putExtra(data.key, data.value)
+            for (data in extraData) {
+                intent.putExtra(data.key, data.value)
+            }
+
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+            val pendingIntent = PendingIntent.getActivity(applicationContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+            val channelId = getString(R.string.default_notification_channel_id)
+            val notificationBuilder = NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.drawable.black_queen)
+                .setContentTitle("Title")
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(channelId, "Opponent moved", IMPORTANCE_DEFAULT)
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            notificationManager.notify(currentNotificationId++, notificationBuilder.build())
+        } catch (e: Exception){
+            Logger.log(applicationContext, e.stackTraceToString(), "fire_base_crash_log.txt")
         }
 
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-
-        val pendingIntent = PendingIntent.getActivity(applicationContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-        val channelId = getString(R.string.default_notification_channel_id)
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.black_queen)
-            .setContentTitle("Title")
-            .setContentText(message)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Opponent moved", IMPORTANCE_DEFAULT)
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        notificationManager.notify(currentNotificationId++, notificationBuilder.build())
     }
 
     companion object {

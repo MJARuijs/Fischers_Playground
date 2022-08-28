@@ -28,6 +28,12 @@ object NetworkManager {
         return false
     }
 
+    fun stop() {
+        client.close()
+        initialized.set(false)
+        manager.stop()
+    }
+
     fun run(context: Context) {
         if (initialized.get()) {
             return
