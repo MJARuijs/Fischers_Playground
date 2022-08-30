@@ -4,15 +4,19 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_DEFAULT
 import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_UPDATE_CURRENT
+import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.MainActivity
-import com.mjaruijs.fischersplayground.activities.MainActivity2
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
@@ -73,6 +77,7 @@ class FirebaseService : FirebaseMessagingService() {
             val dataList = data.split('|')
 
             val extraData = HashMap<String, String>()
+            extraData["news_topic"] = topic
 
             val notificationMessage = when (topic) {
                 "new_game" -> {
@@ -84,7 +89,10 @@ class FirebaseService : FirebaseMessagingService() {
                     "Your move!"
                 }
                 "invite" -> {
-                    "New invite"
+                    val opponentName = dataList[0]
+                    extraData["opponent_name"] = opponentName
+                    extraData["invite_id"] = dataList[1]
+                    "$opponentName is challenging you to a game of chess!"
                 }
                 "request_undo" -> {
                     "Opponent is requesting to undo their move!"
@@ -92,37 +100,72 @@ class FirebaseService : FirebaseMessagingService() {
                 else -> { "" }
             }
 
-            val dataServiceIntent = Intent(this, DataManagerService::class.java)
-            dataServiceIntent.putExtra("topic", topic)
-            dataServiceIntent.putExtra("data", data)
+            val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
+                .setInputData(workDataOf(
+                    Pair("topic", topic),
+                    Pair("data", data)
+                ))
+                .build()
 
-            startForegroundService(dataServiceIntent)
+            val workManager = WorkManager.getInstance(applicationContext)
+            workManager.enqueue(worker)
 
-            sendNotification(notificationMessage, extraData)
-//            FileManager.write(applicationContext, "firebase_data.txt", "$data\n")
+            val onClickIntent = createIntent(topic, extraData) ?: throw IllegalArgumentException("Failed to create an intent for topic: $topic")
+
+            sendNotification(notificationMessage, onClickIntent)
         } catch (e: Exception) {
             FileManager.write(applicationContext, "firebase_crash_log.txt", e.stackTraceToString())
         }
     }
 
-    private fun sendNotification(message: String, extraData: HashMap<String, String>) {
-        try {
-            val intent = Intent(applicationContext, MultiplayerGameActivity::class.java)
+    private fun createIntent(topic: String, extraData: HashMap<String, String>): PendingIntent? {
+        return when (topic) {
+            "move" -> {
+                val intent = Intent(applicationContext, MultiplayerGameActivity::class.java)
 
-            for (data in extraData) {
-                intent.putExtra(data.key, data.value)
+                for (data in extraData) {
+                    intent.putExtra(data.key, data.value)
+                }
+
+                val stackBuilder = TaskStackBuilder.create(applicationContext)
+                stackBuilder.addParentStack(MultiplayerGameActivity::class.java)
+                stackBuilder.addNextIntent(intent)
+                stackBuilder.getPendingIntent(0, FLAG_UPDATE_CURRENT)
             }
+            "invite" -> {
+                val intent = Intent(applicationContext, MainActivity::class.java)
 
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                for (data in extraData) {
+                    intent.putExtra(data.key, data.value)
+                }
 
-            val pendingIntent = PendingIntent.getActivity(applicationContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+                PendingIntent.getActivity(applicationContext, 0, intent, FLAG_UPDATE_CURRENT)
+            }
+            else -> null
+        }
+    }
+
+    private fun sendNotification(message: String, onClickIntent: PendingIntent) {
+        try {
+//            val intent = Intent(applicationContext, MultiplayerGameActivity::class.java)
+//
+//            for (data in extraData) {
+//                intent.putExtra(data.key, data.value)
+//            }
+//
+//            val stackBuilder = TaskStackBuilder.create(applicationContext)
+//            stackBuilder.addParentStack(MultiplayerGameActivity::class.java)
+//            stackBuilder.addNextIntent(intent)
+
+//            val pendingIntent = stackBuilder.getPendingIntent(0, FLAG_UPDATE_CURRENT)
+
             val channelId = getString(R.string.default_notification_channel_id)
             val notificationBuilder = NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.black_queen)
                 .setContentTitle("Title")
                 .setContentText(message)
                 .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
+                .setContentIntent(onClickIntent)
 
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 

@@ -93,6 +93,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun setGame(game: MultiPlayerGame) {
         this.game = game
+//        game.goToLastMove()
+//        game.showPreviousMove()
         opponentName = game.opponentName
         isPlayingWhite = game.isPlayingWhite
 
@@ -103,14 +105,20 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         runOnUiThread {
             getChatFragment().addMessages(game.chatMessages)
             getActionBarFragment().game = game
-        }
-
-        runOnUiThread {
             processNews(game)
         }
 
         setGameCallbacks()
+        game.sendMoveData = {
+            val message = NetworkMessage(Topic.GAME_UPDATE, "move", it)
+            networkManager.sendMessage(message)
+        }
         super.setGame(game)
+    }
+
+    override fun onContextCreated() {
+        super.onContextCreated()
+//        game.showNextMove()
     }
 
     override fun onDisplaySizeChanged(width: Int, height: Int) {
@@ -140,7 +148,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         for (news in game.newsUpdates) {
             when (news.newsType) {
                 NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show(opponentName, ::closeAndSaveGameAsWin)
-                NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw)
+                NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw, networkManager)
                 NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
                 NewsType.OPPONENT_DECLINED_DRAW -> opponentRejectedDrawDialog.show(opponentName)
                 NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, userId)
@@ -164,7 +172,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun onChatMessageSent(message: ChatMessage) {
-        NetworkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "", "$gameId|$userId|${message.timeStamp}|${message.message}"))
+        networkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "", "$gameId|$userId|${message.timeStamp}|${message.message}"))
         (game as MultiPlayerGame).chatMessages += message
     }
 
@@ -240,12 +248,12 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onOpponentOfferedDraw(gameId: String) {
         if (this.gameId == gameId) {
-            opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw)
+            opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw, networkManager)
         }
     }
 
     private fun acceptDraw() {
-        NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$userId"))
+        networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$userId"))
         closeAndSaveGameAsDraw()
     }
 

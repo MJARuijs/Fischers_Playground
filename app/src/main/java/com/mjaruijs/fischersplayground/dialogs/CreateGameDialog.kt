@@ -23,7 +23,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
 
     private var initialized = false
 
-    fun create(id: String, context: Activity) {
+    fun create(id: String, context: Activity, networkManager: NetworkManager) {
         dialog = Dialog(context)
         dialog.setContentView(R.layout.create_game_dialog)
 
@@ -36,7 +36,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
 
         searchBar.setOnQueryTextListener(OnSearchViewChangedListener {
             if (searchBar.query.isNotBlank()) {
-                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "search_players", "${searchBar.query}"))
+                networkManager.sendMessage(NetworkMessage(Topic.INFO, "search_players", "${searchBar.query}"))
             } else {
                 context.runOnUiThread {
                     loadRecentPlayers()
@@ -44,7 +44,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
             }
         })
 
-        playerCardList = PlayerAdapter(id, ::onPlayerClicked)
+        playerCardList = PlayerAdapter(id, ::onPlayerClicked, networkManager)
 
         val recyclerView = dialog.findViewById<RecyclerView>(R.id.available_players_list) ?: return
         recyclerView.adapter = playerCardList

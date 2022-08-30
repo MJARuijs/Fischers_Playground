@@ -6,6 +6,7 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
 open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> Unit) : Fragment(layoutResource) {
@@ -16,6 +17,8 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
     lateinit var forwardButton: UIButton
 
     lateinit var game: Game
+
+    lateinit var networkManager: NetworkManager
 
     open var numberOfButtons: Int = 2
     var numberOfButtonsInitialized = 0
@@ -42,6 +45,8 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        networkManager = NetworkManager.getInstance()
 
         val textOffset = 65
         val textColor = Color.WHITE

@@ -94,6 +94,12 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
         return currentMoveIndex
     }
 
+    fun goToLastMove() {
+        while (currentMoveIndex < moves.size - 1) {
+            showNextMove()
+        }
+    }
+
     open fun showPreviousMove(): Pair<Boolean, Boolean> {
         if (currentMoveIndex == -1) {
             return Pair(first = true, second = false)

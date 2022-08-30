@@ -35,8 +35,10 @@ import kotlin.collections.HashMap
 
 abstract class ClientActivity : AppCompatActivity() {
 
-    protected var userId: String = "default_user_id"
-    protected var userName = "default_user_name"
+    protected var userId: String = DEFAULT_USER_ID
+    protected var userName = DEFAULT_USER_NAME
+
+    protected lateinit var networkManager: NetworkManager
 
     //    private var clientMessenger = Messenger(IncomingHandler(this))
     abstract var clientMessenger: Messenger
@@ -72,7 +74,7 @@ abstract class ClientActivity : AppCompatActivity() {
         serviceMessenger!!.send(message)
     }
 
-    private fun isInitialized() = NetworkManager.isRunning()
+    private fun isInitialized() = networkManager.isRunning()
 
     private fun isUserRegisteredAtServer(): Boolean {
         return getPreference(USER_PREFERENCE_FILE).contains(USER_ID_KEY)
@@ -86,16 +88,18 @@ abstract class ClientActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val preferences = getPreference(USER_PREFERENCE_FILE)
-        userId = preferences.getString(USER_ID_KEY, "")!!
-        userName = preferences.getString(USER_NAME_KEY, "")!!
+        userId = preferences.getString(USER_ID_KEY, DEFAULT_USER_ID)!!
+        userName = preferences.getString(USER_NAME_KEY, DEFAULT_USER_NAME)!!
 
-        if (!isInitiali()) {
+        networkManager = NetworkManager.getInstance()
+
+        if (!isInitialized()) {
             preloadModels()
 
-            NetworkManager.run(this)
+            networkManager.run(this)
 
-            if (userId != "default_user_id") {
-                NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "id", userId))
+            if (userId != DEFAULT_USER_ID) {
+                networkManager.sendMessage(NetworkMessage(Topic.INFO, "id", userId))
             }
         }
 
@@ -132,7 +136,7 @@ abstract class ClientActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         if (!stayingInApp) {
-            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|offline"))
+            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|offline"))
         }
         incomingInviteDialog.dismiss()
     }
@@ -148,7 +152,7 @@ abstract class ClientActivity : AppCompatActivity() {
         if (inviteData == null) {
             return
         }
-        incomingInviteDialog.showInvite(inviteData.second.opponentName, inviteData.first)
+        incomingInviteDialog.showInvite(inviteData.second.opponentName, inviteData.first, networkManager)
     }
 
     open fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {}
@@ -240,6 +244,9 @@ abstract class ClientActivity : AppCompatActivity() {
 
         const val USER_ID_KEY = "user_id"
         const val USER_NAME_KEY = "user_name"
+
+        const val DEFAULT_USER_ID = "default_user_id"
+        const val DEFAULT_USER_NAME = "default_user_name"
 
     }
 }

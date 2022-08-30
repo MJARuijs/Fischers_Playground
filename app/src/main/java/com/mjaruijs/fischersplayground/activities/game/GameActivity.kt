@@ -22,6 +22,9 @@ import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
+import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_MOVE_MADE
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_GAME_STATUS
@@ -69,7 +72,14 @@ abstract class GameActivity : ClientActivity() {
             hideActivityDecorations(fullScreen)
             registerReceivers()
 
-            undoRequestedDialog.create(this)
+            undoRequestedDialog.create(this) {
+                if (it == DialogResult.ACCEPT) {
+                    networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_undo", "$gameId|$userId"))
+                } else if (it == DialogResult.DECLINE) {
+                    networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "rejected_undo", "$gameId|$userId"))
+                }
+            }
+
             undoRejectedDialog.create(this)
             offerDrawDialog.create(this)
             opponentResignedDialog.create(this)
@@ -116,11 +126,12 @@ abstract class GameActivity : ClientActivity() {
         opponentBundle.putString("team", if (isPlayingWhite) "BLACK" else "WHITE")
         opponentBundle.putBoolean("hide_status_icon", isSinglePlayer)
 
-        supportFragmentManager.commit {
-            setReorderingAllowed(true)
-            replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
-            replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
-        }
+        // TODO: Uncomment this part
+//        supportFragmentManager.commit {
+//            setReorderingAllowed(true)
+//            replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
+//            replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
+//        }
     }
 
     fun getActionBarFragment(): ActionButtonsFragment {
@@ -128,28 +139,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun onContextCreated() {
-//        println("GAME_ACTIVITY: context created")
-//        if (isSinglePlayer) {
-//            game = SinglePlayerGame()
-//        } else {
-//            game = savedGames[gameId] ?: MultiPlayerGame(gameId, id, opponentName, isPlayingWhite)
-
-//            runOnUiThread {
-//                getChatFragment().addMessages((game as MultiPlayerGame).chatMessages)
-//            }
-//        }
-
-
-
-//        glView.setGame(game)
-
         restorePreferences()
-
-//        if (game is MultiPlayerGame) {
-//            runOnUiThread {
-//                processNews((game as MultiPlayerGame))
-//            }
-//        }
     }
 
     fun setGameCallbacks() {
@@ -339,7 +329,7 @@ abstract class GameActivity : ClientActivity() {
         val invitingUsername = data[0]
         val inviteId = data[1]
 
-        incomingInviteDialog.showInvite(invitingUsername, inviteId)
+        incomingInviteDialog.showInvite(invitingUsername, inviteId, networkManager)
     }
 
 //    override fun onUndoRequested(content: String) {

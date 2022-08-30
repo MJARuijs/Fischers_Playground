@@ -6,7 +6,6 @@ import android.view.View
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.dialogs.OfferDrawDialog
 import com.mjaruijs.fischersplayground.dialogs.ResignDialog
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
@@ -47,7 +46,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val p
                 }
 
                 resignDialog.show {
-                    NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "resign", "$gameId|$playerId"))
+                    networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "resign", "$gameId|$playerId"))
 //                    SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
 
 //                    finishActivity(GameStatus.GAME_LOST)
@@ -70,7 +69,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val p
                     return@setOnClickListener
                 }
 
-                offerDrawDialog.show(gameId, playerId)
+                offerDrawDialog.show(gameId, playerId, networkManager)
             }
 
         redoButton = view.findViewById(R.id.request_redo_button)
@@ -89,7 +88,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val p
                     return@setOnClickListener
                 }
 
-                NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "request_undo", "$gameId|$playerId"))
+                networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "request_undo", "$gameId|$playerId"))
             }
 
         buttons += resignButton

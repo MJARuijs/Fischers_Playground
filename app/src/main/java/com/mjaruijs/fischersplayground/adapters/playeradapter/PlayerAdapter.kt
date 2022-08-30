@@ -12,7 +12,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.Time
 
-class PlayerAdapter(var id: String, private val onInvite: (String, Long, String, String) -> Unit) : RecyclerView.Adapter<PlayerAdapter.PlayerViewHolder>() {
+class PlayerAdapter(var id: String, private val onInvite: (String, Long, String, String) -> Unit, private val networkManager: NetworkManager) : RecyclerView.Adapter<PlayerAdapter.PlayerViewHolder>() {
 
     private val players = ArrayList<PlayerCardItem>()
 
@@ -41,7 +41,7 @@ class PlayerAdapter(var id: String, private val onInvite: (String, Long, String,
 
             onInvite(inviteId, timeStamp, players[position].name, players[position].id)
 
-            NetworkManager.sendMessage(NetworkMessage(Topic.INFO, "invite", "${players[position].id}|$inviteId|$timeStamp"))
+            networkManager.sendMessage(NetworkMessage(Topic.INFO, "invite", "${players[position].id}|$inviteId|$timeStamp"))
         }
     }
 

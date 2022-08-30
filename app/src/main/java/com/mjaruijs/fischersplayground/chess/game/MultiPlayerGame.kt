@@ -7,9 +7,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
-import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
@@ -18,6 +15,10 @@ import com.mjaruijs.fischersplayground.util.Time
 class MultiPlayerGame(val gameId: String, private val playerId: String, val opponentName: String, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, moves) {
 
     var status: GameStatus
+
+    var sendMoveData: (String) -> Unit = {
+        println("Multiplayer move was made, but no data was actually sent. Did you forget to set the sendMoveData() function?")
+    }
 
     init {
         status = if (moves.isEmpty()) {
@@ -97,9 +98,8 @@ class MultiPlayerGame(val gameId: String, private val playerId: String, val oppo
         if (!runInBackground) {
             val timeStamp = Time.getFullTimeStamp()
             val positionUpdateMessage = "$gameId|$playerId|${move.toChessNotation()}|$timeStamp"
-            val message = NetworkMessage(Topic.GAME_UPDATE, "move", positionUpdateMessage)
 
-            NetworkManager.sendMessage(message)
+            sendMoveData(positionUpdateMessage)
         }
 
         status = GameStatus.OPPONENT_MOVE

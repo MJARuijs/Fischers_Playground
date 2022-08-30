@@ -63,34 +63,31 @@ class DataManagerService : Service() {
 
     private var bindCount = 0
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent != null) {
-
-            loadingData.set(true)
-            Thread {
-                loadData()
-                loadingData.set(false)
-                log("Done loading data")
-            }.start()
-
-            val topic = intent.getStringExtra("topic") ?: ""
-            val data = intent.getStringExtra("data") ?: ""
-
-            while (loadingData.get()) {
-                Thread.sleep(10)
-            }
-
-            when (topic) {
-                "move" -> onOpponentMoved(data)
-            }
-        }
-
-        startForeground(100, buildNotification())
-//        stopSelf()
-//        stopForeground(true)
-
-        return START_NOT_STICKY
-    }
+//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+//        if (intent != null) {
+//
+//            loadingData.set(true)
+//            Thread {
+//                loadData()
+//                loadingData.set(false)
+//                log("Done loading data")
+//            }.start()
+//
+//            val topic = intent.getStringExtra("topic") ?: ""
+//            val data = intent.getStringExtra("data") ?: ""
+//
+//            while (loadingData.get()) {
+//                Thread.sleep(10)
+//            }
+//
+//            when (topic) {
+//                "move" -> onOpponentMoved(data)
+//            }
+//        }
+//
+//
+//        return START_NOT_STICKY
+//    }
 
     override fun onBind(intent: Intent?): IBinder {
         val caller = intent?.getStringExtra("caller") ?: ""
@@ -118,8 +115,6 @@ class DataManagerService : Service() {
         val preferences = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE)
         id = preferences.getString(USER_ID_KEY, "")!!
 
-//        stopForeground(true)
-//        stopSelf()
         load()
 
         registerReceiver(newGameReceiver, infoFilter)
@@ -179,25 +174,25 @@ class DataManagerService : Service() {
     private fun log(message: String) {
         FileManager.append(applicationContext, "log.txt", "$message\n")
     }
-
-    private fun buildNotification(): Notification {
-        val channelId = "Fetching updates"
-
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.black_queen)
-            .setContentTitle("Title")
-            .setContentText("Fetching game updates")
-            .setAutoCancel(true)
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Opponent moved", NotificationManager.IMPORTANCE_DEFAULT)
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        return notificationBuilder.build()
-    }
+//
+//    private fun buildNotification(): Notification {
+//        val channelId = "Fetching updates"
+//
+//        val notificationBuilder = NotificationCompat.Builder(this, channelId)
+//            .setSmallIcon(R.drawable.black_queen)
+//            .setContentTitle("Title")
+//            .setContentText("Fetching game updates")
+//            .setAutoCancel(true)
+//
+//        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            val channel = NotificationChannel(channelId, "Opponent moved", NotificationManager.IMPORTANCE_DEFAULT)
+//            notificationManager.createNotificationChannel(channel)
+//        }
+//
+//        return notificationBuilder.build()
+//    }
 
     class IncomingHandler(service: DataManagerService) : Handler() {
 

@@ -14,8 +14,9 @@ object ErrorHandler {
     }
 
     private fun reportToServer(e: Exception): Boolean {
-        if (NetworkManager.isRunning()) {
-            NetworkManager.sendMessage(NetworkMessage(Topic.CRASH_REPORT, "", e.toString()))
+        val networkManager = NetworkManager.getInstance()
+        if (networkManager.isRunning()) {
+            networkManager.sendMessage(NetworkMessage(Topic.CRASH_REPORT, "", e.toString()))
             return true
         }
         return false

@@ -15,13 +15,13 @@ class OpponentOfferedDrawDialog {
         dialogBuilder = AlertDialog.Builder(context)
     }
 
-    fun show(gameId: String, opponentName: String, onAccept: () -> Unit) {
+    fun show(gameId: String, opponentName: String, onAccept: () -> Unit, networkManager: NetworkManager) {
         dialogBuilder.setMessage("$opponentName is offering a draw!")
         dialogBuilder.setPositiveButton("Accept") { _, _ ->
             onAccept()
         }
         dialogBuilder.setNegativeButton("Decline") { _, _ ->
-            NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "declined_draw", gameId))
+            networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "declined_draw", gameId))
         }
 
         dialog = dialogBuilder.show()

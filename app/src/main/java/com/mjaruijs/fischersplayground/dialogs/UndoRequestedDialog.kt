@@ -10,20 +10,22 @@ class UndoRequestedDialog {
 
     private lateinit var dialog: AlertDialog
     private lateinit var dialogBuilder: AlertDialog.Builder
+    private lateinit var onClick: (DialogResult) -> Unit
 
-    fun create(context: Context) {
+    fun create(context: Context, onClick: (DialogResult) -> Unit) {
         dialogBuilder = AlertDialog.Builder(context)
         dialogBuilder.setTitle("Undo requested!")
+        this.onClick = onClick
     }
 
     fun show(gameId: String, opponentUsername: String, id: String) {
         println("SHOWING DIALOG")
         dialogBuilder.setMessage("$opponentUsername is requesting to undo their last move")
         dialogBuilder.setPositiveButton("Accept") { _, _ ->
-            NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_undo", "$gameId|$id"))
+            onClick(DialogResult.ACCEPT)
         }
         dialogBuilder.setNegativeButton("Reject") { _, _ ->
-            NetworkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "rejected_undo", "$gameId|$id"))
+            onClick(DialogResult.DECLINE)
         }
 
         dialog = dialogBuilder.show()

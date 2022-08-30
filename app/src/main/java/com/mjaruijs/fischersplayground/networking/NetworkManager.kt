@@ -8,11 +8,25 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import java.util.concurrent.atomic.AtomicBoolean
 
-object NetworkManager {
+class NetworkManager {
 
-    private const val PUBLIC_SERVER_IP = "217.101.191.23"
-    private const val LOCAL_SERVER_IP = "192.168.178.18"
-    private const val SERVER_PORT = 4500
+    companion object {
+
+        private const val PUBLIC_SERVER_IP = "217.101.191.23"
+        private const val LOCAL_SERVER_IP = "192.168.178.17"
+        private const val SERVER_PORT = 4500
+
+        private var instance: NetworkManager? = null
+
+        fun getInstance(): NetworkManager {
+            if (instance == null) {
+                instance = NetworkManager()
+            }
+
+            return instance!!
+        }
+
+    }
 
     private val clientInitializing = AtomicBoolean(false)
     private val initialized = AtomicBoolean(false)
@@ -44,7 +58,7 @@ object NetworkManager {
         Thread {
             try {
                 clientInitializing.set(true)
-                client = EncodedClient(LOCAL_SERVER_IP, SERVER_PORT, NetworkManager::onRead)
+                client = EncodedClient(LOCAL_SERVER_IP, SERVER_PORT, ::onRead)
                 initialized.set(true)
             } catch (e: Exception) {
                 println("Failed to connect to server..")
