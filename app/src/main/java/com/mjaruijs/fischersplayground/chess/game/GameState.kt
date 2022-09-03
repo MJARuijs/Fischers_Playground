@@ -4,7 +4,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.util.ErrorHandler
 import kotlin.math.roundToInt
 
 class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayList<ArrayList<Piece?>> = ArrayList()) {
@@ -63,7 +62,7 @@ class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayLi
         return try {
             state[i][j]
         } catch (e: IndexOutOfBoundsException) {
-            ErrorHandler.reportCrash(e)
+//            ErrorHandler.reportCrash(e)
             return null
         }
     }
@@ -82,7 +81,7 @@ class GameState(private val isPlayingWhite: Boolean, internal val state: ArrayLi
        try {
            state[vector2.x.roundToInt()][vector2.y.roundToInt()] = piece
        } catch (e: IndexOutOfBoundsException) {
-           ErrorHandler.reportCrash(e)
+//           ErrorHandler.reportCrash(e)
        }
     }
 

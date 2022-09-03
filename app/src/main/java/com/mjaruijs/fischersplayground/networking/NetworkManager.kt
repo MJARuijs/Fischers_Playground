@@ -17,11 +17,21 @@ class NetworkManager {
         private const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
+//
+//        fun keepAlive() {
+//            if (instance == null) {
+//                println("Networker: wanted to set keepAlive but instance is null")
+//                return
+//            }
+//            instance!!.keepAlive()
+//        }
 
-        fun getInstance(): NetworkManager {
+        fun getInstance(listener: NetworkListener): NetworkManager {
             if (instance == null) {
                 instance = NetworkManager()
             }
+
+            instance!!.addListener(listener)
 
             return instance!!
         }
@@ -30,10 +40,18 @@ class NetworkManager {
 
     private val clientInitializing = AtomicBoolean(false)
     private val initialized = AtomicBoolean(false)
-
-    private val manager = Manager("Client")
+    private lateinit var manager: Manager
 
     private lateinit var client: EncodedClient
+
+    private val messageQueue = ArrayList<NetworkMessage>()
+
+//    private var listeners = ArrayList<NetworkListener>()
+
+    private var keepAlive = AtomicBoolean(false)
+
+//    var numberOfClients = 0
+//        private set
 
     fun isRunning(): Boolean {
         if (initialized.get()) {
@@ -42,10 +60,56 @@ class NetworkManager {
         return false
     }
 
-    fun stop() {
+    fun addListener(listener: NetworkListener) {
+//        listeners += listener
+        log("Adding listener: ${listener.name}")
+//        numberOfClients++
+    }
+
+    fun removeListener(listener: NetworkListener) {
+//        numberOfClients--
+        log("Removing listener: ${listener.name}")
+//        listeners.remove(listener)
+    }
+
+//    fun numberOfListeners() = listeners.size
+
+//    fun keepAlive() {
+//        keepAlive.set(true)
+//        log("Setting keepAlive")
+//    }
+//
+//    fun clearKeepAlive() {
+//        log("Clearing keepalive")
+//        keepAlive.set(false)
+//    }
+
+    fun log(message: String) {
+        println("Networker: $message")
+    }
+
+    fun stop(): Boolean {
+//        if (keepAlive.get()) {
+//            log("Tried to kill networker but kept it alive")
+//            return false
+//        }
+//        if (listeners.isNotEmpty()) {
+//            print("Tried to stop networker but clients are still bound: ${listeners.size}")
+//            for (client in listeners) {
+//                print(", ${client.name}")
+//            }
+//            println()
+//            return false
+//        }
+
+        log("Stopping networker")
+
+        messageQueue.clear()
         client.close()
         initialized.set(false)
+        clientInitializing.set(false)
         manager.stop()
+        return true
     }
 
     fun run(context: Context) {
@@ -53,6 +117,7 @@ class NetworkManager {
             return
         }
 
+        manager = Manager("Client")
         manager.context = context
 
         Thread {
@@ -61,7 +126,7 @@ class NetworkManager {
                 client = EncodedClient(LOCAL_SERVER_IP, SERVER_PORT, ::onRead)
                 initialized.set(true)
             } catch (e: Exception) {
-                println("Failed to connect to server..")
+                log("Failed to connect to server..")
                 initialized.set(false)
             } finally {
                 clientInitializing.set(false)
@@ -70,6 +135,14 @@ class NetworkManager {
             if (initialized.get()) {
                 Thread(manager).start()
                 manager.register(client)
+
+//                println("processing queued messages")
+
+                for (message in messageQueue) {
+//                    println("Sending queued message: $message")
+                    sendMessage(message)
+                }
+                messageQueue.clear()
             }
         }.start()
     }
@@ -82,12 +155,16 @@ class NetworkManager {
             }
 
             if (initialized.get()) {
-                println("Sending message: $message")
+//                println("Sending message: $message")
                 try {
                     client.write(message.toString())
+                    messageQueue.remove(message)
                 } catch (e: Exception) {
 
                 }
+            } else {
+                messageQueue += message
+//                println("Queueing message: $message")
             }
 
         }.start()
@@ -95,7 +172,7 @@ class NetworkManager {
 
     private fun onRead(message: NetworkMessage, context: Context) {
         if (message.topic != Topic.USER_STATUS) {
-            println("Received message: $message")
+            log("Received message: $message")
         }
 
         if (message.topic == Topic.INFO) {

@@ -25,6 +25,7 @@ object FileManager {
             val writer = OutputStreamWriter(context.openFileOutput(fileName, Context.MODE_PRIVATE))
             writer.write(content)
             writer.close()
+
 //            println("Wrote: $content")
             true
         } catch (e: IOException) {

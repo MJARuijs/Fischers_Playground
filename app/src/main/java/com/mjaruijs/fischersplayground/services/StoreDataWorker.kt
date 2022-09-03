@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
@@ -16,43 +17,46 @@ import com.mjaruijs.fischersplayground.util.FileManager
 
 class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(context, workParams) {
 
-    private val savedGames = HashMap<String, MultiPlayerGame>()
+//    private val savedGames = HashMap<String, MultiPlayerGame>()
     private lateinit var id: String
+    private lateinit var dataManager: DataManager
 
     override fun doWork(): Result {
         val preferences = applicationContext.getSharedPreferences("user_data", Service.MODE_PRIVATE)
         id = preferences.getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
 
-        loadSavedGames()
+        dataManager = DataManager.getInstance(applicationContext)
+
+//        loadSavedGames()
 
         val topic = inputData.getString("topic")
-        val data = inputData.getString("data")!!
+        val data = inputData.getStringArray("data")!!
 
+//        val dataList = data.split('|')
+
+        var output: Any? = null
         if (topic == "move") {
-            onOpponentMoved(data)
+            output = onOpponentMoved(data)
         }
+
+//        val result = workDataOf(Pair("result", output))
 
         return Result.success()
     }
 
-    private fun onOpponentMoved(content: String) {
-        val data = content.split('|')
-
+    private fun onOpponentMoved(data: Array<String>) {
         val gameId = data[0]
         val moveNotation = data[1]
         val move = Move.fromChessNotation(moveNotation)
 
         try {
-            val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId..")
+            val game = dataManager.savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId..")
             game.moveOpponent(move, false)
-            savedGames[gameId] = game
-
-            saveGames()
+            dataManager.savedGames[gameId] = game
+            dataManager.saveGames()
         } catch (e: Exception) {
             FileManager.write(applicationContext, "crash_log.txt", e.stackTraceToString())
         }
-
-//        sendMessage(DataManagerService.FLAG_OPPONENT_MOVED, MoveData(gameId, GameStatus.PLAYER_MOVE, move.timeStamp))
     }
 
     private fun loadSavedGames() {
@@ -107,14 +111,14 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             val newGame = MultiPlayerGame(gameId, id, opponentName, isPlayerWhite, moves, messages, newsUpdates)
             newGame.status = gameStatus
 
-            savedGames[gameId] = newGame
+            dataManager.savedGames[gameId] = newGame
         }
     }
 
     private fun saveGames() {
         var content = ""
 
-        for ((gameId, game) in savedGames) {
+        for ((gameId, game) in dataManager.savedGames) {
             var moveData = "["
 
             for ((i, move) in game.moves.withIndex()) {

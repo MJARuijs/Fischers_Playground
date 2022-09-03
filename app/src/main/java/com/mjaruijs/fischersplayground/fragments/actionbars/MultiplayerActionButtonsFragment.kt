@@ -6,11 +6,12 @@ import android.view.View
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.dialogs.OfferDrawDialog
 import com.mjaruijs.fischersplayground.dialogs.ResignDialog
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class MultiplayerActionButtonsFragment(private val gameId: String, private val playerId: String, private val isChatOpened: () -> Boolean, requestRender: () -> Unit) : ActionButtonsFragment(R.layout.multiplayer_actionbar, requestRender) {
+class MultiplayerActionButtonsFragment(private val gameId: String, private val playerId: String, private val isChatOpened: () -> Boolean, requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar, requestRender, networkManager) {
 
     private lateinit var resignButton: UIButton
     private lateinit var offerDrawButton: UIButton

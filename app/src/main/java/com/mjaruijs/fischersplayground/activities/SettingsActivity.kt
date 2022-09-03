@@ -30,6 +30,8 @@ import kotlin.math.roundToInt
 @Suppress("SameParameterValue", "ControlFlowWithEmptyBody")
 class SettingsActivity : ClientActivity() {
 
+    override val name = "settings_activity"
+
     override var clientMessenger = Messenger(IncomingHandler(this))
 
     private lateinit var game: SinglePlayerGame

@@ -6,6 +6,7 @@ import com.mjaruijs.fischersplayground.networking.nio.NonBlockingClient
 import java.net.InetSocketAddress
 import java.nio.Buffer
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 import java.nio.channels.SocketChannel
 import java.util.*
 
@@ -23,6 +24,8 @@ open class EncodedClient(channel: SocketChannel, val address: String, val callba
             buffer.put(encodedBytes)
             (buffer as Buffer).rewind()
             channel.write(buffer)
+        } catch (e: ClosedChannelException) {
+
         } catch (e: Exception) {
             e.printStackTrace()
             throw ClientException("Invalid write!")

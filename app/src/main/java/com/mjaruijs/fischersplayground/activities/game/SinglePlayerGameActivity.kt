@@ -11,6 +11,8 @@ class SinglePlayerGameActivity : GameActivity() {
 
     override var activityName = "single_player_activity"
 
+    override val name = "single_player_activity"
+
     override var clientMessenger = Messenger(IncomingHandler(this))
 
     override fun onCreate(savedInstanceState: Bundle?) {

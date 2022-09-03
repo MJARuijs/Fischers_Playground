@@ -24,10 +24,6 @@ import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_DELETE_GAME
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_ALL_DATA
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_ID
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_STORE_SENT_INVITE
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
@@ -36,7 +32,11 @@ class MainActivity : ClientActivity() {
 
     override var activityName = "main_activity"
 
+    override val name = "main_activity"
+
     override var clientMessenger = Messenger(IncomingHandler(this))
+
+    override val stayInAppOnBackPress = false
 
     private val idReceiver = MessageReceiver(Topic.INFO, "id", ::onIdReceived)
     private val playersReceiver = MessageReceiver(Topic.INFO, "search_players_result", ::onPlayersReceived)
@@ -66,6 +66,19 @@ class MainActivity : ClientActivity() {
 
         registerReceivers()
 
+        createUsernameDialog.create(this)
+        createUsernameDialog.setLayout()
+
+        if (userName == DEFAULT_USER_NAME) {
+            createUsernameDialog.show(::saveUserName)
+        } else {
+            findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
+        }
+
+        initUIComponents()
+
+
+
         FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
             val token = result.token
             val currentToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
@@ -81,19 +94,6 @@ class MainActivity : ClientActivity() {
                 }
             }
         }
-
-//        stopService(Intent(this, DataManagerService::class.java))
-
-        createUsernameDialog.create(this)
-        createUsernameDialog.setLayout()
-
-        if (userName == DEFAULT_USER_NAME) {
-            createUsernameDialog.show(::saveUserName)
-        } else {
-            findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
-        }
-
-        initUIComponents()
     }
 
     private fun processNews(topic: String) {
@@ -111,12 +111,12 @@ class MainActivity : ClientActivity() {
         this.userId = id
 
         savePreference(USER_ID_KEY, id)
-        Thread {
-            while (!serviceBound) {
-                Thread.sleep(10)
-            }
-            sendMessage(FLAG_SET_ID, id)
-        }.start()
+//        Thread {
+//            while (!serviceBound) {
+//                Thread.sleep(10)
+//            }
+//            sendMessage(FLAG_SET_ID, id)
+//        }.start()
 
         if (hasNewToken) {
             val token = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
@@ -128,7 +128,11 @@ class MainActivity : ClientActivity() {
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
-        sendMessage(FLAG_STORE_SENT_INVITE, Triple(inviteId, opponentId, InviteData(opponentName, timeStamp, InviteType.PENDING)))
+        dataManager.savedInvites[inviteId] = InviteData(opponentName, timeStamp, InviteType.PENDING)
+        dataManager.saveInvites()
+        dataManager.updateRecentOpponents(Pair(opponentName, opponentId))
+
+//        sendMessage(FLAG_STORE_SENT_INVITE, Triple(inviteId, opponentId, InviteData(opponentName, timeStamp, InviteType.PENDING)))
     }
 
     private fun onGameClicked(gameCard: GameCardItem) {
@@ -149,13 +153,41 @@ class MainActivity : ClientActivity() {
     }
 
     private fun onGameDeleted(gameId: String) {
-        sendMessage(FLAG_DELETE_GAME, gameId)
+        dataManager.savedGames.remove(gameId)
+        dataManager.savedInvites.remove(gameId)
+        dataManager.saveGames()
+        dataManager.saveInvites()
+//        sendMessage(FLAG_DELETE_GAME, gameId)
+    }
+
+    override fun onIncomingInvite(content: String) {
+        val data = processIncomingInvite(content)
+        val inviteId = data.first
+        val inviteData = data.second
+
+        incomingInviteDialog.showInvite(inviteData.opponentName, inviteId, networkManager)
+    }
+
+    override fun onNewGameStarted(content: String) {
+        val gameCard = processNewGameData(content)
+        val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.isPlayingWhite, gameCard.hasUpdate)
+        if (!doesCardExist) {
+            gameAdapter += gameCard
+        }
+    }
+
+    override fun onOpponentMoved(content: String) {
+        println("APP IN BACKGROUND? $appInBackground")
+        if (appInBackground) {
+            super.onOpponentMoved(content)
+        } else {
+            val data = processOpponentMoveData(content)
+            gameAdapter.updateCardStatus(data.gameId, data.status, data.timeStamp)
+        }
     }
 
     override fun onOpponentMoved(data: MoveData?) {
-        if (data == null) {
-            return
-        }
+        if (data == null) return
 
         gameAdapter.updateCardStatus(data.gameId, data.status, data.timeStamp)
     }
@@ -229,11 +261,29 @@ class MainActivity : ClientActivity() {
         super.onResume()
 
         Thread {
-            while (!serviceBound) {
-                Thread.sleep(10)
+            if (!dataManager.isDataLoaded()) {
+                while (dataManager.isLoadingData()) {
+                    Thread.sleep(1)
+                }
+                runOnUiThread {
+                    restoreSavedGames(dataManager.savedGames)
+                    restoreSavedInvites(dataManager.savedInvites)
+                    updateRecentOpponents(dataManager.recentOpponents)
+                }
+            } else {
+                runOnUiThread {
+                    restoreSavedGames(dataManager.savedGames)
+                    restoreSavedInvites(dataManager.savedInvites)
+                    updateRecentOpponents(dataManager.recentOpponents)
+                }
             }
-            sendMessage(FLAG_GET_ALL_DATA)
         }.start()
+//        Thread {
+//            while (!serviceBound) {
+//                Thread.sleep(10)
+//            }
+//            sendMessage(FLAG_GET_ALL_DATA)
+//        }.start()
 
         stayingInApp = false
 
@@ -257,21 +307,12 @@ class MainActivity : ClientActivity() {
     override fun onDestroy() {
         createGameDialog.dismiss()
 
-        if (!stayingInApp) {
-//            NetworkManager.stop()
-            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|offline"))
-        }
+//        if (!stayingInApp) {
+////            NetworkManager.stop()
+//            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|offline"))
+//        }
 
         super.onDestroy()
-    }
-
-    override fun onUserLeaveHint() {
-        if (!stayingInApp) {
-            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|away"))
-//            NetworkManager.stop()
-        }
-
-        super.onUserLeaveHint()
     }
 
     private fun savePreference(key: String, value: String) {
@@ -360,7 +401,7 @@ class MainActivity : ClientActivity() {
             }
     }
 
-    override fun newGameStarted(gameCard: GameCardItem) {
+    override fun onNewGameStarted(gameCard: GameCardItem) {
         val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.isPlayingWhite, gameCard.hasUpdate)
         if (!doesCardExist) {
             gameAdapter += gameCard

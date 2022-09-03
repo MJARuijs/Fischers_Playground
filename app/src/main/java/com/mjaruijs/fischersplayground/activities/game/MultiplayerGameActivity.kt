@@ -27,9 +27,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override var activityName = "multiplayer_activity"
 
-    override var clientMessenger = Messenger(IncomingHandler(this))
+    override val name = "multiplayer_activity"
 
-//    private var stayingInApp = false
+    override var clientMessenger = Messenger(IncomingHandler(this))
 
     private var chatInitialized = false
     private var chatOpened = false
@@ -54,9 +54,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             supportFragmentManager.commit {
                 setReorderingAllowed(true)
                 replace(R.id.chat_container, ChatFragment(::onChatMessageSent, ::translateChat, ::closeChat))
-                replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, ::isChatOpened) {
-                    glView.requestRender()
-                })
+                replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, ::isChatOpened, ::requestRender, networkManager))
             }
         } catch (e: Exception) {
             FileManager.append(this,  "mp_game_activity_crash_report.txt", e.stackTraceToString())
@@ -64,12 +62,13 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onResume() {
-        Thread {
-            while (!serviceBound) {
-                Thread.sleep(10)
-            }
-            sendMessage(FLAG_GET_GAME, gameId)
-        }.start()
+//        Thread {
+//            while (!serviceBound) {
+//                Thread.sleep(10)
+//            }
+//            sendMessage(FLAG_GET_GAME, gameId)
+//        }.start()
+        setGame(dataManager.savedGames[gameId]!!)
 //        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId"))
         keyboardHeightProvider.observer = this
         super.onResume()
@@ -80,7 +79,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 //            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
         }
 
-        sendMessage(FLAG_SAVE_GAME, game)
+//        sendMessage(FLAG_SAVE_GAME, game)
 
         keyboardHeightProvider.observer = null
         super.onPause()
@@ -112,6 +111,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         game.sendMoveData = {
             val message = NetworkMessage(Topic.GAME_UPDATE, "move", it)
             networkManager.sendMessage(message)
+
         }
         super.setGame(game)
     }

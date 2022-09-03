@@ -6,9 +6,10 @@ import android.view.View
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class PracticeActionButtonsFragment(requestRender: () -> Unit) : ActionButtonsFragment(R.layout.practice_actionbar, requestRender) {
+class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.practice_actionbar, requestRender, networkManager) {
 
     private lateinit var startRecordingButton: UIButton
     private lateinit var stopRecordingButton: UIButton

@@ -29,6 +29,7 @@ import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_MOVE_MADE
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_GAME_STATUS
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 
 abstract class GameActivity : ClientActivity() {
 
@@ -127,11 +128,11 @@ abstract class GameActivity : ClientActivity() {
         opponentBundle.putBoolean("hide_status_icon", isSinglePlayer)
 
         // TODO: Uncomment this part
-//        supportFragmentManager.commit {
-//            setReorderingAllowed(true)
-//            replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
-//            replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
-//        }
+        supportFragmentManager.commit {
+            setReorderingAllowed(true)
+            replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
+            replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
+        }
     }
 
     fun getActionBarFragment(): ActionButtonsFragment {
@@ -184,11 +185,30 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun onClick(x: Float, y: Float) {
-        game.onClick(x, y, displayWidth, displayHeight)
+        try {
+            game.onClick(x, y, displayWidth, displayHeight)
+        } catch (e: Exception) {
+            Logger.log(applicationContext, e.stackTraceToString(), "onclick_crash_log.txt")
+        }
+    }
+
+    protected fun requestRender() {
+        glView.requestRender()
     }
 
     private fun onMoveMade(move: Move) {
-        sendMessage(FLAG_MOVE_MADE, Pair(gameId, move))
+        println("Making move: ${move.toChessNotation()}")
+
+//        if (game is MultiPlayerGame) {
+//            (game as MultiPlayerGame).status = GameStatus.OPPONENT_MOVE
+//            val message = NetworkMessage(Topic.GAME_UPDATE, "move", it)
+//            networkManager.sendMessage(message)
+//        }
+
+        dataManager.savedGames[gameId] = game as MultiPlayerGame
+        dataManager.saveData()
+//        dataManager.savedGames[gameId]?.move(move, true)
+//        sendMessage(FLAG_MOVE_MADE, Pair(gameId, move))
     }
 
     private fun onCheckMate(team: Team) {
@@ -240,16 +260,16 @@ abstract class GameActivity : ClientActivity() {
 //        game.clearNews()
 //    }
 
-    private fun onNewGameStarted(content: String) {
-        val data = content.split('|')
-
-        val inviteId = data[0]
-        val opponentName = data[1]
-        val playingWhite = data[2].toBoolean()
-
-//        val newGame = MultiPlayerGame(inviteId, id, opponentName, playingWhite)
-//        savedGames[inviteId] = newGame
-    }
+//    override fun onNewGameStarted(content: String) {
+//        val data = content.split('|')
+//
+//        val inviteId = data[0]
+//        val opponentName = data[1]
+//        val playingWhite = data[2].toBoolean()
+//
+////        val newGame = MultiPlayerGame(inviteId, id, opponentName, playingWhite)
+////        savedGames[inviteId] = newGame
+//    }
 
 //    private fun onOpponentResigned(content: String) {
 //        val data = content.split('|')
@@ -306,7 +326,7 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    private fun onOpponentMoved(content: String) {
+    override fun onOpponentMoved(content: String) {
         val data = content.split('|')
 
         val gameId = data[0]
@@ -317,20 +337,20 @@ abstract class GameActivity : ClientActivity() {
             (game as MultiPlayerGame).moveOpponent(move, false)
             glView.requestRender()
         } else {
-//            val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-//            game.moveOpponent(move, false)
-//            savedGames[gameId] = game
+            val game = dataManager.savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+            game.moveOpponent(move, false)
+            dataManager.savedGames[gameId] = game
         }
     }
 
-    private fun onIncomingInvite(content: String) {
-        val data = content.split('|')
-
-        val invitingUsername = data[0]
-        val inviteId = data[1]
-
-        incomingInviteDialog.showInvite(invitingUsername, inviteId, networkManager)
-    }
+//    private fun onIncomingInvite(content: String) {
+//        val data = content.split('|')
+//
+//        val invitingUsername = data[0]
+//        val inviteId = data[1]
+//
+//        incomingInviteDialog.showInvite(invitingUsername, inviteId, networkManager)
+//    }
 
 //    override fun onUndoRequested(content: String) {
 //        val data = content.split('|')
@@ -415,7 +435,7 @@ abstract class GameActivity : ClientActivity() {
 //        if (game is MultiPlayerGame) {
 //            (game as MultiPlayerGame).status = status
 //        }
-        sendMessage(FLAG_SET_GAME_STATUS, Pair(gameId, status))
+//        sendMessage(FLAG_SET_GAME_STATUS, Pair(gameId, status))
 
 //        saveGames()
 //        saveGame()
@@ -553,10 +573,10 @@ abstract class GameActivity : ClientActivity() {
         super.onDestroy()
     }
 
-    override fun onUserLeaveHint() {
-//        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
-        super.onUserLeaveHint()
-    }
+//    override fun onUserLeaveHint() {
+////        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
+//        super.onUserLeaveHint()
+//    }
 
 
 

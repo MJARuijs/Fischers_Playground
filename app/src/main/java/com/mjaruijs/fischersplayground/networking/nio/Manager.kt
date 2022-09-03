@@ -37,11 +37,10 @@ class Manager(private val name: String) : Runnable {
                 val keys = selector.selectedKeys()
                 val iterator = keys.iterator()
                 while (iterator.hasNext()) {
-
                     val key = iterator.next()
                     iterator.remove()
-                    if (key.isValid) {
 
+                    if (key.isValid) {
                         if (key.isAcceptable) {
                             val server = key.attachment() as NonBlockingServer
                             server.onAccept(server.accept())
@@ -59,6 +58,7 @@ class Manager(private val name: String) : Runnable {
                                     val address = clientInfo.substring(startIndex + 1, endIndex)
                                     onClientDisconnect(address)
                                 }
+
                                 Logger.warn("${name}_Manager: CLIENT DISCONNECTED! ${client.channel.remoteAddress}")
                                 client.close()
                                 key.cancel()
@@ -67,16 +67,16 @@ class Manager(private val name: String) : Runnable {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                stop()
                 Logger.warn("STOPPED: ${e.message}")
             }
         }
     }
 
     fun stop() {
+        selector.close()
         running.set(false)
         registering.set(false)
-        selector.close()
     }
 
 }

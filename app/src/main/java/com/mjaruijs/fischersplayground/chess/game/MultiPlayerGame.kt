@@ -10,6 +10,7 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
 class MultiPlayerGame(val gameId: String, private val playerId: String, val opponentName: String, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, moves) {
@@ -77,7 +78,42 @@ class MultiPlayerGame(val gameId: String, private val playerId: String, val oppo
             }
         }
 
-        move(move, runInBackground)
+//        move(move, runInBackground)
+        possibleMoves.clear()
+
+        val fromPosition = move.getFromPosition(team)
+        val toPosition = move.getToPosition(team)
+
+        val currentPositionPiece = Piece(move.movedPiece, move.team)
+
+        take(currentPositionPiece, fromPosition, toPosition)
+
+        if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
+            performCastle(move.team, fromPosition, toPosition, runInBackground)
+        } else {
+            state[toPosition] = currentPositionPiece
+            state[fromPosition] = null
+
+            if (!runInBackground) {
+                setAnimationData(fromPosition, toPosition)
+            }
+
+            if (move.promotedPiece != null) {
+                state[toPosition] = Piece(move.promotedPiece, move.team)
+            }
+        }
+
+        val isCheck = isPlayerChecked(state, team)
+        val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
+
+        updateCheckData(move.team, isCheck, isCheckMate)
+
+        if (!runInBackground) {
+            if (isShowingCurrentMove()) {
+                incrementMoveCounter()
+            }
+            moves += move
+        }
 
         status = GameStatus.PLAYER_MOVE
     }
@@ -93,6 +129,8 @@ class MultiPlayerGame(val gameId: String, private val playerId: String, val oppo
             }
         }
 
+        status = GameStatus.OPPONENT_MOVE
+
         val move = move(team, fromPosition, toPosition, runInBackground)
 
         if (!runInBackground) {
@@ -101,8 +139,6 @@ class MultiPlayerGame(val gameId: String, private val playerId: String, val oppo
 
             sendMoveData(positionUpdateMessage)
         }
-
-        status = GameStatus.OPPONENT_MOVE
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {

@@ -13,6 +13,8 @@ class PractiseGameActivity : GameActivity() {
 
     override var activityName = "practice_activity"
 
+    override val name = "practice_activity"
+
     override var clientMessenger = Messenger(IncomingHandler(this))
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,9 +25,7 @@ class PractiseGameActivity : GameActivity() {
 
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment {
-                glView.requestRender()
-            })
+            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, networkManager))
         }
 
     }

@@ -18,50 +18,14 @@ import com.google.firebase.messaging.RemoteMessage
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.MainActivity
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
+import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 
 class FirebaseService : FirebaseMessagingService() {
 
-//    private var serviceMessenger: Messenger? = null
-//    var serviceBound = false
-
     private var currentNotificationId = 0
-
-//    private val connection = object : ServiceConnection {
-//        override fun onServiceConnected(name: ComponentName?, service: IBinder) {
-//            serviceMessenger = Messenger(service)
-//            serviceBound = true
-//
-////            val registrationMessage = Message.obtain(null, FLAG_REGISTER_CLIENT, activityName)
-////            registrationMessage.replyTo = clientMessenger
-////            serviceMessenger!!.send(registrationMessage)
-//        }
-//
-//        override fun onServiceDisconnected(name: ComponentName?) {
-//            serviceMessenger = null
-//            serviceBound = false
-//        }
-//    }
-
-//    fun sendMessage(flag: Int, data: Any? = null) {
-//        val message = Message.obtain(null, flag, data)
-//        serviceMessenger!!.send(message)
-//    }
-
-//    override fun onCreate() {
-//        super.onCreate()
-//
-//        Toast.makeText(applicationContext, "Created firebase!", Toast.LENGTH_SHORT).show()
-////        val intent = Intent(this, DataManagerService::class.java)
-////        intent.putExtra("caller", "Firebase")
-////        bindService(intent, connection, Context.BIND_AUTO_CREATE)
-//    }
-
-//    override fun onDestroy() {
-//        Toast.makeText(applicationContext, "Destroyed firebase!", Toast.LENGTH_SHORT).show()
-//        super.onDestroy()
-//    }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
@@ -72,51 +36,60 @@ class FirebaseService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         try {
+            val dataManager = DataManager.getInstance(applicationContext)
+
+//            NetworkManager.keepAlive()
+
             val topic = message.data["topic"] ?: throw IllegalArgumentException("No data was found with name: topic..")
             val data = message.data["data"] ?: throw IllegalArgumentException("No data was found with name: data..")
-            val dataList = data.split('|')
+            val dataList = data.split('|').toTypedArray()
 
-            val extraData = HashMap<String, String>()
-            extraData["news_topic"] = topic
+//            val extraData = HashMap<String, String>()
+//            extraData["news_topic"] = topic
 
-            val notificationMessage = when (topic) {
-                "new_game" -> {
-                    "New game!"
-                }
-                "move" -> {
-                    extraData["game_id"] = dataList[0]
-                    extraData["move_notation"] = dataList[1]
-                    "Your move!"
-                }
-                "invite" -> {
-                    val opponentName = dataList[0]
-                    extraData["opponent_name"] = opponentName
-                    extraData["invite_id"] = dataList[1]
-                    "$opponentName is challenging you to a game of chess!"
-                }
-                "request_undo" -> {
-                    "Opponent is requesting to undo their move!"
-                }
-                else -> { "" }
-            }
+            val notificationData = dataManager.createNotificationData(topic, dataList)
 
             val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
                 .setInputData(workDataOf(
                     Pair("topic", topic),
-                    Pair("data", data)
+                    Pair("data", dataList)
                 ))
                 .build()
 
             val workManager = WorkManager.getInstance(applicationContext)
             workManager.enqueue(worker)
 
-            val onClickIntent = createIntent(topic, extraData) ?: throw IllegalArgumentException("Failed to create an intent for topic: $topic")
-
-            sendNotification(notificationMessage, onClickIntent)
+            NotificationBuilder.build(applicationContext, notificationData)
         } catch (e: Exception) {
             FileManager.write(applicationContext, "firebase_crash_log.txt", e.stackTraceToString())
         }
     }
+
+//    private fun createIntent(topic: String, data: List<String>): PendingIntent {
+//        return when (topic) {
+//            "move" -> createMultiplayerActivityIntent(data)
+//            "new_game" -> createMultiplayerActivityIntent(data)
+//            "invite" -> createMainActivityIntent(data)
+//            else -> throw IllegalArgumentException("Could not create notification for topic: $topic")
+//        }
+//    }
+
+//    private fun createMainActivityIntent(data: List<String>): PendingIntent {
+//        val intent = Intent(applicationContext, MainActivity::class.java)
+//        intent.putExtra("opponent_name", data[0])
+//        intent.putExtra("invite_id", data[1])
+//        return PendingIntent.getActivity(applicationContext, 0, intent, FLAG_UPDATE_CURRENT)
+//    }
+//
+//    private fun createMultiplayerActivityIntent(data: List<String>): PendingIntent {
+//        val intent = Intent(applicationContext, MultiplayerGameActivity::class.java)
+//        intent.putExtra("game_id", data[0])
+//
+//        val stackBuilder = TaskStackBuilder.create(applicationContext)
+//        stackBuilder.addParentStack(MultiplayerGameActivity::class.java)
+//        stackBuilder.addNextIntent(intent)
+//        return stackBuilder.getPendingIntent(0, FLAG_UPDATE_CURRENT)
+//    }
 
     private fun createIntent(topic: String, extraData: HashMap<String, String>): PendingIntent? {
         return when (topic) {
@@ -147,18 +120,6 @@ class FirebaseService : FirebaseMessagingService() {
 
     private fun sendNotification(message: String, onClickIntent: PendingIntent) {
         try {
-//            val intent = Intent(applicationContext, MultiplayerGameActivity::class.java)
-//
-//            for (data in extraData) {
-//                intent.putExtra(data.key, data.value)
-//            }
-//
-//            val stackBuilder = TaskStackBuilder.create(applicationContext)
-//            stackBuilder.addParentStack(MultiplayerGameActivity::class.java)
-//            stackBuilder.addNextIntent(intent)
-
-//            val pendingIntent = stackBuilder.getPendingIntent(0, FLAG_UPDATE_CURRENT)
-
             val channelId = getString(R.string.default_notification_channel_id)
             val notificationBuilder = NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.black_queen)
@@ -177,14 +138,6 @@ class FirebaseService : FirebaseMessagingService() {
             notificationManager.notify(currentNotificationId++, notificationBuilder.build())
         } catch (e: Exception){
             Logger.log(applicationContext, e.stackTraceToString(), "fire_base_crash_log.txt")
-        }
-
-    }
-
-    companion object {
-
-        fun getToken(context: Context): String {
-            return context.getSharedPreferences("fcm_token", MODE_PRIVATE).getString("token", "")!!
         }
 
     }
