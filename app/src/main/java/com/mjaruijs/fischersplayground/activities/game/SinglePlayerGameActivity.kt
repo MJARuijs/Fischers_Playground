@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.ImageView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
+import com.mjaruijs.fischersplayground.util.Time
 
 class SinglePlayerGameActivity : GameActivity() {
 
@@ -21,7 +22,7 @@ class SinglePlayerGameActivity : GameActivity() {
     }
 
     override fun onContextCreated() {
-        game = SinglePlayerGame()
+        game = SinglePlayerGame(Time.getFullTimeStamp())
         super.onContextCreated()
     }
 

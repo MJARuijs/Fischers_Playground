@@ -22,12 +22,9 @@ import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_MOVE_MADE
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SET_GAME_STATUS
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 
@@ -205,7 +202,7 @@ abstract class GameActivity : ClientActivity() {
 //            networkManager.sendMessage(message)
 //        }
 
-        dataManager.savedGames[gameId] = game as MultiPlayerGame
+        dataManager[gameId] = game as MultiPlayerGame
         dataManager.saveData()
 //        dataManager.savedGames[gameId]?.move(move, true)
 //        sendMessage(FLAG_MOVE_MADE, Pair(gameId, move))
@@ -327,20 +324,28 @@ abstract class GameActivity : ClientActivity() {
     }
 
     override fun onOpponentMoved(content: String) {
-        val data = content.split('|')
+        val moveData = processOpponentMoveData(content)
 
-        val gameId = data[0]
-        val moveNotation = data[1]
-        val move = Move.fromChessNotation(moveNotation)
-
-        if (this.gameId == gameId) {
-            (game as MultiPlayerGame).moveOpponent(move, false)
+        if (moveData.gameId == gameId) {
+            (game as MultiPlayerGame).moveOpponent(moveData.move, false)
             glView.requestRender()
         } else {
-            val game = dataManager.savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-            game.moveOpponent(move, false)
-            dataManager.savedGames[gameId] = game
+            showPopup(moveData)
         }
+//        val data = content.split('|')
+//
+//        val gameId = data[0]
+//        val moveNotation = data[1]
+//        val move = Move.fromChessNotation(moveNotation)
+//
+//        if (this.gameId == gameId) {
+//            (game as MultiPlayerGame).moveOpponent(move, false)
+//            glView.requestRender()
+//        } else {
+//            val game = dataManager[gameId]
+//            game.moveOpponent(move, false)
+//            dataManager[gameId] = game
+//        }
     }
 
 //    private fun onIncomingInvite(content: String) {

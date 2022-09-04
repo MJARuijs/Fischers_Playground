@@ -8,6 +8,7 @@ import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeActionButtonsFragment
+import com.mjaruijs.fischersplayground.util.Time
 
 class PractiseGameActivity : GameActivity() {
 
@@ -20,7 +21,7 @@ class PractiseGameActivity : GameActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
-        game = SinglePlayerGame()
+        game = SinglePlayerGame(Time.getFullTimeStamp())
         setGameCallbacks()
 
         supportFragmentManager.commit {

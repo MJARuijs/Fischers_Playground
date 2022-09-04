@@ -13,7 +13,7 @@ import com.mjaruijs.fischersplayground.util.FloatUtils
 import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
-class MultiPlayerGame(val gameId: String, private val playerId: String, val opponentName: String, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, moves) {
+class MultiPlayerGame(val gameId: String, val opponentName: String, lastUpdated: Long, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated, moves) {
 
     var status: GameStatus
 
@@ -74,6 +74,7 @@ class MultiPlayerGame(val gameId: String, private val playerId: String, val oppo
     fun moveOpponent(move: Move, runInBackground: Boolean) {
         if (!runInBackground) {
             if (status != GameStatus.OPPONENT_MOVE) {
+                println("RETURNING BECAUSE NOT OPPONENTS MOVE")
                 return
             }
         }
@@ -134,8 +135,8 @@ class MultiPlayerGame(val gameId: String, private val playerId: String, val oppo
         val move = move(team, fromPosition, toPosition, runInBackground)
 
         if (!runInBackground) {
-            val timeStamp = Time.getFullTimeStamp()
-            val positionUpdateMessage = "$gameId|$playerId|${move.toChessNotation()}|$timeStamp"
+            val timeStamp = lastUpdated
+            val positionUpdateMessage = "${move.toChessNotation()}|$timeStamp"
 
             sendMoveData(positionUpdateMessage)
         }

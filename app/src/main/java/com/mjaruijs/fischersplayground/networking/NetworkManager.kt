@@ -13,7 +13,7 @@ class NetworkManager {
     companion object {
 
         private const val PUBLIC_SERVER_IP = "217.101.191.23"
-        private const val LOCAL_SERVER_IP = "192.168.178.17"
+        private const val LOCAL_SERVER_IP = "192.168.178.18"
         private const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
@@ -62,13 +62,13 @@ class NetworkManager {
 
     fun addListener(listener: NetworkListener) {
 //        listeners += listener
-        log("Adding listener: ${listener.name}")
+//        log("Adding listener: ${listener.name}")
 //        numberOfClients++
     }
 
     fun removeListener(listener: NetworkListener) {
 //        numberOfClients--
-        log("Removing listener: ${listener.name}")
+//        log("Removing listener: ${listener.name}")
 //        listeners.remove(listener)
     }
 
@@ -155,7 +155,7 @@ class NetworkManager {
             }
 
             if (initialized.get()) {
-//                println("Sending message: $message")
+                log("Sending message: $message")
                 try {
                     client.write(message.toString())
                     messageQueue.remove(message)

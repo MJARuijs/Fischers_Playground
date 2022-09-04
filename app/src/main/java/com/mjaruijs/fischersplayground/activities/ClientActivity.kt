@@ -1,15 +1,15 @@
 package com.mjaruijs.fischersplayground.activities
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.TaskStackBuilder
-import android.content.*
-import android.os.*
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
+import android.os.Bundle
+import android.os.Handler
+import android.os.Message
+import android.os.Messenger
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NotificationCompat
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
@@ -27,12 +27,12 @@ import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_CHAT_MESSAGE_RECEIVED
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_ALL_DATA
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_INVITE
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_MULTIPLAYER_GAMES
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_RECENT_OPPONENTS
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_GAME
+import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_NEW_INVITE
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_ACCEPTED_DRAW
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_MOVED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_OPPONENT_OFFERED_DRAW
@@ -40,11 +40,11 @@ import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLA
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_ACCEPTED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_REJECTED
 import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_UNDO_REQUESTED
+import com.mjaruijs.fischersplayground.services.FirebaseService
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
 import java.lang.ref.WeakReference
 import java.util.*
-import kotlin.collections.HashMap
 
 abstract class ClientActivity : AppCompatActivity(), NetworkListener {
 
@@ -67,7 +67,7 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
     protected var userId: String = DEFAULT_USER_ID
     protected var userName = DEFAULT_USER_NAME
 
-    protected var appInBackground = false
+//    protected var appInBackground = false
 //    protected val savedGames = HashMap<String, MultiPlayerGame>()
 //    private val savedInvites = HashMap<String, InviteData>()
 //    private val recentOpponents = Stack<Pair<String, String>>()
@@ -123,7 +123,6 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         val preferences = getPreference(USER_PREFERENCE_FILE)
         userId = preferences.getString(USER_ID_KEY, DEFAULT_USER_ID)!!
         userName = preferences.getString(USER_NAME_KEY, DEFAULT_USER_NAME)!!
@@ -132,11 +131,14 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
         dataManager = DataManager.getInstance(this)
 
         incomingInviteDialog.create(this)
+
+//        NotificationBuilder.clearNotifications(this)
+        NotificationBuilder.getInstance(this).clearNotifications()
     }
 
     override fun onStart() {
         super.onStart()
-        println("ON START $activityName")
+//        println("ON START $activityName")
 //        val intent = Intent(this, DataManagerService::class.java)
 //        intent.putExtra("caller", activityName)
 //        bindService(intent, connection, Context.BIND_AUTO_CREATE)
@@ -145,10 +147,10 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
     override fun onResume() {
         super.onResume()
 
-        println("ON RESUME $activityName")
-        appInBackground = false
+//        println("ON RESUME $activityName")
+//        appInBackground = false
         if (!isInitialized()) {
-            println("Initializing!")
+//            println("Initializing!")
             preloadModels()
 
             networkManager.run(this)
@@ -160,8 +162,8 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
 //            } else {
 //                println("HAS DEFAULT ID")
             }
-        } else {
-            println("NETWORKER ALREADY INITIALIZED")
+//        } else {
+//            println("NETWORKER ALREADY INITIALIZED")
         }
 
 //        networkManager.clearKeepAlive()
@@ -179,8 +181,11 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
     override fun onStop() {
         super.onStop()
 
-        println("ON STOP: $activityName")
+//        println("ON STOP: $activityName")
         incomingInviteDialog.dismiss()
+        unregisterReceiver(newGameReceiver)
+        unregisterReceiver(inviteReceiver)
+        unregisterReceiver(opponentMovedReceiver)
 
         if (!stayingInApp) {
 //            networkManager.removeListener(this)
@@ -197,37 +202,38 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        println("ON DESTROY CALLED $activityName")
+//        println("ON DESTROY CALLED $activityName")
         if (!stayingInApp) {
-            unregisterReceiver(newGameReceiver)
-            unregisterReceiver(inviteReceiver)
-            unregisterReceiver(opponentMovedReceiver)
 
-            if (appInBackground) {
+
+//            if (appInBackground) {
 //                if (networkManager.numberOfListeners() == 1) {
-                    networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|offline"))
-                    networkManager.removeListener(this)
-                    networkManager.stop()
+//                    networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|offline"))
+//                    networkManager.removeListener(this)
+//                    networkManager.stop()
 //                }
-            }
+//            }
 
 
 //            NetworkManager.stop()
         }
-
-        incomingInviteDialog.dismiss()
+//        val broadcastIntent = Intent()
+//        broadcastIntent.action = "restart_service"
+//        broadcastIntent.setClass(this, FirebaseService::class.java)
+//        sendBroadcast(broadcastIntent)
+//        incomingInviteDialog.dismiss()
+        super.onDestroy()
     }
 
     override fun onUserLeaveHint() {
-        println("ON_USER_LEAVE_HINT")
+//        println("ON_USER_LEAVE_HINT")
         if (!stayingInApp) {
-            println("SENDING AWAY MESSAGE")
+//            println("SENDING AWAY MESSAGE")
             networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|away"))
 //            NetworkManager.stop()
         }
 
-        appInBackground = true
+//        appInBackground = true
 
         super.onUserLeaveHint()
     }
@@ -235,7 +241,7 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
     override fun onBackPressed() {
         println("ON BACK PRESSED")
         stayingInApp = stayInAppOnBackPress
-        appInBackground = true
+//        appInBackground = true
 
         if (stayingInApp) {
             super.onBackPressed()
@@ -262,13 +268,13 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
     open fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {}
 
     open fun onIncomingInvite(content: String) {
-        if (appInBackground) {
-            val data = processIncomingInvite(content)
-            val notificationData = dataManager.createNotificationData("invite", content.split('|').toTypedArray())
-            NotificationBuilder.build(applicationContext, notificationData)
-        } else {
+//        if (appInBackground) {
+//            val data = processIncomingInvite(content)
+//            val notificationData = dataManager.createNotificationData("invite", content.split('|').toTypedArray())
+//            NotificationBuilder.build(applicationContext, notificationData)
+//        } else {
             processIncomingInvite(content)
-        }
+//        }
     }
 
     protected fun processIncomingInvite(content: String): Pair<String, InviteData> {
@@ -301,15 +307,17 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
         val inviteId = data[0]
         val opponentName = data[1]
         val playingWhite = data[2].toBoolean()
+        val timeStamp = data[3].toLong()
 
         val underscoreIndex = inviteId.indexOf('_')
         val opponentId = inviteId.substring(0, underscoreIndex)
 
-        val timeStamp = Time.getFullTimeStamp()
         val newGameStatus = if (playingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
 
-        val newGame = MultiPlayerGame(inviteId, userId, opponentName, playingWhite)
-        dataManager.savedGames[inviteId] = newGame
+        val newGame = MultiPlayerGame(inviteId, opponentName, timeStamp, playingWhite)
+        newGame.lastUpdated = timeStamp
+        dataManager[inviteId] = newGame
+
         dataManager.savedInvites.remove(inviteId)
 
         dataManager.saveData()
@@ -318,26 +326,26 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
         val hasUpdate = newGameStatus == GameStatus.PLAYER_MOVE
         return GameCardItem(inviteId, timeStamp, opponentName, newGameStatus, playingWhite, hasUpdate)
     }
-
-    open fun onNewGameStarted(gameCard: GameCardItem) {}
-
-    open fun onUndoRequested(gameId: String) {}
-
-    open fun onUndoRequestAccepted(data: Pair<String, Int>?) {}
-
-    open fun onUndoRequestRejected(gameId: String) {}
-
-    open fun onOpponentMoved(data: MoveData?) {}
+//
+//    open fun onNewGameStarted(gameCard: GameCardItem) {}
+//
+//    open fun onUndoRequested(gameId: String) {}
+//
+//    open fun onUndoRequestAccepted(data: Pair<String, Int>?) {}
+//
+//    open fun onUndoRequestRejected(gameId: String) {}
+//
+//    open fun onOpponentMoved(data: MoveData?) {}
 
     open fun onOpponentMoved(content: String) {
 
-        if (appInBackground) {
+//        if (appInBackground) {
 //            NetworkManager.keepAlive()
 
-            val data = processOpponentMoveData(content)
+//            val data = processOpponentMoveData(content)
 //            val extraData = HashMap<String, String>()
-            val notificationData = dataManager.createNotificationData("move", content.split('|').toTypedArray())
-            NotificationBuilder.build(applicationContext, notificationData)
+//            val notificationData = dataManager.createNotificationData("move", content.split('|').toTypedArray())
+//            NotificationBuilder.build(applicationContext, notificationData)
 //
 //            val intent = Intent(applicationContext, MultiplayerGameActivity::class.java)
 //            intent.putExtra("game_id", data.gameId)
@@ -369,11 +377,11 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
 //            }
 //
 //            notificationManager.notify(1, notificationBuilder.build())
-        } else {
-            processOpponentMoveData(content)
+//        } else {
+            val moveData = processOpponentMoveData(content)
 
-            showPopup()
-        }
+            showPopup(moveData)
+//        }
     }
 
     protected fun processOpponentMoveData(content: String): MoveData {
@@ -381,12 +389,14 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
 
         val gameId = data[0]
         val moveNotation = data[1]
+        val timeStamp = data[2].toLong()
         val move = Move.fromChessNotation(moveNotation)
+        val game = dataManager[gameId]
 
         try {
-            val game = dataManager.savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId")
             game.moveOpponent(move, false)
-            dataManager.savedGames[gameId] = game
+            game.lastUpdated = timeStamp
+            dataManager[gameId] = game
             dataManager.saveGames()
         } catch (e: Exception) {
             FileManager.write(applicationContext, "crash_log.txt", e.stackTraceToString())
@@ -404,11 +414,12 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
 //        val workManager = WorkManager.getInstance(applicationContext)
 //        workManager.enqueue(worker)
 //
-        return MoveData(gameId, GameStatus.PLAYER_MOVE, move.timeStamp)
+        return MoveData(gameId, GameStatus.PLAYER_MOVE, game.lastUpdated, move)
     }
 
-    fun showPopup() {
-
+    fun showPopup(moveData: MoveData) {
+        val game = dataManager[moveData.gameId]
+        Toast.makeText(applicationContext, "${game.opponentName} played ${moveData.move.toChessNotation()}", Toast.LENGTH_SHORT).show()
     }
 
     open fun onOpponentResigned(gameId: String) {}
@@ -431,25 +442,25 @@ abstract class ClientActivity : AppCompatActivity(), NetworkListener {
 
         @Suppress("UNCHECKED_CAST")
         override fun handleMessage(msg: Message) {
-            val activity = activityReference.get() ?: return
-            println("Received in Activity: ${msg.obj}")
+//            val activity = activityReference.get() ?: return
+//            println("Received in Activity: ${msg.obj}")
 
-            when (msg.what) {
-                FLAG_GET_MULTIPLAYER_GAMES -> activity.restoreSavedGames(msg.obj as? HashMap<String, MultiPlayerGame>)
-                FLAG_NEW_INVITE -> activity.onInviteReceived(msg.obj as? Pair<String, InviteData>)
-                FLAG_GET_ALL_DATA -> activity.restoreSavedData(msg.obj as? Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>)
-                FLAG_NEW_GAME -> activity.onNewGameStarted(msg.obj as GameCardItem)
-                FLAG_OPPONENT_MOVED -> activity.onOpponentMoved(msg.obj as MoveData)
-                FLAG_UNDO_REQUESTED -> activity.onUndoRequested(msg.obj as String)
-                FLAG_UNDO_ACCEPTED -> activity.onUndoRequestAccepted(msg.obj as Pair<String, Int>?)
-                FLAG_UNDO_REJECTED -> activity.onUndoRequestRejected(msg.obj as String)
-                FLAG_OPPONENT_OFFERED_DRAW -> activity.onOpponentOfferedDraw(msg.obj as String)
-                FLAG_OPPONENT_ACCEPTED_DRAW -> activity.onOpponentRejectedDraw(msg.obj as String)
-                FLAG_OPPONENT_REJECTED_DRAW -> activity.onOpponentRejectedDraw(msg.obj as String)
-                FLAG_CHAT_MESSAGE_RECEIVED -> activity.onChatMessageReceived(msg.obj as? Triple<String, String, String>)
-                FLAG_GET_GAME -> activity.setGame(msg.obj as MultiPlayerGame)
-                FLAG_GET_RECENT_OPPONENTS -> activity.updateRecentOpponents(msg.obj as Stack<Pair<String, String>>)
-            }
+//            when (msg.what) {
+//                FLAG_GET_MULTIPLAYER_GAMES -> activity.restoreSavedGames(msg.obj as? HashMap<String, MultiPlayerGame>)
+//                FLAG_NEW_INVITE -> activity.onInviteReceived(msg.obj as? Pair<String, InviteData>)
+//                FLAG_GET_ALL_DATA -> activity.restoreSavedData(msg.obj as? Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>)
+//                FLAG_NEW_GAME -> activity.onNewGameStarted(msg.obj as GameCardItem)
+//                FLAG_OPPONENT_MOVED -> activity.onOpponentMoved(msg.obj as MoveData)
+//                FLAG_UNDO_REQUESTED -> activity.onUndoRequested(msg.obj as String)
+//                FLAG_UNDO_ACCEPTED -> activity.onUndoRequestAccepted(msg.obj as Pair<String, Int>?)
+//                FLAG_UNDO_REJECTED -> activity.onUndoRequestRejected(msg.obj as String)
+//                FLAG_OPPONENT_OFFERED_DRAW -> activity.onOpponentOfferedDraw(msg.obj as String)
+//                FLAG_OPPONENT_ACCEPTED_DRAW -> activity.onOpponentRejectedDraw(msg.obj as String)
+//                FLAG_OPPONENT_REJECTED_DRAW -> activity.onOpponentRejectedDraw(msg.obj as String)
+//                FLAG_CHAT_MESSAGE_RECEIVED -> activity.onChatMessageReceived(msg.obj as? Triple<String, String, String>)
+//                FLAG_GET_GAME -> activity.setGame(msg.obj as MultiPlayerGame)
+//                FLAG_GET_RECENT_OPPONENTS -> activity.updateRecentOpponents(msg.obj as Stack<Pair<String, String>>)
+//            }
 
         }
     }

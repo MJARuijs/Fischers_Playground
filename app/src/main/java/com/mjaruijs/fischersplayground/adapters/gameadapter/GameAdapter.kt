@@ -21,9 +21,10 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
     private val games = ArrayList<GameCardItem>()
 
     @SuppressLint("NotifyDataSetChanged")
-    fun updateGameCard(gameId: String, newStatus: GameStatus, isPlayerWhite: Boolean? = null, hasUpdate: Boolean): Boolean {
+    fun updateGameCard(gameId: String, newStatus: GameStatus, lastUpdated: Long, isPlayerWhite: Boolean? = null, hasUpdate: Boolean): Boolean {
         val game = games.find { game -> game.id == gameId } ?: return false
 
+        game.lastUpdated = lastUpdated
         game.gameStatus = newStatus
         game.isPlayingWhite = isPlayerWhite
 

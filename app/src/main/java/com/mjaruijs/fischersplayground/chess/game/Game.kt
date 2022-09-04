@@ -14,7 +14,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = ArrayList()) {
+abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var moves: ArrayList<Move> = ArrayList()) {
 
     protected val state = GameState(isPlayingWhite)
 
@@ -34,7 +34,7 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
 
     private var locked = AtomicBoolean(false)
 
-    var lastUpdated = 0L
+//    var lastUpdated = 0L
 
     var onPawnPromoted: (Vector2, Team) -> PieceType = { _, _ -> PieceType.QUEEN }
     var enableBackButton: () -> Unit = {}
@@ -274,8 +274,10 @@ abstract class Game(val isPlayingWhite: Boolean, var moves: ArrayList<Move> = Ar
 
 //        println("Move made from: $actualFromPosition, to: $actualToPosition")
 
-        val move = Move(Time.getFullTimeStamp(), team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type, promotedPiece)
+        val move = Move(team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, pieceAtNewPosition?.type, promotedPiece)
         if (!runInBackground) {
+            lastUpdated = Time.getFullTimeStamp()
+
             if (isShowingCurrentMove()) {
                 incrementMoveCounter()
             }

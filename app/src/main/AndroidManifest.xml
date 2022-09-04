@@ -48,7 +48,6 @@
             android:name=".activities.game.PractiseGameActivity"
             android:parentActivityName=".activities.MainActivity"
             android:windowSoftInputMode="adjustNothing" />
-        <activity android:name=".activities.MainActivity2" />
 
         <service
             android:name=".services.DataManagerService"
@@ -62,6 +61,17 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+<!--        <receiver-->
+<!--            android:name=".receivers.RestartReceiver"-->
+<!--            android:enabled="true"-->
+<!--            android:exported="true">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="restart_service" />-->
+<!--            </intent-filter>-->
+<!--        </receiver>-->
+
+
     </application>
 
 </manifest>

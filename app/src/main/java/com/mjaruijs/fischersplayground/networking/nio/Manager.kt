@@ -68,7 +68,7 @@ class Manager(private val name: String) : Runnable {
                 }
             } catch (e: Exception) {
                 stop()
-                Logger.warn("STOPPED: ${e.message}")
+//                Logger.warn("STOPPED: ${e.message}")
             }
         }
     }

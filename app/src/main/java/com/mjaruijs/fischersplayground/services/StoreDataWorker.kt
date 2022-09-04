@@ -47,13 +47,21 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     private fun onOpponentMoved(data: Array<String>) {
         val gameId = data[0]
         val moveNotation = data[1]
+        val timeStamp = data[2].toLong()
         val move = Move.fromChessNotation(moveNotation)
 
         try {
-            val game = dataManager.savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with id: $gameId..")
+            val game = dataManager[gameId]
             game.moveOpponent(move, false)
-            dataManager.savedGames[gameId] = game
+            game.lastUpdated = timeStamp
+            dataManager[gameId] = game
             dataManager.saveGames()
+
+//            for (g in dataManager.getSavedGames()) {
+//
+//            }
+
+            println("SAVING GAME: $gameId ${move.toChessNotation()}")
         } catch (e: Exception) {
             FileManager.write(applicationContext, "crash_log.txt", e.stackTraceToString())
         }
@@ -108,17 +116,17 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
                 newsUpdates += News.fromString(news)
             }
 
-            val newGame = MultiPlayerGame(gameId, id, opponentName, isPlayerWhite, moves, messages, newsUpdates)
+            val newGame = MultiPlayerGame(gameId, opponentName, lastUpdated, isPlayerWhite, moves, messages, newsUpdates)
             newGame.status = gameStatus
-
-            dataManager.savedGames[gameId] = newGame
+            newGame.lastUpdated = lastUpdated
+            dataManager[gameId] = newGame
         }
     }
 
     private fun saveGames() {
         var content = ""
 
-        for ((gameId, game) in dataManager.savedGames) {
+        for ((gameId, game) in dataManager.getSavedGames()) {
             var moveData = "["
 
             for ((i, move) in game.moves.withIndex()) {

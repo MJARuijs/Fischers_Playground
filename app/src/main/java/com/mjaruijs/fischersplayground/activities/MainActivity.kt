@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Messenger
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.core.view.ViewCompat
@@ -19,13 +20,13 @@ import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 
 class MainActivity : ClientActivity() {
@@ -54,15 +55,10 @@ class MainActivity : ClientActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES)
-
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
         hideActivityDecorations()
-
-        val newsTopic = intent.getStringExtra("news_topic")
-        if (newsTopic != null) {
-            processNews(newsTopic)
-        }
 
         registerReceivers()
 
@@ -77,7 +73,14 @@ class MainActivity : ClientActivity() {
 
         initUIComponents()
 
-
+        try {
+            val newsTopic = intent.getStringExtra("news_topic")
+            if (newsTopic != null) {
+                processNews(newsTopic)
+            }
+        } catch (e: Exception) {
+            Logger.log(this, e.stackTraceToString(), "main_activity_crash_report.txt")
+        }
 
         FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
             val token = result.token
@@ -103,6 +106,15 @@ class MainActivity : ClientActivity() {
                 val inviteId = intent.getStringExtra("invite_id") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: invite_id")
 //                incomingInviteDialog.create(this)
                 incomingInviteDialog.showInvite(opponentName, inviteId, networkManager)
+            }
+            "move" -> {
+                val data = intent.getStringExtra("data") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: data")
+                val moveData = processOpponentMoveData(data)
+
+                val multiplayerIntent = Intent(this, MultiplayerGameActivity::class.java)
+                multiplayerIntent.putExtra("game_id", moveData.gameId)
+                startActivity(multiplayerIntent)
+                Toast.makeText(this, "Opponent made move!", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -153,7 +165,7 @@ class MainActivity : ClientActivity() {
     }
 
     private fun onGameDeleted(gameId: String) {
-        dataManager.savedGames.remove(gameId)
+        dataManager.removeGame(gameId)
         dataManager.savedInvites.remove(gameId)
         dataManager.saveGames()
         dataManager.saveInvites()
@@ -170,42 +182,43 @@ class MainActivity : ClientActivity() {
 
     override fun onNewGameStarted(content: String) {
         val gameCard = processNewGameData(content)
-        val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.isPlayingWhite, gameCard.hasUpdate)
+
+        val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.lastUpdated, gameCard.isPlayingWhite, gameCard.hasUpdate)
         if (!doesCardExist) {
             gameAdapter += gameCard
         }
     }
 
     override fun onOpponentMoved(content: String) {
-        println("APP IN BACKGROUND? $appInBackground")
-        if (appInBackground) {
-            super.onOpponentMoved(content)
-        } else {
+//        println("APP IN BACKGROUND? $appInBackground")
+//        if (appInBackground) {
+//            super.onOpponentMoved(content)
+//        } else {
             val data = processOpponentMoveData(content)
-            gameAdapter.updateCardStatus(data.gameId, data.status, data.timeStamp)
-        }
+            gameAdapter.updateCardStatus(data.gameId, data.status, data.time)
+//        }
     }
-
-    override fun onOpponentMoved(data: MoveData?) {
-        if (data == null) return
-
-        gameAdapter.updateCardStatus(data.gameId, data.status, data.timeStamp)
-    }
-
-    override fun onUndoRequested(gameId: String) {
-        gameAdapter.hasUpdate(gameId)
-    }
-
-    override fun onUndoRequestAccepted(data: Pair<String, Int>?) {
-        if (data == null) {
-            return
-        }
-        gameAdapter.hasUpdate(data.first)
-    }
-
-    override fun onUndoRequestRejected(gameId: String) {
-        gameAdapter.hasUpdate(gameId)
-    }
+//
+//    override fun onOpponentMoved(data: MoveData?) {
+//        if (data == null) return
+//
+//        gameAdapter.updateCardStatus(data.gameId, data.status, data.time)
+//    }
+//
+//    override fun onUndoRequested(gameId: String) {
+//        gameAdapter.hasUpdate(gameId)
+//    }
+//
+//    override fun onUndoRequestAccepted(data: Pair<String, Int>?) {
+//        if (data == null) {
+//            return
+//        }
+//        gameAdapter.hasUpdate(data.first)
+//    }
+//
+//    override fun onUndoRequestRejected(gameId: String) {
+//        gameAdapter.hasUpdate(gameId)
+//    }
 
     private fun saveUserName(userName: String) {
         this.userName = userName
@@ -266,13 +279,13 @@ class MainActivity : ClientActivity() {
                     Thread.sleep(1)
                 }
                 runOnUiThread {
-                    restoreSavedGames(dataManager.savedGames)
+                    restoreSavedGames(dataManager.getSavedGames())
                     restoreSavedInvites(dataManager.savedInvites)
                     updateRecentOpponents(dataManager.recentOpponents)
                 }
             } else {
                 runOnUiThread {
-                    restoreSavedGames(dataManager.savedGames)
+                    restoreSavedGames(dataManager.getSavedGames())
                     restoreSavedInvites(dataManager.savedInvites)
                     updateRecentOpponents(dataManager.recentOpponents)
                 }
@@ -400,17 +413,17 @@ class MainActivity : ClientActivity() {
                 createGameDialog.show()
             }
     }
-
-    override fun onNewGameStarted(gameCard: GameCardItem) {
-        val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.isPlayingWhite, gameCard.hasUpdate)
-        if (!doesCardExist) {
-            gameAdapter += gameCard
-        }
-    }
+//
+//    override fun onNewGameStarted(gameCard: GameCardItem) {
+//        val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.isPlayingWhite, gameCard.hasUpdate)
+//        if (!doesCardExist) {
+//            gameAdapter += gameCard
+//        }
+//    }
 
     override fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
         for ((gameId, game) in games ?: return) {
-            val doesCardExist = gameAdapter.updateGameCard(gameId, game.status, game.isPlayingWhite, false)
+            val doesCardExist = gameAdapter.updateGameCard(gameId, game.status, game.lastUpdated, game.isPlayingWhite, false)
 
             if (!doesCardExist) {
                 gameAdapter += GameCardItem(gameId, game.lastUpdated, game.opponentName, game.status, game.isPlayingWhite, false)

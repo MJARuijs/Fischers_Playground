@@ -247,7 +247,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
     }
 
     fun destroy() {
-        println("destroying pieceRenderer")
+//        println("destroying pieceRenderer")
         quad.destroy()
 //        pawnMesh.destroy()
 //        knightMesh.destroy()

@@ -68,7 +68,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 //            }
 //            sendMessage(FLAG_GET_GAME, gameId)
 //        }.start()
-        setGame(dataManager.savedGames[gameId]!!)
+        setGame(dataManager[gameId])
 //        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId"))
         keyboardHeightProvider.observer = this
         super.onResume()
@@ -109,9 +109,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         setGameCallbacks()
         game.sendMoveData = {
-            val message = NetworkMessage(Topic.GAME_UPDATE, "move", it)
+            val message = NetworkMessage(Topic.GAME_UPDATE, "move", "$gameId|$userId|$it")
             networkManager.sendMessage(message)
-
         }
         super.setGame(game)
     }
@@ -206,29 +205,29 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         chatOpened = false
     }
-
-    override fun onUndoRequested(gameId: String) {
-        if (this.gameId == gameId) {
-            undoRequestedDialog.show(gameId, opponentName, userId)
-        }
-    }
-
-    override fun onUndoRequestAccepted(data: Pair<String, Int>?) {
-        if (data == null) {
-            return
-        }
-
-        if (this.gameId == data.first) {
-            (game as MultiPlayerGame).undoMoves(data.second)
-            glView.requestRender()
-        }
-    }
-
-    override fun onUndoRequestRejected(gameId: String) {
-        if (this.gameId == gameId) {
-            undoRejectedDialog.show(opponentName)
-        }
-    }
+//
+//    override fun onUndoRequested(gameId: String) {
+//        if (this.gameId == gameId) {
+//            undoRequestedDialog.show(gameId, opponentName, userId)
+//        }
+//    }
+//
+//    override fun onUndoRequestAccepted(data: Pair<String, Int>?) {
+//        if (data == null) {
+//            return
+//        }
+//
+//        if (this.gameId == data.first) {
+//            (game as MultiPlayerGame).undoMoves(data.second)
+//            glView.requestRender()
+//        }
+//    }
+//
+//    override fun onUndoRequestRejected(gameId: String) {
+//        if (this.gameId == gameId) {
+//            undoRejectedDialog.show(opponentName)
+//        }
+//    }
 
 //    override fun onOpponentMoved(data: MoveData?) {
 //        if (data == null) {

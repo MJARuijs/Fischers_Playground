@@ -25,7 +25,7 @@ import kotlin.collections.HashMap
 
 class DataManager(private val context: Context) {
 
-    val savedGames = HashMap<String, MultiPlayerGame>()
+    private val savedGames = HashMap<String, MultiPlayerGame>()
     val savedInvites = HashMap<String, InviteData>()
     val recentOpponents = Stack<Pair<String, String>>()
     private val userId: String
@@ -39,54 +39,24 @@ class DataManager(private val context: Context) {
         loadData()
     }
 
-    fun createNotificationData(topic: String, data: Array<String>): NotificationData {
+    fun getSavedGames() = savedGames
 
-        return when (topic) {
-            "new_game" -> {
-                val opponentName = data[1]
-                val isPlayingWhite = data[2].toBoolean()
-                val color = if (isPlayingWhite) "white" else "black"
-                NotificationData("New game started!", "You're playing $color against $opponentName!", createIntent(topic, data))
-            }
-            "move" -> {
-                val gameId = data[0]
-                val moveNotation = data[1]
-                val move = moveNotation.substring(moveNotation.indexOf(':') + 1)
-                val game = savedGames[gameId] ?: throw IllegalArgumentException("Could not find game with gameId: $gameId")
-                NotificationData("Your move!", "${game.opponentName} played $move", createIntent(topic, data))
-            }
-            "invite" -> {
-                val opponentName = data[0]
-                NotificationData("New invite!", "$opponentName has invited you for a game of chess!", createIntent("invite", data))
-            }
-            else -> throw IllegalArgumentException("Could not create NotificationData for topic: $topic")
+    fun removeGame(id: String) {
+        savedGames.remove(id)
+    }
+
+    operator fun set(id: String, game: MultiPlayerGame) {
+        while (isLoadingData()) {
+            Thread.sleep(1)
         }
+        savedGames[id] = game
     }
 
-    private fun createIntent(topic: String, data: Array<String>): PendingIntent {
-        return when (topic) {
-            "move" -> createMultiplayerActivityIntent(data)
-            "new_game" -> createMultiplayerActivityIntent(data)
-            "invite" -> createMainActivityIntent(data)
-            else -> throw IllegalArgumentException("Could not create notification for topic: $topic")
+    operator fun get(id: String): MultiPlayerGame {
+        while (isLoadingData()) {
+            Thread.sleep(1)
         }
-    }
-
-    private fun createMainActivityIntent(data: Array<String>): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java)
-        intent.putExtra("opponent_name", data[0])
-        intent.putExtra("invite_id", data[1])
-        return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-    }
-
-    private fun createMultiplayerActivityIntent(data: Array<String>): PendingIntent {
-        val intent = Intent(context, MultiplayerGameActivity::class.java)
-        intent.putExtra("game_id", data[0])
-
-        val stackBuilder = TaskStackBuilder.create(context)
-        stackBuilder.addParentStack(MultiplayerGameActivity::class.java)
-        stackBuilder.addNextIntent(intent)
-        return stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+        return savedGames[id] ?: throw IllegalArgumentException("No game could be found with id: $id")
     }
 
     fun isLoadingData() = loadingData.get()
@@ -166,7 +136,7 @@ class DataManager(private val context: Context) {
                 newsUpdates += News.fromString(news)
             }
 
-            val newGame = MultiPlayerGame(gameId, userId, opponentName, isPlayerWhite, moves, messages, newsUpdates)
+            val newGame = MultiPlayerGame(gameId, opponentName, lastUpdated, isPlayerWhite, moves, messages, newsUpdates)
             newGame.status = gameStatus
 
             savedGames[gameId] = newGame
@@ -285,7 +255,17 @@ class DataManager(private val context: Context) {
             content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
         }
 
+        println("Should write:\n$content")
+
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
+
+        val lines = FileManager.read(context, MULTIPLAYER_GAME_FILE)!!
+
+        println("Actually read:")
+        for (line in lines) {
+            println(line)
+        }
+        println()
     }
 
     fun saveInvites() {

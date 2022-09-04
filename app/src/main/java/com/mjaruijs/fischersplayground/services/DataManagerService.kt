@@ -353,14 +353,14 @@ class DataManagerService : Service() {
         val inviteId = data[0]
         val opponentName = data[1]
         val playingWhite = data[2].toBoolean()
+        val timeStamp = data[3].toLong()
 
         val underscoreIndex = inviteId.indexOf('_')
         val opponentId = inviteId.substring(0, underscoreIndex)
 
-        val timeStamp = Time.getFullTimeStamp()
         val newGameStatus = if (playingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
 
-        val newGame = MultiPlayerGame(inviteId, id, opponentName, playingWhite)
+        val newGame = MultiPlayerGame(inviteId, opponentName, timeStamp, playingWhite)
         savedGames[inviteId] = newGame
         savedInvites.remove(inviteId)
         updateRecentOpponents(Pair(opponentName, opponentId))
@@ -410,7 +410,7 @@ class DataManagerService : Service() {
             FileManager.write(applicationContext, "crash_log.txt", e.stackTraceToString())
         }
 
-        sendMessage(FLAG_OPPONENT_MOVED, MoveData(gameId, GameStatus.PLAYER_MOVE, move.timeStamp))
+//        sendMessage(FLAG_OPPONENT_MOVED, MoveData(gameId, GameStatus.PLAYER_MOVE,  move))
     }
 
     private fun updateRecentOpponents(newOpponent: Pair<String, String>?) {
@@ -505,7 +505,7 @@ class DataManagerService : Service() {
                 newsUpdates += News.fromString(news)
             }
 
-            val newGame = MultiPlayerGame(gameId, id, opponentName, isPlayerWhite, moves, messages, newsUpdates)
+            val newGame = MultiPlayerGame(gameId, opponentName, lastUpdated, isPlayerWhite, moves, messages, newsUpdates)
             newGame.status = gameStatus
 
             savedGames[gameId] = newGame

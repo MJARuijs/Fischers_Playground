@@ -25,6 +25,7 @@ import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
+import com.mjaruijs.fischersplayground.util.Time
 import kotlin.math.roundToInt
 
 @Suppress("SameParameterValue", "ControlFlowWithEmptyBody")
@@ -203,7 +204,7 @@ class SettingsActivity : ClientActivity() {
     private fun onContextCreated() {
         runOnUiThread {
             glView3D.holder.setFixedSize(getDisplayWidth(), getDisplayWidth())
-            game = SinglePlayerGame()
+            game = SinglePlayerGame(Time.getFullTimeStamp())
             glView3D.setGame(game)
             restorePreferences()
         }
