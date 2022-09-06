@@ -16,6 +16,10 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
 
     companion object {
 
+        fun getBySign(sign: String): PieceType {
+            return getBySign(sign[0])
+        }
+
         fun getBySign(sign: Char): PieceType {
             for (piece in values()) {
                 if (sign.uppercase() == piece.sign.uppercase()) {

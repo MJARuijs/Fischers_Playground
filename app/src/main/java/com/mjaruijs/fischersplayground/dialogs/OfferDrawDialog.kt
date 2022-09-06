@@ -18,7 +18,7 @@ class OfferDrawDialog {
 
     fun show(gameId: String, id: String, networkManager: NetworkManager) {
         dialogBuilder.setPositiveButton("Yes") { _, _ ->
-            networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "offer_draw", "$gameId|$id"))
+            networkManager.sendMessage(NetworkMessage(Topic.DRAW_OFFERED, "$gameId|$id"))
         }
         dialogBuilder.setNegativeButton("No") { _, _ ->
 

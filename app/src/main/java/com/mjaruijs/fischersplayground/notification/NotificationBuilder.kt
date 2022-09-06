@@ -7,22 +7,20 @@ import androidx.core.app.NotificationCompat
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.MainActivity
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.util.Logger
 
 class NotificationBuilder(context: Context) {
 
-    private var notificationId = 1
-    private val notificationIds = HashSet<Int>()
-
     private val dataManager = DataManager.getInstance(context)
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     init {
-        val moveChannel = NotificationChannel(NotificationBuilder.MOVE_CHANNEL_ID, NotificationBuilder.MOVE_CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT)
-        val inviteChannel = NotificationChannel(NotificationBuilder.INVITE_CHANNEL_ID, NotificationBuilder.INVITE_CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT)
-        val newGameChannel = NotificationChannel(NotificationBuilder.NEW_GAME_CHANNEL_ID, NotificationBuilder.NEW_GAME_CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT)
-        val miscellaneousChannel = NotificationChannel(NotificationBuilder.MISCELLANEOUS_ID, NotificationBuilder.MISCELLANEOUS_ID, NotificationManager.IMPORTANCE_DEFAULT)
+        val moveChannel = NotificationChannel(MOVE_CHANNEL_ID, MOVE_CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT)
+        val inviteChannel = NotificationChannel(INVITE_CHANNEL_ID, INVITE_CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT)
+        val newGameChannel = NotificationChannel(NEW_GAME_CHANNEL_ID, NEW_GAME_CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT)
+        val miscellaneousChannel = NotificationChannel(MISCELLANEOUS_ID, MISCELLANEOUS_ID, NotificationManager.IMPORTANCE_DEFAULT)
         notificationManager.createNotificationChannel(moveChannel)
         notificationManager.createNotificationChannel(inviteChannel)
         notificationManager.createNotificationChannel(newGameChannel)
@@ -68,49 +66,38 @@ class NotificationBuilder(context: Context) {
         notificationManager.cancelAll()
     }
 
-    private fun generateId(): Int {
-        for (i in 0 until Int.MAX_VALUE) {
-            if (!notificationIds.contains(i)) {
-                return i
-            }
-        }
-        throw IllegalArgumentException("No more ID's available for notifications..")
-    }
-
-    fun createNotificationData(context: Context, topic: String, data: Array<String>): NotificationData {
-
+    fun createNotificationData(context: Context, topic: Topic, data: Array<String>): NotificationData {
         return when (topic) {
-            "new_game" -> {
+            Topic.NEW_GAME -> {
                 val opponentName = data[1]
                 val isPlayingWhite = data[2].toBoolean()
                 val color = if (isPlayingWhite) "white" else "black"
-                NotificationData("New game started!", "You're playing $color against $opponentName!", NEW_GAME_CHANNEL_ID, createIntent(context, topic, data))
+                NotificationData("New game started!", "You're playing $color against $opponentName!", NEW_GAME_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
             }
-            "move" -> {
+            Topic.MOVE -> {
                 val gameId = data[0]
                 val moveNotation = data[1]
                 val move = moveNotation.substring(moveNotation.indexOf(':') + 1)
                 val game = dataManager[gameId]
-                NotificationData("Your move!", "${game.opponentName} played $move", MOVE_CHANNEL_ID, createIntent(context, topic, data))
+                NotificationData("Your move!", "${game.opponentName} played $move", MOVE_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
             }
-            "invite" -> {
+            Topic.INVITE -> {
                 val opponentName = data[0]
-                NotificationData("New invite!", "$opponentName has invited you for a game of chess!", INVITE_CHANNEL_ID, createIntent(context, "invite", data))
+                NotificationData("New invite!", "$opponentName has invited you for a game of chess!", INVITE_CHANNEL_ID, createMainActivityIntent(context, data))
+            }
+            Topic.UNDO_REQUESTED -> {
+                val opponentName = data[1]
+                NotificationData("Undo requested!", "$opponentName has requested to undo their move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
+            }
+            Topic.RESIGN -> {
+                val opponentName = data[1]
+                NotificationData("Game over!", "$opponentName has resigned. You won!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             else -> throw IllegalArgumentException("Could not create NotificationData for topic: $topic")
         }
     }
 
-    private fun createIntent(context: Context, topic: String, data: Array<String>): PendingIntent {
-        return when (topic) {
-            "move" -> createMultiplayerActivityIntent(context, data)
-            "new_game" -> createMultiplayerActivityIntent(context, data)
-            "invite" -> createMainActivityIntent(context, data)
-            else -> throw IllegalArgumentException("Could not create notification for topic: $topic")
-        }
-    }
-
-    fun createMainActivityIntent(context: Context, data: Array<String>): PendingIntent {
+    private fun createMainActivityIntent(context: Context, data: Array<String>): PendingIntent {
         val intent = Intent(context, MainActivity::class.java)
         intent.putExtra("opponent_name", data[0])
         intent.putExtra("invite_id", data[1])
@@ -129,6 +116,7 @@ class NotificationBuilder(context: Context) {
 
     companion object {
 
+        const val GROUP_CHANNEL_ID = "Group channel"
         const val MOVE_CHANNEL_ID = "Move updates"
         const val INVITE_CHANNEL_ID = "New invites"
         const val NEW_GAME_CHANNEL_ID = "New game started"

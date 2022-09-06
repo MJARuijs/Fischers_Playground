@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.activities.game
 
 import android.os.Bundle
-import android.os.Messenger
 import android.view.View
 import android.widget.ImageView
 import androidx.fragment.app.commit
@@ -13,10 +12,6 @@ import com.mjaruijs.fischersplayground.util.Time
 class PractiseGameActivity : GameActivity() {
 
     override var activityName = "practice_activity"
-
-    override val name = "practice_activity"
-
-    override var clientMessenger = Messenger(IncomingHandler(this))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

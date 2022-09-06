@@ -1,8 +1,36 @@
 package com.mjaruijs.fischersplayground.chess.pieces
 
+import android.os.Parcel
+import android.os.Parcelable
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, val promotedPiece: PieceType?) {
+class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, val promotedPiece: PieceType?) : Parcelable {
+
+    constructor(parcel: Parcel) : this(
+        Team.fromString(parcel.readString()!!),
+        Vector2.fromString(parcel.readString()!!),
+        Vector2.fromString(parcel.readString()!!),
+        PieceType.getBySign(parcel.readString()!!),
+        parcel.readByte() != 0.toByte(),
+        parcel.readByte() != 0.toByte(),
+        PieceType.getBySign(parcel.readByte().toInt().toChar()),
+        PieceType.getBySign(parcel.readByte().toInt().toChar())
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(team.toString())
+        parcel.writeString(fromPosition.toString())
+        parcel.writeString(toPosition.toString())
+        parcel.writeString(movedPiece.sign.toString())
+        parcel.writeByte(if (isCheckMate) 1 else 0)
+        parcel.writeByte(if (isCheck) 1 else 0)
+        parcel.writeString(pieceTaken?.sign.toString())
+        parcel.writeString(promotedPiece?.sign.toString())
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
 
     fun getFromPosition(perspectiveOf: Team): Vector2 {
         return if (perspectiveOf == Team.WHITE) fromPosition else Vector2(7, 7) - fromPosition
@@ -60,13 +88,9 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         }
     }
 
-    companion object {
+    companion object CREATOR : Parcelable.Creator<Move> {
 
         fun fromChessNotation(moveContent: String): Move {
-//            val separatorIndex = moveContent.indexOf(':')
-//            val timeStamp = moveContent.substring(0, separatorIndex).toLong()
-//            val notation = moveContent.substring(separatorIndex + 1)
-
             if (moveContent.length < 6) {
                 throw IllegalArgumentException("Received notation is too short to be a proper Chess notation: $moveContent")
             }
@@ -132,6 +156,14 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
                 'h' -> 7
                 else -> throw IllegalArgumentException("Couldn't make a square from chess notation: $col")
             }
+        }
+
+        override fun createFromParcel(parcel: Parcel): Move {
+            return Move(parcel)
+        }
+
+        override fun newArray(size: Int): Array<Move?> {
+            return arrayOfNulls(size)
         }
     }
 }

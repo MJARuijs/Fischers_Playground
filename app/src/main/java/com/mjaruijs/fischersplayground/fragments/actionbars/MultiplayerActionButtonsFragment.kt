@@ -47,7 +47,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val p
                 }
 
                 resignDialog.show {
-                    networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "resign", "$gameId|$playerId"))
+                    networkManager.sendMessage(NetworkMessage(Topic.RESIGN, "$gameId|$playerId"))
 //                    SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
 
 //                    finishActivity(GameStatus.GAME_LOST)
@@ -89,7 +89,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val p
                     return@setOnClickListener
                 }
 
-                networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "request_undo", "$gameId|$playerId"))
+                networkManager.sendMessage(NetworkMessage(Topic.UNDO_REQUESTED, "$gameId|$playerId"))
             }
 
         buttons += resignButton

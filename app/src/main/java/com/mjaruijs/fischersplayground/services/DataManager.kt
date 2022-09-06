@@ -1,13 +1,8 @@
 package com.mjaruijs.fischersplayground.services
 
-import android.app.PendingIntent
-import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
-import android.content.Intent
 import com.mjaruijs.fischersplayground.activities.ClientActivity
-import com.mjaruijs.fischersplayground.activities.MainActivity
-import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
@@ -16,14 +11,11 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.pieces.Move
-import com.mjaruijs.fischersplayground.notification.NotificationData
 import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
-class DataManager(private val context: Context) {
+class DataManager(context: Context) {
 
     private val savedGames = HashMap<String, MultiPlayerGame>()
     val savedInvites = HashMap<String, InviteData>()
@@ -36,7 +28,7 @@ class DataManager(private val context: Context) {
         val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
         userId = preferences.getString(ClientActivity.USER_ID_KEY, "")!!
 
-        loadData()
+        loadData(context)
     }
 
     fun getSavedGames() = savedGames
@@ -63,7 +55,7 @@ class DataManager(private val context: Context) {
 
     fun isDataLoaded() = dataLoaded.get()
 
-    fun loadData() {
+    fun loadData(context: Context) {
         if (loadingData.get()) {
 //            println("Data is already loading.. returning..")
             return
@@ -74,9 +66,9 @@ class DataManager(private val context: Context) {
         loadingData.set(true)
         Thread {
             try {
-                loadSavedGames()
-                loadInvites()
-                loadRecentOpponents()
+                loadSavedGames(context)
+                loadInvites(context)
+                loadRecentOpponents(context)
                 dataLoaded.set(true)
             } catch (e: Exception) {
                 FileManager.write(context, "file_loading_crash.txt", e.stackTraceToString())
@@ -87,7 +79,7 @@ class DataManager(private val context: Context) {
 
     }
 
-    private fun loadSavedGames() {
+    private fun loadSavedGames(context: Context) {
         val lines = FileManager.read(context, MULTIPLAYER_GAME_FILE) ?: ArrayList()
 
         for (gameData in lines) {
@@ -143,7 +135,7 @@ class DataManager(private val context: Context) {
         }
     }
 
-    fun loadInvites() {
+    fun loadInvites(context: Context) {
         val lines = FileManager.read(context, INVITES_FILE) ?: ArrayList()
 
         for (line in lines) {
@@ -157,11 +149,11 @@ class DataManager(private val context: Context) {
             val timeStamp = data[2].toLong()
             val type = InviteType.fromString(data[3])
 
-            savedInvites[inviteId] = InviteData(opponentName, timeStamp, type)
+            savedInvites[inviteId] = InviteData(inviteId, opponentName, timeStamp, type)
         }
     }
 
-    fun loadRecentOpponents() {
+    fun loadRecentOpponents(context: Context) {
         val lines = FileManager.read(context, RECENT_OPPONENTS_FILE) ?: ArrayList()
 
         for (line in lines) {
@@ -172,11 +164,11 @@ class DataManager(private val context: Context) {
             val data = line.split('|')
             val opponentName = data[0]
             val opponentId = data[1]
-            updateRecentOpponents(Pair(opponentName, opponentId))
+            updateRecentOpponents(context, Pair(opponentName, opponentId))
         }
     }
 
-    fun updateRecentOpponents(newOpponent: Pair<String, String>?) {
+    fun updateRecentOpponents(context: Context, newOpponent: Pair<String, String>?) {
         if (newOpponent == null) {
             return
         }
@@ -205,20 +197,20 @@ class DataManager(private val context: Context) {
         }
 
         recentOpponents.push(newOpponent)
-        saveRecentOpponents()
+        saveRecentOpponents(context)
     }
 
-    fun saveData() {
+    fun saveData(context: Context) {
 //        println("SAVING DATA")
         Thread {
-            saveGames()
-            saveInvites()
-            saveRecentOpponents()
+            saveGames(context)
+            saveInvites(context)
+            saveRecentOpponents(context)
 //            log("Done saving data")
         }.start()
     }
 
-    fun saveGames() {
+    fun saveGames(context: Context) {
         var content = ""
 
         for ((gameId, game) in savedGames) {
@@ -255,20 +247,10 @@ class DataManager(private val context: Context) {
             content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
         }
 
-        println("Should write:\n$content")
-
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
-
-        val lines = FileManager.read(context, MULTIPLAYER_GAME_FILE)!!
-
-        println("Actually read:")
-        for (line in lines) {
-            println(line)
-        }
-        println()
     }
 
-    fun saveInvites() {
+    fun saveInvites(context: Context) {
         var content = ""
 
         for ((inviteId, invite) in savedInvites) {
@@ -278,7 +260,7 @@ class DataManager(private val context: Context) {
         FileManager.write(context, INVITES_FILE, content)
     }
 
-    fun saveRecentOpponents() {
+    fun saveRecentOpponents(context: Context) {
         var data = ""
         for (recentOpponent in recentOpponents) {
             data += "${recentOpponent.first}|${recentOpponent.second}\n"
@@ -301,7 +283,7 @@ class DataManager(private val context: Context) {
                 // TODO: Is this useful?
 //                instance!!.loadData()
             }
-            instance!!.loadData()
+            instance!!.loadData(context)
 
             return instance!!
         }

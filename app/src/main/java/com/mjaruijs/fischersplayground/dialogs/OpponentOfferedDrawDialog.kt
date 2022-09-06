@@ -21,7 +21,7 @@ class OpponentOfferedDrawDialog {
             onAccept()
         }
         dialogBuilder.setNegativeButton("Decline") { _, _ ->
-            networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "declined_draw", gameId))
+            networkManager.sendMessage(NetworkMessage(Topic.DRAW_REJECTED, gameId))
         }
 
         dialog = dialogBuilder.show()

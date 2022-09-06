@@ -41,7 +41,7 @@ class PlayerAdapter(var id: String, private val onInvite: (String, Long, String,
 
             onInvite(inviteId, timeStamp, players[position].name, players[position].id)
 
-            networkManager.sendMessage(NetworkMessage(Topic.INFO, "invite", "${players[position].id}|$inviteId|$timeStamp"))
+            networkManager.sendMessage(NetworkMessage(Topic.INVITE, "${players[position].id}|$inviteId|$timeStamp"))
         }
     }
 

@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.activities.game
 
 import android.animation.ObjectAnimator
 import android.os.Bundle
-import android.os.Messenger
 import android.view.View
 import android.widget.ImageView
 import androidx.fragment.app.FragmentContainerView
@@ -16,20 +15,13 @@ import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.fragments.ChatFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.MultiplayerActionButtonsFragment
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_GET_GAME
-import com.mjaruijs.fischersplayground.services.DataManagerService.Companion.FLAG_SAVE_GAME
 import com.mjaruijs.fischersplayground.util.FileManager
 
 class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override var activityName = "multiplayer_activity"
-
-    override val name = "multiplayer_activity"
-
-    override var clientMessenger = Messenger(IncomingHandler(this))
 
     private var chatInitialized = false
     private var chatOpened = false
@@ -109,7 +101,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         setGameCallbacks()
         game.sendMoveData = {
-            val message = NetworkMessage(Topic.GAME_UPDATE, "move", "$gameId|$userId|$it")
+            val message = NetworkMessage(Topic.MOVE, "$gameId|$userId|$it")
             networkManager.sendMessage(message)
         }
         super.setGame(game)
@@ -150,7 +142,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, opponentName, ::acceptDraw, networkManager)
                 NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
                 NewsType.OPPONENT_DECLINED_DRAW -> opponentRejectedDrawDialog.show(opponentName)
-                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, userId)
+                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(opponentName)
                 NewsType.OPPONENT_ACCEPTED_UNDO -> {
                     game.undoMoves(news.data)
                     glView.requestRender()
@@ -171,7 +163,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun onChatMessageSent(message: ChatMessage) {
-        networkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "", "$gameId|$userId|${message.timeStamp}|${message.message}"))
+        networkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "$gameId|$userId|${message.timeStamp}|${message.message}"))
         (game as MultiPlayerGame).chatMessages += message
     }
 
@@ -252,7 +244,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun acceptDraw() {
-        networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_draw", "$gameId|$userId"))
+        networkManager.sendMessage(NetworkMessage(Topic.DRAW_ACCEPTED, "$gameId|$userId"))
         closeAndSaveGameAsDraw()
     }
 

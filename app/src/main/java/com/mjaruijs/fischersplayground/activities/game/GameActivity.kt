@@ -14,6 +14,7 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.*
@@ -72,9 +73,9 @@ abstract class GameActivity : ClientActivity() {
 
             undoRequestedDialog.create(this) {
                 if (it == DialogResult.ACCEPT) {
-                    networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "accepted_undo", "$gameId|$userId"))
+                    networkManager.sendMessage(NetworkMessage(Topic.UNDO_ACCEPTED, "$gameId|$userId"))
                 } else if (it == DialogResult.DECLINE) {
-                    networkManager.sendMessage(NetworkMessage(Topic.GAME_UPDATE, "rejected_undo", "$gameId|$userId"))
+                    networkManager.sendMessage(NetworkMessage(Topic.UNDO_REJECTED, "$gameId|$userId"))
                 }
             }
 
@@ -203,7 +204,7 @@ abstract class GameActivity : ClientActivity() {
 //        }
 
         dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData()
+        dataManager.saveData(applicationContext)
 //        dataManager.savedGames[gameId]?.move(move, true)
 //        sendMessage(FLAG_MOVE_MADE, Pair(gameId, move))
     }
@@ -323,29 +324,23 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    override fun onOpponentMoved(content: String) {
-        val moveData = processOpponentMoveData(content)
-
-        if (moveData.gameId == gameId) {
-            (game as MultiPlayerGame).moveOpponent(moveData.move, false)
-            glView.requestRender()
-        } else {
-            showPopup(moveData)
+    override fun onOpponentMoved(topic: Topic, content: Array<String>) {
+        sendDataToWorker<MoveData>(topic, content) { moveData ->
+            if (moveData.gameId == gameId) {
+                (game as MultiPlayerGame).moveOpponent(moveData.move, false)
+                glView.requestRender()
+            } else {
+                showPopup(moveData)
+            }
         }
-//        val data = content.split('|')
-//
-//        val gameId = data[0]
-//        val moveNotation = data[1]
-//        val move = Move.fromChessNotation(moveNotation)
-//
-//        if (this.gameId == gameId) {
-//            (game as MultiPlayerGame).moveOpponent(move, false)
-//            glView.requestRender()
-//        } else {
-//            val game = dataManager[gameId]
-//            game.moveOpponent(move, false)
-//            dataManager[gameId] = game
-//        }
+    }
+
+    override fun onUndoRequested(content: String) {
+        processUndoRequest(content) {
+            if (it.gameId == gameId) {
+                undoRequestedDialog.show(opponentName)
+            }
+        }
     }
 
 //    private fun onIncomingInvite(content: String) {

@@ -36,7 +36,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
 
         searchBar.setOnQueryTextListener(OnSearchViewChangedListener {
             if (searchBar.query.isNotBlank()) {
-                networkManager.sendMessage(NetworkMessage(Topic.INFO, "search_players", "${searchBar.query}"))
+                networkManager.sendMessage(NetworkMessage(Topic.SEARCH_PLAYERS, "${searchBar.query}"))
             } else {
                 context.runOnUiThread {
                     loadRecentPlayers()

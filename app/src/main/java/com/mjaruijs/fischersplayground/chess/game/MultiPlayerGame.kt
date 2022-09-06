@@ -10,8 +10,6 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
-import com.mjaruijs.fischersplayground.util.Logger
-import com.mjaruijs.fischersplayground.util.Time
 
 class MultiPlayerGame(val gameId: String, val opponentName: String, lastUpdated: Long, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated, moves) {
 

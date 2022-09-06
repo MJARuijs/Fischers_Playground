@@ -1,8 +1,8 @@
 package com.mjaruijs.fischersplayground.networking.message
 
-class NetworkMessage(val topic: Topic, val category: String, val content: String) {
+class NetworkMessage(val topic: Topic, val content: String) {
 
-    override fun toString() = "[$topic;$category;$content]"
+    override fun toString() = "[$topic;$content]"
 
     companion object {
 
@@ -10,10 +10,9 @@ class NetworkMessage(val topic: Topic, val category: String, val content: String
             val data = input.removePrefix("[").removeSuffix("]").split(';')
 
             val topic = Topic.fromString(data[0])
-            val category = data[1]
-            val content = data[2]
+            val content = data[1]
 
-            return NetworkMessage(topic, category, content)
+            return NetworkMessage(topic, content)
         }
     }
 

@@ -1,55 +1,47 @@
 package com.mjaruijs.fischersplayground.services
 
-import android.app.NotificationChannel
-import android.app.NotificationChannelGroup
-import android.app.NotificationManager
-import android.content.Context
-import android.widget.Toast
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
+import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_ID_KEY
+import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_PREFERENCE_FILE
+import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
-import com.mjaruijs.fischersplayground.notification.NotificationBuilder.Companion.MOVE_CHANNEL_ID
+import com.mjaruijs.fischersplayground.notification.NotificationBuilder.Companion.GROUP_CHANNEL_ID
 import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
 
 class FirebaseService : FirebaseMessagingService() {
-
-    init {
-//        Logger.log(applicationContext, "LOL", "lol.txt")
-//        throw IllegalArgumentException("LOL")
-    }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         println("New token was generated: $token")
-//        Toast.makeText(this, "Got new token! $token", Toast.LENGTH_SHORT).show()
         getSharedPreferences("fcm_token", MODE_PRIVATE).edit().putString("token", token).apply()
     }
-
-//    override fun onDestroy() {
-//        Toast.makeText(applicationContext, "Firebase destroyed", Toast.LENGTH_SHORT).show()
-//        super.onDestroy()
-//    }
 
     override fun onMessageReceived(message: RemoteMessage) {
         try {
             val notificationBuilder = NotificationBuilder.getInstance(this)
 
-            val topic = message.data["topic"] ?: throw IllegalArgumentException("No data was found with name: topic..")
+            val topic = Topic.fromString(message.data["topic"] ?: throw IllegalArgumentException("No data was found with name: topic.."))
             val data = message.data["data"] ?: throw IllegalArgumentException("No data was found with name: data..")
+
+            if (topic == Topic.RECONNECT_TO_SERVER) {
+                reconnectToServer(data)
+                return
+            }
+
             val dataList = data.split('|').toTypedArray()
 
-//            val extraData = HashMap<String, String>()
-//            extraData["news_topic"] = topic
-
-            Logger.log(applicationContext,"Got firebaseMessage: $topic $data")
+//            Logger.log(applicationContext,"Got firebaseMessage: $topic $data")
 
             val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
                 .setInputData(workDataOf(
-                    Pair("topic", topic),
+                    Pair("topic", topic.toString()),
                     Pair("data", dataList)
                 ))
                 .build()
@@ -61,12 +53,26 @@ class FirebaseService : FirebaseMessagingService() {
             val notification = notificationBuilder.build(applicationContext, false, notificationData)
             notificationBuilder.notify(notification)
 
-            val summaryNotification = notificationBuilder.build(applicationContext, true, "Title??", "Message!", MOVE_CHANNEL_ID, null)
+            val summaryNotification = notificationBuilder.build(applicationContext, true, "Title??", "Message!", GROUP_CHANNEL_ID, null)
             notificationBuilder.notify(0, summaryNotification)
 
-            Logger.log(applicationContext, "got to end of FireBase")
+//            Logger.log(applicationContext, "got to end of FireBase")
         } catch (e: Exception) {
             FileManager.write(applicationContext, "firebase_crash_log.txt", e.stackTraceToString())
+        }
+    }
+
+    private fun reconnectToServer(data: String) {
+        val serverData = data.split('|')
+        val address = serverData[0]
+        val port = serverData[1].toInt()
+
+        val networkManager = NetworkManager.getInstance()
+        networkManager.run(applicationContext, address, port)
+
+        val userId = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, DEFAULT_USER_ID)!!
+        if (userId != DEFAULT_USER_ID) {
+            networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
         }
     }
 }

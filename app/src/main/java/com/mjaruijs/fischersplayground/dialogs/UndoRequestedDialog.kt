@@ -2,6 +2,8 @@ package com.mjaruijs.fischersplayground.dialogs
 
 import android.app.AlertDialog
 import android.content.Context
+import android.os.Parcel
+import android.os.Parcelable
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
@@ -18,8 +20,7 @@ class UndoRequestedDialog {
         this.onClick = onClick
     }
 
-    fun show(gameId: String, opponentUsername: String, id: String) {
-        println("SHOWING DIALOG")
+    fun show(opponentUsername: String) {
         dialogBuilder.setMessage("$opponentUsername is requesting to undo their last move")
         dialogBuilder.setPositiveButton("Accept") { _, _ ->
             onClick(DialogResult.ACCEPT)
@@ -31,4 +32,30 @@ class UndoRequestedDialog {
         dialog = dialogBuilder.show()
     }
 
+    class UndoRequestData(val gameId: String, val opponentName: String) : Parcelable {
+        constructor(parcel: Parcel) : this(
+            parcel.readString()!!,
+            parcel.readString()!!
+        )
+
+        override fun writeToParcel(parcel: Parcel, flags: Int) {
+            parcel.writeString(gameId)
+            parcel.writeString(opponentName)
+        }
+
+        override fun describeContents(): Int {
+            return 0
+        }
+
+        companion object CREATOR : Parcelable.Creator<UndoRequestData> {
+            override fun createFromParcel(parcel: Parcel): UndoRequestData {
+                return UndoRequestData(parcel)
+            }
+
+            override fun newArray(size: Int): Array<UndoRequestData?> {
+                return arrayOfNulls(size)
+            }
+        }
+
+    }
 }

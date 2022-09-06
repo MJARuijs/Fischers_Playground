@@ -1,12 +1,9 @@
 package com.mjaruijs.fischersplayground.activities
 
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
-import android.os.Messenger
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.core.view.ViewCompat
@@ -20,29 +17,22 @@ import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
+import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
-import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 
 class MainActivity : ClientActivity() {
 
     override var activityName = "main_activity"
 
-    override val name = "main_activity"
-
-    override var clientMessenger = Messenger(IncomingHandler(this))
-
     override val stayInAppOnBackPress = false
 
-    private val idReceiver = MessageReceiver(Topic.INFO, "id", ::onIdReceived)
-    private val playersReceiver = MessageReceiver(Topic.INFO, "search_players_result", ::onPlayersReceived)
-
-    private val infoFilter = IntentFilter("mjaruijs.fischers_playground.INFO")
+//    private val idReceiver = MessageReceiver("id", ::onIdReceived)
+//    private val playersReceiver = MessageReceiver("search_players_result", ::onPlayersReceived)
 
     private val createUsernameDialog = CreateUsernameDialog()
     private val createGameDialog = CreateGameDialog(::onInvite)
@@ -73,14 +63,15 @@ class MainActivity : ClientActivity() {
 
         initUIComponents()
 
-        try {
-            val newsTopic = intent.getStringExtra("news_topic")
-            if (newsTopic != null) {
-                processNews(newsTopic)
-            }
-        } catch (e: Exception) {
-            Logger.log(this, e.stackTraceToString(), "main_activity_crash_report.txt")
-        }
+//        try {
+//            val newsTopic = intent.getStringExtra("news_topic")
+//            if (newsTopic != null) {
+//                Toast.makeText(applicationContext, "Got news: $newsTopic", Toast.LENGTH_SHORT).show()
+//                processNotification(newsTopic)
+//            }
+//        } catch (e: Exception) {
+//            Logger.log(this, e.stackTraceToString(), "main_activity_crash_report.txt")
+//        }
 
         FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
             val token = result.token
@@ -93,58 +84,72 @@ class MainActivity : ClientActivity() {
                 if (userName == DEFAULT_USER_NAME) {
                     hasNewToken = true
                 } else {
-                    networkManager.sendMessage(NetworkMessage(Topic.INFO, "token", "$userId|$token"))
+                    networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$userId|$token"))
                 }
             }
         }
     }
 
-    private fun processNews(topic: String) {
+    override fun onMessageReceived(topic: Topic, content: Array<String>) {
         when (topic) {
-            "invite" -> {
-                val opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: opponent_name")
-                val inviteId = intent.getStringExtra("invite_id") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: invite_id")
-//                incomingInviteDialog.create(this)
-                incomingInviteDialog.showInvite(opponentName, inviteId, networkManager)
-            }
-            "move" -> {
-                val data = intent.getStringExtra("data") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: data")
-                val moveData = processOpponentMoveData(data)
-
-                val multiplayerIntent = Intent(this, MultiplayerGameActivity::class.java)
-                multiplayerIntent.putExtra("game_id", moveData.gameId)
-                startActivity(multiplayerIntent)
-                Toast.makeText(this, "Opponent made move!", Toast.LENGTH_SHORT).show()
-            }
+            Topic.SET_USER_ID -> onIdReceived(content)
+            Topic.SEARCH_PLAYERS -> onPlayersReceived(content)
+            else -> super.onMessageReceived(topic, content)
         }
     }
 
-    private fun onIdReceived(id: String) {
+    private fun onIdReceived(content: Array<String>) {
+        val id = content[0]
         this.userId = id
 
         savePreference(USER_ID_KEY, id)
-//        Thread {
-//            while (!serviceBound) {
-//                Thread.sleep(10)
-//            }
-//            sendMessage(FLAG_SET_ID, id)
-//        }.start()
 
         if (hasNewToken) {
             val token = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
             println("SENDING NEW TOKEN: $token")
-            networkManager.sendMessage(NetworkMessage(Topic.INFO, "token", "$id|$token"))
+            networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
         }
         createGameDialog.updateId(id)
     }
 
+    private fun onPlayersReceived(content: Array<String>) {
+        createGameDialog.clearPlayers()
+        for (playerData in content) {
+            if (playerData.isBlank()) {
+                continue
+            }
+
+            val data = playerData.removePrefix("(").removeSuffix(")").split('|')
+            val name = data[0]
+            val id = data[1]
+            createGameDialog.addPlayers(name, id)
+        }
+    }
+
+//    private fun processNotification(topic: String) {
+//        when (topic) {
+//            "invite" -> {
+//                val opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: opponent_name")
+//                val inviteId = intent.getStringExtra("invite_id") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: invite_id")
+//                incomingInviteDialog.showInvite(opponentName, inviteId, networkManager)
+//            }
+//            "move" -> {
+//                val data = intent.getStringExtra("data") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: data")
+//                processOpponentMoveData(data) {
+//                    val multiplayerIntent = Intent(this, MultiplayerGameActivity::class.java)
+//                    multiplayerIntent.putExtra("game_id", it.gameId)
+//                    startActivity(multiplayerIntent)
+//                    Toast.makeText(this, "Opponent made move!", Toast.LENGTH_SHORT).show()
+//                }
+//            }
+//        }
+//    }
+
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
-        dataManager.savedInvites[inviteId] = InviteData(opponentName, timeStamp, InviteType.PENDING)
-        dataManager.saveInvites()
-        dataManager.updateRecentOpponents(Pair(opponentName, opponentId))
-
-//        sendMessage(FLAG_STORE_SENT_INVITE, Triple(inviteId, opponentId, InviteData(opponentName, timeStamp, InviteType.PENDING)))
+        dataManager.savedInvites[inviteId] = InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING)
+        dataManager.saveInvites(applicationContext)
+        dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
     }
 
     private fun onGameClicked(gameCard: GameCardItem) {
@@ -167,58 +172,31 @@ class MainActivity : ClientActivity() {
     private fun onGameDeleted(gameId: String) {
         dataManager.removeGame(gameId)
         dataManager.savedInvites.remove(gameId)
-        dataManager.saveGames()
-        dataManager.saveInvites()
-//        sendMessage(FLAG_DELETE_GAME, gameId)
+        dataManager.saveGames(applicationContext)
+        dataManager.saveInvites(applicationContext)
     }
 
-    override fun onIncomingInvite(content: String) {
-        val data = processIncomingInvite(content)
-        val inviteId = data.first
-        val inviteData = data.second
-
-        incomingInviteDialog.showInvite(inviteData.opponentName, inviteId, networkManager)
-    }
-
-    override fun onNewGameStarted(content: String) {
-        val gameCard = processNewGameData(content)
-
-        val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.lastUpdated, gameCard.isPlayingWhite, gameCard.hasUpdate)
-        if (!doesCardExist) {
-            gameAdapter += gameCard
+    override fun onIncomingInvite(topic: Topic, content: Array<String>) {
+        sendDataToWorker<InviteData>(topic, content) { inviteData ->
+            gameAdapter += GameCardItem(inviteData.inviteId, inviteData.timeStamp, inviteData.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
+            incomingInviteDialog.showInvite(inviteData.opponentName, inviteData.inviteId, networkManager)
         }
     }
 
-    override fun onOpponentMoved(content: String) {
-//        println("APP IN BACKGROUND? $appInBackground")
-//        if (appInBackground) {
-//            super.onOpponentMoved(content)
-//        } else {
-            val data = processOpponentMoveData(content)
-            gameAdapter.updateCardStatus(data.gameId, data.status, data.time)
-//        }
+    override fun onNewGameStarted(topic: Topic, content: Array<String>) {
+        sendDataToWorker<GameCardItem>(topic, content) { gameCard ->
+            val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.lastUpdated, gameCard.isPlayingWhite, gameCard.hasUpdate)
+            if (!doesCardExist) {
+                gameAdapter += gameCard
+            }
+        }
     }
-//
-//    override fun onOpponentMoved(data: MoveData?) {
-//        if (data == null) return
-//
-//        gameAdapter.updateCardStatus(data.gameId, data.status, data.time)
-//    }
-//
-//    override fun onUndoRequested(gameId: String) {
-//        gameAdapter.hasUpdate(gameId)
-//    }
-//
-//    override fun onUndoRequestAccepted(data: Pair<String, Int>?) {
-//        if (data == null) {
-//            return
-//        }
-//        gameAdapter.hasUpdate(data.first)
-//    }
-//
-//    override fun onUndoRequestRejected(gameId: String) {
-//        gameAdapter.hasUpdate(gameId)
-//    }
+
+    override fun onOpponentMoved(topic: Topic, content: Array<String>) {
+        sendDataToWorker<MoveData>(topic, content) {
+            gameAdapter.updateCardStatus(it.gameId, it.status, it.time)
+        }
+    }
 
     private fun saveUserName(userName: String) {
         this.userName = userName
@@ -226,23 +204,7 @@ class MainActivity : ClientActivity() {
         savePreference(USER_NAME_KEY, userName)
 
         findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
-        networkManager.sendMessage(NetworkMessage(Topic.INFO, "user_name", userName))
-    }
-
-    private fun onPlayersReceived(content: String) {
-        val playersData = content.split(')')
-
-        createGameDialog.clearPlayers()
-        for (playerData in playersData) {
-            if (playerData.isBlank()) {
-                continue
-            }
-
-            val data = playerData.removePrefix("(").removeSuffix(")").split('|')
-            val name = data[0]
-            val id = data[1]
-            createGameDialog.addPlayers(name, id)
-        }
+        networkManager.sendMessage(NetworkMessage(Topic.SET_USER_NAME, userName))
     }
 
     override fun onOpponentResigned(gameId: String) {
@@ -262,12 +224,8 @@ class MainActivity : ClientActivity() {
     }
 
     private fun registerReceivers() {
-        registerReceiver(idReceiver, infoFilter)
-        registerReceiver(playersReceiver, infoFilter)
-    }
-
-    private fun log(message: String) {
-        FileManager.append(applicationContext, "log.txt", "$message\n")
+//        registerReceiver(idReceiver, intentFilter)
+//        registerReceiver(playersReceiver, intentFilter)
     }
 
     override fun onResume() {
@@ -291,39 +249,21 @@ class MainActivity : ClientActivity() {
                 }
             }
         }.start()
-//        Thread {
-//            while (!serviceBound) {
-//                Thread.sleep(10)
-//            }
-//            sendMessage(FLAG_GET_ALL_DATA)
-//        }.start()
 
         stayingInApp = false
-
-//        if (isUserRegisteredAtServer()) {
-//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|online"))
-//        }
 
         registerReceivers()
     }
 
     override fun onStop() {
-        unregisterReceiver(idReceiver)
-        unregisterReceiver(playersReceiver)
+//        unregisterReceiver(idReceiver)
+//        unregisterReceiver(playersReceiver)
 
-//        if (!stayingInApp) {
-//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$id|away"))
-//        }
         super.onStop()
     }
 
     override fun onDestroy() {
         createGameDialog.dismiss()
-
-//        if (!stayingInApp) {
-////            NetworkManager.stop()
-//            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$userId|offline"))
-//        }
 
         super.onDestroy()
     }
@@ -369,7 +309,6 @@ class MainActivity : ClientActivity() {
         gameRecyclerView.layoutManager = LinearLayoutManager(this)
         gameRecyclerView.adapter = gameAdapter
 
-//        incomingInviteDialog.create(this)
         createGameDialog.create(userId, this, networkManager)
 
         findViewById<UIButton>(R.id.settings_button)
@@ -413,13 +352,6 @@ class MainActivity : ClientActivity() {
                 createGameDialog.show()
             }
     }
-//
-//    override fun onNewGameStarted(gameCard: GameCardItem) {
-//        val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.isPlayingWhite, gameCard.hasUpdate)
-//        if (!doesCardExist) {
-//            gameAdapter += gameCard
-//        }
-//    }
 
     override fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
         for ((gameId, game) in games ?: return) {
@@ -451,11 +383,11 @@ class MainActivity : ClientActivity() {
         }
     }
 
-    override fun onInviteReceived(inviteData: Pair<String, InviteData>?) {
-        super.onInviteReceived(inviteData)
-
-        gameAdapter += GameCardItem(inviteData?.first ?: return, inviteData.second.timeStamp, inviteData.second.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
-    }
+//    override fun onInviteReceived(inviteData: Pair<String, InviteData>?) {
+//        super.onInviteReceived(inviteData)
+//
+//        gameAdapter += GameCardItem(inviteData?.first ?: return, inviteData.second.timeStamp, inviteData.second.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
+//    }
 
     override fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {
         restoreSavedGames(data?.first ?: return)

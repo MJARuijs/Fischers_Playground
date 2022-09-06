@@ -14,9 +14,9 @@ class Manager(private val name: String) : Runnable {
 
     lateinit var context: Context
 
-    private lateinit var onClientDisconnect: (String) -> Unit
+    private lateinit var onClientDisconnect: () -> Unit
 
-    fun setOnClientDisconnect(callback: (String) -> Unit) {
+    fun setOnClientDisconnect(callback: () -> Unit) {
         onClientDisconnect = callback
     }
 
@@ -51,13 +51,13 @@ class Manager(private val name: String) : Runnable {
                             try {
                                 client.onRead(context)
                             } catch (exception: ClientException) {
-                                if (::onClientDisconnect.isInitialized) {
-                                    val clientInfo = client.channel.remoteAddress.toString()
-                                    val startIndex = clientInfo.indexOf("/")
-                                    val endIndex = clientInfo.indexOf(":")
-                                    val address = clientInfo.substring(startIndex + 1, endIndex)
-                                    onClientDisconnect(address)
-                                }
+//                                if (::onClientDisconnect.isInitialized) {
+//                                    val clientInfo = client.channel.remoteAddress.toString()
+//                                    val startIndex = clientInfo.indexOf("/")
+//                                    val endIndex = clientInfo.indexOf(":")
+//                                    val address = clientInfo.substring(startIndex + 1, endIndex)
+//                                    onClientDisconnect()
+//                                }
 
                                 Logger.warn("${name}_Manager: CLIENT DISCONNECTED! ${client.channel.remoteAddress}")
                                 client.close()
@@ -68,6 +68,7 @@ class Manager(private val name: String) : Runnable {
                 }
             } catch (e: Exception) {
                 stop()
+                onClientDisconnect()
 //                Logger.warn("STOPPED: ${e.message}")
             }
         }
