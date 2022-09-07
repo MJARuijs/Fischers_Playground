@@ -124,31 +124,12 @@ class NetworkManager {
         }
 
         val messageData = message.content.split('|').toTypedArray()
-//        val content = ArrayList<String>()
-//
-//        for (data in messageData) {
-//            content += data
-//        }
 
         val intent = Intent("mjaruijs.fischers_playground")
             .putExtra("topic", message.topic.toString())
             .putExtra("content", messageData)
-        context.sendBroadcast(intent)
 
-//        if (message.topic == Topic.INFO) {
-//            val intent = Intent("mjaruijs.fischers_playground.INFO").putExtra(message.category, message.content)
-//            context.sendBroadcast(intent)
-//        } else if (message.topic == Topic.GAME_UPDATE) {
-//            val intent = Intent("mjaruijs.fischers_playground.GAME_UPDATE").putExtra(message.category, message.content)
-//            println("Sending broadcast: ${message.category} | ${message.content}")
-//            context.sendBroadcast(intent)
-//        } else if (message.topic == Topic.CHAT_MESSAGE) {
-//            val intent = Intent("mjaruijs.fischers_playground.CHAT_MESSAGE").putExtra(message.category, message.content)
-//            context.sendBroadcast(intent)
-//        } else if (message.topic == Topic.USER_STATUS) {
-//            val intent = Intent("mjaruijs.fischers_playground.USER_STATUS").putExtra(message.category, message.content)
-//            context.sendBroadcast(intent)
-//        }
+        context.sendBroadcast(intent)
     }
 
 }

@@ -1,19 +1,26 @@
 package com.mjaruijs.fischersplayground.networking.message
 
-enum class Topic {
+import android.os.Parcelable
+import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
+import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
+import com.mjaruijs.fischersplayground.chess.pieces.MoveData
+import com.mjaruijs.fischersplayground.data.UndoAcceptedData
+import com.mjaruijs.fischersplayground.dialogs.UndoRequestedDialog
+
+enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
 
     SET_USER_ID,
     SET_USER_NAME,
     FIRE_BASE_TOKEN,
     SEARCH_PLAYERS,
-    NEW_GAME,
-    INVITE,
+    NEW_GAME(GameCardItem),
+    INVITE(InviteData),
     INVITE_ACCEPTED,
     INVITE_REJECTED,
-    MOVE,
+    MOVE(MoveData),
     RESIGN,
-    UNDO_REQUESTED,
-    UNDO_ACCEPTED,
+    UNDO_REQUESTED(UndoRequestedDialog.UndoRequestData),
+    UNDO_ACCEPTED(UndoAcceptedData),
     UNDO_REJECTED,
     DRAW_OFFERED,
     DRAW_ACCEPTED,

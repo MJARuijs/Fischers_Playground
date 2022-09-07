@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.activities.game
 
 import android.animation.ObjectAnimator
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.View
 import android.widget.ImageView
 import androidx.fragment.app.FragmentContainerView
@@ -13,6 +14,9 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.NewsType
+import com.mjaruijs.fischersplayground.data.UndoAcceptedData
+import com.mjaruijs.fischersplayground.dialogs.DialogResult
+import com.mjaruijs.fischersplayground.dialogs.UndoRequestedDialog
 import com.mjaruijs.fischersplayground.fragments.ChatFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.MultiplayerActionButtonsFragment
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
@@ -27,6 +31,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private var chatOpened = false
     private var chatTranslation = 0
 
+    private val undoRequestedDialog = UndoRequestedDialog()
+
     private lateinit var keyboardHeightProvider: KeyboardHeightProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +41,18 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         try {
             gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
             initChatBox()
+
+            undoRequestedDialog.create(this) {
+                (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_ACCEPTED_UNDO)
+                dataManager[gameId] = game as MultiPlayerGame
+                dataManager.saveData(applicationContext)
+
+                if (it == DialogResult.ACCEPT) {
+                    networkManager.sendMessage(NetworkMessage(Topic.UNDO_ACCEPTED, "$gameId|$userId"))
+                } else if (it == DialogResult.DECLINE) {
+                    networkManager.sendMessage(NetworkMessage(Topic.UNDO_REJECTED, "$gameId|$userId"))
+                }
+            }
 
             keyboardHeightProvider = KeyboardHeightProvider(this)
             findViewById<View>(R.id.game_layout).post {
@@ -54,12 +72,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onResume() {
-//        Thread {
-//            while (!serviceBound) {
-//                Thread.sleep(10)
-//            }
-//            sendMessage(FLAG_GET_GAME, gameId)
-//        }.start()
         setGame(dataManager[gameId])
 //        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId"))
         keyboardHeightProvider.observer = this
@@ -67,12 +79,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onPause() {
-        if (!stayingInApp) {
-//            NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
-        }
-
-//        sendMessage(FLAG_SAVE_GAME, game)
-
+        dataManager[gameId] = (game as MultiPlayerGame)
         keyboardHeightProvider.observer = null
         super.onPause()
     }
@@ -151,7 +158,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 NewsType.NO_NEWS -> {}
             }
         }
-        game.clearNews()
+        game.clearAllNews()
     }
 
     private fun getChatFragment(): ChatFragment {
@@ -231,6 +238,22 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 //        }
 //    }
 
+
+    override fun onUndoRequested(output: Parcelable) {
+        val data = output as UndoRequestedDialog.UndoRequestData
+        if (data.gameId == this.gameId) {
+            undoRequestedDialog.show(data.opponentName)
+        } else {
+            super.onUndoRequested(data)
+        }
+    }
+
+    override fun onUndoAccepted(output: Parcelable) {
+        val data = output as UndoAcceptedData
+        (game as MultiPlayerGame).undoMoves(data.numberOfReversedMoves)
+        glView.requestRender()
+    }
+
     override fun onOpponentResigned(gameId: String) {
         if (this.gameId == gameId) {
             opponentResignedDialog.show(userName, ::closeAndSaveGameAsWin)
@@ -274,6 +297,12 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onBackPressed() {
+        println("PRINTING NEWS")
+
+        for (news in (game as MultiPlayerGame).newsUpdates) {
+            println("GOT NEWS: $news")
+        }
+
         if (isChatOpened()) {
             closeChat()
         } else {

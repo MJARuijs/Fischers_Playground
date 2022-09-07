@@ -52,8 +52,16 @@ class MultiPlayerGame(val gameId: String, val opponentName: String, lastUpdated:
         newsUpdates += news
     }
 
-    fun clearNews() {
+    fun clearNews(newsType: NewsType) {
+        newsUpdates.removeIf { news ->
+            news.newsType == newsType
+        }
+    }
+
+    fun clearAllNews() {
+        println("Clearing news")
         newsUpdates.clear()
+
     }
 
     override fun getCurrentTeam() = team

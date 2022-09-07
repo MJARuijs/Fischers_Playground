@@ -201,7 +201,7 @@ class DataManager(context: Context) {
     }
 
     fun saveData(context: Context) {
-//        println("SAVING DATA")
+        println("SAVING DATA")
         Thread {
             saveGames(context)
             saveInvites(context)
@@ -236,8 +236,11 @@ class DataManager(context: Context) {
 
             var newsContent = "["
 
+            println("SAVING NEWS:")
+
             for ((i, news) in game.newsUpdates.withIndex()) {
                 newsContent += news.toString()
+                println(news.toString())
                 if (i != game.newsUpdates.size - 1) {
                     newsContent += "\\"
                 }

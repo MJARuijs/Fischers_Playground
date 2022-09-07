@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.activities
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Parcelable
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
@@ -18,8 +19,10 @@ import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
+import com.mjaruijs.fischersplayground.data.UndoAcceptedData
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
+import com.mjaruijs.fischersplayground.dialogs.UndoRequestedDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
@@ -30,9 +33,6 @@ class MainActivity : ClientActivity() {
     override var activityName = "main_activity"
 
     override val stayInAppOnBackPress = false
-
-//    private val idReceiver = MessageReceiver("id", ::onIdReceived)
-//    private val playersReceiver = MessageReceiver("search_players_result", ::onPlayersReceived)
 
     private val createUsernameDialog = CreateUsernameDialog()
     private val createGameDialog = CreateGameDialog(::onInvite)
@@ -49,8 +49,6 @@ class MainActivity : ClientActivity() {
 
         setContentView(R.layout.activity_main)
         hideActivityDecorations()
-
-        registerReceivers()
 
         createUsernameDialog.create(this)
         createUsernameDialog.setLayout()
@@ -119,7 +117,7 @@ class MainActivity : ClientActivity() {
                 continue
             }
 
-            val data = playerData.removePrefix("(").removeSuffix(")").split('|')
+            val data = playerData.removePrefix("(").removeSuffix(")").split(',')
             val name = data[0]
             val id = data[1]
             createGameDialog.addPlayers(name, id)
@@ -176,26 +174,32 @@ class MainActivity : ClientActivity() {
         dataManager.saveInvites(applicationContext)
     }
 
-    override fun onIncomingInvite(topic: Topic, content: Array<String>) {
-        sendDataToWorker<InviteData>(topic, content) { inviteData ->
-            gameAdapter += GameCardItem(inviteData.inviteId, inviteData.timeStamp, inviteData.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
-            incomingInviteDialog.showInvite(inviteData.opponentName, inviteData.inviteId, networkManager)
+    override fun onNewGameStarted(output: Parcelable) {
+        val gameCard = output as GameCardItem
+        val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.lastUpdated, gameCard.isPlayingWhite, gameCard.hasUpdate)
+        if (!doesCardExist) {
+            gameAdapter += gameCard
         }
     }
 
-    override fun onNewGameStarted(topic: Topic, content: Array<String>) {
-        sendDataToWorker<GameCardItem>(topic, content) { gameCard ->
-            val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.lastUpdated, gameCard.isPlayingWhite, gameCard.hasUpdate)
-            if (!doesCardExist) {
-                gameAdapter += gameCard
-            }
-        }
+    override fun onIncomingInvite(output: Parcelable) {
+        val inviteData = output as InviteData
+
+        gameAdapter += GameCardItem(inviteData.inviteId, inviteData.timeStamp, inviteData.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
+        incomingInviteDialog.showInvite(inviteData.opponentName, inviteData.inviteId, networkManager)
     }
 
-    override fun onOpponentMoved(topic: Topic, content: Array<String>) {
-        sendDataToWorker<MoveData>(topic, content) {
-            gameAdapter.updateCardStatus(it.gameId, it.status, it.time)
-        }
+    override fun onOpponentMoved(output: Parcelable) {
+        val moveData = output as MoveData
+        gameAdapter.updateCardStatus(moveData.gameId, moveData.status, moveData.time)
+    }
+
+    override fun onUndoRequested(output: Parcelable) {
+        gameAdapter.hasUpdate((output as UndoRequestedDialog.UndoRequestData).gameId)
+    }
+
+    override fun onUndoAccepted(output: Parcelable) {
+        gameAdapter.hasUpdate((output as UndoAcceptedData).gameId)
     }
 
     private fun saveUserName(userName: String) {
@@ -223,11 +227,6 @@ class MainActivity : ClientActivity() {
         gameAdapter.hasUpdate(gameId)
     }
 
-    private fun registerReceivers() {
-//        registerReceiver(idReceiver, intentFilter)
-//        registerReceiver(playersReceiver, intentFilter)
-    }
-
     override fun onResume() {
         super.onResume()
 
@@ -251,15 +250,6 @@ class MainActivity : ClientActivity() {
         }.start()
 
         stayingInApp = false
-
-        registerReceivers()
-    }
-
-    override fun onStop() {
-//        unregisterReceiver(idReceiver)
-//        unregisterReceiver(playersReceiver)
-
-        super.onStop()
     }
 
     override fun onDestroy() {

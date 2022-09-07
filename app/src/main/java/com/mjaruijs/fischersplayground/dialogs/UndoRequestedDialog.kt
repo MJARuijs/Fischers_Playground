@@ -30,6 +30,8 @@ class UndoRequestedDialog {
         }
 
         dialog = dialogBuilder.show()
+        dialog.setCancelable(false)
+        dialog.setCanceledOnTouchOutside(false)
     }
 
     class UndoRequestData(val gameId: String, val opponentName: String) : Parcelable {

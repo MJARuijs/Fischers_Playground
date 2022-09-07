@@ -89,6 +89,10 @@ class NotificationBuilder(context: Context) {
                 val opponentName = data[1]
                 NotificationData("Undo requested!", "$opponentName has requested to undo their move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
+            Topic.UNDO_ACCEPTED -> {
+                val opponentName = data[1]
+                NotificationData("Move reversed!", "$opponentName has accepted your request to undo your move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
+            }
             Topic.RESIGN -> {
                 val opponentName = data[1]
                 NotificationData("Game over!", "$opponentName has resigned. You won!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))

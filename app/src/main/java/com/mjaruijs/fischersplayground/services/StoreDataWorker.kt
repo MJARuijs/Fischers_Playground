@@ -17,6 +17,7 @@ import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
+import com.mjaruijs.fischersplayground.data.UndoAcceptedData
 import com.mjaruijs.fischersplayground.dialogs.UndoRequestedDialog
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.util.FileManager
@@ -40,6 +41,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             Topic.INVITE -> onIncomingInvite(data)
             Topic.NEW_GAME -> onNewGameStarted(data)
             Topic.UNDO_REQUESTED -> onUndoRequested(data)
+            Topic.UNDO_ACCEPTED -> onUndoAccepted(data)
             else -> throw IllegalArgumentException("Could not parse data with unknown topic: $topic")
         }
 
@@ -78,12 +80,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         }
 
         return MoveData(gameId, GameStatus.PLAYER_MOVE, timeStamp, move)
-//        return workDataOf(
-//            Pair("game_id", gameId),
-//            Pair("status", "PLAYER_MOVE"),
-//            Pair("last_updated", game.lastUpdated),
-//            Pair("move_notation", moveNotation)
-//        )
     }
 
     private fun onIncomingInvite(data: Array<String>): Parcelable {
@@ -96,12 +92,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         dataManager.saveData(applicationContext)
 
         return InviteData(inviteId, opponentName, timeStamp, InviteType.RECEIVED)
-
-//        return workDataOf(
-//            Pair("invite_id", inviteId),
-//            Pair("opponent_name", opponentName),
-//            Pair("time_stamp", timeStamp)
-//        )
     }
 
     private fun onNewGameStarted(data: Array<String>): Parcelable {
@@ -130,7 +120,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     }
 
     private fun onUndoRequested(data: Array<String>): UndoRequestedDialog.UndoRequestData {
-        println("HANDLING UNDO REQUEST")
         val gameId = data[0]
         val opponentName = data[1]
         val game = dataManager[gameId]
@@ -140,101 +129,18 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         return UndoRequestedDialog.UndoRequestData(gameId, opponentName)
     }
 
-//
-//    private fun loadSavedGames() {
-//        val lines = FileManager.read(applicationContext, DataManagerService.MULTIPLAYER_GAME_FILE) ?: ArrayList()
-//
-//        for (gameData in lines) {
-//            if (gameData.isBlank()) {
-//                continue
-//            }
-//
-//            val data = gameData.removePrefix("(").removeSuffix(")").split('|')
-//            val gameId = data[0]
-//            val lastUpdated = data[1].toLong()
-//            val opponentName = data[2]
-//            val isPlayerWhite = data[3].toBoolean()
-//            val gameStatus = GameStatus.fromString(data[4])
-//            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
-//            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
-//            val newsData = data[7].removePrefix("[").removeSuffix("]").split("\\")
-//
-////            val winner = data[7]
-//
-//            val moves = ArrayList<Move>()
-//
-//            for (move in moveList) {
-//                if (move.isNotBlank()) {
-//                    moves += Move.fromChessNotation(move)
-//                }
-//            }
-//
-//            val messages = ArrayList<ChatMessage>()
-//            for (message in chatMessages) {
-//                if (message.isNotBlank()) {
-//                    val messageData = message.split(',')
-//                    val timeStamp = messageData[0]
-//                    val messageContent = messageData[1]
-//                    val type = MessageType.fromString(messageData[2])
-//
-//                    messages += ChatMessage(timeStamp, messageContent, type)
-//                }
-//            }
-//
-//            val newsUpdates = ArrayList<News>()
-//            for (news in newsData) {
-//                if (news.isBlank()) {
-//                    continue
-//                }
-//
-//                newsUpdates += News.fromString(news)
-//            }
-//
-//            val newGame = MultiPlayerGame(gameId, opponentName, lastUpdated, isPlayerWhite, moves, messages, newsUpdates)
-//            newGame.status = gameStatus
-//            newGame.lastUpdated = lastUpdated
-//            dataManager[gameId] = newGame
-//        }
-//    }
-//
-//    private fun saveGames() {
-//        var content = ""
-//
-//        for ((gameId, game) in dataManager.getSavedGames()) {
-//            var moveData = "["
-//
-//            for ((i, move) in game.moves.withIndex()) {
-//                moveData += move.toChessNotation()
-//                if (i != game.moves.size - 1) {
-//                    moveData += "\\"
-//                }
-//            }
-//            moveData += "]"
-//
-//            var chatData = "["
-//
-//            for ((i, message) in game.chatMessages.withIndex()) {
-//                chatData += message.toString()
-//                if (i != game.chatMessages.size - 1) {
-//                    chatData += "\\"
-//                }
-//            }
-//            chatData += "]"
-//
-//            var newsContent = "["
-//
-//            for ((i, news) in game.newsUpdates.withIndex()) {
-//                newsContent += news.toString()
-//                if (i != game.newsUpdates.size - 1) {
-//                    newsContent += "\\"
-//                }
-//            }
-//            newsContent += "]"
-//
-//            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
-//        }
-//
-//        FileManager.write(applicationContext, DataManagerService.MULTIPLAYER_GAME_FILE, content)
-//    }
+    private fun onUndoAccepted(data: Array<String>): UndoAcceptedData {
+        val gameId = data[0]
+        val opponentName = data[1]
+        val numberOfReversedMoves = data[2].toInt()
+
+//        dataManager[gameId].undoMoves(numberOfReversedMoves)
+        val game = dataManager[gameId]
+        game.undoMoves(numberOfReversedMoves)
+        dataManager[gameId] = game
+        dataManager.saveData(applicationContext)
+
+        return UndoAcceptedData(gameId, opponentName, numberOfReversedMoves)
+    }
 
 }

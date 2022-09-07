@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.activities.game
 
 import android.os.Bundle
+import android.os.Parcelable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -31,7 +32,6 @@ import com.mjaruijs.fischersplayground.util.Logger
 
 abstract class GameActivity : ClientActivity() {
 
-    val undoRequestedDialog = UndoRequestedDialog()
     val undoRejectedDialog = UndoRejectedDialog()
     val resignDialog = ResignDialog()
     val offerDrawDialog = OfferDrawDialog()
@@ -61,7 +61,6 @@ abstract class GameActivity : ClientActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
-//        println("GAME_ACTIVITY: onCreate")
 
         try {
 
@@ -69,15 +68,6 @@ abstract class GameActivity : ClientActivity() {
             val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
 
             hideActivityDecorations(fullScreen)
-            registerReceivers()
-
-            undoRequestedDialog.create(this) {
-                if (it == DialogResult.ACCEPT) {
-                    networkManager.sendMessage(NetworkMessage(Topic.UNDO_ACCEPTED, "$gameId|$userId"))
-                } else if (it == DialogResult.DECLINE) {
-                    networkManager.sendMessage(NetworkMessage(Topic.UNDO_REJECTED, "$gameId|$userId"))
-                }
-            }
 
             undoRejectedDialog.create(this)
             offerDrawDialog.create(this)
@@ -324,59 +314,31 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    override fun onOpponentMoved(topic: Topic, content: Array<String>) {
-        sendDataToWorker<MoveData>(topic, content) { moveData ->
-            if (moveData.gameId == gameId) {
-                (game as MultiPlayerGame).moveOpponent(moveData.move, false)
-                glView.requestRender()
-            } else {
-                showPopup(moveData)
-            }
-        }
-    }
-
-    override fun onUndoRequested(content: String) {
-        processUndoRequest(content) {
-            if (it.gameId == gameId) {
-                undoRequestedDialog.show(opponentName)
-            }
-        }
-    }
-
-//    private fun onIncomingInvite(content: String) {
-//        val data = content.split('|')
-//
-//        val invitingUsername = data[0]
-//        val inviteId = data[1]
-//
-//        incomingInviteDialog.showInvite(invitingUsername, inviteId, networkManager)
-//    }
-
-//    override fun onUndoRequested(content: String) {
-//        val data = content.split('|')
-//        val gameId = data[0]
-//        val opponentUsername = data[1]
-//
-//        if (this.gameId == gameId) {
-//            undoRequestedDialog.show(gameId, opponentUsername, id)
-//        } else {
-////            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REQUESTED_UNDO))
-//        }
-//    }
-
-    private fun onUndoAccepted(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-        val numberOfMovesReversed = data[1].toInt()
-
-        if (this.gameId == gameId) {
-            (game as MultiPlayerGame).undoMoves(numberOfMovesReversed)
+    override fun onOpponentMoved(output: Parcelable) {
+        val moveData = output as MoveData
+        if (moveData.gameId == gameId) {
+            (game as MultiPlayerGame).moveOpponent(moveData.move, false)
             glView.requestRender()
         } else {
-//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
-//            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+            super.onOpponentMoved(output)
         }
     }
+
+
+
+//    private fun onUndoAccepted(content: String) {
+//        val data = content.split('|')
+//        val gameId = data[0]
+//        val numberOfMovesReversed = data[1].toInt()
+//
+//        if (this.gameId == gameId) {
+//            (game as MultiPlayerGame).undoMoves(numberOfMovesReversed)
+//            glView.requestRender()
+//        } else {
+////            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
+////            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
+//        }
+//    }
 
     private fun onUndoRejected(gameId: String) {
         if (this.gameId == gameId) {
@@ -410,25 +372,6 @@ abstract class GameActivity : ClientActivity() {
 //        if (game is MultiPlayerGame) {
 //            (game as MultiPlayerGame).chatMessages += message
 //        }
-//    }
-
-//    private fun finishActivity() {
-//        val resultIntent = Intent()
-////        resultIntent.putExtra("saved_games", gamesToString())
-//
-//        if (game is MultiPlayerGame) {
-//            resultIntent.putExtra("gameId", gameId)
-//            resultIntent.putExtra("lastUpdated", game.lastUpdated)
-//            resultIntent.putExtra("opponentName", opponentName)
-//            resultIntent.putExtra("status", (game as MultiPlayerGame).status.toString())
-//            resultIntent.putExtra("isPlayingWhite", isPlayingWhite)
-//            resultIntent.putExtra("hasUpdate", true)
-////            setResult(Activity.RESULT_OK, resultIntent)
-//        } else {
-////            setResult(Activity.RESULT_CANCELED, resultIntent)
-//        }
-
-//        finish()
 //    }
 
     private fun finishActivity(status: GameStatus) {
@@ -499,27 +442,6 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-//    private fun saveGame() {
-//        println("SAVING GAME: $gameId ${(game as MultiPlayerGame).status}")
-////        SavedGames.put(gameId, game as MultiPlayerGame)
-//        FileManager.write(this, "game.txt", (game as MultiPlayerGame).toString())
-//    }
-
-    private fun registerReceivers() {
-//        registerReceiver(inviteReceiver, infoFilter)
-//        registerReceiver(newGameReceiver, infoFilter)
-//        registerReceiver(gameUpdateReceiver, gameUpdateFilter)
-//        registerReceiver(requestUndoReceiver, gameUpdateFilter)
-//        registerReceiver(undoAcceptedReceiver, gameUpdateFilter)
-//        registerReceiver(undoRejectedReceiver, gameUpdateFilter)
-//        registerReceiver(opponentResignedReceiver, gameUpdateFilter)
-//        registerReceiver(opponentOfferedDrawReceiver, gameUpdateFilter)
-//        registerReceiver(opponentAcceptedDrawReceiver, gameUpdateFilter)
-//        registerReceiver(opponentDeclinedDrawReceiver, gameUpdateFilter)
-//        registerReceiver(chatMessageReceiver, chatFilter)
-//        registerReceiver(userStatusReceiver, statusFilter)
-    }
-
     override fun setGame(game: MultiPlayerGame) {
         super.setGame(game)
         if (game.moves.isNotEmpty()) {
@@ -536,77 +458,14 @@ abstract class GameActivity : ClientActivity() {
         super.onResume()
 
         stayingInApp = false
-        registerReceivers()
 
         pieceChooserDialog.setLayout()
     }
 
-    override fun onPause() {
-//        if (game is MultiPlayerGame) {
-//            saveGame()
-//        }
-
-//        println("GAME ACTIVITY: onPause")
-//        saveGames()
-
-//        unregisterReceiver(inviteReceiver)
-//        unregisterReceiver(newGameReceiver)
-//        unregisterReceiver(gameUpdateReceiver)
-//        unregisterReceiver(requestUndoReceiver)
-//        unregisterReceiver(undoAcceptedReceiver)
-//        unregisterReceiver(undoRejectedReceiver)
-//        unregisterReceiver(opponentResignedReceiver)
-//        unregisterReceiver(opponentOfferedDrawReceiver)
-//        unregisterReceiver(opponentAcceptedDrawReceiver)
-//        unregisterReceiver(opponentDeclinedDrawReceiver)
-//        unregisterReceiver(chatMessageReceiver)
-//        unregisterReceiver(userStatusReceiver)
-
-        super.onPause()
-    }
-
     override fun onDestroy() {
-//        println("ON DESTROY GAME_ACTIVITY $isFinishing")
         glView.destroy()
-//        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId|offline"))
-
         super.onDestroy()
     }
-
-//    override fun onUserLeaveHint() {
-////        NetworkManager.sendMessage(NetworkMessage(Topic.USER_STATUS, "status", "$playerId|$gameId|away"))
-//        super.onUserLeaveHint()
-//    }
-
-
-
-//    private fun parseSavedGames(content: String) {
-//        val gamesData = content.split(',')
-//
-//        for (gameData in gamesData) {
-//            val data = gameData.split('|')
-//            val gameId = data[0]
-//            val lastUpdated = data[1].toLong()
-//            val opponentName = data[2]
-//            val gameStatus = GameStatus.fromString(data[3])
-//            val isPlayingWhite = data[4].toBoolean()
-//            val hasUpdate = data[5].toBoolean()
-//
-//
-//        }
-//    }
-
-//    private fun gamesToString(): String {
-//        var data = ""
-//
-//        for (game in savedGames) {
-//            data += "${game.key}|${game.value.lastUpdated}|${game.value.opponentName}|${game.value.status}|${game.value.isPlayingWhite}|true,"
-//        }
-//
-//        return data
-//    }
-
-
 
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
         runOnUiThread { pieceChooserDialog.show(square, team) }

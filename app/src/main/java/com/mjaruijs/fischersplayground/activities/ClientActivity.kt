@@ -18,7 +18,6 @@ import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
-import com.mjaruijs.fischersplayground.dialogs.UndoRequestedDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
@@ -27,26 +26,11 @@ import com.mjaruijs.fischersplayground.opengl.OBJLoader
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.services.StoreDataWorker
 import java.util.*
-import kotlin.collections.ArrayList
 
 abstract class ClientActivity : AppCompatActivity() {
 
     private val networkReceiver = MessageReceiver(::onMessageReceived)
-//    private val newGameReceiver = MessageReceiver(::o nNewGameStarted)
-//    private val opponentMovedReceiver = MessageReceiver("move", ::onOpponentMoved)
-//    private val inviteReceiver = MessageReceiver("invite", ::onIncomingInvite)
-//    private val requestUndoReceiver = MessageReceiver("undo_requested", ::onUndoRequested)
-//    private val undoAcceptedReceiver = MessageReceiver("accepted_undo", ::onUndoAccepted)
-//    private val undoRejectedReceiver = MessageReceiver("rejected_undo", ::onUndoRejected)
-//    private val opponentResignedReceiver = MessageReceiver("opponent_resigned", ::onOpponentResigned)
-//    private val opponentOfferedDrawReceiver = MessageReceiver("opponent_offered_draw", ::onOpponentOfferedDraw)
-//    private val opponentAcceptedDrawReceiver = MessageReceiver("accepted_draw", ::onOpponentAcceptedDraw)
-//    private val opponentDeclinedDrawReceiver = MessageReceiver("declined_draw", ::onOpponentDeclinedDraw)
-//    private val chatMessageReceiver = MessageReceiver("", ::onChatMessageReceived)
-
-    protected val intentFilter = IntentFilter("mjaruijs.fischers_playground")
-//    private val gameUpdateFilter = IntentFilter("mjaruijs.fischers_playground.GAME_UPDATE")
-//    private val chatFilter = IntentFilter("mjaruijs.fischers_playground.CHAT_MESSAGE")
+    private val intentFilter = IntentFilter("mjaruijs.fischers_playground")
 
     protected var userId: String = DEFAULT_USER_ID
     protected var userName = DEFAULT_USER_NAME
@@ -141,6 +125,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         stayingInApp = stayInAppOnBackPress
+        dataManager.saveData(applicationContext)
 
         if (stayingInApp) {
             super.onBackPressed()
@@ -154,67 +139,72 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}
 
-//    open fun onInviteReceived(inviteData: Pair<String, InviteData>?) {
-//        if (inviteData == null) {
-//            return
-//        }
-//        incomingInviteDialog.showInvite(inviteData.second.opponentName, inviteData.first, networkManager)
-//    }
-
     open fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {}
 
     open fun onMessageReceived(topic: Topic, content: Array<String>) {
-        when (topic) {
-            Topic.NEW_GAME -> onNewGameStarted(topic, content)
-            Topic.MOVE -> onOpponentMoved(topic, content)
-            Topic.INVITE -> onIncomingInvite(topic, content)
-        }
+        sendDataToWorker(topic, content, when (topic) {
+            Topic.NEW_GAME -> ::onNewGameStarted
+            Topic.INVITE -> ::onIncomingInvite
+            Topic.MOVE -> ::onOpponentMoved
+            Topic.UNDO_REQUESTED -> ::onUndoRequested
+            Topic.UNDO_ACCEPTED -> ::onUndoAccepted
+            Topic.UNDO_REJECTED -> ::onUndoRejected
+            else -> throw IllegalArgumentException("Failed to handle message with topic: $topic")
+        })
+
     }
 
-    open fun onNewGameStarted(topic: Topic, content: Array<String>) {
-        sendDataToWorker<GameCardItem>(topic, content) { gameCard ->
-            val underscoreIndex = gameCard.id.indexOf('_')
-            val opponentId = gameCard.id.substring(0, underscoreIndex)
+    open fun onNewGameStarted(output: Parcelable) {
+        val gameCard = output as GameCardItem
+        val underscoreIndex = gameCard.id.indexOf('_')
+        val opponentId = gameCard.id.substring(0, underscoreIndex)
 
-            dataManager.updateRecentOpponents(applicationContext, Pair(gameCard.opponentName, opponentId))
-        }
-//        processNewGameData(content) { gameCard ->
-//            val underscoreIndex = gameCard.id.indexOf('_')
-//            val opponentId = gameCard.id.substring(0, underscoreIndex)
-//
-//            dataManager.updateRecentOpponents(applicationContext, Pair(gameCard.opponentName, opponentId))
-//        }
-
-        // Show popup with new game info
+        dataManager.updateRecentOpponents(applicationContext, Pair(gameCard.opponentName, opponentId))
     }
 
-    open fun onOpponentMoved(topic: Topic, content: Array<String>) {
-        sendDataToWorker<MoveData>(topic, content) {
-            showPopup(it)
-        }
+    open fun onOpponentMoved(output: Parcelable) {
+        // TODO: show popup
     }
 
-    open fun onIncomingInvite(topic: Topic, content: Array<String>) {
-        sendDataToWorker<InviteData>(topic, content) {
-            // TODO: show popup with invite data
-        }
+    open fun onIncomingInvite(output: Parcelable) {
+        // TODO: show popup
     }
 
-    open fun onUndoRequested(content: String) {
-        processUndoRequest(content) {
-
-        }
+    open fun onUndoRequested(output: Parcelable) {
+        // TODO: show popup
     }
 
-    protected fun processUndoRequest(content: String, onResult: (UndoRequestedDialog.UndoRequestData) -> Unit) {
-        val data = content.split('|').toTypedArray()
-        println("GONNASEND TO WORKER")
-//        sendDataToWorker<UndoRequestedDialog.UndoRequestData>("undo_requested", data) {
-//            onResult(it)
-//        }
+    open fun onUndoAccepted(output: Parcelable) {
+        // TODO: show popup
     }
 
+    open fun onUndoRejected(output: Parcelable) {
+        // TODO: show popup
+    }
 
+    open fun onDrawOffered(output: Parcelable) {
+        // TODO: show popup
+    }
+
+    open fun onDrawAccepted(output: Parcelable) {
+        // TODO: show popup
+    }
+
+    open fun onDrawRejected(output: Parcelable) {
+        // TODO: show popup
+    }
+
+    open fun onOpponentResigned(output: Parcelable) {
+        // TODO: show popup
+    }
+
+    open fun onUserStatusChanged(output: Parcelable) {
+        // TODO: show popup
+    }
+
+    open fun onChatMessageReceived(output: Parcelable) {
+        // TODO: show popup
+    }
 
     open fun onOpponentResigned(gameId: String) {}
 
@@ -230,7 +220,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 
-    protected inline fun <reified T : Parcelable> sendDataToWorker(topic: Topic, data: Array<String>, crossinline onResult: (T) -> Unit) {
+    private fun sendDataToWorker(topic: Topic, data: Array<String>, onResult: (Parcelable) -> Unit) {
         val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
             .setInputData(
                 workDataOf(
@@ -246,20 +236,20 @@ abstract class ClientActivity : AppCompatActivity() {
         workManager.getWorkInfoByIdLiveData(worker.id)
             .observe(this) {
                 if (it != null && it.state.isFinished) {
-                    val result = it.outputData.getParcelable<T>("output")!!
+                    val result = it.outputData.getParcelable(topic.dataType, "output")!!
                     onResult(result)
                 }
             }
     }
 
-    protected inline fun <reified T : Parcelable> Data.getParcelable(key: String): T? {
+    private fun Data.getParcelable(type: Parcelable.Creator<*>?, key: String): Parcelable? {
         val parcel = Parcel.obtain()
         try {
             val bytes = getByteArray(key) ?: return null
             parcel.unmarshall(bytes, 0, bytes.size)
             parcel.setDataPosition(0)
-            val creator = T::class.java.getField("CREATOR").get(null) as Parcelable.Creator<T>
-            return creator.createFromParcel(parcel)
+
+            return type?.createFromParcel(parcel) as Parcelable
         } finally {
             parcel.recycle()
         }
