@@ -34,7 +34,7 @@ class PractiseGameActivity : GameActivity() {
 //    }
 
     override fun onResume() {
-        getActionBarFragment().game = game
+        getActionBarFragment()?.game = game
         super.onResume()
     }
 }

@@ -13,7 +13,7 @@ class OpponentAcceptedDrawDialog {
         dialogBuilder.setTitle("It's a draw!")
     }
 
-    fun show(gameId: String, opponentUsername: String, onClick: () -> Unit) {
+    fun show(opponentUsername: String, onClick: () -> Unit) {
         dialogBuilder.setMessage("$opponentUsername has accepted your offer for a draw")
         dialogBuilder.setPositiveButton("Ok") { _, _ ->
             onClick()

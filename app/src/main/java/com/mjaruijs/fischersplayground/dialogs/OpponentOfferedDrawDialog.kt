@@ -10,18 +10,22 @@ class OpponentOfferedDrawDialog {
 
     private lateinit var dialog: AlertDialog
     private lateinit var dialogBuilder: AlertDialog.Builder
+    private lateinit var onAccept: () -> Unit
+    private lateinit var userId: String
 
-    fun create(context: Context) {
+    fun create(context: Context, userId: String, onAccept: () -> Unit) {
         dialogBuilder = AlertDialog.Builder(context)
+        this.userId = userId
+        this.onAccept = onAccept
     }
 
-    fun show(gameId: String, opponentName: String, onAccept: () -> Unit, networkManager: NetworkManager) {
+    fun show(gameId: String, opponentName: String, networkManager: NetworkManager) {
         dialogBuilder.setMessage("$opponentName is offering a draw!")
         dialogBuilder.setPositiveButton("Accept") { _, _ ->
             onAccept()
         }
         dialogBuilder.setNegativeButton("Decline") { _, _ ->
-            networkManager.sendMessage(NetworkMessage(Topic.DRAW_REJECTED, gameId))
+            networkManager.sendMessage(NetworkMessage(Topic.DRAW_REJECTED, "$gameId|$userId"))
         }
 
         dialog = dialogBuilder.show()

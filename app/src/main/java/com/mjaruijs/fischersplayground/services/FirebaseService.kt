@@ -30,10 +30,10 @@ class FirebaseService : FirebaseMessagingService() {
             val topic = Topic.fromString(message.data["topic"] ?: throw IllegalArgumentException("No data was found with name: topic.."))
             val data = message.data["data"] ?: throw IllegalArgumentException("No data was found with name: data..")
 
-            if (topic == Topic.RECONNECT_TO_SERVER) {
-                reconnectToServer(data)
-                return
-            }
+//            if (topic == Topic.RECONNECT_TO_SERVER) {
+//                reconnectToServer(data)
+//                return
+//            }
 
             val dataList = data.split('|').toTypedArray()
 
@@ -49,7 +49,7 @@ class FirebaseService : FirebaseMessagingService() {
             val workManager = WorkManager.getInstance(applicationContext)
             workManager.enqueue(worker)
 
-            val notificationData = notificationBuilder.createNotificationData(applicationContext, topic, dataList)
+            val notificationData = notificationBuilder.createNotificationData(applicationContext, topic, dataList) ?: return
             val notification = notificationBuilder.build(applicationContext, false, notificationData)
             notificationBuilder.notify(notification)
 

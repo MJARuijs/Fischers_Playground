@@ -117,9 +117,7 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
                 }
             }
 
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-            }
-
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
     }
 
@@ -172,6 +170,7 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
         for (message in messages) {
             chatAdapter += message
         }
+        chatAdapter.notifyDataSetChanged()
     }
 
 }

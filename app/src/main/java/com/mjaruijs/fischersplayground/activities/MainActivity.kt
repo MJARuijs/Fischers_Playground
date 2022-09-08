@@ -19,13 +19,13 @@ import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
-import com.mjaruijs.fischersplayground.data.UndoAcceptedData
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
-import com.mjaruijs.fischersplayground.dialogs.UndoRequestedDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
+import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import java.util.*
 
 class MainActivity : ClientActivity() {
@@ -195,11 +195,14 @@ class MainActivity : ClientActivity() {
     }
 
     override fun onUndoRequested(output: Parcelable) {
-        gameAdapter.hasUpdate((output as UndoRequestedDialog.UndoRequestData).gameId)
+        gameAdapter.hasUpdate((output as ParcelableString).value)
     }
 
     override fun onUndoAccepted(output: Parcelable) {
-        gameAdapter.hasUpdate((output as UndoAcceptedData).gameId)
+        val pair = output as ParcelablePair<*, *>
+        if (pair.first is ParcelableString) {
+            gameAdapter.hasUpdate((pair.first as ParcelableString).value)
+        }
     }
 
     private fun saveUserName(userName: String) {
@@ -209,22 +212,6 @@ class MainActivity : ClientActivity() {
 
         findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
         networkManager.sendMessage(NetworkMessage(Topic.SET_USER_NAME, userName))
-    }
-
-    override fun onOpponentResigned(gameId: String) {
-        gameAdapter.updateCardStatus(gameId, GameStatus.GAME_WON)
-    }
-
-    override fun onOpponentOfferedDraw(gameId: String) {
-        gameAdapter.hasUpdate(gameId)
-    }
-
-    override fun onOpponentAcceptedDraw(gameId: String) {
-        gameAdapter.hasUpdate(gameId)
-    }
-
-    override fun onOpponentRejectedDraw(gameId: String) {
-        gameAdapter.hasUpdate(gameId)
     }
 
     override fun onResume() {

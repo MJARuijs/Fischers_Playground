@@ -14,6 +14,7 @@ class OpponentDeclinedDrawDialog {
     }
 
     fun show(opponentUsername: String) {
+        println("SHOWING DRAW DIALOG")
         dialogBuilder.setMessage("$opponentUsername has declined your offer for a draw")
         dialogBuilder.setPositiveButton("Ok") { _, _ ->
 

@@ -9,8 +9,6 @@ import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.SettingsActivity
-import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
-import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
@@ -24,8 +22,6 @@ import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
-import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
@@ -36,7 +32,6 @@ abstract class GameActivity : ClientActivity() {
     val resignDialog = ResignDialog()
     val offerDrawDialog = OfferDrawDialog()
     val opponentResignedDialog = OpponentResignedDialog()
-    val opponentOfferedDrawDialog = OpponentOfferedDrawDialog()
     val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
     val opponentRejectedDrawDialog = OpponentDeclinedDrawDialog()
 
@@ -72,7 +67,6 @@ abstract class GameActivity : ClientActivity() {
             undoRejectedDialog.create(this)
             offerDrawDialog.create(this)
             opponentResignedDialog.create(this)
-            opponentOfferedDrawDialog.create(this)
             opponentAcceptedDrawDialog.create(this)
             opponentRejectedDrawDialog.create(this)
             checkMateDialog.create(this)
@@ -123,8 +117,12 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    fun getActionBarFragment(): ActionButtonsFragment {
-        return (supportFragmentManager.fragments.find { fragment -> fragment is ActionButtonsFragment } as ActionButtonsFragment)
+    fun getActionBarFragment(): ActionButtonsFragment? {
+        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is ActionButtonsFragment }
+        if (fragment != null) {
+            return fragment as ActionButtonsFragment
+        }
+        return null
     }
 
     open fun onContextCreated() {
@@ -195,8 +193,6 @@ abstract class GameActivity : ClientActivity() {
 
         dataManager[gameId] = game as MultiPlayerGame
         dataManager.saveData(applicationContext)
-//        dataManager.savedGames[gameId]?.move(move, true)
-//        sendMessage(FLAG_MOVE_MADE, Pair(gameId, move))
     }
 
     private fun onCheckMate(team: Team) {
@@ -229,91 +225,6 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-//    private fun processNews(game: MultiPlayerGame) {
-//        for (news in game.newsUpdates) {
-//            when (news.newsType) {
-//                NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show(opponentName, ::closeAndSaveGameAsWin)
-//                NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show(gameId, id, opponentName, ::acceptDraw)
-//                NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show(gameId, opponentName, ::closeAndSaveGameAsDraw)
-//                NewsType.OPPONENT_DECLINED_DRAW -> opponentDeclinedDrawDialog.show(opponentName)
-//                NewsType.OPPONENT_REQUESTED_UNDO -> undoRequestedDialog.show(gameId, opponentName, id)
-//                NewsType.OPPONENT_ACCEPTED_UNDO -> {
-//                    game.undoMoves(news.data)
-//                    glView.requestRender()
-//                }
-//                NewsType.OPPONENT_REJECTED_UNDO -> undoRejectedDialog.show(opponentName)
-//                NewsType.NO_NEWS -> {}
-//            }
-//        }
-//        game.clearNews()
-//    }
-
-//    override fun onNewGameStarted(content: String) {
-//        val data = content.split('|')
-//
-//        val inviteId = data[0]
-//        val opponentName = data[1]
-//        val playingWhite = data[2].toBoolean()
-//
-////        val newGame = MultiPlayerGame(inviteId, id, opponentName, playingWhite)
-////        savedGames[inviteId] = newGame
-//    }
-
-//    private fun onOpponentResigned(content: String) {
-//        val data = content.split('|')
-//        val gameId = data[0]
-//        val opponentUsername = data[1]
-//
-//        if (this.gameId == gameId) {
-//            opponentResignedDialog.show(opponentUsername, ::closeAndSaveGameAsWin)
-//        } else {
-////            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-////            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_RESIGNED))
-//        }
-//    }
-//
-//    private fun onOpponentOfferedDraw(content: String) {
-//        val data = content.split('|')
-//
-//        val gameId = data[0]
-//        val opponentUsername = data[1]
-//
-//        if (this.gameId == gameId) {
-//            opponentOfferedDrawDialog.show(gameId, id, opponentUsername, ::acceptDraw)
-//        } else {
-////            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-////            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_OFFERED_DRAW))
-//        }
-//    }
-//
-//    private fun onOpponentAcceptedDraw(content: String) {
-//        val data = content.split('|')
-//
-//        val gameId = data[0]
-//        val opponentUsername = data[1]
-//
-//        if (this.gameId == gameId) {
-//            opponentAcceptedDrawDialog.show(gameId, opponentUsername, ::closeAndSaveGameAsDraw)
-//        } else {
-////            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-////            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_DRAW))
-//        }
-//    }
-
-    private fun onOpponentDeclinedDraw(content: String) {
-        val data = content.split('|')
-
-        val gameId = data[0]
-        val opponentUsername = data[1]
-
-        if (this.gameId == gameId) {
-            opponentRejectedDrawDialog.show(opponentUsername)
-        } else {
-//            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_DECLINED_DRAW))
-        }
-    }
-
     override fun onOpponentMoved(output: Parcelable) {
         val moveData = output as MoveData
         if (moveData.gameId == gameId) {
@@ -324,94 +235,25 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-
-
-//    private fun onUndoAccepted(content: String) {
-//        val data = content.split('|')
-//        val gameId = data[0]
-//        val numberOfMovesReversed = data[1].toInt()
-//
-//        if (this.gameId == gameId) {
-//            (game as MultiPlayerGame).undoMoves(numberOfMovesReversed)
-//            glView.requestRender()
-//        } else {
-////            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfMovesReversed))
-////            savedGames[gameId]?.status = GameStatus.PLAYER_MOVE
-//        }
-//    }
-
-    private fun onUndoRejected(gameId: String) {
-        if (this.gameId == gameId) {
-            undoRejectedDialog.show(opponentName)
-        } else {
-//            savedGames[gameId]?.addNews(News(NewsType.OPPONENT_REJECTED_UNDO))
-        }
-    }
-
-    private fun onUserStatusReceived(content: String) {
-        setOpponentStatusIcon(content)
-    }
-
-    private fun onChatMessageReceived(content: String) {
-        val data = content.split('|')
-        val gameId = data[0]
-        val timeStamp = data[1]
-        val messageContent = data[2]
-
-        val message = ChatMessage(timeStamp, messageContent, MessageType.RECEIVED)
-
-        if (this.gameId == gameId) {
-//            getChatFragment().addReceivedMessage(message)
-        } else {
-//            savedGames[gameId]?.chatMessages?.add(message)
-        }
-    }
-
-//    private fun onChatMessageSent(message: ChatMessage) {
-//        NetworkManager.sendMessage(Message(Topic.CHAT_MESSAGE, "", "$gameId|$id|${message.timeStamp}|${message.message}"))
-//        if (game is MultiPlayerGame) {
-//            (game as MultiPlayerGame).chatMessages += message
-//        }
-//    }
-
-    private fun finishActivity(status: GameStatus) {
-//        if (game is MultiPlayerGame) {
-//            (game as MultiPlayerGame).status = status
-//        }
-//        sendMessage(FLAG_SET_GAME_STATUS, Pair(gameId, status))
-
-//        saveGames()
-//        saveGame()
-
-//        val resultIntent = Intent()
-//        resultIntent.putExtra("gameId", gameId)
-//        resultIntent.putExtra("lastUpdated", game.lastUpdated)
-//        resultIntent.putExtra("opponentName", opponentName)
-//        resultIntent.putExtra("status", status)
-//        resultIntent.putExtra("isPlayingWhite", isPlayingWhite)
-//        resultIntent.putExtra("hasUpdate", true)
-//        setResult(Activity.RESULT_OK, resultIntent)
-
-//        println("GAME_ACTIVITY: finish")
+    open fun finishActivity(status: GameStatus) {
+//        finish()
+//        val intent = Intent(this, MainActivity::class.java)
+//        intent.flags = FLAG_ACTIVITY_CLEAR_TOP
+//        startActivity(intent)
+        stayingInApp = true
         finish()
     }
 
-    fun closeAndSaveGameAsWin() {
+    open fun closeAndSaveGameAsWin() {
         finishActivity(GameStatus.GAME_WON)
-//        SavedGames.get(gameId)?.status = GameStatus.GAME_WON
-//        finish()
     }
 
-    fun closeAndSaveGameAsDraw() {
+    open fun closeAndSaveGameAsDraw() {
         finishActivity(GameStatus.GAME_DRAW)
-//        SavedGames.get(gameId)?.status = GameStatus.GAME_DRAW
-//        finish()
     }
 
-    fun closeAndSaveGameAsLoss() {
+    open fun closeAndSaveGameAsLoss() {
         finishActivity(GameStatus.GAME_LOST)
-//        SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
-//        finish()
     }
 
     private fun hideActivityDecorations(isFullscreen: Boolean) {
@@ -427,29 +269,13 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    private fun setOpponentStatusIcon(gameId: String) {
-//        println("GETTING FRAGMENT")
-        val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
-
-//        println("TRYING TO SET STATUS: ${this.gameId} :: $gameId")
-
-        when {
-//            this.gameId == gameId -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_GAME)
-            gameId == "online" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_OTHER_GAME)
-            gameId == "away" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.AWAY)
-            gameId == "offline" -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.OFFLINE)
-            else -> (opponentFragment as PlayerCardFragment).setStatusIcon(PlayerStatus.IN_OTHER_GAME)
-        }
-    }
-
-    override fun setGame(game: MultiPlayerGame) {
-        super.setGame(game)
+    open fun setGameParameters(game: MultiPlayerGame) {
         if (game.moves.isNotEmpty()) {
             if (game.getMoveIndex() != -1) {
-                getActionBarFragment().enableBackButton()
+                getActionBarFragment()?.enableBackButton()
             }
             if (!game.isShowingCurrentMove()) {
-                getActionBarFragment().enableForwardButton()
+                getActionBarFragment()?.enableForwardButton()
             }
         }
     }
@@ -473,13 +299,13 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun enableBackButton() {
-        getActionBarFragment().enableBackButton()
+        getActionBarFragment()?.enableBackButton()
 //        findViewById<UIButton>(R.id.back_button).enable()
         glView.requestRender()
     }
 
     private fun enableForwardButton() {
-        getActionBarFragment().enableForwardButton()
+        getActionBarFragment()?.enableForwardButton()
         glView.requestRender()
 //        findViewById<UIButton>(R.id.forward_button).enable()
     }

@@ -34,30 +34,4 @@ class UndoRequestedDialog {
         dialog.setCanceledOnTouchOutside(false)
     }
 
-    class UndoRequestData(val gameId: String, val opponentName: String) : Parcelable {
-        constructor(parcel: Parcel) : this(
-            parcel.readString()!!,
-            parcel.readString()!!
-        )
-
-        override fun writeToParcel(parcel: Parcel, flags: Int) {
-            parcel.writeString(gameId)
-            parcel.writeString(opponentName)
-        }
-
-        override fun describeContents(): Int {
-            return 0
-        }
-
-        companion object CREATOR : Parcelable.Creator<UndoRequestData> {
-            override fun createFromParcel(parcel: Parcel): UndoRequestData {
-                return UndoRequestData(parcel)
-            }
-
-            override fun newArray(size: Int): Array<UndoRequestData?> {
-                return arrayOfNulls(size)
-            }
-        }
-
-    }
 }

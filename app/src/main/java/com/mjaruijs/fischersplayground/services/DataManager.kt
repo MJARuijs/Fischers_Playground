@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -79,6 +80,16 @@ class DataManager(context: Context) {
 
     }
 
+    fun saveData(context: Context) {
+        println("SAVING DATA")
+        Thread {
+            saveGames(context)
+            saveInvites(context)
+            saveRecentOpponents(context)
+//            log("Done saving data")
+        }.start()
+    }
+
     private fun loadSavedGames(context: Context) {
         val lines = FileManager.read(context, MULTIPLAYER_GAME_FILE) ?: ArrayList()
 
@@ -89,13 +100,15 @@ class DataManager(context: Context) {
 
             val data = gameData.removePrefix("(").removeSuffix(")").split('|')
             val gameId = data[0]
-            val lastUpdated = data[1].toLong()
+            val opponentId = data[1]
             val opponentName = data[2]
-            val isPlayerWhite = data[3].toBoolean()
-            val gameStatus = GameStatus.fromString(data[4])
-            val moveList = data[5].removePrefix("[").removeSuffix("]").split('\\')
-            val chatMessages = data[6].removePrefix("[").removeSuffix("]").split('\\')
-            val newsData = data[7].removePrefix("[").removeSuffix("]").split("\\")
+            val gameStatus = GameStatus.fromString(data[3])
+            val opponentStatus = data[4]
+            val lastUpdated = data[5].toLong()
+            val isPlayerWhite = data[6].toBoolean()
+            val moveList = data[7].removePrefix("[").removeSuffix("]").split('\\')
+            val chatMessages = data[8].removePrefix("[").removeSuffix("]").split('\\')
+            val newsData = data[9].removePrefix("[").removeSuffix("]").split("\\")
 
 //            val winner = data[7]
 
@@ -128,14 +141,14 @@ class DataManager(context: Context) {
                 newsUpdates += News.fromString(news)
             }
 
-            val newGame = MultiPlayerGame(gameId, opponentName, lastUpdated, isPlayerWhite, moves, messages, newsUpdates)
+            val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moves, messages, newsUpdates)
             newGame.status = gameStatus
 
             savedGames[gameId] = newGame
         }
     }
 
-    fun loadInvites(context: Context) {
+    private fun loadInvites(context: Context) {
         val lines = FileManager.read(context, INVITES_FILE) ?: ArrayList()
 
         for (line in lines) {
@@ -153,7 +166,7 @@ class DataManager(context: Context) {
         }
     }
 
-    fun loadRecentOpponents(context: Context) {
+    private fun loadRecentOpponents(context: Context) {
         val lines = FileManager.read(context, RECENT_OPPONENTS_FILE) ?: ArrayList()
 
         for (line in lines) {
@@ -200,16 +213,6 @@ class DataManager(context: Context) {
         saveRecentOpponents(context)
     }
 
-    fun saveData(context: Context) {
-        println("SAVING DATA")
-        Thread {
-            saveGames(context)
-            saveInvites(context)
-            saveRecentOpponents(context)
-//            log("Done saving data")
-        }.start()
-    }
-
     fun saveGames(context: Context) {
         var content = ""
 
@@ -236,18 +239,15 @@ class DataManager(context: Context) {
 
             var newsContent = "["
 
-            println("SAVING NEWS:")
-
             for ((i, news) in game.newsUpdates.withIndex()) {
                 newsContent += news.toString()
-                println(news.toString())
                 if (i != game.newsUpdates.size - 1) {
                     newsContent += "\\"
                 }
             }
             newsContent += "]"
 
-            content += "$gameId|${game.lastUpdated}|${game.opponentName}|${game.isPlayingWhite}|${game.status}|$moveData|$chatData|$newsContent\n"
+            content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|$moveData|$chatData|$newsContent\n"
         }
 
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
@@ -263,7 +263,7 @@ class DataManager(context: Context) {
         FileManager.write(context, INVITES_FILE, content)
     }
 
-    fun saveRecentOpponents(context: Context) {
+    private fun saveRecentOpponents(context: Context) {
         var data = ""
         for (recentOpponent in recentOpponents) {
             data += "${recentOpponent.first}|${recentOpponent.second}\n"

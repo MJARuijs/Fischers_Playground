@@ -22,4 +22,5 @@ class OpponentResignedDialog {
 
         dialog = dialogBuilder.show()
     }
+
 }

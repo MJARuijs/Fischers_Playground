@@ -11,7 +11,7 @@ import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class MultiplayerActionButtonsFragment(private val gameId: String, private val playerId: String, private val isChatOpened: () -> Boolean, requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar, requestRender, networkManager) {
+class MultiplayerActionButtonsFragment(private val gameId: String, private val playerId: String, private val isChatOpened: () -> Boolean, private val onResign: () -> Unit, requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar, requestRender, networkManager) {
 
     private lateinit var resignButton: UIButton
     private lateinit var offerDrawButton: UIButton
@@ -47,10 +47,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val p
                 }
 
                 resignDialog.show {
-                    networkManager.sendMessage(NetworkMessage(Topic.RESIGN, "$gameId|$playerId"))
-//                    SavedGames.get(gameId)?.status = GameStatus.GAME_LOST
-
-//                    finishActivity(GameStatus.GAME_LOST)
+                    onResign()
                 }
             }
 //

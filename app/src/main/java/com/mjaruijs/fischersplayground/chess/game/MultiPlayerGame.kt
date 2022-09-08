@@ -9,11 +9,10 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
+import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.util.FloatUtils
 
-class MultiPlayerGame(val gameId: String, val opponentName: String, lastUpdated: Long, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated, moves) {
-
-    var status: GameStatus
+class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated, moves) {
 
     var sendMoveData: (String) -> Unit = {
         println("Multiplayer move was made, but no data was actually sent. Did you forget to set the sendMoveData() function?")
@@ -42,6 +41,10 @@ class MultiPlayerGame(val gameId: String, val opponentName: String, lastUpdated:
                 moveOpponent(move, true)
             }
         }
+    }
+
+    fun addMessage(message: ChatMessage) {
+        chatMessages += message
     }
 
     fun addNews(type: NewsType) {
@@ -183,8 +186,8 @@ class MultiPlayerGame(val gameId: String, val opponentName: String, lastUpdated:
         return Action.NO_OP
     }
 
-    override fun toString(): String {
-        return "$gameId|$lastUpdated|$opponentName|$status|$isPlayingWhite|true"
-    }
+//    override fun toString(): String {
+//        return "$gameId|$lastUpdated|$opponentName|$status|$isPlayingWhite|true"
+//    }
 
 }

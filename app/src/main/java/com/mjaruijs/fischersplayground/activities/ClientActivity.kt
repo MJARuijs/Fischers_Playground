@@ -85,10 +85,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
         dataManager.loadData(applicationContext)
         registerReceiver(networkReceiver, intentFilter)
-//        registerReceiver(newGameReceiver, infoFilter)
-//        registerReceiver(inviteReceiver, infoFilter)
-//        registerReceiver(opponentMovedReceiver, gameUpdateFilter)
-//        registerReceiver(requestUndoReceiver, gameUpdateFilter)
 
         if (isUserRegisteredAtServer()) {
             networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
@@ -98,13 +94,8 @@ abstract class ClientActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
 
-//        println("ON STOP: $activityName")
         incomingInviteDialog.dismiss()
         unregisterReceiver(networkReceiver)
-//        unregisterReceiver(newGameReceiver)
-//        unregisterReceiver(inviteReceiver)
-//        unregisterReceiver(opponentMovedReceiver)
-//        unregisterReceiver(requestUndoReceiver)
 
         if (!stayingInApp) {
             networkManager.stop()
@@ -113,11 +104,8 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     override fun onUserLeaveHint() {
-//        println("ON_USER_LEAVE_HINT")
         if (!stayingInApp) {
-//            println("SENDING AWAY MESSAGE")
             networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
-//            NetworkManager.stop()
         }
 
         super.onUserLeaveHint()
@@ -143,15 +131,20 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open fun onMessageReceived(topic: Topic, content: Array<String>) {
         sendDataToWorker(topic, content, when (topic) {
-            Topic.NEW_GAME -> ::onNewGameStarted
             Topic.INVITE -> ::onIncomingInvite
+            Topic.NEW_GAME -> ::onNewGameStarted
             Topic.MOVE -> ::onOpponentMoved
             Topic.UNDO_REQUESTED -> ::onUndoRequested
             Topic.UNDO_ACCEPTED -> ::onUndoAccepted
             Topic.UNDO_REJECTED -> ::onUndoRejected
+            Topic.RESIGN -> ::onOpponentResigned
+            Topic.DRAW_OFFERED -> ::onDrawOffered
+            Topic.DRAW_ACCEPTED -> ::onDrawAccepted
+            Topic.DRAW_REJECTED -> ::onDrawRejected
+            Topic.CHAT_MESSAGE -> ::onChatMessageReceived
+            Topic.USER_STATUS_CHANGED -> ::onUserStatusChanged
             else -> throw IllegalArgumentException("Failed to handle message with topic: $topic")
         })
-
     }
 
     open fun onNewGameStarted(output: Parcelable) {
@@ -198,25 +191,13 @@ abstract class ClientActivity : AppCompatActivity() {
         // TODO: show popup
     }
 
-    open fun onUserStatusChanged(output: Parcelable) {
-        // TODO: show popup
-    }
-
     open fun onChatMessageReceived(output: Parcelable) {
         // TODO: show popup
     }
 
-    open fun onOpponentResigned(gameId: String) {}
-
-    open fun onOpponentOfferedDraw(gameId: String) {}
-
-    open fun onOpponentAcceptedDraw(gameId: String) {}
-
-    open fun onOpponentRejectedDraw(gameId: String) {}
-
-    open fun onChatMessageReceived(data: Triple<String, String, String>?) {}
-
-    open fun setGame(game: MultiPlayerGame) {}
+    open fun onUserStatusChanged(output: Parcelable) {
+        // TODO: show popup
+    }
 
     open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 
