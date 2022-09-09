@@ -87,7 +87,7 @@ abstract class ClientActivity : AppCompatActivity() {
         registerReceiver(networkReceiver, intentFilter)
 
         if (isUserRegisteredAtServer()) {
-            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
+            sendResumeStatusToServer()
         }
     }
 
@@ -100,12 +100,12 @@ abstract class ClientActivity : AppCompatActivity() {
         if (!stayingInApp) {
             networkManager.stop()
         }
-
     }
 
     override fun onUserLeaveHint() {
         if (!stayingInApp) {
-            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
+            sendAwayStatusToServer()
+//            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
         }
 
         super.onUserLeaveHint()
@@ -118,11 +118,20 @@ abstract class ClientActivity : AppCompatActivity() {
         if (stayingInApp) {
             super.onBackPressed()
         } else {
-            if (!stayingInApp) {
-                networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
-            }
+            sendAwayStatusToServer()
+//            if (!stayingInApp) {
+//                networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
+//            }
             moveTaskToBack(true)
         }
+    }
+
+    open fun sendResumeStatusToServer() {
+        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
+    }
+
+    open fun sendAwayStatusToServer() {
+        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
     }
 
     open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}
@@ -217,7 +226,7 @@ abstract class ClientActivity : AppCompatActivity() {
         workManager.getWorkInfoByIdLiveData(worker.id)
             .observe(this) {
                 if (it != null && it.state.isFinished) {
-                    val result = it.outputData.getParcelable(topic.dataType, "output")!!
+                    val result = it.outputData.getParcelable(topic.dataType, "output") ?: return@observe
                     onResult(result)
                 }
             }
@@ -230,7 +239,7 @@ abstract class ClientActivity : AppCompatActivity() {
             parcel.unmarshall(bytes, 0, bytes.size)
             parcel.setDataPosition(0)
 
-            return type?.createFromParcel(parcel) as Parcelable
+            return type?.createFromParcel(parcel) as Parcelable?
         } finally {
             parcel.recycle()
         }

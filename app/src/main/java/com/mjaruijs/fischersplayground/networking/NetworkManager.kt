@@ -13,7 +13,7 @@ class NetworkManager {
     companion object {
 
         private const val PUBLIC_SERVER_IP = "217.101.191.23"
-        private const val LOCAL_SERVER_IP = "192.168.178.103"
+        private const val LOCAL_SERVER_IP = "192.168.178.18"
         private const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
@@ -49,8 +49,10 @@ class NetworkManager {
 
     fun stop(): Boolean {
         messageQueue.clear()
-        client.close()
-        initialized.set(false)
+        if (initialized.get()) {
+            client.close()
+            initialized.set(false)
+        }
         clientInitializing.set(false)
         manager.stop()
         return true
@@ -119,9 +121,9 @@ class NetworkManager {
     }
 
     private fun onRead(message: NetworkMessage, context: Context) {
-        if (message.topic != Topic.USER_STATUS_CHANGED) {
+//        if (message.topic != Topic.USER_STATUS_CHANGED) {
             log("Received message: $message")
-        }
+//        }
 
         val messageData = message.content.split('|').toTypedArray()
 

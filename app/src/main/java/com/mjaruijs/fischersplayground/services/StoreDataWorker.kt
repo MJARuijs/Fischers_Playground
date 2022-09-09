@@ -116,12 +116,10 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
 
         val inviteId = data[0]
         val opponentName = data[1]
-        val opponentStatus = data[2]
-        val playingWhite = data[3].toBoolean()
-        val timeStamp = data[4].toLong()
-
-        val underscoreIndex = inviteId.indexOf('_')
-        val opponentId = inviteId.substring(0, underscoreIndex)
+        val opponentId = data[2]
+        val opponentStatus = data[3]
+        val playingWhite = data[4].toBoolean()
+        val timeStamp = data[5].toLong()
 
         val gameStatus = if (playingWhite) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
 
@@ -130,7 +128,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
 
         dataManager[inviteId] = newGame
         dataManager.savedInvites.remove(inviteId)
-//        updateRecentOpponents(Pair(opponentName, opponentId))
+        dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
 
         val hasUpdate = gameStatus == GameStatus.PLAYER_MOVE
 
@@ -209,19 +207,26 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         return ChatMessage.Data(gameId, timeStamp, messageContent, MessageType.RECEIVED)
     }
 
-    private fun onUserStatusChanged(data: Array<String>) {
+    private fun onUserStatusChanged(data: Array<String>): ParcelableString {
         val opponentId = data[0]
         val opponentStatus = data[1]
+
+        println("OpponentID: $opponentId : $opponentStatus")
 
         for (gameEntry in dataManager.getSavedGames()) {
             val gameId = gameEntry.key
             val game = gameEntry.value
 
+            println("GAME OPPONENT ID: ${game.opponentId}")
+
             if (game.opponentId == opponentId) {
-                game.opponentStatus = opponentStatus
-                dataManager[gameId] = game
+                dataManager[gameId].opponentStatus = opponentStatus
+//                game.opponentStatus = opponentStatus
+//                dataManager[gameId] = game
             }
         }
+
+        return ParcelableString(opponentStatus)
     }
 
     private fun reconnectToServer(data: Array<String>) {

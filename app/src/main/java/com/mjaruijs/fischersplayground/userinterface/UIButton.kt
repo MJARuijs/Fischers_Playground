@@ -49,6 +49,8 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     private var heldDown = false
     private var startClickTimer = -1L
 
+    private var iconScaleType = ScaleType.SCALE_WITH_PARENT
+
     var disabled = false
     var buttonText = ""
 
@@ -156,6 +158,11 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     fun setOnReleaseListener(onRelease: () -> Unit): UIButton {
         this.onRelease = onRelease
+        return this
+    }
+
+    fun setIconScaleType(scaleType: ScaleType): UIButton {
+        this.iconScaleType = scaleType
         return this
     }
 
@@ -294,38 +301,51 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-
         if (bitmap != null) {
-            val scale = 0.5f
+            if (iconScaleType == ScaleType.SCALE_WITH_PARENT) {
+                val scale = 0.5f
 
-            val halfViewWidth = (w / 2)
-            val halfDrawableWidth = (w * scale / 2)
+                val halfViewWidth = (w / 2)
+                val halfDrawableWidth = (w * scale / 2)
 
-            val left = ((halfViewWidth - halfDrawableWidth).roundToInt())
-            val right = ((w * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
+                val left = ((halfViewWidth - halfDrawableWidth).roundToInt())
+                val right = ((w * scale + halfViewWidth - halfDrawableWidth)).roundToInt()
 
-            val drawableWidth = right - left
+                val drawableWidth = right - left
 
-            val top: Int
-            val bottom: Int
+                val top: Int
+                val bottom: Int
 
-            if (centerVertically) {
-                val halfViewHeight = (h / 2)
-                val halfDrawableHeight = (h * scale / 2)
+                if (centerVertically) {
+                    val halfViewHeight = (h / 2)
+                    val halfDrawableHeight = (h * scale / 2)
 
-                top = ((halfViewHeight - halfDrawableHeight).roundToInt())
-                bottom = ((h * scale + halfViewHeight - halfDrawableHeight)).roundToInt()
-            } else {
-                top = 0
+                    top = ((halfViewHeight - halfDrawableHeight).roundToInt())
+                    bottom = ((h * scale + halfViewHeight - halfDrawableHeight)).roundToInt()
+                } else {
+                    top = 0
 
-                val maxHeight = (h * scale).roundToInt()
-                bottom = max(maxHeight, drawableWidth)
+                    val maxHeight = (h * scale).roundToInt()
+                    bottom = max(maxHeight, drawableWidth)
+                }
+
+                bitmapBounds = Rect(left, top, right, bottom)
+            } else if (iconScaleType == ScaleType.SQUARE) {
+                if (h < w) {
+                    val scaledHeight = (h * 0.3f).roundToInt()
+                    val halfHeight = h / 2
+                    val top = halfHeight - scaledHeight
+                    val bottom = halfHeight + scaledHeight
+
+                    val halfWidth = w / 2
+
+                    val left = halfWidth - scaledHeight
+                    val right = halfWidth + scaledHeight
+                    val scale = 1f
+                    bitmapBounds = Rect((left * scale).roundToInt(), (top * scale).roundToInt(), (right * scale).roundToInt(), (bottom * scale).roundToInt())
+                }
             }
 
-//            val bottom = (h * scale).roundToInt()
-
-            bitmapBounds = Rect(left, top, right, bottom)
-//            println("OnSizeChanged: $buttonText")
         }
 
         val maxTextSize = calculateMaxTextSize()

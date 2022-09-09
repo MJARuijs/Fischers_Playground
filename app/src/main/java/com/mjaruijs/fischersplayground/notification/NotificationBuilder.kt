@@ -119,7 +119,7 @@ class NotificationBuilder(context: Context) {
                 NotificationData("New message!", "$opponentName: $message", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.USER_STATUS_CHANGED -> null
-            else -> throw IllegalArgumentException("Could not create NotificationData for topic: $topic")
+            else -> null
         }
     }
 

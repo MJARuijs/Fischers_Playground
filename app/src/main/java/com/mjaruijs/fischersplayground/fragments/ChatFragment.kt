@@ -21,7 +21,7 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.util.Time
 import kotlin.math.abs
 
-class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val translate: (Float) -> Unit, private val close: () -> Unit) : Fragment(R.layout.chat_fragment) {
+class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val close: () -> Unit) : Fragment(R.layout.chat_fragment) {
 
     private lateinit var constraintLayout: ConstraintLayout
 

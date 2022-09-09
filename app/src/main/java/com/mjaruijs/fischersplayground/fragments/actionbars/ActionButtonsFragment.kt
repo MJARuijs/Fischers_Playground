@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.fragments.actionbars
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
@@ -21,6 +22,7 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
 //    lateinit var networkManager: NetworkManager
 
     open var numberOfButtons: Int = 2
+
     var numberOfButtonsInitialized = 0
 
     val buttons = ArrayList<UIButton>()
