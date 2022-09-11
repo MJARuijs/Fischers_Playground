@@ -16,6 +16,7 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
+import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
@@ -23,9 +24,9 @@ import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
+import com.mjaruijs.fischersplayground.userinterface.UIButton
 import java.util.*
 
 class MainActivity : ClientActivity() {
@@ -155,16 +156,31 @@ class MainActivity : ClientActivity() {
         gameAdapter.clearUpdate(gameCard, userId)
 
         if (gameCard.gameStatus == GameStatus.INVITE_RECEIVED) {
-            incomingInviteDialog.showInvite(gameCard.opponentName, gameCard.id, networkManager)
+            showNewInviteDialog(gameCard.id, gameCard.opponentName)
         } else if (gameCard.gameStatus != GameStatus.INVITE_PENDING) {
-            val intent = Intent(this, MultiplayerGameActivity::class.java)
-                .putExtra("id", userId)
-                .putExtra("user_name", userName)
-                .putExtra("is_playing_white", gameCard.isPlayingWhite)
-                .putExtra("game_id", gameCard.id)
-                .putExtra("opponent_name", gameCard.opponentName)
-            startActivity(intent)
+            launchMultiplayerActivity(gameCard)
         }
+    }
+
+    private fun launchMultiplayerActivity(gameCard: GameCardItem) {
+        val intent = Intent(this, MultiplayerGameActivity::class.java)
+            .putExtra("id", userId)
+            .putExtra("user_name", userName)
+            .putExtra("is_playing_white", gameCard.isPlayingWhite)
+            .putExtra("game_id", gameCard.id)
+            .putExtra("opponent_name", gameCard.opponentName)
+        startActivity(intent)
+    }
+
+    private fun showNewInviteDialog(inviteId: String, opponentName: String) {
+        incomingInviteDialog.setMessage("$opponentName is inviting you for a game!")
+        incomingInviteDialog.setRightOnClick {
+            networkManager.sendMessage(NetworkMessage(Topic.INVITE_ACCEPTED, inviteId))
+        }
+        incomingInviteDialog.setLeftOnClick {
+            networkManager.sendMessage(NetworkMessage(Topic.INVITE_REJECTED, inviteId))
+        }
+        incomingInviteDialog.show()
     }
 
     private fun onGameDeleted(gameId: String) {
@@ -186,7 +202,8 @@ class MainActivity : ClientActivity() {
         val inviteData = output as InviteData
 
         gameAdapter += GameCardItem(inviteData.inviteId, inviteData.timeStamp, inviteData.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
-        incomingInviteDialog.showInvite(inviteData.opponentName, inviteData.inviteId, networkManager)
+
+        showNewInviteDialog(inviteData.inviteId, inviteData.opponentName)
     }
 
     override fun onOpponentMoved(output: Parcelable) {
@@ -201,8 +218,41 @@ class MainActivity : ClientActivity() {
     override fun onUndoAccepted(output: Parcelable) {
         val pair = output as ParcelablePair<*, *>
         if (pair.first is ParcelableString) {
-            gameAdapter.hasUpdate((pair.first as ParcelableString).value)
+            val gameId = (pair.first as ParcelableString).value
+            gameAdapter.updateCardStatus(gameId, GameStatus.PLAYER_MOVE)
+            gameAdapter.hasUpdate(gameId)
         }
+    }
+
+    override fun onUndoRejected(output: Parcelable) {
+        val gameId = (output as ParcelableString).value
+        gameAdapter.hasUpdate(gameId)
+    }
+
+    override fun onDrawOffered(output: Parcelable) {
+        val gameId = (output as ParcelableString).value
+        gameAdapter.hasUpdate(gameId)
+    }
+
+    override fun onDrawAccepted(output: Parcelable) {
+        val gameId = (output as ParcelableString).value
+        gameAdapter.hasUpdate(gameId)
+    }
+
+    override fun onDrawRejected(output: Parcelable) {
+        val gameId = (output as ParcelableString).value
+        gameAdapter.hasUpdate(gameId)
+    }
+
+    override fun onOpponentResigned(output: Parcelable) {
+        val gameId = (output as ParcelableString).value
+        gameAdapter.hasUpdate(gameId)
+    }
+
+    override fun onChatMessageReceived(output: Parcelable) {
+        val messageData = output as ChatMessage.Data
+        val gameId = messageData.gameId
+        gameAdapter.hasUpdate(gameId)
     }
 
     private fun saveUserName(userName: String) {
@@ -218,8 +268,7 @@ class MainActivity : ClientActivity() {
         super.onResume()
 
         Thread {
-            if (!dataManager.isDataLoaded()) {
-                while (dataManager.isLoadingData()) {
+                while (dataManager.isLocked()) {
                     Thread.sleep(1)
                 }
                 runOnUiThread {
@@ -227,13 +276,7 @@ class MainActivity : ClientActivity() {
                     restoreSavedInvites(dataManager.savedInvites)
                     updateRecentOpponents(dataManager.recentOpponents)
                 }
-            } else {
-                runOnUiThread {
-                    restoreSavedGames(dataManager.getSavedGames())
-                    restoreSavedInvites(dataManager.savedInvites)
-                    updateRecentOpponents(dataManager.recentOpponents)
-                }
-            }
+
         }.start()
 
         stayingInApp = false
@@ -366,11 +409,11 @@ class MainActivity : ClientActivity() {
 //        gameAdapter += GameCardItem(inviteData?.first ?: return, inviteData.second.timeStamp, inviteData.second.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
 //    }
 
-    override fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {
-        restoreSavedGames(data?.first ?: return)
-        restoreSavedInvites(data.second)
-        updateRecentOpponents(data.third)
-    }
+//    override fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {
+//        restoreSavedGames(data?.first ?: return)
+//        restoreSavedInvites(data.second)
+//        updateRecentOpponents(data.third)
+//    }
 
     override fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {
         createGameDialog.setRecentOpponents(opponents ?: return)

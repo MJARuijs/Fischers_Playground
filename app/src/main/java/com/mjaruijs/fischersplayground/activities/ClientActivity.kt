@@ -13,11 +13,10 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
-import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
-import com.mjaruijs.fischersplayground.dialogs.IncomingInviteDialog
+import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
@@ -40,7 +39,8 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open val stayInAppOnBackPress = true
 
-    protected val incomingInviteDialog = IncomingInviteDialog()
+    protected lateinit var incomingInviteDialog: DoubleButtonDialog
+//    protected val incomingInviteDialog = IncomingInviteDialog()
 
     protected var stayingInApp = false
 
@@ -65,13 +65,15 @@ abstract class ClientActivity : AppCompatActivity() {
         networkManager = NetworkManager.getInstance()
         dataManager = DataManager.getInstance(this)
 
-        incomingInviteDialog.create(this)
+//        incomingInviteDialog.create(this)
 
         NotificationBuilder.getInstance(this).clearNotifications()
     }
 
     override fun onResume() {
         super.onResume()
+
+        incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
 
         if (!isInitialized()) {
             preloadModels()
@@ -91,8 +93,8 @@ abstract class ClientActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStop() {
-        super.onStop()
+    override fun onPause() {
+        dataManager.saveData(applicationContext)
 
         incomingInviteDialog.dismiss()
         unregisterReceiver(networkReceiver)
@@ -100,12 +102,13 @@ abstract class ClientActivity : AppCompatActivity() {
         if (!stayingInApp) {
             networkManager.stop()
         }
+
+        super.onPause()
     }
 
     override fun onUserLeaveHint() {
         if (!stayingInApp) {
             sendAwayStatusToServer()
-//            networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
         }
 
         super.onUserLeaveHint()
@@ -119,9 +122,6 @@ abstract class ClientActivity : AppCompatActivity() {
             super.onBackPressed()
         } else {
             sendAwayStatusToServer()
-//            if (!stayingInApp) {
-//                networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
-//            }
             moveTaskToBack(true)
         }
     }
@@ -130,13 +130,11 @@ abstract class ClientActivity : AppCompatActivity() {
         networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
     }
 
-    open fun sendAwayStatusToServer() {
+    private fun sendAwayStatusToServer() {
         networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
     }
 
     open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}
-
-    open fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {}
 
     open fun onMessageReceived(topic: Topic, content: Array<String>) {
         sendDataToWorker(topic, content, when (topic) {

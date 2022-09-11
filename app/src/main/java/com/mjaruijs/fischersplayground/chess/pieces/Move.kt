@@ -4,7 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, val promotedPiece: PieceType?) : Parcelable {
+class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, val takenPiecePosition: Vector2?, val promotedPiece: PieceType?) : Parcelable {
 
     constructor(parcel: Parcel) : this(
         Team.fromString(parcel.readString()!!),
@@ -14,6 +14,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         parcel.readByte() != 0.toByte(),
         parcel.readByte() != 0.toByte(),
         PieceType.getBySign(parcel.readByte().toInt().toChar()),
+        Vector2.fromString(parcel.readString()!!),
         PieceType.getBySign(parcel.readByte().toInt().toChar())
     )
 
@@ -25,6 +26,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         parcel.writeByte(if (isCheckMate) 1 else 0)
         parcel.writeByte(if (isCheck) 1 else 0)
         parcel.writeString(pieceTaken?.sign.toString())
+        parcel.writeString(takenPiecePosition.toString())
         parcel.writeString(promotedPiece?.sign.toString())
     }
 
@@ -40,6 +42,11 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         return if (perspectiveOf == Team.WHITE) toPosition else Vector2(7, 7) - toPosition
     }
 
+    fun getTakenPosition(perspectiveOf: Team): Vector2? {
+        if (takenPiecePosition == null) return null
+        return if (perspectiveOf == Team.WHITE) takenPiecePosition else Vector2(7, 7) - takenPiecePosition
+    }
+
     fun toChessNotation(): String {
         var notation = ""
         val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
@@ -49,9 +56,11 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         notation += getRowSign(fromPosition)
         notation += if (pieceTaken == null) "-" else "x"
 
-        if (pieceTaken != null) {
+        if (pieceTaken != null && takenPiecePosition != null) {
             val takenPieceSign = if (team == Team.BLACK) pieceTaken.sign.uppercase() else pieceTaken.sign.lowercase()
             notation += takenPieceSign
+            notation += getColSign(takenPiecePosition)
+            notation += getRowSign(takenPiecePosition)
         }
 
         notation += getColSign(toPosition)
@@ -60,6 +69,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         if (promotedPiece != null) {
             notation += promotedPiece.sign
         }
+
 
         if (isCheckMate) {
             notation += "#"
@@ -95,53 +105,62 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
                 throw IllegalArgumentException("Received notation is too short to be a proper Chess notation: $moveContent")
             }
 
-            var i = 0
-            val movedPieceSign = moveContent[i++]
-            val movedPiece = PieceType.getBySign(movedPieceSign)
-            val team = if (movedPieceSign.isUpperCase()) Team.WHITE else Team.BLACK
+            return try {
+                var i = 0
+                val movedPieceSign = moveContent[i++]
+                val movedPiece = PieceType.getBySign(movedPieceSign)
+                val team = if (movedPieceSign.isUpperCase()) Team.WHITE else Team.BLACK
 
-            val fromCol = moveContent[i++]
-            val fromRow = moveContent[i++]
+                val fromCol = moveContent[i++]
+                val fromRow = moveContent[i++]
 
-            val fromX = colToNumber(fromCol)
-            val fromY = fromRow.toString().toInt() - 1
+                val fromX = colToNumber(fromCol)
+                val fromY = fromRow.toString().toInt() - 1
 
-            val moveType = moveContent[i++]
-            val takenPieceSign: Char
-            var takenPiece: PieceType? = null
+                val moveType = moveContent[i++]
+                val takenPieceSign: Char
+                var takenPiece: PieceType? = null
 
-            if (moveType == 'x') {
-                takenPieceSign = moveContent[i++]
-                takenPiece = PieceType.getBySign(takenPieceSign)
-            }
+                var takenPiecePosition: Vector2? = null
 
-            val toCol = moveContent[i++]
-            val toRow = moveContent[i++]
-
-            val toX = colToNumber(toCol)
-            val toY = toRow.toString().toInt() - 1
-
-            var promotedPiece: PieceType? = null
-
-            if (movedPiece == PieceType.PAWN && ((team == Team.WHITE && toY == 7) || (team == Team.BLACK && toY == 0))) {
-                val promotedPieceSign = moveContent[i++]
-                promotedPiece = PieceType.getBySign(promotedPieceSign)
-            }
-
-            var isCheckMate = false
-            var isCheck = false
-
-            if (moveContent.length == i - 1) {
-                val kingSituation = moveContent[i]
-                if (kingSituation == '+') {
-                    isCheck = true
+                if (moveType == 'x') {
+                    takenPieceSign = moveContent[i++]
+                    takenPiece = PieceType.getBySign(takenPieceSign)
+                    val takenPieceCol = moveContent[i++]
+                    val takenPieceRow = moveContent[i++]
+                    takenPiecePosition = Vector2(colToNumber(takenPieceCol), takenPieceRow.toString().toInt() - 1)
                 }
-                if (kingSituation == '#') {
-                    isCheckMate = true
-                }
-            }
 
-            return Move(team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, promotedPiece)
+                val toCol = moveContent[i++]
+                val toRow = moveContent[i++]
+
+                val toX = colToNumber(toCol)
+                val toY = toRow.toString().toInt() - 1
+
+                var promotedPiece: PieceType? = null
+
+                if (movedPiece == PieceType.PAWN && ((team == Team.WHITE && toY == 7) || (team == Team.BLACK && toY == 0))) {
+                    val promotedPieceSign = moveContent[i++]
+                    promotedPiece = PieceType.getBySign(promotedPieceSign)
+                }
+
+                var isCheckMate = false
+                var isCheck = false
+
+                if (moveContent.length == i - 1) {
+                    val kingSituation = moveContent[i]
+                    if (kingSituation == '+') {
+                        isCheck = true
+                    }
+                    if (kingSituation == '#') {
+                        isCheckMate = true
+                    }
+                }
+
+                Move(team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, takenPiecePosition, promotedPiece)
+            } catch (e: Exception) {
+                throw IllegalArgumentException("Failed to parse move from: $moveContent")
+            }
         }
 
         private fun colToNumber(col: Char): Int {

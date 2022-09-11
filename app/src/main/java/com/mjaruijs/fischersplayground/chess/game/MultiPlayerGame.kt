@@ -11,7 +11,7 @@ import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
 
-class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated, moves) {
+class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated, moves) {
 
     var sendMoveData: (String) -> Unit = {
         println("Multiplayer move was made, but no data was actually sent. Did you forget to set the sendMoveData() function?")
@@ -63,7 +63,6 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     fun clearAllNews() {
         println("Clearing news")
         newsUpdates.clear()
-
     }
 
     override fun getCurrentTeam() = team
@@ -77,6 +76,27 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
             status = if (status == GameStatus.OPPONENT_MOVE) GameStatus.PLAYER_MOVE else GameStatus.OPPONENT_MOVE
         }
+
+        if (currentMoveIndex == -1) {
+            disableBackButton()
+        }
+    }
+
+    fun hasPendingMove() = moveToBeConfirmed.isNotEmpty()
+
+    fun confirmMove() {
+        status = GameStatus.OPPONENT_MOVE
+        moveToBeConfirmed = ""
+    }
+
+    fun cancelMove() {
+        undoMove(moves.removeLast())
+        status = GameStatus.PLAYER_MOVE
+
+        if (moves.size == 0) {
+            disableBackButton()
+        }
+        moveToBeConfirmed = ""
     }
 
     fun moveOpponent(move: Move, runInBackground: Boolean) {
@@ -138,15 +158,14 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
-        status = GameStatus.OPPONENT_MOVE
+//        status = GameStatus.OPPONENT_MOVE
 
         val move = move(team, fromPosition, toPosition, runInBackground)
 
         if (!runInBackground) {
-            val timeStamp = lastUpdated
-            val positionUpdateMessage = "${move.toChessNotation()}|$timeStamp"
-
-            sendMoveData(positionUpdateMessage)
+            val positionUpdateMessage = move.toChessNotation()
+            moveToBeConfirmed = positionUpdateMessage
+            sendMoveData(moveToBeConfirmed)
         }
     }
 

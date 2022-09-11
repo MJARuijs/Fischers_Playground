@@ -28,14 +28,14 @@ import com.mjaruijs.fischersplayground.util.Logger
 
 abstract class GameActivity : ClientActivity() {
 
-    val undoRejectedDialog = UndoRejectedDialog()
-    val resignDialog = ResignDialog()
-    val offerDrawDialog = OfferDrawDialog()
-    val opponentResignedDialog = OpponentResignedDialog()
-    val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
-    val opponentRejectedDrawDialog = OpponentDeclinedDrawDialog()
+//    val undoRejectedDialog = UndoRejectedDialog()
 
-    private val checkMateDialog = CheckMateDialog()
+//    val opponentResignedDialog = OpponentResignedDialog()
+//    val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
+//    val opponentRejectedDrawDialog = OpponentDeclinedDrawDialog()
+
+    private lateinit var checkMateDialog: SingleButtonDialog
+//    private lateinit var offerDrawDialog: DoubleButtonDialog
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
     private var displayWidth = 0
@@ -64,12 +64,10 @@ abstract class GameActivity : ClientActivity() {
 
             hideActivityDecorations(fullScreen)
 
-            undoRejectedDialog.create(this)
-            offerDrawDialog.create(this)
-            opponentResignedDialog.create(this)
-            opponentAcceptedDrawDialog.create(this)
-            opponentRejectedDrawDialog.create(this)
-            checkMateDialog.create(this)
+//            undoRejectedDialog.create(this)
+//            opponentResignedDialog.create(this)
+//            opponentAcceptedDrawDialog.create(this)
+//            opponentRejectedDrawDialog.create(this)
             pieceChooserDialog.create(this)
 
             userId = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, "")!!
@@ -80,8 +78,6 @@ abstract class GameActivity : ClientActivity() {
                 opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information: opponent_name")
                 isPlayingWhite = intent.getBooleanExtra("is_playing_white", true)
             }
-
-//        NetworkManager.sendMessage(Message(Topic.USER_STATUS, "status", "$id|$gameId"))
 
             glView = findViewById(R.id.opengl_view)
             glView.init(::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
@@ -96,6 +92,27 @@ abstract class GameActivity : ClientActivity() {
         } catch (e: Exception) {
             FileManager.append(this, "game_activity_crash_report.txt", e.stackTraceToString())
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        checkMateDialog = SingleButtonDialog(this, "Checkmate!", "Exit", ::closeAndSaveGameAsWin)
+//        offerDrawDialog = DoubleButtonDialog(this, "Offering Draw", "Are you sure you want to offer a draw?", null, "Cancel", {}, null, "Yes", {})
+        stayingInApp = false
+
+        pieceChooserDialog.setLayout()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        checkMateDialog.dismiss()
+    }
+
+    override fun onDestroy() {
+        glView.destroy()
+
+        super.onDestroy()
     }
 
     fun loadFragments() {
@@ -133,6 +150,8 @@ abstract class GameActivity : ClientActivity() {
         game.onPawnPromoted = ::onPawnPromoted
         game.enableBackButton = ::enableBackButton
         game.enableForwardButton = ::enableForwardButton
+        game.disableBackButton = ::disableBackButton
+        game.disableForwardButton = ::disableForwardButton
         game.onPieceTaken = ::onPieceTaken
         game.onPieceRegained = ::onPieceRegained
         game.onCheckMate = ::onCheckMate
@@ -161,7 +180,7 @@ abstract class GameActivity : ClientActivity() {
         Thread {
             Thread.sleep(10)
             glView.invalidate()
-            glView.requestRender()
+            requestRender()
         }.start()
     }
 
@@ -183,14 +202,6 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun onMoveMade(move: Move) {
-        println("Making move: ${move.toChessNotation()}")
-
-//        if (game is MultiPlayerGame) {
-//            (game as MultiPlayerGame).status = GameStatus.OPPONENT_MOVE
-//            val message = NetworkMessage(Topic.GAME_UPDATE, "move", it)
-//            networkManager.sendMessage(message)
-//        }
-
         dataManager[gameId] = game as MultiPlayerGame
         dataManager.saveData(applicationContext)
     }
@@ -198,9 +209,13 @@ abstract class GameActivity : ClientActivity() {
     private fun onCheckMate(team: Team) {
         runOnUiThread {
             if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
-                checkMateDialog.show(userName, ::closeAndSaveGameAsWin)
+                checkMateDialog.setMessage("You won!")
+                    .setOnClick { closeAndSaveGameAsWin() }
+                    .show()
             } else {
-                checkMateDialog.show(opponentName, ::closeAndSaveGameAsLoss)
+                checkMateDialog.setMessage("$opponentName has won!")
+                    .setOnClick { closeAndSaveGameAsLoss() }
+                    .show()
             }
         }
     }
@@ -229,17 +244,13 @@ abstract class GameActivity : ClientActivity() {
         val moveData = output as MoveData
         if (moveData.gameId == gameId) {
             (game as MultiPlayerGame).moveOpponent(moveData.move, false)
-            glView.requestRender()
+            requestRender()
         } else {
             super.onOpponentMoved(output)
         }
     }
 
     open fun finishActivity(status: GameStatus) {
-//        finish()
-//        val intent = Intent(this, MainActivity::class.java)
-//        intent.flags = FLAG_ACTIVITY_CLEAR_TOP
-//        startActivity(intent)
         stayingInApp = true
         finish()
     }
@@ -280,19 +291,6 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-
-        stayingInApp = false
-
-        pieceChooserDialog.setLayout()
-    }
-
-    override fun onDestroy() {
-        glView.destroy()
-        super.onDestroy()
-    }
-
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
         runOnUiThread { pieceChooserDialog.show(square, team) }
         return PieceType.QUEEN
@@ -300,14 +298,23 @@ abstract class GameActivity : ClientActivity() {
 
     private fun enableBackButton() {
         getActionBarFragment()?.enableBackButton()
-//        findViewById<UIButton>(R.id.back_button).enable()
-        glView.requestRender()
+        requestRender()
     }
 
     private fun enableForwardButton() {
         getActionBarFragment()?.enableForwardButton()
-        glView.requestRender()
-//        findViewById<UIButton>(R.id.forward_button).enable()
+        requestRender()
     }
+
+    private fun disableBackButton() {
+        getActionBarFragment()?.disableBackButton()
+        requestRender()
+    }
+
+    private fun disableForwardButton() {
+        getActionBarFragment()?.disableForwardButton()
+        requestRender()
+    }
+
 
 }

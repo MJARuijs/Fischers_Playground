@@ -17,6 +17,7 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
+import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
@@ -150,9 +151,12 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val numberOfReversedMoves = data[1].toInt()
 
 //        dataManager[gameId].undoMoves(numberOfReversedMoves)
-        val game = dataManager[gameId]
-        game.undoMoves(numberOfReversedMoves)
-        dataManager[gameId] = game
+        dataManager[gameId].addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfReversedMoves))
+        dataManager[gameId].status = GameStatus.PLAYER_MOVE
+//        val game = dataManager[gameId]
+//        game.addNews(NewsType.OPPONENT_ACCEPTED_UNDO)
+//        game.undoMoves(numberOfReversedMoves)
+//        dataManager[gameId] = game
 
         return ParcelablePair(ParcelableString(gameId), ParcelableInt(numberOfReversedMoves))
     }
@@ -185,6 +189,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val gameId = data[0]
 
         dataManager[gameId].status = GameStatus.GAME_DRAW
+        dataManager[gameId].addNews(NewsType.OPPONENT_ACCEPTED_DRAW)
 
         return ParcelableString(gameId)
     }
@@ -223,6 +228,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
                 dataManager[gameId].opponentStatus = opponentStatus
 //                game.opponentStatus = opponentStatus
 //                dataManager[gameId] = game
+
             }
         }
 

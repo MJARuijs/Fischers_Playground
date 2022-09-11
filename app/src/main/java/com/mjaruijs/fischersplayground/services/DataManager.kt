@@ -11,19 +11,20 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.pieces.Move
-import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.HashMap
 
 class DataManager(context: Context) {
 
     private val savedGames = HashMap<String, MultiPlayerGame>()
     val savedInvites = HashMap<String, InviteData>()
     val recentOpponents = Stack<Pair<String, String>>()
+
     private val userId: String
-    private val loadingData = AtomicBoolean(false)
-    private val dataLoaded = AtomicBoolean(false)
+
+    private val lock = AtomicBoolean(false)
 
     init {
         val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
@@ -32,61 +33,84 @@ class DataManager(context: Context) {
         loadData(context)
     }
 
-    fun getSavedGames() = savedGames
+    fun getSavedGames(): HashMap<String, MultiPlayerGame> {
+        while (isLocked()) {
+            Thread.sleep(1)
+        }
+        return savedGames
+    }
 
     fun removeGame(id: String) {
+        while (isLocked()) {
+            Thread.sleep(1)
+        }
         savedGames.remove(id)
     }
 
     operator fun set(id: String, game: MultiPlayerGame) {
-        while (isLoadingData()) {
+        while (isLocked()) {
             Thread.sleep(1)
         }
         savedGames[id] = game
     }
 
     operator fun get(id: String): MultiPlayerGame {
-        while (isLoadingData()) {
+        while (isLocked()) {
             Thread.sleep(1)
         }
         return savedGames[id] ?: throw IllegalArgumentException("No game could be found with id: $id")
     }
 
-    fun isLoadingData() = loadingData.get()
+    fun isLocked() = lock.get()
 
-    fun isDataLoaded() = dataLoaded.get()
+    private fun lock() {
+        lock.set(true)
+    }
+
+    private fun unlock() {
+        lock.set(false)
+    }
 
     fun loadData(context: Context) {
-        if (loadingData.get()) {
-//            println("Data is already loading.. returning..")
+        if (isLocked()) {
+            println("Data is already loading.. returning..")
             return
         }
 
-//        println("LOADING DATA")
+        println("LOADING DATA")
 
-        loadingData.set(true)
+        lock()
         Thread {
             try {
+                savedGames.clear()
+                savedInvites.clear()
+                recentOpponents.clear()
                 loadSavedGames(context)
                 loadInvites(context)
                 loadRecentOpponents(context)
-                dataLoaded.set(true)
             } catch (e: Exception) {
                 FileManager.write(context, "file_loading_crash.txt", e.stackTraceToString())
+            } finally {
+                unlock()
             }
 
-            loadingData.set(false)
         }.start()
 
     }
 
     fun saveData(context: Context) {
         println("SAVING DATA")
+
+        while (isLocked()) {
+            Thread.sleep(1)
+        }
+
+        lock()
         Thread {
             saveGames(context)
             saveInvites(context)
             saveRecentOpponents(context)
-//            log("Done saving data")
+            unlock()
         }.start()
     }
 
@@ -106,9 +130,10 @@ class DataManager(context: Context) {
             val opponentStatus = data[4]
             val lastUpdated = data[5].toLong()
             val isPlayerWhite = data[6].toBoolean()
-            val moveList = data[7].removePrefix("[").removeSuffix("]").split('\\')
-            val chatMessages = data[8].removePrefix("[").removeSuffix("]").split('\\')
-            val newsData = data[9].removePrefix("[").removeSuffix("]").split("\\")
+            val moveToBeConfirmed = data[7]
+            val moveList = data[8].removePrefix("[").removeSuffix("]").split('\\')
+            val chatMessages = data[9].removePrefix("[").removeSuffix("]").split('\\')
+            val newsData = data[10].removePrefix("[").removeSuffix("]").split("\\")
 
 //            val winner = data[7]
 
@@ -141,9 +166,10 @@ class DataManager(context: Context) {
                 newsUpdates += News.fromString(news)
             }
 
-            val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moves, messages, newsUpdates)
-            newGame.status = gameStatus
+            println("LOADED FROM STORAGE: $gameStatus")
 
+            val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
+            newGame.status = gameStatus
             savedGames[gameId] = newGame
         }
     }
@@ -247,7 +273,7 @@ class DataManager(context: Context) {
             }
             newsContent += "]"
 
-            content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|$moveData|$chatData|$newsContent\n"
+            content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
         }
 
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)

@@ -45,6 +45,14 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
         forwardButton.disable()
     }
 
+    fun disableForwardButton() {
+        forwardButton.disable()
+    }
+
+    fun disableBackButton() {
+        backButton.disable()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
