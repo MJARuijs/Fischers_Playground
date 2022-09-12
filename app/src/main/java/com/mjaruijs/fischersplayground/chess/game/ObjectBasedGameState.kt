@@ -89,23 +89,23 @@ class ObjectBasedGameState(private val isPlayingWhite: Boolean, private val piec
         add(Piece(type, team, square))
     }
 
-    fun move(oldSquare: Vector2, newSquare: Vector2, onAnimationFinish: () -> Unit = {}) {
-//        val piece = get(oldSquare) ?: return
+//    fun move(oldSquare: Vector2, newSquare: Vector2, onAnimationFinish: () -> Unit = {}) {
+////        val piece = get(oldSquare) ?: return
+////        remove(newSquare)
+//        pieces.find { piece ->
+//            piece.boardPosition == oldSquare
+//        }?.move(newSquare) {
+//            onAnimationFinish()
+//        }
+//    }
+
+//    fun setPosition(oldSquare: Vector2, newSquare: Vector2) {
 //        remove(newSquare)
-        pieces.find { piece ->
-            piece.boardPosition == oldSquare
-        }?.move(newSquare) {
-            onAnimationFinish()
-        }
-    }
-
-    fun setPosition(oldSquare: Vector2, newSquare: Vector2) {
-        remove(newSquare)
-
-        pieces.find { piece ->
-            piece.boardPosition == oldSquare
-        }?.setPosition(newSquare)
-    }
+//
+//        pieces.find { piece ->
+//            piece.boardPosition == oldSquare
+//        }?.setPosition(newSquare)
+//    }
 
     /**
      * Remove the first piece that is found at the given square and return it

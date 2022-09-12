@@ -86,7 +86,9 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 if (animationQueue.isNotEmpty()) {
                     val animationData = animationQueue.poll()!!
                     animationRunning.set(true)
-                    val animator = PieceAnimator(animationData.timeStamp, animationData.piece, requestRender, animationData.onAnimationFinished)
+//                    println("Starting animation: ${animationData.piece.type} ${animationData.fromPosition} ${animationData.toPosition}")
+                    animationData.piece.translation = animationData.toPosition - animationData.fromPosition
+                    val animator = PieceAnimator(animationData.piece, requestRender, animationData.onAnimationFinished)
                     animator.addOnFinishCall {
                         animationRunning.set(false)
                     }
@@ -100,50 +102,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     }
 
     fun queueAnimation(game: Game, animationData: AnimationData) {
-        println("Queuing animation: ${animationData.piece.type} ${animationData.piece.team} ${animationData.piece.boardPosition} ${animationData.piece.animatedPosition}")
-//        animationData.piece.newSquare = animationData.toPosition
+//        println("Queuing animation: ${animationData.piece.type} ${animationData.piece.team} ${animationData.piece.boardPosition} ${animationData.piece.animatedPosition}")
         animationQueue.add(animationData)
-//        animationQueue.
-//        if (animationQueue.isEmpty()) {
-//
-//        }
-    }
-
-    fun startAnimations(game: Game) {
-//        val pieces = game.getPieces()
-//        game.unlockData()
-
-//        for (piece in pieces) {
-//            if (piece.shouldAnimate) {
-//                PieceAnimator(piece, requestRender)
-//            }
-//        }
-
-//        val animationData = game.getAnimationData()
-
-//        for (animation in animationData) {
-//            animations += Animation2(animation.fromPosition, animation.toPosition)
-//            val x = ValueAnimator.ofFloat(animation.toPosition.x - animation.fromPosition.x, 0.0f)
-//            val y = ValueAnimator.ofFloat(animation.toPosition.y - animation.fromPosition.y, 0.0f)
-//            x.addUpdateListener {
-////                println(it.animatedValue)
-//                runningAnimations[animation.toPosition]?.x = it.animatedValue as Float
-//            }
-//            y.addUpdateListener {
-////                println(it.animatedValue)
-//                runningAnimations[animation.toPosition]?.y = it.animatedValue as Float
-//            }
-//            x.duration = 1000L
-//
-//            y.duration = 1000L
-////            y.doOnEnd {
-////                runningAnimations.remove(animation.toPosition)
-////            }
-//            x.start()
-//            y.start()
-//            runningAnimations[animation.toPosition] = Vector2()
-//        }
-//        game.resetAnimationData()
     }
 
     private fun getPieceTexture2d(piece: Piece): Int {
@@ -175,18 +135,18 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
         sampler.bind(PieceTextures.get2DTextureArray())
 
-//        for (row in 0 until 8) {
-//            for (col in 0 until 8) {
-//                val piece = game[row, col] ?: continue
+        for (x in 0 until 8) {
+            for (y in 0 until 8) {
+                val piece = game[x, y] ?: continue
 
 //        println("RENDERING")
 
-        val pieces = game.getPieces().iterator()
-        for (piece in pieces) {
-            val position = piece.animatedPosition
+//        val pieces = game.getPieces().iterator()
+//        for (piece in pieces) {
+//            val position = piece.animatedPosition
 
-            val row = position.x
-            val col = position.y
+            val row = x - piece.getAnimatedX()
+            val col = y - piece.getAnimatedY()
 
 //            println("${piece.type} ${piece.team} $position ${piece.boardPosition}")
 
@@ -218,6 +178,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 //                    (Vector2((row + animation.x) * 2.0f, (col + animation.y) * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
 //                }
 
+
             val translation = (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f)
 
 //                if (animation != null) {
@@ -229,14 +190,14 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 //                    it.
 //                })
 
-            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
-            piece2DProgram.set("textureId", getPieceTexture2d(piece).toFloat())
-            piece2DProgram.set("translation", translation)
-            quad.draw()
-//            }
+                piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
+                piece2DProgram.set("textureId", getPieceTexture2d(piece).toFloat())
+                piece2DProgram.set("translation", translation)
+                quad.draw()
+            }
         }
 
-        game.unlockData()
+//        game.unlockData()
 
 //        for (animation in animations) {
 //            if (animation.stopAnimating) {
@@ -268,13 +229,13 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
         sampler.bind(PieceTextures.get3DTextureArray())
 
-//        for (row in 0 until 8) {
-//            for (col in 0 until 8) {
-//                val piece = game[row, col] ?: continue
-        val pieces = game.getPieces()
-        game.unlockData()
+        for (row in 0 until 8) {
+            for (col in 0 until 8) {
+                val piece = game[row, col] ?: continue
+//        val pieces = game.getPieces()
+//        game.unlockData()
 
-        for (piece in pieces) {
+//        for (piece in pieces) {
 //                val animation = animations.find { animation -> animation.row == row && animation.col == col }
 
 //                val translation = if (animation == null) {
@@ -317,7 +278,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 //        animations.removeIf { animation -> animation.stopAnimating }
 
 //        piece3DProgram.stop()
-//    }
+    }
 
 //    fun update(delta: Float): Boolean {
 //        for (animation in animations) {

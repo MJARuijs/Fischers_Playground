@@ -7,9 +7,9 @@ class Piece(val type: PieceType, val team: Team, val boardPosition: Vector2) {
 //    var shouldAnimate = false
 
 //    var newSquare: Vector2? = null
-    var onAnimationFinish: () -> Unit = {}
+//    var onAnimationFinish: () -> Unit = {}
 
-//    var translation = Vector2()
+    var translation = Vector2()
 
     var animatedPosition = Vector2(boardPosition)
 
@@ -17,25 +17,25 @@ class Piece(val type: PieceType, val team: Team, val boardPosition: Vector2) {
 
     fun getBoardY() = boardPosition.y
 
-    fun getAnimatedX() = animatedPosition.x
+    fun getAnimatedX() = translation.x
 
-    fun getAnimatedY() = animatedPosition.y
+    fun getAnimatedY() = translation.y
 
-    fun move(newSquare: Vector2, onAnimationFinish: () -> Unit) {
-//        shouldAnimate = true
-        println("Moving $type $team from $animatedPosition to $newSquare")
+//    fun move(newSquare: Vector2, onAnimationFinish: () -> Unit) {
+////        shouldAnimate = true
+//        println("Moving $type $team from $animatedPosition to $newSquare")
+//
+//        boardPosition.x = newSquare.x
+//        boardPosition.y = newSquare.y
+//
+//
+////        this.newSquare = newSquare
+//        this.onAnimationFinish = onAnimationFinish
+//    }
 
-        boardPosition.x = newSquare.x
-        boardPosition.y = newSquare.y
-
-
-//        this.newSquare = newSquare
-        this.onAnimationFinish = onAnimationFinish
-    }
-
-    fun setPosition(newSquare: Vector2) {
-        boardPosition.x = newSquare.x
-        boardPosition.y = newSquare.y
-    }
+//    fun setPosition(newSquare: Vector2) {
+//        boardPosition.x = newSquare.x
+//        boardPosition.y = newSquare.y
+//    }
 
 }
