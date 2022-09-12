@@ -3,30 +3,34 @@ package com.mjaruijs.fischersplayground.opengl.renderer.animation
 import android.animation.ValueAnimator
 import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
-import com.mjaruijs.fischersplayground.chess.pieces.Piece
+import com.mjaruijs.fischersplayground.chess.game.ArrayBasedGameState
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PieceAnimator(val piece: Piece, requestRender: () -> Unit, var onFinish: () -> Unit, animationDuration: Long = 1000L) {
+class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, translation: Vector2, requestRender: () -> Unit, var onFinish: () -> Unit, animationDuration: Long = 500L) {
 
     private val xFinished = AtomicBoolean(false)
     private val yFinished = AtomicBoolean(false)
-    private val xAnimator = ValueAnimator.ofFloat(piece.translation.x, 0.0f)
-    private val yAnimator = ValueAnimator.ofFloat(piece.translation.y, 0.0f)
+    private val onStartExecuted = AtomicBoolean(false)
+
+    private val piece = state[piecePosition]!!
+    private val xAnimator = ValueAnimator.ofFloat(translation.x, 0.0f)
+    private val yAnimator = ValueAnimator.ofFloat(translation.y, 0.0f)
 
     private val onFinishCalls = ArrayList<() -> Unit>()
 
     init {
-        onFinish()
         xAnimator.duration = animationDuration
         xAnimator.addUpdateListener {
             piece.translation.x = it.animatedValue as Float
-//            piece.translation.x = it.animatedValue as Float
             requestRender()
         }
         xAnimator.doOnStart {
-//            onFinish()
-            println("OnStart position for: ${piece.type} ${piece.team}: ${piece.animatedPosition}, ${piece.boardPosition}")
-//            piece.boardPosition.x = piece.newSquare!!.x
+            if (!onStartExecuted.get()) {
+                onStartExecuted.set(true)
+                println("EXECUTING ON START")
+                onFinish()
+            }
         }
         xAnimator.doOnEnd {
             xFinished.set(true)
@@ -37,18 +41,20 @@ class PieceAnimator(val piece: Piece, requestRender: () -> Unit, var onFinish: (
 
         yAnimator.duration = animationDuration
         yAnimator.addUpdateListener {
-//            println(it.animatedValue as Float)
             piece.translation.y = it.animatedValue as Float
             requestRender()
         }
         yAnimator.doOnStart {
-//            piece.boardPosition.y = piece.newSquare!!.y
+            if (!onStartExecuted.get()) {
+                onStartExecuted.set(true)
+                println("EXECUTING ON START")
+                onFinish()
+            }
         }
         yAnimator.doOnEnd {
             yFinished.set(true)
             if (xFinished.get()) {
                 finish()
-//                piece.onAnimationFinish()
             }
         }
     }
@@ -58,18 +64,14 @@ class PieceAnimator(val piece: Piece, requestRender: () -> Unit, var onFinish: (
     }
 
     fun start() {
-//        piece.shouldAnimate = false
         xAnimator.start()
         yAnimator.start()
     }
 
-    fun finish() {
-        println("OnFinish position for: ${piece.type} ${piece.team} : ${piece.animatedPosition}, ${piece.boardPosition}")
+    private fun finish() {
         for (call in onFinishCalls) {
             call()
         }
-//        piece.onAnimationFinish()
-//        onFinish()
     }
 
 }

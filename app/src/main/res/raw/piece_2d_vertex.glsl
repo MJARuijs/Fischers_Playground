@@ -4,6 +4,7 @@ layout (location = 0) in vec2 inPosition;
 
 uniform vec2 translation;
 uniform vec2 scale;
+uniform float height;
 
 //uniform float aspectRatio;
 

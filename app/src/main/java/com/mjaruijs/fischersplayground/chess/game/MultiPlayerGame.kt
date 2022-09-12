@@ -138,7 +138,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
             if (move.promotedPiece != null) {
 //                state.replace(toPosition, move.promotedPiece, move.team)
-                state[toPosition] = Piece(move.promotedPiece, move.team, toPosition)
+                state[toPosition] = Piece(move.promotedPiece, move.team)
             }
         }
 

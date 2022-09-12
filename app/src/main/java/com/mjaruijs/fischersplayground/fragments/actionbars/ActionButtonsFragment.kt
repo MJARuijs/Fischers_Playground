@@ -87,7 +87,8 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
                     game.clearBoardData()
                     enableForwardButton()
                 }
-                requestRender()
+                // TODO: Uncomment this ?
+//                requestRender()
             }
 
         forwardButton = view.findViewById(R.id.forward_button)
@@ -114,7 +115,8 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
                 if (buttonStates.second) {
                     enableBackButton()
                 }
-                requestRender()
+                // TODO: uncomment this ?
+//                requestRender()
             }
 
         buttons += backButton

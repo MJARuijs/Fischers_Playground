@@ -76,11 +76,15 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 
 //        PieceRenderer.init(resources, isPlayerWhite)
 //        backgroundRenderer = BackgroundRenderer(context)
-        pieceRenderer = PieceRenderer(resources, isPlayerWhite, requestRender, runOnUiThread)
+        pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame)
         boardRenderer = BoardRenderer(resources)
         highlightRenderer = HighlightRenderer(resources)
 
         onContextCreated()
+    }
+
+    private fun requestRenderPieces() {
+        requestRender()
     }
 
     fun setR(r: Float) {
@@ -119,7 +123,6 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     }
 
     fun setPieceScale(scale: Float) {
-//        PieceRenderer.pieceScale = Vector3(scale, scale, scale)
         pieceRenderer.pieceScale = Vector3(scale, scale, scale)
     }
 
@@ -127,22 +130,17 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
         this.game = game
         this.board = game.board
         game.queueAnimation = ::queueAnimation
-//        game.startAnimations = ::startAnimations
 
         board.is3D = is3D
     }
 
-    fun queueAnimation(animationData: AnimationData) {
-//        runOnUiThread {
-            pieceRenderer.queueAnimation(game, animationData)
-//        }
+    private fun getGame(): Game {
+        return game
     }
 
-//    fun startAnimations() {
-//        runOnUiThread {
-//            pieceRenderer.startAnimations(game)
-//        }
-//    }
+    private fun queueAnimation(animationData: AnimationData) {
+        pieceRenderer.queueAnimation(game, animationData)
+    }
 
     fun update(): Boolean {
         return if (this::game.isInitialized) {
@@ -176,29 +174,34 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
             return
         }
 
-        if (is3D) {
-            glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        try {
+            if (is3D) {
+                glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
 //            backgroundRenderer.render3D(camera, aspectRatio)
-            boardRenderer.render3D(board, camera, displayWidth, displayHeight, aspectRatio)
-            highlightRenderer.renderSelectedSquares3D(board, camera)
+                boardRenderer.render3D(board, camera, displayWidth, displayHeight, aspectRatio)
+                highlightRenderer.renderSelectedSquares3D(board, camera)
 
-            pieceRenderer.render3D(game, camera, aspectRatio)
-            highlightRenderer.renderPossibleSquares3D(board, camera)
-        } else {
-            glClear(GL_COLOR_BUFFER_BIT)
+                pieceRenderer.render3D(game, camera, aspectRatio)
+                highlightRenderer.renderPossibleSquares3D(board, camera)
+            } else {
+                glClear(GL_COLOR_BUFFER_BIT)
 
 //            backgroundRenderer.render2D(aspectRatio)
-            boardRenderer.render2D(aspectRatio)
-            highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
-            pieceRenderer.render2D(game, aspectRatio)
-            highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
-        }
+                boardRenderer.render2D(aspectRatio)
+                highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
 
-        if (pixelsRequested) {
-            onPixelsRead(saveBuffer())
-            pixelsRequested = false
-            onPixelsRead = {}
+                pieceRenderer.render2D(game, aspectRatio)
+                highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
+            }
+
+            if (pixelsRequested) {
+                onPixelsRead(saveBuffer())
+                pixelsRequested = false
+                onPixelsRead = {}
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
     }

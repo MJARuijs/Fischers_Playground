@@ -14,7 +14,7 @@ import kotlin.math.roundToInt
 
 abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var moves: ArrayList<Move> = ArrayList()) {
 
-    protected val state = ArrayBasedGameState(isPlayingWhite)
+    val state = ArrayBasedGameState(isPlayingWhite)
 
     val board: Board = Board()
 
@@ -183,7 +183,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 //    }
 
     fun upgradePawn(square: Vector2, pieceType: PieceType, team: Team) {
-        state[square] = Piece(pieceType, team, square)
+        state[square] = Piece(pieceType, team)
 //        state.remove(square)
 //        state.replace(square, pieceType, team)
         promotionLock.set(false)
@@ -198,11 +198,16 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         if (move.movedPiece == PieceType.KING && abs(toPosition.x - fromPosition.x) == 2.0f) {
             performCastle(move.team, fromPosition, toPosition, true)
         } else {
-            val movingPiece = state[fromPosition]!!
+            val translation = toPosition - fromPosition
 
+            val takenPiece = if (move.pieceTaken == null) {
+                null
+            } else {
+                Piece(move.pieceTaken, !move.team)
+            }
 
-            queueAnimation(AnimationData(System.nanoTime(), movingPiece, fromPosition, toPosition) {
-                state[toPosition] = movingPiece
+            queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, move.takenPiecePosition) {
+                state[toPosition] = state[fromPosition]!!
 
                 if (move.takenPiecePosition != null) {
                     if (move.takenPiecePosition != toPosition) {
@@ -271,20 +276,27 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 //                state[toPosition] = Piece(move.pieceTaken, !move.team, fromPosition)
 //            }
 
-            val movingPiece = state[toPosition]!!
+//            val movingPiece = state[toPosition]!!
 
-            println("Undoing move: ${movingPiece.team} ${movingPiece.type} $fromPosition $toPosition ${state[fromPosition]?.type}")
+//            println("Undoing move: ${movingPiece.team} ${movingPiece.type} $fromPosition $toPosition ${state[fromPosition]?.type}")
 
-            queueAnimation(AnimationData(System.nanoTime(), state[toPosition]!!, toPosition, fromPosition) {
+            val takenPiece = if (move.pieceTaken == null) {
+                null
+            } else {
+                Piece(move.pieceTaken, !move.team)
+            }
+
+            val translation = fromPosition - toPosition
+            queueAnimation(AnimationData(System.nanoTime(), state, toPosition, translation, takenPiece, move.takenPiecePosition) {
                 state[fromPosition] = state[toPosition]
 
                 if (move.pieceTaken == null) {
                     state[toPosition] = null
                 } else {
                     if (move.takenPiecePosition!! == toPosition) {
-                        state[toPosition] = Piece(move.pieceTaken, !move.team, toPosition)
+                        state[toPosition] = Piece(move.pieceTaken, !move.team)
                     } else {
-                        state[move.takenPiecePosition] = Piece(move.pieceTaken, !move.team, toPosition)
+                        state[move.takenPiecePosition] = Piece(move.pieceTaken, !move.team)
                         state[toPosition] = null
                     }
                 }
@@ -353,7 +365,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
 //                println("Move: $fromPosition $toPosition ${state[fromPosition]!!.boardPosition} ${state[fromPosition]!!.animatedPosition}")
 
-                queueAnimation(AnimationData(System.nanoTime(), currentPositionPiece, fromPosition, toPosition) {
+                val translation = toPosition - fromPosition
+
+
+                queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, takenPiecePosition) {
                     state[toPosition] = currentPositionPiece
                     state[fromPosition] = null
                 })

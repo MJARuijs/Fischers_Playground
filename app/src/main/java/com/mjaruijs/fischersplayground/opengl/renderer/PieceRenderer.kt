@@ -23,10 +23,11 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.math.PI
 
-class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit) {
+class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game) {
 
     private val quad = Quad()
     private val sampler = Sampler(0)
@@ -72,6 +73,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     private val animationQueue = PriorityQueue<AnimationData>()
     private val animationRunning = AtomicBoolean(false)
 
+    private val takenPieces = ArrayList<Pair<Piece, Vector2>>()
+
     var rChannel = 1.0f
     var gChannel = 1.0f
     var bChannel = 1.0f
@@ -86,11 +89,17 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 if (animationQueue.isNotEmpty()) {
                     val animationData = animationQueue.poll()!!
                     animationRunning.set(true)
+                    if (animationData.takenPiece != null) {
+                        takenPieces += Pair(animationData.takenPiece, animationData.takenPiecePosition!!)
+                    }
 //                    println("Starting animation: ${animationData.piece.type} ${animationData.fromPosition} ${animationData.toPosition}")
-                    animationData.piece.translation = animationData.toPosition - animationData.fromPosition
-                    val animator = PieceAnimator(animationData.piece, requestRender, animationData.onAnimationFinished)
+                    val animator = PieceAnimator(requestGame().state, animationData.piecePosition, animationData.translation, requestRender, animationData.onAnimationFinished)
+
                     animator.addOnFinishCall {
                         animationRunning.set(false)
+                    }
+                    animator.addOnFinishCall {
+                        takenPieces.remove(Pair(animationData.takenPiece, animationData.takenPiecePosition))
                     }
                     runOnUiThread {
                         animator.start()
@@ -135,18 +144,30 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
         sampler.bind(PieceTextures.get2DTextureArray())
 
+        for (pieceData in takenPieces) {
+
+            val piece = pieceData.first
+            val piecePosition = pieceData.second
+
+            val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f)
+            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
+            piece2DProgram.set("textureId", getPieceTexture2d(piece).toFloat())
+            piece2DProgram.set("translation", translation)
+
+            quad.draw()
+        }
+
         for (x in 0 until 8) {
             for (y in 0 until 8) {
                 val piece = game[x, y] ?: continue
 
-//        println("RENDERING")
 
 //        val pieces = game.getPieces().iterator()
 //        for (piece in pieces) {
 //            val position = piece.animatedPosition
 
-            val row = x - piece.getAnimatedX()
-            val col = y - piece.getAnimatedY()
+            val row = x - piece.translation.x
+            val col = y - piece.translation.y
 
 //            println("${piece.type} ${piece.team} $position ${piece.boardPosition}")
 
@@ -196,6 +217,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 quad.draw()
             }
         }
+
 
 //        game.unlockData()
 

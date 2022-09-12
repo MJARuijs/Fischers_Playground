@@ -25,27 +25,27 @@ class ArrayBasedGameState(private val isPlayingWhite: Boolean, private val state
 
             val queenOffset = if (isPlayingWhite) 0 else 1
 
-            state[0][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE, Vector2(0, whiteIndex))
-            state[1][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE, Vector2(1, whiteIndex))
-            state[2][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE, Vector2(2, whiteIndex))
-            state[3 + queenOffset][whiteIndex] = Piece(PieceType.QUEEN, Team.WHITE, Vector2(3 + queenOffset, whiteIndex))
-            state[4 - queenOffset][whiteIndex] = Piece(PieceType.KING, Team.WHITE, Vector2(4 - queenOffset, whiteIndex))
-            state[5][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE, Vector2(5, whiteIndex))
-            state[6][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE, Vector2(6, whiteIndex))
-            state[7][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE, Vector2(7, whiteIndex))
+            state[0][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
+            state[1][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE)
+            state[2][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE)
+            state[3 + queenOffset][whiteIndex] = Piece(PieceType.QUEEN, Team.WHITE)
+            state[4 - queenOffset][whiteIndex] = Piece(PieceType.KING, Team.WHITE)
+            state[5][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE)
+            state[6][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE)
+            state[7][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
 
-            state[0][blackIndex] = Piece(PieceType.ROOK, Team.BLACK, Vector2(0, blackIndex))
-            state[1][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK, Vector2(1, blackIndex))
-            state[2][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK, Vector2(2, blackIndex))
-            state[3 + queenOffset][blackIndex] = Piece(PieceType.QUEEN, Team.BLACK, Vector2(3 + queenOffset, blackIndex))
-            state[4 - queenOffset][blackIndex] = Piece(PieceType.KING, Team.BLACK, Vector2(4 - queenOffset, blackIndex))
-            state[5][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK, Vector2(5, blackIndex))
-            state[6][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK, Vector2(6, blackIndex))
-            state[7][blackIndex] = Piece(PieceType.ROOK, Team.BLACK, Vector2(7, blackIndex))
+            state[0][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
+            state[1][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
+            state[2][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
+            state[3 + queenOffset][blackIndex] = Piece(PieceType.QUEEN, Team.BLACK)
+            state[4 - queenOffset][blackIndex] = Piece(PieceType.KING, Team.BLACK)
+            state[5][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
+            state[6][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
+            state[7][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
 
             for (i in 0 until 8) {
-                state[i][whitePawnIndex] = Piece(PieceType.PAWN, Team.WHITE, Vector2(i, whitePawnIndex))
-                state[i][blackPawnIndex] = Piece(PieceType.PAWN, Team.BLACK, Vector2(i, blackPawnIndex))
+                state[i][whitePawnIndex] = Piece(PieceType.PAWN, Team.WHITE)
+                state[i][blackPawnIndex] = Piece(PieceType.PAWN, Team.BLACK)
             }
         }
     }
