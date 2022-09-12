@@ -200,6 +200,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         } else {
             val movingPiece = state[fromPosition]!!
 
+
             queueAnimation(AnimationData(System.nanoTime(), movingPiece, fromPosition, toPosition) {
                 state[toPosition] = movingPiece
 
@@ -270,7 +271,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 //                state[toPosition] = Piece(move.pieceTaken, !move.team, fromPosition)
 //            }
 
+            val movingPiece = state[toPosition]!!
 
+            println("Undoing move: ${movingPiece.team} ${movingPiece.type} $fromPosition $toPosition ${state[fromPosition]?.type}")
 
             queueAnimation(AnimationData(System.nanoTime(), state[toPosition]!!, toPosition, fromPosition) {
                 state[fromPosition] = state[toPosition]
