@@ -13,6 +13,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Camera.Companion.DEFAULT_ZOOM
+import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
 import java.nio.ByteBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -54,7 +55,8 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 
     var isPlayerWhite = true
 
-    var onDraw: () -> Unit = {}
+    lateinit var runOnUiThread: (() -> Unit) -> Unit
+    var requestRender: () -> Unit = {}
     var onPixelsRead: (ByteBuffer) -> Unit = {}
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
 
@@ -74,7 +76,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 
 //        PieceRenderer.init(resources, isPlayerWhite)
 //        backgroundRenderer = BackgroundRenderer(context)
-        pieceRenderer = PieceRenderer(resources, isPlayerWhite)
+        pieceRenderer = PieceRenderer(resources, isPlayerWhite, requestRender, runOnUiThread)
         boardRenderer = BoardRenderer(resources)
         highlightRenderer = HighlightRenderer(resources)
 
@@ -124,18 +126,35 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     fun setGame(game: Game) {
         this.game = game
         this.board = game.board
+        game.queueAnimation = ::queueAnimation
+//        game.startAnimations = ::startAnimations
 
         board.is3D = is3D
     }
 
-    fun update(delta: Float): Boolean {
+    fun queueAnimation(animationData: AnimationData) {
+//        runOnUiThread {
+            pieceRenderer.queueAnimation(game, animationData)
+//        }
+    }
+
+//    fun startAnimations() {
+//        runOnUiThread {
+//            pieceRenderer.startAnimations(game)
+//        }
+//    }
+
+    fun update(): Boolean {
         return if (this::game.isInitialized) {
-            Thread {
-                pieceRenderer.startAnimations(game)
-            }.start()
-            pieceRenderer.update(delta)
+//            Thread {
+            runOnUiThread {
+//                pieceRenderer.startAnimations(game)
+            }
+//            }.start()
+            return true
+//            pieceRenderer.update(delta)
         } else {
-            false
+            true
         }
     }
 
@@ -182,7 +201,6 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
             onPixelsRead = {}
         }
 
-        onDraw()
     }
 
     private fun updateBoardCamera() {

@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.opengl.renderer
+package com.mjaruijs.fischersplayground.opengl.renderer.animation
 
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 

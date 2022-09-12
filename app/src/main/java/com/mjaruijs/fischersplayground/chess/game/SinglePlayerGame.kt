@@ -8,13 +8,13 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
 
-class SinglePlayerGame(lastUpdated: Long) : Game(false, lastUpdated) {
+class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
 
     private var teamToMove = Team.WHITE
 
     override fun getCurrentTeam() = teamToMove
 
-    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(if (isPlayingWhite) Team.WHITE else Team.BLACK, piece, square, true, state, moves, lookingForCheck)
+    override fun getPieceMoves(piece: Piece, square: Vector2, state: ObjectBasedGameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(if (isPlayingWhite) Team.WHITE else Team.BLACK, piece, square, true, state, moves, lookingForCheck)
 
     override fun showPreviousMove(): Pair<Boolean, Boolean> {
         if (currentMoveIndex != -1) {

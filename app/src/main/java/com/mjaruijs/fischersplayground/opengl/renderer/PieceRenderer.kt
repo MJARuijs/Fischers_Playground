@@ -5,7 +5,6 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
-import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.Color
 import com.mjaruijs.fischersplayground.math.matrices.Matrix4
@@ -15,24 +14,22 @@ import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Quad
 import com.mjaruijs.fischersplayground.opengl.light.AmbientLight
 import com.mjaruijs.fischersplayground.opengl.light.DirectionalLight
-import com.mjaruijs.fischersplayground.opengl.model.Entity
 import com.mjaruijs.fischersplayground.opengl.model.Material
-import com.mjaruijs.fischersplayground.opengl.model.MeshLoader
+import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
+import com.mjaruijs.fischersplayground.opengl.renderer.animation.PieceAnimator
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.HashMap
 import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
-class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
+class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit) {
 
     private val quad = Quad()
     private val sampler = Sampler(0)
-
-    private val isLocked = AtomicBoolean(false)
 
     private val piece2DProgram = ShaderProgram(
         ShaderLoader.load(R.raw.piece_2d_vertex, ShaderType.VERTEX, resources),
@@ -72,11 +69,82 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
 
     var pieceScale = Vector3(1f, 1f, 1f)
 
-    private val animations = ArrayList<AnimationValues>()
+    private val animationQueue = PriorityQueue<AnimationData>()
+    private val animationRunning = AtomicBoolean(false)
 
     var rChannel = 1.0f
     var gChannel = 1.0f
     var bChannel = 1.0f
+
+    init {
+        Thread {
+            while (true) {
+                while (animationRunning.get()) {
+                    Thread.sleep(1)
+                }
+
+                if (animationQueue.isNotEmpty()) {
+                    val animationData = animationQueue.poll()!!
+                    animationRunning.set(true)
+                    val animator = PieceAnimator(animationData.timeStamp, animationData.piece, requestRender, animationData.onAnimationFinished)
+                    animator.addOnFinishCall {
+                        animationRunning.set(false)
+                    }
+                    runOnUiThread {
+                        animator.start()
+                    }
+                }
+
+            }
+        }.start()
+    }
+
+    fun queueAnimation(game: Game, animationData: AnimationData) {
+        println("Queuing animation: ${animationData.piece.type} ${animationData.piece.team} ${animationData.piece.boardPosition} ${animationData.piece.animatedPosition}")
+//        animationData.piece.newSquare = animationData.toPosition
+        animationQueue.add(animationData)
+//        animationQueue.
+//        if (animationQueue.isEmpty()) {
+//
+//        }
+    }
+
+    fun startAnimations(game: Game) {
+//        val pieces = game.getPieces()
+//        game.unlockData()
+
+//        for (piece in pieces) {
+//            if (piece.shouldAnimate) {
+//                PieceAnimator(piece, requestRender)
+//            }
+//        }
+
+//        val animationData = game.getAnimationData()
+
+//        for (animation in animationData) {
+//            animations += Animation2(animation.fromPosition, animation.toPosition)
+//            val x = ValueAnimator.ofFloat(animation.toPosition.x - animation.fromPosition.x, 0.0f)
+//            val y = ValueAnimator.ofFloat(animation.toPosition.y - animation.fromPosition.y, 0.0f)
+//            x.addUpdateListener {
+////                println(it.animatedValue)
+//                runningAnimations[animation.toPosition]?.x = it.animatedValue as Float
+//            }
+//            y.addUpdateListener {
+////                println(it.animatedValue)
+//                runningAnimations[animation.toPosition]?.y = it.animatedValue as Float
+//            }
+//            x.duration = 1000L
+//
+//            y.duration = 1000L
+////            y.doOnEnd {
+////                runningAnimations.remove(animation.toPosition)
+////            }
+//            x.start()
+//            y.start()
+//            runningAnimations[animation.toPosition] = Vector2()
+//        }
+//        game.resetAnimationData()
+    }
 
     private fun getPieceTexture2d(piece: Piece): Int {
         if (pieceTextures2D.contains(piece)) {
@@ -98,35 +166,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
         return pieceTextures3D[piece]!!
     }
 
-    private fun startAnimation(animationData: AnimationData) {
-        val toPosition = animationData.toPosition
-        val fromPosition = animationData.fromPosition
-
-        val animatingRow = toPosition.x.roundToInt()
-        val animatingCol = toPosition.y.roundToInt()
-        val translation = fromPosition - toPosition
-        val totalDistance = fromPosition - toPosition
-
-        animations += AnimationValues(animatingRow, animatingCol, translation, totalDistance, animationData.onAnimationFinished)
-    }
-
-    @Suppress("ControlFlowWithEmptyBody")
-    fun startAnimations(game: Game) {
-        while (isLocked.get()) {}
-
-        isLocked.set(true)
-        val animationData = game.getAnimationData()
-
-        for (animation in animationData) {
-            startAnimation(animation)
-        }
-
-        game.resetAnimationData()
-        isLocked.set(false)
-    }
-
     fun render2D(game: Game, aspectRatio: Float) {
-        startAnimations(game)
+//        startAnimations(game)
 
         piece2DProgram.start()
         piece2DProgram.set("textureMaps", sampler.index)
@@ -134,38 +175,82 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
 
         sampler.bind(PieceTextures.get2DTextureArray())
 
-        for (row in 0 until 8) {
-            for (col in 0 until 8) {
-                val piece = game[row, col] ?: continue
+//        for (row in 0 until 8) {
+//            for (col in 0 until 8) {
+//                val piece = game[row, col] ?: continue
 
-                val animation = animations.find { animation -> animation.animatingRow == row && animation.animatingCol == col }
+//        println("RENDERING")
 
-                val translation = if (animation == null) {
-                    (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
-                } else {
-                    (Vector2((row + animation.translation.x) * 2.0f, (col + animation.translation.y) * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
-                }
+        val pieces = game.getPieces().iterator()
+        for (piece in pieces) {
+            val position = piece.animatedPosition
 
-                piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
-                piece2DProgram.set("textureId", getPieceTexture2d(piece).toFloat())
-                piece2DProgram.set("translation", translation)
-                quad.draw()
-            }
+            val row = position.x
+            val col = position.y
+
+//            println("${piece.type} ${piece.team} $position ${piece.boardPosition}")
+
+//                if (piece.type == PieceType.QUEEN && piece.team == Team.WHITE) {
+//                    println("Piece: ${piece.type} ${piece.team} $row $col")
+//                }
+//
+//                val animation = runningAnimations[Vector2(row, col)]
+//                if (runningAnimations.size != 0) {
+////                    println("SIZE: ${runningAnimations.size}. Looking for $row $col")
+//                    if (piece.type == PieceType.QUEEN && piece.team == Team.WHITE) {
+//                        for (entry in runningAnimations) {
+//                            println("${entry.key} : ${entry.value} $row $col")
+//                        }
+//                    }
+//                }
+//                if (animation != null) {
+//                    if (piece.type == PieceType.QUEEN && piece.team == Team.WHITE) {
+//                        println("Actual value: ${animation?.x} ${animation?.y}")
+//                    }
+//                }
+//                val animation = animations.find { animation -> animation.animatingRow == row && animation.animatingCol == col }
+
+//                val animation = animations.find { animation -> animation.row == row && animation.col == col }
+
+//                val translation = if (animation == null) {
+//                    (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
+//                } else {
+//                    (Vector2((row + animation.x) * 2.0f, (col + animation.y) * 2.0f) / 8.0f) + Vector2(-1.0f, 1.0f / 4.0f - 1.0f)
+//                }
+
+            val translation = (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f)
+
+//                if (animation != null) {
+//                    println("Translation: $translation")
+//                }
+
+//                val animator = ObjectAnimator.ofFloat(0.0f, 1.0f)
+//                animator.addUpdateListener({
+//                    it.
+//                })
+
+            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
+            piece2DProgram.set("textureId", getPieceTexture2d(piece).toFloat())
+            piece2DProgram.set("translation", translation)
+            quad.draw()
+//            }
         }
 
-        for (animation in animations) {
-            if (animation.stopAnimating) {
-                animation.onFinish()
-            }
-        }
+        game.unlockData()
 
-        animations.removeIf { animation -> animation.stopAnimating }
+//        for (animation in animations) {
+//            if (animation.stopAnimating) {
+//                animation.onFinish()
+//            }
+//        }
+
+//        animations.removeIf { animation -> animation.stopAnimating }
 
         piece2DProgram.stop()
     }
 
     fun render3D(game: Game, camera: Camera, aspectRatio: Float) {
-        startAnimations(game)
+//        startAnimations(game)
 
         piece3DProgram.start()
         piece3DProgram.set("projection", camera.projectionMatrix)
@@ -183,17 +268,20 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
 
         sampler.bind(PieceTextures.get3DTextureArray())
 
-        for (row in 0 until 8) {
-            for (col in 0 until 8) {
-                val piece = game[row, col] ?: continue
+//        for (row in 0 until 8) {
+//            for (col in 0 until 8) {
+//                val piece = game[row, col] ?: continue
+        val pieces = game.getPieces()
+        game.unlockData()
 
-                val animation = animations.find { animation -> animation.animatingRow == row && animation.animatingCol == col }
+        for (piece in pieces) {
+//                val animation = animations.find { animation -> animation.row == row && animation.col == col }
 
-                val translation = if (animation == null) {
-                    (Vector2(row, col) / 8.0f) * 2.0f - 1.0f + Vector2(1 / 8f, 1 / 8f)
-                } else {
-                    (Vector2(row + animation.translation.x, col + animation.translation.y) / 8.0f) * 2.0f - 1.0f + Vector2(1 / 8f, 1 / 8f)
-                }
+//                val translation = if (animation == null) {
+//                    (Vector2(row, col) / 8.0f) * 2.0f - 1.0f + Vector2(1 / 8f, 1 / 8f)
+//                } else {
+//                    (Vector2(row + animation.translation.x, col + animation.translation.y) / 8.0f) * 2.0f - 1.0f + Vector2(1 / 8f, 1 / 8f)
+//                }
 
                 if (piece.team == Team.WHITE) {
                     whiteMaterial.applyTo(piece3DProgram)
@@ -220,31 +308,31 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean) {
             }
         }
 
-        for (animation in animations) {
-            if (animation.stopAnimating) {
-                animation.onFinish()
-            }
-        }
+//        for (animation in animations) {
+//            if (animation.stopAnimating) {
+//                animation.onFinish()
+//            }
+//        }
 
-        animations.removeIf { animation -> animation.stopAnimating }
+//        animations.removeIf { animation -> animation.stopAnimating }
 
-        piece3DProgram.stop()
-    }
+//        piece3DProgram.stop()
+//    }
 
-    fun update(delta: Float): Boolean {
-        for (animation in animations) {
-            val increment = animation.totalDistance * delta * 5f
-
-            if (abs(animation.translation.x) < abs(increment.x) || abs(animation.translation.y) < abs(increment.y)) {
-                animation.translation = Vector2()
-                animation.stopAnimating = true
-            } else {
-                animation.translation -= increment
-            }
-        }
-
-        return animations.isNotEmpty()
-    }
+//    fun update(delta: Float): Boolean {
+//        for (animation in animations) {
+//            val increment = animation.totalDistance * delta * 5f
+//
+//            if (abs(animation.translation.x) < abs(increment.x) || abs(animation.translation.y) < abs(increment.y)) {
+//                animation.translation = Vector2()
+//                animation.stopAnimating = true
+//            } else {
+//                animation.translation -= increment
+//            }
+//        }
+//
+//        return animations.isNotEmpty()
+//    }
 
     fun destroy() {
 //        println("destroying pieceRenderer")

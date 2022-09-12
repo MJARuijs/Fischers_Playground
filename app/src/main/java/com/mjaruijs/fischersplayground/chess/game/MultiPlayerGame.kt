@@ -67,7 +67,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
     override fun getCurrentTeam() = team
 
-    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(team, piece, square, false, state, moves, lookingForCheck)
+    override fun getPieceMoves(piece: Piece, square: Vector2, state: ObjectBasedGameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(team, piece, square, false, state, moves, lookingForCheck)
 
     fun undoMoves(numberOfMoves: Int) {
         for (i in 0 until numberOfMoves) {
@@ -107,28 +107,38 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
+        // TODO: implement processing, but not showing of opponent move when player is not looking at the most recent move
+//        if (!runInBackground && !isShowingCurrentMove()) {
+//            moveOpponent(move, true)
+//
+//            return
+//        }
+
 //        move(move, runInBackground)
         possibleMoves.clear()
 
         val fromPosition = move.getFromPosition(team)
         val toPosition = move.getToPosition(team)
 
-        val currentPositionPiece = Piece(move.movedPiece, move.team)
+        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+//        val currentPositionPiece = Piece(move.movedPiece, move.team)
 
         take(currentPositionPiece, fromPosition, toPosition)
 
         if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(move.team, fromPosition, toPosition, runInBackground)
         } else {
-            state[toPosition] = currentPositionPiece
-            state[fromPosition] = null
+            state.move(fromPosition, toPosition)
+//            state[toPosition] = currentPositionPiece
+//            state[fromPosition] = null
 
             if (!runInBackground) {
-                setAnimationData(fromPosition, toPosition)
+//                setAnimationData(fromPosition, toPosition)
             }
 
             if (move.promotedPiece != null) {
-                state[toPosition] = Piece(move.promotedPiece, move.team)
+                state.replace(toPosition, move.promotedPiece, move.team)
+//                state[toPosition] = Piece(move.promotedPiece, move.team)
             }
         }
 

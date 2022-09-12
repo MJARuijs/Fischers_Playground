@@ -18,7 +18,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.*
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
-import com.mjaruijs.fischersplayground.fragments.PlayerStatus
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
@@ -80,7 +79,7 @@ abstract class GameActivity : ClientActivity() {
             }
 
             glView = findViewById(R.id.opengl_view)
-            glView.init(::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
+            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
 
             if (savedInstanceState == null) {
                 if (isSinglePlayer) {
@@ -113,6 +112,12 @@ abstract class GameActivity : ClientActivity() {
         glView.destroy()
 
         super.onDestroy()
+    }
+
+    private fun runOnUIThread(runnable: () -> Unit) {
+        runOnUiThread {
+            runnable()
+        }
     }
 
     fun loadFragments() {
@@ -207,7 +212,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun onCheckMate(team: Team) {
-        runOnUiThread {
+        runOnUIThread {
             if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
                 checkMateDialog.setMessage("You won!")
                     .setOnClick { closeAndSaveGameAsWin() }
@@ -222,31 +227,21 @@ abstract class GameActivity : ClientActivity() {
 
     private fun onPieceTaken(pieceType: PieceType, team: Team) {
         if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
-            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
-            (opponentFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
+//            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
+//            (opponentFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
         } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
-            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
-            (playerFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
+//            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
+//            (playerFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
         }
     }
 
     private fun onPieceRegained(pieceType: PieceType, team: Team) {
         if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
-            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
-            (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
+//            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
+//            (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
         } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
-            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
-            (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
-        }
-    }
-
-    override fun onOpponentMoved(output: Parcelable) {
-        val moveData = output as MoveData
-        if (moveData.gameId == gameId) {
-            (game as MultiPlayerGame).moveOpponent(moveData.move, false)
-            requestRender()
-        } else {
-            super.onOpponentMoved(output)
+//            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
+//            (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
         }
     }
 
@@ -292,7 +287,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
-        runOnUiThread { pieceChooserDialog.show(square, team) }
+        runOnUIThread { pieceChooserDialog.show(square, team) }
         return PieceType.QUEEN
     }
 

@@ -19,6 +19,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     private var renderer: OpenGLRenderer
     private lateinit var onSurfaceCreated: () -> Unit
     private lateinit var onClick: (Float, Float) -> Unit
+    private lateinit var runOnUiThread: (() -> Unit) -> Unit
 
     init {
         setEGLContextClientVersion(3)
@@ -34,12 +35,15 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
-    fun init(onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean) {
+    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean) {
+        this.runOnUiThread = runOnUiThread
         this.onSurfaceCreated = onSurfaceCreated
         this.onClick = onClick
 
+        renderer.requestRender = ::requestRender
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
         renderer.isPlayerWhite = isPlayerWhite
+        renderer.runOnUiThread = runOnUiThread
     }
 
     fun getRenderer() = renderer
@@ -54,11 +58,11 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     }
 
     private fun update() {
-        val animating = renderer.update(1.0f / tickRate)
+        val animating = renderer.update()
 
-        if (animating) {
-            requestRender()
-        }
+//        if (animating) {
+//            requestRender()
+//        }
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {

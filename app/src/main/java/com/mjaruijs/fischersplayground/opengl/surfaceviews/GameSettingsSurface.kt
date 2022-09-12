@@ -57,11 +57,11 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
     }
 
     private fun update() {
-        val animating = renderer.update(1.0f / tickRate)
+//        val animating = renderer.update(1.0f / tickRate)
 
-        if (animating) {
-            requestRender()
-        }
+//        if (animating) {
+//            requestRender()
+//        }
     }
 
     private var currentDistance = 0f

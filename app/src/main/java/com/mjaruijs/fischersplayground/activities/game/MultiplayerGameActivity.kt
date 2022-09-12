@@ -14,6 +14,7 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.NewsType
+import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.*
 import com.mjaruijs.fischersplayground.fragments.ChatFragment
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
@@ -270,6 +271,16 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun onResign() {
         networkManager.sendMessage(NetworkMessage(Topic.RESIGN, "$gameId|$userId"))
         closeAndSaveGameAsLoss()
+    }
+
+    override fun onOpponentMoved(output: Parcelable) {
+        val moveData = output as MoveData
+        if (moveData.gameId == gameId) {
+            (game as MultiPlayerGame).moveOpponent(moveData.move, false)
+            requestRender()
+        } else {
+            super.onOpponentMoved(output)
+        }
     }
 
     override fun onUndoRequested(output: Parcelable) {
