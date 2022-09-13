@@ -5,7 +5,6 @@ import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.*
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
-import com.mjaruijs.fischersplayground.util.FloatUtils
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
@@ -29,7 +28,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     private var isChecked = false
 
     private val promotionLock = AtomicBoolean(false)
-    private val dataLock = AtomicBoolean(false)
 
     var onPawnPromoted: (Vector2, Team) -> PieceType = { _, _ -> PieceType.QUEEN }
     var enableBackButton: () -> Unit = {}
@@ -49,24 +47,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     init {
         board.requestPossibleMoves = { square ->
             val possibleMoves = determinePossibleMoves(square, getCurrentTeam())
-
-//            println("Requesting possible moves for $square")
-//            for (move in possibleMoves) {
-//                println(move)
-//            }
             board.updatePossibleMoves(possibleMoves)
         }
     }
-
-    private fun lockData() {
-        dataLock.set(true)
-    }
-
-    fun unlockData() {
-        dataLock.set(false)
-    }
-
-    private fun isDataLocked() = dataLock.get()
 
     abstract fun getCurrentTeam(): Team
 
@@ -86,10 +69,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     }
 
     fun getMoveIndex() = currentMoveIndex
-
-    fun addMove(move: Move) {
-        moves += move
-    }
 
     protected fun incrementMoveCounter(): Int {
         currentMoveIndex++
@@ -149,16 +128,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             currentMoveIndex == moves.size - 1
         }
     }
-//
-//    fun getPieces(): ArrayList<Piece> {
-//        while (isDataLocked()) {
-//            Thread.sleep(1)
-//        }
-//
-//        lockData()
-//
-//        return state.getPieces()
-//    }
 
     operator fun get(i: Int, j: Int): Piece? {
         return state[i, j]
@@ -168,24 +137,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         board.deselectSquare()
     }
 
-//    protected fun setAnimationData(fromPosition: Vector2, toPosition: Vector2, onAnimationFinished: () -> Unit = {}) {
-//        animationData += AnimationData(convertPosition(fromPosition), convertPosition(toPosition), onAnimationFinished)
-//    }
-
-    private fun convertPosition(position: Vector2): Vector2 {
-        return if (team == Team.WHITE) position else position
-    }
-
-//    fun getAnimationData() = animationData
-
-//    fun resetAnimationData() {
-//        animationData.clear()
-//    }
-
     fun upgradePawn(square: Vector2, pieceType: PieceType, team: Team) {
         state[square] = Piece(pieceType, team)
-//        state.remove(square)
-//        state.replace(square, pieceType, team)
         promotionLock.set(false)
     }
 
@@ -193,51 +146,49 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val fromPosition = move.getFromPosition(team)
         val toPosition = move.getToPosition(team)
 
-//        val piece = Piece(move.movedPiece, move.team)
-
         if (move.movedPiece == PieceType.KING && abs(toPosition.x - fromPosition.x) == 2.0f) {
-            performCastle(move.team, fromPosition, toPosition, true)
+            performCastle(move.team, fromPosition, toPosition, false)
         } else {
-            val translation = toPosition - fromPosition
-
             val takenPiece = if (move.pieceTaken == null) {
                 null
             } else {
                 Piece(move.pieceTaken, !move.team)
             }
 
-            queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, move.takenPiecePosition) {
+//            queueAnimation(createAnimation(fromPosition, toPosition, takenPiece, move.takenPiecePosition))
+
+            val translation = toPosition - fromPosition
+            queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, move.takenPiecePosition, {
                 state[toPosition] = state[fromPosition]!!
+                state[fromPosition] = null
 
                 if (move.takenPiecePosition != null) {
+                    onPieceTaken(move.pieceTaken!!, !move.team)
+
                     if (move.takenPiecePosition != toPosition) {
                         state[move.takenPiecePosition] = null
                     }
                 }
-                state[fromPosition] = null
-            })
+            }, null))
         }
 
         val isCheck = isPlayerChecked(state, !move.team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
-        if (move.pieceTaken != null) {
-            val takenPiecePosition = move.getTakenPosition(team)
-            if (takenPiecePosition != null && !FloatUtils.compare(takenPiecePosition, toPosition)) {
-//                state[takenPiecePosition] = null
-//                state.remove(takenPiecePosition)
-            }
-            onPieceTaken(move.pieceTaken, !move.team)
-        }
-
         updateCheckData(move.team, isCheck, isCheckMate)
+    }
+
+    fun createAnimation(fromPosition: Vector2, toPosition: Vector2, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null): AnimationData {
+        val translation = toPosition - fromPosition
+        return AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, takenPiecePosition, {
+            state[toPosition] = state[fromPosition]
+            state[fromPosition] = null
+        }, null)
     }
 
     protected fun undoMove(move: Move) {
         val toPosition = move.getToPosition(team)
         val fromPosition = move.getFromPosition(team)
-
-//        val piece = Piece(move.movedPiece, move.team)
 
         if (move.movedPiece == PieceType.KING && abs(fromPosition.x - toPosition.x) == 2.0f) {
             val direction = if (fromPosition.x < toPosition.x) -1 else 1
@@ -247,39 +198,23 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             val oldRookPosition = Vector2(toPosition.x.roundToInt() + direction, y)
             val newRookPosition = Vector2(newX, y)
 
-//            state.move(fromPosition, toPosition) {
-//                state.move(oldRookPosition, newRookPosition)
-//            }
+            val kingAnimation = createAnimation(toPosition, fromPosition)
+            kingAnimation.nextAnimation = createAnimation(oldRookPosition, newRookPosition)
 
-            state[fromPosition] = state[toPosition]
-            state[toPosition] = null
-//            setAnimationData(fromPosition, toPosition) {
-                state[newRookPosition] = state[oldRookPosition]
-                state[oldRookPosition] = null
-//                setAnimationData(oldRookPosition, newRookPosition)
-//            }
+            queueAnimation(kingAnimation)
+
+//            queueAnimation(AnimationData(System.nanoTime(), state, toPosition, translation, null, null,
+//                {
+//                    state[fromPosition] = state[toPosition]
+//                    state[toPosition] = null
+//                },
+//                AnimationData(System.nanoTime(), state, oldRookPosition, rookTranslation, null, null,
+//                    {
+//                        state[newRookPosition] = state[oldRookPosition]
+//                        state[oldRookPosition] = null
+//                    }, null)
+//            ))
         } else {
-//            val movingPiece = state[fromPosition, move.team]!!
-//            state.move(fromPosition, toPosition)
-//
-//            queueAnimation(AnimationData(System.currentTimeMillis(), movingPiece, toPosition) {
-//                state.remove(toPosition, !move.team)
-//            })
-
-//            state[fromPosition]!!.setPosition(toPosition)
-//            val p = state[fromPosition]!!
-//            println("$fromPosition $toPosition ::: ${p.type} ${p.team} ${p.boardPosition} ${p.animatedPosition}")
-
-//            if (move.pieceTaken == null) {
-//                state[toPosition] = null
-//            } else {
-//                state[toPosition] = Piece(move.pieceTaken, !move.team, fromPosition)
-//            }
-
-//            val movingPiece = state[toPosition]!!
-
-//            println("Undoing move: ${movingPiece.team} ${movingPiece.type} $fromPosition $toPosition ${state[fromPosition]?.type}")
-
             val takenPiece = if (move.pieceTaken == null) {
                 null
             } else {
@@ -287,34 +222,23 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             }
 
             val translation = fromPosition - toPosition
-            queueAnimation(AnimationData(System.nanoTime(), state, toPosition, translation, takenPiece, move.takenPiecePosition) {
+            queueAnimation(AnimationData(System.nanoTime(), state, toPosition, translation, takenPiece, move.takenPiecePosition, {
                 state[fromPosition] = state[toPosition]
+                state[toPosition] = null
 
-                if (move.pieceTaken == null) {
-                    state[toPosition] = null
-                } else {
+                if (move.pieceTaken != null) {
+                    onPieceRegained(move.pieceTaken, move.team)
                     if (move.takenPiecePosition!! == toPosition) {
                         state[toPosition] = Piece(move.pieceTaken, !move.team)
                     } else {
                         state[move.takenPiecePosition] = Piece(move.pieceTaken, !move.team)
-                        state[toPosition] = null
                     }
                 }
-
-//                state[toPosition] = state[fromPosition]
-//                state[fromPosition] = null
-//                println("On Finish Undo: ${state[toPosition]!!.boardPosition} ${state[toPosition]!!.animatedPosition}")
-            })
-
-
+            }, null))
         }
 
         val isCheck = isPlayerChecked(state, move.team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, move.team) else false
-
-        if (move.pieceTaken != null) {
-            onPieceRegained(move.pieceTaken, move.team)
-        }
 
         updateCheckData(!move.team, isCheck, isCheckMate)
         decrementMoveCounter()
@@ -322,8 +246,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
         possibleMoves.clear()
-
-//        println("Moving $team from $fromPosition to $toPosition")
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
 
@@ -337,42 +259,15 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(team, fromPosition, toPosition, runInBackground)
         } else {
-
-//            val movingPiece = state[fromPosition, team]!!
-//            state.move(fromPosition, toPosition) {
-
-
-//                println("ON FINISH ${movingPiece.boardPosition} ${movingPiece.animatedPosition}")
-//                state.remove(toPosition, !team)
-//            }
-
-//            queueAnimation(AnimationData(System.currentTimeMillis(), movingPiece, toPosition) {
-//                println("ON FINISH ${movingPiece.boardPosition} ${movingPiece.animatedPosition}")
-//                state.remove(toPosition, !team)
-//                for (piece in getPieces()) {
-//                    println("${piece.type} ${piece.team} ${piece.boardPosition} ${piece.animatedPosition}")
-//                }
-//            })
-
-//            state[toPosition] = currentPositionPiece
-//            state[fromPosition] = null
-
             if (!runInBackground) {
-//                state[fromPosition]!!.setPosition(toPosition)
+//                val translation = toPosition - fromPosition
+//
+//                queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, takenPiecePosition, {
+//                    state[toPosition] = currentPositionPiece
+//                    state[fromPosition] = null
+//                }, null))
 
-                // TODO: Should this be before or after the animation?
-
-
-//                println("Move: $fromPosition $toPosition ${state[fromPosition]!!.boardPosition} ${state[fromPosition]!!.animatedPosition}")
-
-                val translation = toPosition - fromPosition
-
-
-                queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, takenPiecePosition) {
-                    state[toPosition] = currentPositionPiece
-                    state[fromPosition] = null
-                })
-//                setAnimationData(fromPosition, toPosition)
+                queueAnimation(createAnimation(fromPosition, toPosition, takenPiece, takenPiecePosition))
 
                 if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
                     promotedPiece = promotePawn(toPosition)
@@ -402,8 +297,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 null
             }
         }
-
-//        println("Move made from: $actualFromPosition, to: $actualToPosition")
 
         val move = Move(team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, takenPiece?.type, actualTakenPosition, promotedPiece)
         if (!runInBackground) {
@@ -436,10 +329,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             }
 
             takenPiecePosition = fromPosition + Vector2(direction.x, 0.0f)
-            takeEnPassant(fromPosition, direction, !currentPiece.team)
+            takeEnPassant(fromPosition, direction)
         } else {
             takenPiecePosition = toPosition
-            takeRegularly(toPosition, !currentPiece.team)
+            takeRegularly(toPosition)
         }
 
         if (takenPiece != null) {
@@ -456,23 +349,14 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return null
     }
 
-    private fun takeRegularly(toPosition: Vector2, team: Team): Piece? {
-        val takenPiece = state[toPosition]
-        // TODO: should this be get() or remove() ?
-
-//        state[toPosition] = null
-//        state.remove(toPosition)
-        return takenPiece
-
-//        return state.get(toPosition, team)
+    private fun takeRegularly(toPosition: Vector2): Piece? {
+        return state[toPosition]
     }
 
-    private fun takeEnPassant(fromPosition: Vector2, direction: Vector2, team: Team): Piece? {
+    private fun takeEnPassant(fromPosition: Vector2, direction: Vector2): Piece? {
         val squareOfTakenPiece = fromPosition + Vector2(direction.x, 0.0f)
         val takenPiece = state[squareOfTakenPiece]
         state[squareOfTakenPiece] = null
-//        state.remove(squareOfTakenPiece)
-//        return state.remove(squareOfTakenPiece)
         return takenPiece
     }
 
@@ -511,14 +395,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val kingsPosition = findKingPosition(state, team)
         val possibleMovesForOpponent = ArrayList<Vector2>()
 
-//        val pieces = state.getPieces()
-
-//        for (piece in state.getPieces()) {
-//            if (piece.team != team) {
-//                possibleMovesForOpponent += getPieceMoves(piece, piece.boardPosition, state, true)
-//            }
-//        }
-
         for (x in 0 until 8) {
             for (y in 0 until 8) {
                 val piece = state[x, y] ?: continue
@@ -529,20 +405,12 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             }
         }
 
-        unlockData()
-
         return possibleMovesForOpponent.contains(kingsPosition)
     }
 
     protected fun isPlayerCheckMate(state: ArrayBasedGameState, team: Team): Boolean {
         val possibleMoves = ArrayList<Vector2>()
 
-//        for (piece in state.getPieces()) {
-//            if (piece.team == team) {
-//                possibleMoves += determinePossibleMoves(piece, team)
-//            }
-//        }
-//
         for (x in 0 until 8) {
             for (y in 0 until 8) {
                 val piece = state[x, y] ?: continue
@@ -552,8 +420,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 }
             }
         }
-
-//        unlockData()
 
         return possibleMoves.isEmpty()
     }
@@ -582,20 +448,22 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val newRookPosition = toPosition + Vector2(rookDirection, 0)
 
         if (!runInBackground) {
-//            state.move(fromPosition, toPosition) {
-//                state.move(oldRookPosition, newRookPosition)
-//            }
-//            state.add(state[fromPosition]!!)
-//            state.remove(fromPosition)
-//            state[toPosition] = state[fromPosition]
-//            state[fromPosition] = null
+            val translation = toPosition - fromPosition
+            val rookTranslation = newRookPosition - oldRookPosition
 
-//            setAnimationData(fromPosition, toPosition) {
-//                state[newRookPosition] = state[oldRookPosition]
-//                state[oldRookPosition] = null
-
-//                setAnimationData(oldRookPosition, newRookPosition)
-//            }
+            queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, null, null,
+                {
+                    state[toPosition] = state[fromPosition]
+                    state[fromPosition] = null
+                },
+                AnimationData(System.nanoTime(), state, oldRookPosition, rookTranslation, null, null,
+                    {
+                        state[newRookPosition] = state[oldRookPosition]
+                        state[oldRookPosition] = null
+                    },
+                    null
+                )
+            ))
         }
     }
 
@@ -624,14 +492,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 }
             }
         }
-
-//        for (piece in state.getPieces()) {
-//            if (piece.type == PieceType.KING && piece.team == team) {
-//                return piece.boardPosition
-//            }
-//        }
-
-//        unlockData()
 
         throw IllegalArgumentException("No king was found for team: $team")
     }

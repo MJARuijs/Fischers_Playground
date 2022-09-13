@@ -58,7 +58,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     }
 
     private fun update() {
-        val animating = renderer.update()
+//        val animating = renderer.update()
 
 //        if (animating) {
 //            requestRender()

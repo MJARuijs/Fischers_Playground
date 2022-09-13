@@ -312,45 +312,6 @@ class SettingsActivity : ClientActivity() {
     }
 
     private fun setupUIElements() {
-        findViewById<SeekBar>(R.id.r_seekbar).setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                glView3D.getRenderer().setR(progress.toFloat() / 255f)
-                glView3D.requestRender()
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-            }
-        })
-
-        findViewById<SeekBar>(R.id.g_seekbar).setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                glView3D.getRenderer().setG(progress.toFloat() / 255f)
-                glView3D.requestRender()
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-            }
-        })
-
-        findViewById<SeekBar>(R.id.b_seekbar).setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                glView3D.getRenderer().setB(progress.toFloat() / 255f)
-                glView3D.requestRender()
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-            }
-        })
-
         fullScreenCard.setOnClickListener {
             val isFullscreen = fullScreenCheckbox.isChecked
 

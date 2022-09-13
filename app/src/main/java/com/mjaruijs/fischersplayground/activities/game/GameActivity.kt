@@ -227,21 +227,21 @@ abstract class GameActivity : ClientActivity() {
 
     private fun onPieceTaken(pieceType: PieceType, team: Team) {
         if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
-//            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
-//            (opponentFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
+            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
+            (opponentFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
         } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
-//            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
-//            (playerFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
+            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
+            (playerFragment as PlayerCardFragment).addTakenPiece(pieceType, team)
         }
     }
 
     private fun onPieceRegained(pieceType: PieceType, team: Team) {
         if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
-//            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
-//            (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
+            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
+            (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
         } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
-//            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
-//            (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
+            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
+            (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType, team)
         }
     }
 

@@ -113,19 +113,9 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                 y == 1
             }
 
-//            if (!pawnAtStartingSquare) {
-//                println("PAWN AT: $square ${piece.boardPosition} ${piece.animatedPosition}")
-//            }
-
-//            println("$direction ${piece.team} $team $pawnAtStartingSquare $square")
-
-//            val pawnAtStartingSquare = (piece.team == Team.WHITE && y == 1) || (piece.team == Team.BLACK && y == 6)
-
             if (pawnAtStartingSquare && firstSquareEmpty) {
                 if (gameState[x, y + direction * 2] == null) {
                     possibleMoves += Vector2(x, y + direction * 2)
-//                } else {
-//                    println("NEXT SQUARE NOT EMPTY: ${gameState[x, y + direction * 2]!!.type}, ${gameState[x, y + direction * 2]!!.team}, ${gameState[x, y + direction * 2]!!.boardPosition}, ${gameState[x, y + direction * 2]!!.animatedPosition}")
                 }
             }
 
@@ -424,7 +414,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             }
 
             if (kingMoved || rookMoved) {
-                return false
+//                return false
             }
 
             for (i in 1 until 3) {

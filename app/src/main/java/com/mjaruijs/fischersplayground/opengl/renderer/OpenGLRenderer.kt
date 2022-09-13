@@ -87,21 +87,6 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
         requestRender()
     }
 
-    fun setR(r: Float) {
-//        gameRenderer3D.rChannel = r
-//        println("r=${gameRenderer3D.rChannel}, g=${gameRenderer3D.gChannel}, b=${gameRenderer3D.bChannel}")
-    }
-
-    fun setG(g: Float) {
-//        gameRenderer3D.gChannel = g
-//        println("r=${gameRenderer3D.rChannel}, g=${gameRenderer3D.gChannel}, b=${gameRenderer3D.bChannel}")
-    }
-
-    fun setB(b: Float) {
-//        gameRenderer3D.bChannel = b
-//        println("r=${gameRenderer3D.rChannel}, g=${gameRenderer3D.gChannel}, b=${gameRenderer3D.bChannel}")
-    }
-
     fun set3D(is3D: Boolean) {
         this.is3D = is3D
 
@@ -140,20 +125,6 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 
     private fun queueAnimation(animationData: AnimationData) {
         pieceRenderer.queueAnimation(game, animationData)
-    }
-
-    fun update(): Boolean {
-        return if (this::game.isInitialized) {
-//            Thread {
-            runOnUiThread {
-//                pieceRenderer.startAnimations(game)
-            }
-//            }.start()
-            return true
-//            pieceRenderer.update(delta)
-        } else {
-            true
-        }
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {

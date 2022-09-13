@@ -25,7 +25,7 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
         this.team = team
 
         paint.isAntiAlias = true
-        paint.color = if (team == Team.WHITE) Color.WHITE else Color.BLACK
+        paint.color = if (team == Team.WHITE) Color.BLACK else Color.WHITE
     }
 
     fun add(pieceType: PieceType) {

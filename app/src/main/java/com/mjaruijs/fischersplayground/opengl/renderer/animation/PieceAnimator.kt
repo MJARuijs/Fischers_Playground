@@ -7,35 +7,32 @@ import com.mjaruijs.fischersplayground.chess.game.ArrayBasedGameState
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, translation: Vector2, requestRender: () -> Unit, var onFinish: () -> Unit, animationDuration: Long = 500L) {
+class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val translation: Vector2, requestRender: () -> Unit, var onAnimationStarted: () -> Unit, animationDuration: Long = 500L) {
 
     private val xFinished = AtomicBoolean(false)
     private val yFinished = AtomicBoolean(false)
     private val onStartExecuted = AtomicBoolean(false)
 
-    private val piece = state[piecePosition]!!
+    private val piece = state[piecePosition] ?: throw IllegalArgumentException("No piece was found at square: $piecePosition.. Failed to animate..")
     private val xAnimator = ValueAnimator.ofFloat(translation.x, 0.0f)
     private val yAnimator = ValueAnimator.ofFloat(translation.y, 0.0f)
 
     private val onFinishCalls = ArrayList<() -> Unit>()
 
     init {
+
         xAnimator.duration = animationDuration
         xAnimator.addUpdateListener {
             piece.translation.x = it.animatedValue as Float
             requestRender()
         }
         xAnimator.doOnStart {
-            if (!onStartExecuted.get()) {
-                onStartExecuted.set(true)
-                println("EXECUTING ON START")
-                onFinish()
-            }
+            onStart()
         }
         xAnimator.doOnEnd {
             xFinished.set(true)
             if (yFinished.get()) {
-                finish()
+                onFinish()
             }
         }
 
@@ -45,16 +42,12 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, translat
             requestRender()
         }
         yAnimator.doOnStart {
-            if (!onStartExecuted.get()) {
-                onStartExecuted.set(true)
-                println("EXECUTING ON START")
-                onFinish()
-            }
+            onStart()
         }
         yAnimator.doOnEnd {
             yFinished.set(true)
             if (xFinished.get()) {
-                finish()
+                onFinish()
             }
         }
     }
@@ -63,12 +56,20 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, translat
         onFinishCalls += call
     }
 
+    private fun onStart() {
+        if (!onStartExecuted.get()) {
+            onStartExecuted.set(true)
+            piece.translation = translation
+            onAnimationStarted()
+        }
+    }
+
     fun start() {
         xAnimator.start()
         yAnimator.start()
     }
 
-    private fun finish() {
+    private fun onFinish() {
         for (call in onFinishCalls) {
             call()
         }
