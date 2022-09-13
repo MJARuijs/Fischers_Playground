@@ -155,13 +155,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 Piece(move.pieceTaken, !move.team)
             }
 
-//            queueAnimation(createAnimation(fromPosition, toPosition, takenPiece, move.takenPiecePosition))
-
-            val translation = toPosition - fromPosition
-            queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, move.takenPiecePosition, {
-                state[toPosition] = state[fromPosition]!!
-                state[fromPosition] = null
-
+            queueAnimation(createAnimation(fromPosition, toPosition, takenPiece, move.takenPiecePosition) {
                 if (move.takenPiecePosition != null) {
                     onPieceTaken(move.pieceTaken!!, !move.team)
 
@@ -169,7 +163,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                         state[move.takenPiecePosition] = null
                     }
                 }
-            }, null))
+            })
         }
 
         val isCheck = isPlayerChecked(state, !move.team)
@@ -178,11 +172,12 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         updateCheckData(move.team, isCheck, isCheckMate)
     }
 
-    fun createAnimation(fromPosition: Vector2, toPosition: Vector2, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null): AnimationData {
+    private fun createAnimation(fromPosition: Vector2, toPosition: Vector2, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null, onStart: () -> Unit = {}): AnimationData {
         val translation = toPosition - fromPosition
         return AnimationData(System.nanoTime(), state, fromPosition, translation, takenPiece, takenPiecePosition, {
             state[toPosition] = state[fromPosition]
             state[fromPosition] = null
+            onStart()
         }, null)
     }
 
@@ -202,18 +197,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             kingAnimation.nextAnimation = createAnimation(oldRookPosition, newRookPosition)
 
             queueAnimation(kingAnimation)
-
-//            queueAnimation(AnimationData(System.nanoTime(), state, toPosition, translation, null, null,
-//                {
-//                    state[fromPosition] = state[toPosition]
-//                    state[toPosition] = null
-//                },
-//                AnimationData(System.nanoTime(), state, oldRookPosition, rookTranslation, null, null,
-//                    {
-//                        state[newRookPosition] = state[oldRookPosition]
-//                        state[oldRookPosition] = null
-//                    }, null)
-//            ))
         } else {
             val takenPiece = if (move.pieceTaken == null) {
                 null
@@ -221,11 +204,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 Piece(move.pieceTaken, !move.team)
             }
 
-            val translation = fromPosition - toPosition
-            queueAnimation(AnimationData(System.nanoTime(), state, toPosition, translation, takenPiece, move.takenPiecePosition, {
-                state[fromPosition] = state[toPosition]
-                state[toPosition] = null
-
+            queueAnimation(createAnimation(toPosition, fromPosition, takenPiece, move.takenPiecePosition) {
                 if (move.pieceTaken != null) {
                     onPieceRegained(move.pieceTaken, move.team)
                     if (move.takenPiecePosition!! == toPosition) {
@@ -234,7 +213,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                         state[move.takenPiecePosition] = Piece(move.pieceTaken, !move.team)
                     }
                 }
-            }, null))
+            })
         }
 
         val isCheck = isPlayerChecked(state, move.team)
@@ -448,22 +427,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val newRookPosition = toPosition + Vector2(rookDirection, 0)
 
         if (!runInBackground) {
-            val translation = toPosition - fromPosition
-            val rookTranslation = newRookPosition - oldRookPosition
+            val kingAnimation = createAnimation(fromPosition, toPosition)
+            kingAnimation.nextAnimation = createAnimation(oldRookPosition, newRookPosition)
 
-            queueAnimation(AnimationData(System.nanoTime(), state, fromPosition, translation, null, null,
-                {
-                    state[toPosition] = state[fromPosition]
-                    state[fromPosition] = null
-                },
-                AnimationData(System.nanoTime(), state, oldRookPosition, rookTranslation, null, null,
-                    {
-                        state[newRookPosition] = state[oldRookPosition]
-                        state[oldRookPosition] = null
-                    },
-                    null
-                )
-            ))
+            queueAnimation(kingAnimation)
         }
     }
 

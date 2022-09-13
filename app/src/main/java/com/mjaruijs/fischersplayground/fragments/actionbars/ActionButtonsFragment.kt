@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.fragments.actionbars
 
 import android.graphics.Color
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
@@ -12,18 +11,15 @@ import com.mjaruijs.fischersplayground.userinterface.UIButton
 
 open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> Unit, val networkManager: NetworkManager) : Fragment(layoutResource) {
 
-    var maxTextSize = Float.MAX_VALUE
+    private var maxTextSize = Float.MAX_VALUE
+    private var numberOfButtonsInitialized = 0
 
-    lateinit var backButton: UIButton
-    lateinit var forwardButton: UIButton
+    private lateinit var backButton: UIButton
+    private lateinit var forwardButton: UIButton
 
     lateinit var game: Game
 
-//    lateinit var networkManager: NetworkManager
-
     open var numberOfButtons: Int = 2
-
-    var numberOfButtonsInitialized = 0
 
     val buttons = ArrayList<UIButton>()
 
@@ -56,8 +52,6 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-//        networkManager = NetworkManager.getInstance()
-
         val textOffset = 65
         val textColor = Color.WHITE
         val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
@@ -87,8 +81,6 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
                     game.clearBoardData()
                     enableForwardButton()
                 }
-                // TODO: Uncomment this ?
-//                requestRender()
             }
 
         forwardButton = view.findViewById(R.id.forward_button)
@@ -113,10 +105,9 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
                     it.disable()
                 }
                 if (buttonStates.second) {
+                    game.clearBoardData()
                     enableBackButton()
                 }
-                // TODO: uncomment this ?
-//                requestRender()
             }
 
         buttons += backButton

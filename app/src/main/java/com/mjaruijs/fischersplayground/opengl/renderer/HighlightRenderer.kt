@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
-import android.content.Context
 import android.content.res.Resources
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.Board
