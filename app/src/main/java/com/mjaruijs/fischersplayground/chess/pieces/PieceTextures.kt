@@ -7,19 +7,19 @@ import com.mjaruijs.fischersplayground.opengl.texture.TextureArray
 import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
 import java.util.concurrent.atomic.AtomicBoolean
 
-object PieceTextures {
+class PieceTextures(resources: Resources) {
 
     private val pieceTextures2D = ArrayList<Triple<PieceType, Team, Texture>>()
     private val pieceTextures3D = ArrayList<Pair<PieceType, Texture>>()
     private var textureArray2D: TextureArray? = null
     private var textureArray3D: TextureArray? = null
 
-    private val initialized = AtomicBoolean(false)
+//    private val initialized = AtomicBoolean(false)
 
-    fun init(resources: Resources) {
-        if (initialized.get()) {
-            return
-        }
+    init {
+//        if (initialized.get()) {
+//            return
+//        }
 
         pieceTextures2D += Triple(PieceType.PAWN, Team.WHITE, TextureLoader.load(resources, R.drawable.white_pawn))
         pieceTextures2D += Triple(PieceType.KNIGHT, Team.WHITE, TextureLoader.load(resources, R.drawable.white_knight))
@@ -40,8 +40,9 @@ object PieceTextures {
         pieceTextures3D += Pair(PieceType.ROOK, TextureLoader.load(resources, R.drawable.diffuse_map_rook))
         pieceTextures3D += Pair(PieceType.QUEEN, TextureLoader.load(resources, R.drawable.diffuse_map_queen))
         pieceTextures3D += Pair(PieceType.KING, TextureLoader.load(resources, R.drawable.diffuse_map_king))
+//        initialized.set(true)
 
-        initialized.set(true)
+        createTextureArrays()
     }
 
     fun createTextureArrays() {
@@ -80,5 +81,16 @@ object PieceTextures {
         }
 
         throw IllegalArgumentException("3D Texture not found for piece: $pieceType")
+    }
+
+    fun destroy() {
+        for (texture in pieceTextures2D) {
+            texture.third.destroy()
+        }
+        for (texture in pieceTextures3D) {
+            texture.second.destroy()
+        }
+        textureArray2D?.destroy()
+        textureArray3D?.destroy()
     }
 }

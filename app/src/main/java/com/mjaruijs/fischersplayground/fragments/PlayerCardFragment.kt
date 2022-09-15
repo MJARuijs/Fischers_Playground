@@ -49,7 +49,6 @@ class PlayerCardFragment : Fragment(R.layout.player_card) {
     }
 
     fun setStatusIcon(status: PlayerStatus) {
-        println("SETTING STATUS $status")
         if (this::statusIcon.isInitialized) {
             statusIcon.foregroundTintList = ColorStateList(arrayOf(intArrayOf(0)), intArrayOf(status.color))
         }

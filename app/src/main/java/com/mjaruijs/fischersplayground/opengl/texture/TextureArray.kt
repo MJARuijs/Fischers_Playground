@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.opengl.texture
 
+import android.opengl.GLES20
 import android.opengl.GLES30.*
 import kotlin.math.log2
 import kotlin.math.max
@@ -34,6 +35,10 @@ class TextureArray(textures: List<Texture>) {
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, 0)
+    }
+
+    fun destroy() {
+        glDeleteTextures(1, intArrayOf(handle), 0)
     }
 
 }

@@ -107,5 +107,4 @@ void main() {
 
 //    }
 //    outColor = ambientColor + sunColor;
-
 }

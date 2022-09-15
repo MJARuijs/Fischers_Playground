@@ -14,6 +14,7 @@ class NetworkManager {
 
         private const val PUBLIC_SERVER_IP = "217.101.191.23"
         private const val LOCAL_SERVER_IP = "192.168.178.103"
+//        private const val LOCAL_SERVER_IP = "10.248.59.63"
         private const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
@@ -60,7 +61,6 @@ class NetworkManager {
 
     fun run(context: Context, address: String = LOCAL_SERVER_IP, port: Int = SERVER_PORT) {
         if (initialized.get()) {
-            println("")
             return
         }
 

@@ -31,6 +31,10 @@ import java.util.*
 
 class MainActivity : ClientActivity() {
 
+    companion object {
+        private var initialized = false
+    }
+
     override var activityName = "main_activity"
 
     override val stayInAppOnBackPress = false
@@ -58,6 +62,19 @@ class MainActivity : ClientActivity() {
             createUsernameDialog.show(::saveUserName)
         } else {
             findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
+        }
+
+        if (!initialized) {
+            println("NOT INITIALIZED")
+            initialized = true
+
+            preloadModels()
+
+            networkManager.run(this)
+
+            if (userId != DEFAULT_USER_ID) {
+                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+            }
         }
 
         initUIComponents()
@@ -268,15 +285,14 @@ class MainActivity : ClientActivity() {
         super.onResume()
 
         Thread {
-                while (dataManager.isLocked()) {
-                    Thread.sleep(1)
-                }
-                runOnUiThread {
-                    restoreSavedGames(dataManager.getSavedGames())
-                    restoreSavedInvites(dataManager.savedInvites)
-                    updateRecentOpponents(dataManager.recentOpponents)
-                }
-
+            while (dataManager.isLocked()) {
+                Thread.sleep(1)
+            }
+            runOnUiThread {
+                restoreSavedGames(dataManager.getSavedGames())
+                restoreSavedInvites(dataManager.savedInvites)
+                updateRecentOpponents(dataManager.recentOpponents)
+            }
         }.start()
 
         stayingInApp = false
@@ -311,7 +327,6 @@ class MainActivity : ClientActivity() {
             val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
-
     }
 
     private fun onButtonInitialized(textSize: Float) {
@@ -402,18 +417,6 @@ class MainActivity : ClientActivity() {
             gameAdapter += GameCardItem(inviteId, inviteData.timeStamp, inviteData.opponentName, status, hasUpdate = hasUpdate)
         }
     }
-
-//    override fun onInviteReceived(inviteData: Pair<String, InviteData>?) {
-//        super.onInviteReceived(inviteData)
-//
-//        gameAdapter += GameCardItem(inviteData?.first ?: return, inviteData.second.timeStamp, inviteData.second.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
-//    }
-
-//    override fun restoreSavedData(data: Triple<HashMap<String, MultiPlayerGame>, HashMap<String, InviteData>, Stack<Pair<String, String>>>?) {
-//        restoreSavedGames(data?.first ?: return)
-//        restoreSavedInvites(data.second)
-//        updateRecentOpponents(data.third)
-//    }
 
     override fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {
         createGameDialog.setRecentOpponents(opponents ?: return)

@@ -130,6 +130,13 @@ class HighlightRenderer(resources: Resources) {
 
     fun destroy() {
         quad.destroy()
+        kingCheckedTexture.destroy()
+        circleTexture.destroy()
+        squareSelectedTexture.destroy()
+        textureEffects.destroy()
         highlight2DProgram.destroy()
+        highlight3DProgram.destroy()
+        selectedSquare2DProgram.destroy()
+        selectedSquare3DProgram.destroy()
     }
 }

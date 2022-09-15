@@ -88,7 +88,10 @@ class BoardRenderer(resources: Resources) {
     fun destroy() {
         model2D.destroy()
         model3D.destroy()
+        diffuseTexture.destroy()
+
         board2DProgram.destroy()
+        board3DProgram.destroy()
     }
 
 }

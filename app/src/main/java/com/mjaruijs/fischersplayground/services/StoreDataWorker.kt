@@ -93,8 +93,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             game.moveOpponent(move, false)
             game.lastUpdated = timeStamp
             dataManager[gameId] = game
-
-            println("SAVING GAME: $gameId ${move.toChessNotation()}")
         } catch (e: Exception) {
             FileManager.write(applicationContext, "crash_log.txt", e.stackTraceToString())
         }
@@ -114,7 +112,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     }
 
     private fun onNewGameStarted(data: Array<String>): Parcelable {
-
         val inviteId = data[0]
         val opponentName = data[1]
         val opponentId = data[2]
@@ -129,6 +126,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
 
         dataManager[inviteId] = newGame
         dataManager.savedInvites.remove(inviteId)
+
         dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
 
         val hasUpdate = gameStatus == GameStatus.PLAYER_MOVE
@@ -216,13 +214,9 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val opponentId = data[0]
         val opponentStatus = data[1]
 
-        println("OpponentID: $opponentId : $opponentStatus")
-
         for (gameEntry in dataManager.getSavedGames()) {
             val gameId = gameEntry.key
             val game = gameEntry.value
-
-            println("GAME OPPONENT ID: ${game.opponentId}")
 
             if (game.opponentId == opponentId) {
                 dataManager[gameId].opponentStatus = opponentStatus

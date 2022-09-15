@@ -73,7 +73,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     init {
         paint.isAntiAlias = true
         paint.color = Color.rgb(0.25f, 0.25f, 0.25f)
-
         textPaint.isAntiAlias = true
         textPaint.color = Color.WHITE
         textPaint.textSize = 200.0f
@@ -452,5 +451,9 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         }
 
         return Color.argb(newA, newR, newG, newB)
+    }
+
+    fun destroy() {
+        bitmap?.recycle()
     }
 }

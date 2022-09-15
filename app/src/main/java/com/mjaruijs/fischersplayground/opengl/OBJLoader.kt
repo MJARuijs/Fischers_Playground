@@ -1,8 +1,6 @@
 package com.mjaruijs.fischersplayground.opengl
 
-import android.content.Context
 import android.content.res.Resources
-import com.mjaruijs.fischersplayground.opengl.model.Mesh
 import com.mjaruijs.fischersplayground.opengl.model.MeshData
 import java.io.BufferedInputStream
 import java.nio.ByteBuffer
@@ -10,16 +8,15 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 object OBJLoader {
 
-    private val cache = HashMap<Int, Pair<Thread, MeshData>>()
+    private val cache = HashMap<Int, MeshData>()
     private val currentlyLoading = HashMap<Int, AtomicBoolean>()
 
-    fun get(resources: Resources, location: Int): Pair<Thread, MeshData> {
+    fun get(resources: Resources, location: Int): MeshData {
         if (cache.contains(location)) {
             return cache[location]!!
         }
 
         return if (currentlyLoading.containsKey(location)) {
-//            println("CONTAINS $location")
             try {
                 while (currentlyLoading[location]!!.get()) {
                     Thread.sleep(1)
@@ -31,32 +28,23 @@ object OBJLoader {
             currentlyLoading.remove(location)
             cache[location]!!
         } else {
-//            println("LOADING MESH AGAIN $location")
-
             val mesh = load(resources, location)
-            cache[location] = Pair(Thread.currentThread(), mesh)
-            Pair(Thread.currentThread(), mesh)
+            cache[location] = mesh
+            mesh
         }
     }
 
-    fun preload(resources: Resources, location: Int): Pair<Thread, MeshData> {
+    fun preload(resources: Resources, location: Int): MeshData {
         if (cache.containsKey(location)) {
             return cache[location]!!
         }
-
-//        println("PRELOADING: $location $name")
         currentlyLoading[location] = AtomicBoolean(true)
-//        val startTime = System.nanoTime()
 
         val mesh = load(resources, location)
-
-//        val endTime = System.nanoTime()
-        cache[location] = Pair(Thread.currentThread(), mesh)
-
+        cache[location] = mesh
         currentlyLoading[location]?.set(false)
 
-        return Pair(Thread.currentThread(), mesh)
-//        println("DONE LOADING $location $name ${(endTime - startTime) / 1000000}")
+        return mesh
     }
 
     private fun load(resources: Resources, fileLocation: Int): MeshData {
@@ -85,6 +73,7 @@ object OBJLoader {
             normalData[i] = buffer.float
         }
 
+        inputStream.close()
         reader.close()
 
         return MeshData(vertexData, normalData, textureData)

@@ -4,7 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, val takenPiecePosition: Vector2?, val promotedPiece: PieceType?) : Parcelable {
+class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, private val takenPiecePosition: Vector2?, val promotedPiece: PieceType?) : Parcelable {
 
     constructor(parcel: Parcel) : this(
         Team.fromString(parcel.readString()!!),

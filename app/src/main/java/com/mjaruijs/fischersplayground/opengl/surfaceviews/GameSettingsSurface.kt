@@ -9,15 +9,13 @@ import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
-import com.mjaruijs.fischersplayground.util.FixedRateThread
+import com.mjaruijs.fischersplayground.util.RenderThread
 import kotlin.math.abs
 
 class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSurfaceView(context, attributeSet) {
 
-    private val tickRate = 60.0f
-
-    private var renderer: OpenGLRenderer
-    private val fixedRateThread = FixedRateThread(tickRate, ::update)
+    private lateinit var renderer: OpenGLRenderer
+//    private val renderThread = RenderThread()
 
     private var onSurfaceCreated: () -> Unit = {}
     private lateinit var onCameraRotated: () -> Unit
@@ -30,23 +28,27 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
     var isActive = false
 
     init {
+//        renderThread.start()
+
         setEGLContextClientVersion(3)
         setEGLConfigChooser(ConfigChooser())
 //        renderer = OpenGLRenderer.getInstance(context, ::onContextCreated, true)
-        renderer = OpenGLRenderer(context, resources, ::onContextCreated, true)
-        setRenderer(renderer)
+//        renderThread.addTask {
+            renderer = OpenGLRenderer(context, resources, ::onContextCreated, true)
+            setRenderer(renderer)
+//        }
 
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
-    fun init(onSurfaceCreated: () -> Unit, onCameraRotated: () -> Unit, savePreference: (String, Float) -> Unit) {
+    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onCameraRotated: () -> Unit, savePreference: (String, Float) -> Unit) {
         this.onSurfaceCreated = onSurfaceCreated
         this.onCameraRotated = onCameraRotated
         this.savePreference = savePreference
+        renderer.runOnUiThread = runOnUiThread
     }
 
     private fun onContextCreated() {
-        fixedRateThread.run()
         onSurfaceCreated()
     }
 
@@ -54,14 +56,6 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
     fun setGame(game: Game) {
         renderer.setGame(game)
-    }
-
-    private fun update() {
-//        val animating = renderer.update(1.0f / tickRate)
-
-//        if (animating) {
-//            requestRender()
-//        }
     }
 
     private var currentDistance = 0f
@@ -147,7 +141,6 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
     }
 
     fun destroy() {
-        fixedRateThread.stop()
         renderer.destroy()
     }
 }

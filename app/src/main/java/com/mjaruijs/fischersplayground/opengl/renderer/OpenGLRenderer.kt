@@ -21,24 +21,10 @@ import kotlin.math.PI
 
 class OpenGLRenderer(context: Context, private val resources: Resources, private var onContextCreated: () -> Unit, private var is3D: Boolean) : GLSurfaceView.Renderer {
 
-    companion object {
-
-        private var instance: OpenGLRenderer? = null
-
-        fun getInstance(context: Context, onContextCreated: () -> Unit, is3D: Boolean): OpenGLRenderer {
-            if (instance == null) {
-                instance = OpenGLRenderer(context, context.resources, onContextCreated, is3D)
-            } else {
-                instance!!.onContextCreated = onContextCreated
-                instance!!.is3D = is3D
-            }
-            return instance!!
-        }
-
-    }
-
     private lateinit var board: Board
     private lateinit var game: Game
+
+    private lateinit var pieceTextures: PieceTextures
 
 //    private lateinit var backgroundRenderer: BackgroundRenderer
     private lateinit var boardRenderer: BoardRenderer
@@ -72,9 +58,8 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        PieceTextures.createTextureArrays()
+        pieceTextures = PieceTextures(resources)
 
-//        PieceRenderer.init(resources, isPlayerWhite)
 //        backgroundRenderer = BackgroundRenderer(context)
         pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame)
         boardRenderer = BoardRenderer(resources)
@@ -153,7 +138,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
                 boardRenderer.render3D(board, camera, displayWidth, displayHeight, aspectRatio)
                 highlightRenderer.renderSelectedSquares3D(board, camera)
 
-                pieceRenderer.render3D(game, camera, aspectRatio)
+                pieceRenderer.render3D(game, camera, pieceTextures, aspectRatio)
                 highlightRenderer.renderPossibleSquares3D(board, camera)
             } else {
                 glClear(GL_COLOR_BUFFER_BIT)
@@ -162,12 +147,12 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
                 boardRenderer.render2D(aspectRatio)
                 highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
 
-                pieceRenderer.render2D(game, aspectRatio)
+                pieceRenderer.render2D(game, pieceTextures, aspectRatio)
                 highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
             }
 
             if (pixelsRequested) {
-                onPixelsRead(saveBuffer())
+//                onPixelsRead(saveBuffer())
                 pixelsRequested = false
                 onPixelsRead = {}
             }
@@ -235,6 +220,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     fun destroy() {
 //        backgroundRenderer.destroy()
         pieceRenderer.destroy()
+        pieceTextures.destroy()
         highlightRenderer.destroy()
         boardRenderer.destroy()
     }

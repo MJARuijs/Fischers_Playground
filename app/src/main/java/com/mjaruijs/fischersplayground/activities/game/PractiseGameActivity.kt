@@ -36,7 +36,11 @@ class PractiseGameActivity : GameActivity() {
             replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
             replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
         }
+    }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        println("DESTROYING PRACTICE ACTIVITY")
     }
 
 //    override fun onContextCreated() {

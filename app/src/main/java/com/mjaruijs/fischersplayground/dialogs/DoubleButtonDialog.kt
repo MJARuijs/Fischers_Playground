@@ -117,4 +117,10 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
         dialog.dismiss()
     }
 
+    fun destroy() {
+        dismiss()
+        leftButton.destroy()
+        rightButton.destroy()
+    }
+
 }

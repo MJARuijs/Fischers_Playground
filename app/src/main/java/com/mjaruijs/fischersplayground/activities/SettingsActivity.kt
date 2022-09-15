@@ -38,6 +38,7 @@ class SettingsActivity : ClientActivity() {
     private lateinit var card3D: CardView
     private lateinit var innerCard3D: CardView
     private lateinit var fullScreenCard: CardView
+    private lateinit var confirmMoveCard: CardView
 
     private lateinit var pieceSizeText: TextView
     private lateinit var pieceScaleSeekbar: SeekBar
@@ -45,6 +46,7 @@ class SettingsActivity : ClientActivity() {
     private lateinit var fovSeekbar: SeekBar
 
     private lateinit var fullScreenCheckbox: CheckBox
+    private lateinit var confirmMoveCheckbox: CheckBox
 
     private lateinit var collapseCardButton: ImageView
     private lateinit var graphicsSettingsButton: ImageView
@@ -64,7 +66,7 @@ class SettingsActivity : ClientActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-        PieceTextures.init(resources)
+//        PieceTextures.init(resources)
 
         settingsLayout = findViewById(R.id.settings_layout)
         graphics3DLayout = findViewById(R.id.graphics_3d_layout)
@@ -76,12 +78,14 @@ class SettingsActivity : ClientActivity() {
         card3D = findViewById(R.id.graphics_3d_card)
         innerCard3D = findViewById(R.id.inner_card_3D)
         fullScreenCard = findViewById(R.id.full_screen_card)
+        confirmMoveCard = findViewById(R.id.confirm_move_card)
 
         pieceSizeText = findViewById(R.id.piece_scale_text)
         pieceScaleSeekbar = findViewById(R.id.piece_scale_seekbar)
         fovText = findViewById(R.id.fov_text)
         fovSeekbar = findViewById(R.id.fov_seekbar)
         fullScreenCheckbox = findViewById(R.id.full_screen_checkbox)
+        confirmMoveCheckbox = findViewById(R.id.confirm_move_checkbox)
 
         setupUIElements()
 
@@ -96,7 +100,7 @@ class SettingsActivity : ClientActivity() {
         }
 
         glView3D = findViewById(R.id.preview_3d)
-        glView3D.init(::onContextCreated, ::onCameraRotated, ::savePreference)
+        glView3D.init(::runOnUIThread, ::onContextCreated, ::onCameraRotated, ::saveGraphicsPreference)
         glView3D.getRenderer().set3D(true)
 
         defaultGraphicsConstraints.clone(this, R.layout.graphics_settings)
@@ -105,6 +109,7 @@ class SettingsActivity : ClientActivity() {
         defaultSettingsConstraints.clone(this, R.layout.activity_settings)
         expandedSettingsConstraints.clone(this, R.layout.activity_settings_expanded)
 
+        restoreGamePreferences()
         restoreFullscreenPreference()
         restore3DPreference()
     }
@@ -120,6 +125,12 @@ class SettingsActivity : ClientActivity() {
     override fun onDestroy() {
         glView3D.destroy()
         super.onDestroy()
+    }
+
+    private fun runOnUIThread(runnable: () -> Unit) {
+        runOnUiThread {
+            runnable()
+        }
     }
 
     @SuppressLint("Recycle")
@@ -206,11 +217,17 @@ class SettingsActivity : ClientActivity() {
     }
 
     private fun onCameraRotated() {
-        savePreference(CAMERA_ROTATION_KEY, glView3D.getRenderer().getCameraRotation())
+        saveGraphicsPreference(CAMERA_ROTATION_KEY, glView3D.getRenderer().getCameraRotation())
+    }
+
+    private fun restoreGamePreferences() {
+        val preferences = getSharedPreferences(GAME_PREFERENCES_KEY, MODE_PRIVATE)
+        val confirmMoves = preferences.getBoolean(CONFIRM_MOVES_KEY, false)
+        confirmMoveCheckbox.isChecked = confirmMoves
     }
 
     private fun restoreFullscreenPreference() {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val preferences = getSharedPreferences(GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
         val fullScreen = preferences.getBoolean(FULL_SCREEN_KEY, false)
 
         toggleActivityDecorations(fullScreen)
@@ -218,14 +235,14 @@ class SettingsActivity : ClientActivity() {
     }
 
     private fun restore3DPreference() {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val preferences = getSharedPreferences(GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
 
         is3D = preferences.getBoolean(GRAPHICS_3D_KEY, false)
         selectGraphicsType()
     }
 
     private fun restorePreferences() {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val preferences = getSharedPreferences(GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
 
         val cameraRotation = preferences.getString(CAMERA_ROTATION_KEY, "") ?: ""
         val fov = preferences.getInt(FOV_KEY, 45)
@@ -257,43 +274,7 @@ class SettingsActivity : ClientActivity() {
             graphicsSettingsButton.visibility = View.GONE
             collapseCardButton.visibility = View.GONE
         }
-        savePreference(GRAPHICS_3D_KEY, is3D)
-    }
-
-    private fun savePreference(key: String, value: Vector3) {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
-
-        with(preferences.edit()) {
-            putString(key, value.toString())
-            apply()
-        }
-    }
-
-    private fun savePreference(key: String, value: Int) {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
-
-        with(preferences.edit()) {
-            putInt(key, value)
-            apply()
-        }
-    }
-
-    private fun savePreference(key: String, value: Float) {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
-
-        with(preferences.edit()) {
-            putFloat(key, value)
-            apply()
-        }
-    }
-
-    private fun savePreference(key: String, value: Boolean) {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
-
-        with(preferences.edit()) {
-            putBoolean(key, value)
-            apply()
-        }
+        saveGraphicsPreference(GRAPHICS_3D_KEY, is3D)
     }
 
     private fun toggleActivityDecorations(isFullscreen: Boolean) {
@@ -315,14 +296,25 @@ class SettingsActivity : ClientActivity() {
         fullScreenCard.setOnClickListener {
             val isFullscreen = fullScreenCheckbox.isChecked
 
-            savePreference(FULL_SCREEN_KEY, !isFullscreen)
+            saveGraphicsPreference(FULL_SCREEN_KEY, !isFullscreen)
             toggleActivityDecorations(!isFullscreen)
             fullScreenCheckbox.isChecked = !isFullscreen
         }
 
         fullScreenCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            savePreference(FULL_SCREEN_KEY, isChecked)
+            saveGraphicsPreference(FULL_SCREEN_KEY, isChecked)
             toggleActivityDecorations(isChecked)
+        }
+
+        confirmMoveCard.setOnClickListener {
+            val confirmMove = confirmMoveCheckbox.isChecked
+
+            saveGamePreference(CONFIRM_MOVES_KEY, !confirmMove)
+            confirmMoveCheckbox.isChecked = !confirmMove
+        }
+
+        confirmMoveCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            saveGamePreference(CONFIRM_MOVES_KEY, isChecked)
         }
 
         collapseCardButton.setOnClickListener {
@@ -353,7 +345,7 @@ class SettingsActivity : ClientActivity() {
                 val actualProgress = progress * FOV_SCALE + FOV_OFFSET
                 glView3D.getRenderer().setFoV(actualProgress)
                 glView3D.requestRender()
-                savePreference(FOV_KEY, actualProgress)
+                saveGraphicsPreference(FOV_KEY, actualProgress)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -376,7 +368,7 @@ class SettingsActivity : ClientActivity() {
                 val actualProgress = progress.toFloat() / 100.0f
                 glView3D.getRenderer().setPieceScale(actualProgress)
                 glView3D.requestRender()
-                savePreference(PIECE_SCALE_KEY, actualProgress)
+                saveGraphicsPreference(PIECE_SCALE_KEY, actualProgress)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -393,13 +385,72 @@ class SettingsActivity : ClientActivity() {
         return screenSize.x
     }
 
+    private fun saveGraphicsPreference(key: String, value: Vector3) {
+        savePreference(GRAPHICS_PREFERENCES_KEY, key, value)
+    }
+
+    private fun saveGraphicsPreference(key: String, value: Int) {
+        savePreference(GRAPHICS_PREFERENCES_KEY, key, value)
+    }
+
+    private fun saveGraphicsPreference(key: String, value: Float) {
+        savePreference(GRAPHICS_PREFERENCES_KEY, key, value)
+    }
+
+    private fun saveGraphicsPreference(key: String, value: Boolean) {
+        savePreference(GRAPHICS_PREFERENCES_KEY, key, value)
+    }
+
+    private fun saveGamePreference(key: String, value: Boolean) {
+        savePreference(GAME_PREFERENCES_KEY, key, value)
+    }
+
+    private fun savePreference(preferenceFile: String, key: String, value: Vector3) {
+        val preferences = getSharedPreferences(preferenceFile, MODE_PRIVATE)
+
+        with(preferences.edit()) {
+            putString(key, value.toString())
+            apply()
+        }
+    }
+
+    private fun savePreference(preferenceFile: String, key: String, value: Int) {
+        val preferences = getSharedPreferences(preferenceFile, MODE_PRIVATE)
+
+        with(preferences.edit()) {
+            putInt(key, value)
+            apply()
+        }
+    }
+
+    private fun savePreference(preferenceFile: String, key: String, value: Float) {
+        val preferences = getSharedPreferences(preferenceFile, MODE_PRIVATE)
+
+        with(preferences.edit()) {
+            putFloat(key, value)
+            apply()
+        }
+    }
+
+    private fun savePreference(preferenceFile: String, key: String, value: Boolean) {
+        val preferences = getSharedPreferences(preferenceFile, MODE_PRIVATE)
+
+        with(preferences.edit()) {
+            putBoolean(key, value)
+            apply()
+        }
+    }
+
     companion object {
+        const val GRAPHICS_PREFERENCES_KEY = "graphics_preferences"
+        const val GAME_PREFERENCES_KEY = "game_preferences"
         internal const val GRAPHICS_3D_KEY = "3D_graphics_enabled"
         internal const val CAMERA_ROTATION_KEY = "camera_rotation"
         internal const val CAMERA_ZOOM_KEY = "camera_zoom"
         internal const val FOV_KEY = "camera_fov"
         internal const val PIECE_SCALE_KEY = "piece_scale"
         internal const val FULL_SCREEN_KEY = "full_screen_enabled"
+        internal const val CONFIRM_MOVES_KEY = "confirm_moves"
 
         private const val FOV_OFFSET = 10
         private const val FOV_SCALE = 5

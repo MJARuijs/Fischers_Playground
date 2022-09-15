@@ -73,7 +73,7 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
                     return@setOnClickListener
                 }
 
-                val buttonStates = game.showPreviousMove()
+                val buttonStates = game.showPreviousMove(false)
                 if (buttonStates.first) {
                     it.disable()
                 }
@@ -126,6 +126,12 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
                 button.setFinalTextSize(maxTextSize)
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        backButton.destroy()
+        forwardButton.destroy()
     }
 
 }

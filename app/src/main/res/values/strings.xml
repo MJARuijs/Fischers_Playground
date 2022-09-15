@@ -3,6 +3,7 @@
     <string name="welcome">Welcome</string>
     <string name="search_players">Search players..</string>
     <string name="fullscreen">Fullscreen</string>
+    <string name="confirm_move">Confirm moves</string>
     <string name="field_of_view">Field of View</string>
     <string name="pieces_size">Pieces size</string>
     <string name="default_notification_channel_id">fcm_default_channel</string>

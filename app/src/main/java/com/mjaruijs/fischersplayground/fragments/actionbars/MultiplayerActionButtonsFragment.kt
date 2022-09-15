@@ -25,9 +25,6 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
     private lateinit var hideButtonAnimator: ObjectAnimator
     private lateinit var showButtonAnimator: ObjectAnimator
 
-//    private val resignDialog = ResignDialog()
-//    private val offerDrawDialog = OfferDrawDialog()
-
     private lateinit var confirmResignationDialog: DoubleButtonDialog
     private lateinit var offerDrawDialog: DoubleButtonDialog
 
@@ -166,4 +163,16 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
         showButtonAnimator.start()
         showingExtraButtons = false
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        resignButton.destroy()
+        offerDrawButton.destroy()
+        redoButton.destroy()
+        cancelMoveButton.destroy()
+        confirmMoveButton.destroy()
+        confirmResignationDialog.destroy()
+        offerDrawDialog.destroy()
+    }
+
 }

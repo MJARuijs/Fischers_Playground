@@ -86,4 +86,8 @@ class SingleButtonDialog(parent: Activity, title: String, message: String, butto
         dialog.dismiss()
     }
 
+    fun destroy() {
+        dismiss()
+        button.destroy()
+    }
 }

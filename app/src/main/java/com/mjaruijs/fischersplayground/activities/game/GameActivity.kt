@@ -27,14 +27,7 @@ import com.mjaruijs.fischersplayground.util.Logger
 
 abstract class GameActivity : ClientActivity() {
 
-//    val undoRejectedDialog = UndoRejectedDialog()
-
-//    val opponentResignedDialog = OpponentResignedDialog()
-//    val opponentAcceptedDrawDialog = OpponentAcceptedDrawDialog()
-//    val opponentRejectedDrawDialog = OpponentDeclinedDrawDialog()
-
     private lateinit var checkMateDialog: SingleButtonDialog
-//    private lateinit var offerDrawDialog: DoubleButtonDialog
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
     private var displayWidth = 0
@@ -57,16 +50,11 @@ abstract class GameActivity : ClientActivity() {
         setContentView(R.layout.activity_game)
 
         try {
-
             val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
             val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
 
             hideActivityDecorations(fullScreen)
 
-//            undoRejectedDialog.create(this)
-//            opponentResignedDialog.create(this)
-//            opponentAcceptedDrawDialog.create(this)
-//            opponentRejectedDrawDialog.create(this)
             pieceChooserDialog.create(this)
 
             userId = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, "")!!
@@ -97,7 +85,6 @@ abstract class GameActivity : ClientActivity() {
         super.onResume()
 
         checkMateDialog = SingleButtonDialog(this, "Checkmate!", "Exit", ::closeAndSaveGameAsWin)
-//        offerDrawDialog = DoubleButtonDialog(this, "Offering Draw", "Are you sure you want to offer a draw?", null, "Cancel", {}, null, "Yes", {})
         stayingInApp = false
 
         pieceChooserDialog.setLayout()
@@ -105,7 +92,9 @@ abstract class GameActivity : ClientActivity() {
 
     override fun onStop() {
         super.onStop()
-        checkMateDialog.dismiss()
+
+        checkMateDialog.destroy()
+        pieceChooserDialog.destroy()
     }
 
     override fun onDestroy() {
@@ -212,7 +201,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun onCheckMate(team: Team) {
-        runOnUIThread {
+        runOnUiThread {
             if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
                 checkMateDialog.setMessage("You won!")
                     .setOnClick { closeAndSaveGameAsWin() }
@@ -287,7 +276,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
-        runOnUIThread { pieceChooserDialog.show(square, team) }
+        runOnUiThread { pieceChooserDialog.show(square, team) }
         return PieceType.QUEEN
     }
 
@@ -310,6 +299,5 @@ abstract class GameActivity : ClientActivity() {
         getActionBarFragment()?.disableForwardButton()
         requestRender()
     }
-
 
 }

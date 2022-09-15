@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.opengl.model
 
+import android.opengl.GLES20.glGetError
 import com.mjaruijs.fischersplayground.math.matrices.Matrix4
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3

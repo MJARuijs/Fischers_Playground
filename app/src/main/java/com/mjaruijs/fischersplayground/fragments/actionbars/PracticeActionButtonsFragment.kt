@@ -75,11 +75,16 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
     override fun onResume() {
         game.onMoveMade = { move ->
             if (isRecording) {
-                println("ADDING MOVE")
                 recordedMoves += move
             }
         }
         super.onResume()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        startRecordingButton.destroy()
+        stopRecordingButton.destroy()
     }
 
 }

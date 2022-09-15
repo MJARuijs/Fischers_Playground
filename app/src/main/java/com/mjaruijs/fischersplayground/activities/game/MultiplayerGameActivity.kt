@@ -8,6 +8,8 @@ import android.widget.ImageView
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.SettingsActivity
+import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.GAME_PREFERENCES_KEY
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightObserver
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvider
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
@@ -49,7 +51,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        println("ONCREATE")
         try {
             gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
 
@@ -60,9 +61,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 replace(R.id.chat_container, ChatFragment(::onChatMessageSent, ::closeChat))
                 replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, ::isChatOpened, ::onOfferDraw, ::onResign, ::cancelMove, ::confirmMove, ::requestRender, networkManager))
             }
-
-//            opponentOfferedDrawDialog.create(this, userId, ::acceptDraw)
-//            undoRequestedDialog.create(this, ::undoRequestResult)
 
             keyboardHeightProvider = KeyboardHeightProvider(this)
             findViewById<View>(R.id.game_layout).post {
@@ -76,13 +74,17 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onResume() {
-        println("ONRESUME")
         setGameParameters(dataManager[gameId])
         setGameCallbacks()
 
         (game as MultiPlayerGame).sendMoveData = {
-            runOnUiThread {
-                (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons(it)
+            val showPopup = getPreference(GAME_PREFERENCES_KEY).getBoolean(SettingsActivity.CONFIRM_MOVES_KEY, false)
+            if (showPopup) {
+                runOnUiThread {
+                    (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons(it)
+                }
+            } else {
+                confirmMove(it)
             }
         }
 
@@ -116,9 +118,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun setGameParameters(game: MultiPlayerGame) {
-        println("SETTING PARAMS")
         this.game = game
-//        game.goToLastMove()
+
 //        game.showPreviousMove()
         opponentName = game.opponentName
         isPlayingWhite = game.isPlayingWhite
@@ -153,7 +154,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onContextCreated() {
         super.onContextCreated()
-//        game.showNextMove()
+        game.showPreviousMove(true)
+        game.showNextMove()
+        getActionBarFragment()?.disableForwardButton()
     }
 
     private fun confirmMove(moveNotation: String) {
@@ -187,7 +190,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             (getActionBarFragment() as MultiplayerActionButtonsFragment).initializeAnimator(buttonHeight)
 
             if ((game as MultiPlayerGame).hasPendingMove()) {
-                println("PENDING MOVE: ${(game as MultiPlayerGame).moveToBeConfirmed}")
                 runOnUiThread {
                     (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons((game as MultiPlayerGame).moveToBeConfirmed, 0L)
                 }
@@ -389,9 +391,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }
 
         (game as MultiPlayerGame).undoMoves(numberOfReversedMoves)
-//        if (game.getMoveIndex() == -1) {
-//            (getActionBarFragment() as MultiplayerActionButtonsFragment?)?.disableBackButton()
-//        }
+        if (game.getMoveIndex() == -1) {
+            (getActionBarFragment() as MultiplayerActionButtonsFragment?)?.disableBackButton()
+        }
         requestRender()
 
         dataManager[gameId] = game as MultiPlayerGame

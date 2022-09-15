@@ -20,7 +20,6 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val tran
     private val onFinishCalls = ArrayList<() -> Unit>()
 
     init {
-
         xAnimator.duration = animationDuration
         xAnimator.addUpdateListener {
             piece.translation.x = it.animatedValue as Float

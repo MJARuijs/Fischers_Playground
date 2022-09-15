@@ -73,11 +73,8 @@ class DataManager(context: Context) {
 
     fun loadData(context: Context) {
         if (isLocked()) {
-            println("Data is already loading.. returning..")
             return
         }
-
-        println("LOADING DATA")
 
         lock()
         Thread {
@@ -99,8 +96,6 @@ class DataManager(context: Context) {
     }
 
     fun saveData(context: Context) {
-        println("SAVING DATA")
-
         while (isLocked()) {
             Thread.sleep(1)
         }
@@ -165,8 +160,6 @@ class DataManager(context: Context) {
 
                 newsUpdates += News.fromString(news)
             }
-
-            println("LOADED FROM STORAGE: $gameStatus")
 
             val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
             newGame.status = gameStatus

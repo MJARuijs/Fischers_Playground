@@ -33,6 +33,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     protected var userId: String = DEFAULT_USER_ID
     protected var userName = DEFAULT_USER_NAME
+    private var initialized = false
 
     protected lateinit var networkManager: NetworkManager
     protected lateinit var dataManager: DataManager
@@ -40,13 +41,10 @@ abstract class ClientActivity : AppCompatActivity() {
     open val stayInAppOnBackPress = true
 
     protected lateinit var incomingInviteDialog: DoubleButtonDialog
-//    protected val incomingInviteDialog = IncomingInviteDialog()
 
     protected var stayingInApp = false
 
     open var activityName: String = ""
-
-    private fun isInitialized() = networkManager.isRunning()
 
     private fun isUserRegisteredAtServer(): Boolean {
         return getPreference(USER_PREFERENCE_FILE).contains(USER_ID_KEY)
@@ -65,8 +63,6 @@ abstract class ClientActivity : AppCompatActivity() {
         networkManager = NetworkManager.getInstance()
         dataManager = DataManager.getInstance(this)
 
-//        incomingInviteDialog.create(this)
-
         NotificationBuilder.getInstance(this).clearNotifications()
     }
 
@@ -75,14 +71,18 @@ abstract class ClientActivity : AppCompatActivity() {
 
         incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
 
-        if (!isInitialized()) {
-            preloadModels()
+        initialized = getPreference(USER_PREFERENCE_FILE).getBoolean(INITIALIZED_KEY, false)
+        if (!initialized) {
+//            preloadModels()
 
-            networkManager.run(this)
-
-            if (userId != DEFAULT_USER_ID) {
-                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
-            }
+//            networkManager.run(this)
+//
+//            if (userId != DEFAULT_USER_ID) {
+//                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+//            }
+//
+//            initialized = true
+//            getPreference(USER_PREFERENCE_FILE).edit().putBoolean(INITIALIZED_KEY, true).commit()
         }
 
         dataManager.loadData(applicationContext)
@@ -96,7 +96,7 @@ abstract class ClientActivity : AppCompatActivity() {
     override fun onPause() {
         dataManager.saveData(applicationContext)
 
-        incomingInviteDialog.dismiss()
+        incomingInviteDialog.destroy()
         unregisterReceiver(networkReceiver)
 
         if (!stayingInApp) {
@@ -108,6 +108,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         if (!stayingInApp) {
+            getPreference(USER_PREFERENCE_FILE).edit().putBoolean(INITIALIZED_KEY, false).commit()
             sendAwayStatusToServer()
         }
 
@@ -248,9 +249,7 @@ abstract class ClientActivity : AppCompatActivity() {
         Toast.makeText(applicationContext, "${game.opponentName} played ${moveData.move.toChessNotation()}", Toast.LENGTH_SHORT).show()
     }
 
-    private fun preloadModels() {
-        PieceTextures.init(resources)
-
+    protected fun preloadModels() {
         Thread {
             OBJLoader.preload(resources, R.raw.pawn_bytes)
         }.start()
@@ -282,9 +281,9 @@ abstract class ClientActivity : AppCompatActivity() {
 
         const val USER_ID_KEY = "user_id"
         const val USER_NAME_KEY = "user_name"
+        const val INITIALIZED_KEY = "initialized"
 
         const val DEFAULT_USER_ID = "default_user_id"
         const val DEFAULT_USER_NAME = "default_user_name"
-
     }
 }

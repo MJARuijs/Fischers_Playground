@@ -14,6 +14,10 @@ import com.mjaruijs.fischersplayground.userinterface.UIButton
 class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team) -> Unit) {
 
     private lateinit var dialog: Dialog
+    private lateinit var knightButton: UIButton
+    private lateinit var bishopButton: UIButton
+    private lateinit var rookButton: UIButton
+    private lateinit var queenButton: UIButton
 
     fun create(context: Activity) {
         dialog = Dialog(context)
@@ -30,7 +34,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
 
     fun show(square: Vector2, team: Team) {
         if (team == Team.WHITE) {
-            dialog.findViewById<UIButton>(R.id.knight_button)
+            knightButton = dialog.findViewById(R.id.knight_button)
+            knightButton
                 .setTexturedDrawable(R.drawable.white_knight)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
@@ -39,7 +44,9 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.KNIGHT, team)
                 }
 
-            dialog.findViewById<UIButton>(R.id.bishop_button)
+
+            bishopButton = dialog.findViewById<UIButton>(R.id.bishop_button)
+            bishopButton
                 .setTexturedDrawable(R.drawable.white_bishop)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
@@ -48,7 +55,9 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.BISHOP, team)
                 }
 
-            dialog.findViewById<UIButton>(R.id.rook_button)
+
+            rookButton = dialog.findViewById<UIButton>(R.id.rook_button)
+            rookButton
                 .setTexturedDrawable(R.drawable.white_rook)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
@@ -57,7 +66,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.ROOK, team)
                 }
 
-            dialog.findViewById<UIButton>(R.id.queen_button)
+            queenButton = dialog.findViewById<UIButton>(R.id.queen_button)
+            queenButton
                 .setTexturedDrawable(R.drawable.white_queen)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
@@ -66,7 +76,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
         } else {
-            dialog.findViewById<UIButton>(R.id.knight_button)
+            knightButton = dialog.findViewById<UIButton>(R.id.knight_button)
+            knightButton
                 .setTexturedDrawable(R.drawable.black_knight)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
@@ -75,7 +86,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
 
-            dialog.findViewById<UIButton>(R.id.bishop_button)
+            bishopButton = dialog.findViewById<UIButton>(R.id.bishop_button)
+            bishopButton
                 .setTexturedDrawable(R.drawable.black_bishop)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
@@ -84,7 +96,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
 
-            dialog.findViewById<UIButton>(R.id.rook_button)
+            rookButton = dialog.findViewById<UIButton>(R.id.rook_button)
+            rookButton
                 .setTexturedDrawable(R.drawable.black_rook)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
@@ -93,7 +106,8 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
 
-            dialog.findViewById<UIButton>(R.id.queen_button)
+            queenButton = dialog.findViewById<UIButton>(R.id.queen_button)
+            queenButton
                 .setTexturedDrawable(R.drawable.black_queen)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
@@ -104,6 +118,30 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
         }
 
         dialog.show()
+    }
+
+    fun dismiss() {
+        dialog.dismiss()
+    }
+
+    fun destroy() {
+        dismiss()
+
+        if (this::knightButton.isInitialized) {
+            knightButton.destroy()
+        }
+
+        if (this::bishopButton.isInitialized) {
+            bishopButton.destroy()
+        }
+
+        if (this::rookButton.isInitialized) {
+            rookButton.destroy()
+        }
+
+        if (this::queenButton.isInitialized) {
+            queenButton.destroy()
+        }
     }
 
 }
