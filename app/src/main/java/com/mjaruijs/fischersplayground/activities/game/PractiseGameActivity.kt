@@ -18,7 +18,6 @@ class PractiseGameActivity : GameActivity() {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
         game = SinglePlayerGame(Time.getFullTimeStamp())
-        setGameCallbacks()
 
         val playerBundle = Bundle()
         playerBundle.putString("player_name", userName)
@@ -43,14 +42,16 @@ class PractiseGameActivity : GameActivity() {
         println("DESTROYING PRACTICE ACTIVITY")
     }
 
-//    override fun onContextCreated() {
-//        super.onContextCreated()
+    override fun onContextCreated() {
+        super.onContextCreated()
 //        game = SinglePlayerGame()
 //        getActionBarFragment().game = game
-//        setGameCallbacks()
-//    }
+        setGameCallbacks()
+    }
 
     override fun onResume() {
+//        setGameCallbacks()
+
         getActionBarFragment()?.game = game
         super.onResume()
     }

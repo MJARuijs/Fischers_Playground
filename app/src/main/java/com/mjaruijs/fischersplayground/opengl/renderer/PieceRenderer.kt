@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
 import android.content.res.Resources
-import android.opengl.GLES20.glGetError
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -18,7 +17,6 @@ import com.mjaruijs.fischersplayground.opengl.light.AmbientLight
 import com.mjaruijs.fischersplayground.opengl.light.DirectionalLight
 import com.mjaruijs.fischersplayground.opengl.model.Entity
 import com.mjaruijs.fischersplayground.opengl.model.Material
-import com.mjaruijs.fischersplayground.opengl.model.Mesh
 import com.mjaruijs.fischersplayground.opengl.model.MeshLoader
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.PieceAnimator
@@ -26,11 +24,8 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
-import com.mjaruijs.fischersplayground.util.RenderThread
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.math.PI
 
 class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game) {
@@ -50,10 +45,6 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     private val pieceTextures2D = HashMap<Piece, Int>()
     private val pieceTextures3D = HashMap<Piece, Int>()
-
-//    private val pawnResources = MeshLoader.preload(resources, R.raw.pawn_bytes)
-//    private val pawnMesh = pawnResources.second
-//    private var pawnMesh: Mesh
 
     private val pawnMesh = MeshLoader.preload(resources, R.raw.pawn_bytes)
     private val bishopMesh = MeshLoader.preload(resources, R.raw.bishop_bytes)
@@ -78,8 +69,6 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     private val whiteKnightRotation = if (isPlayerWhite) ROTATION_MATRIX else Matrix4()
     private val blackKnightRotation = if (isPlayerWhite) Matrix4() else ROTATION_MATRIX
 
-    var pieceScale = Vector3(1f, 1f, 1f)
-
     private val animationQueue = PriorityQueue<AnimationData>()
     private val animationRunning = AtomicBoolean(false)
 
@@ -88,6 +77,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     private val animationThread: Thread
 
     private val runAnimationThread = AtomicBoolean(true)
+
+    var pieceScale = Vector3(1f, 1f, 1f)
 
     init {
         animationThread = Thread {
@@ -113,6 +104,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     private fun startAnimation(currentAnimation: AnimationData?) {
         if (currentAnimation == null) {
+            println("returning animationData")
             return
         }
 
@@ -121,23 +113,20 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             takenPieces += Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition!!)
         }
 
-        runOnUiThread {
-            val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStart)
-            animator.addOnFinishCall {
-                animationRunning.set(false)
-            }
-            animator.addOnFinishCall {
-                currentAnimation.onFinish()
-            }
-            animator.addOnFinishCall {
-                takenPieces.remove(Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition))
-            }
+        println("Trying to start animation at ${currentAnimation.piecePosition}}")
 
+        val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls)
+        animator.addOnFinishCall(
+            { animationRunning.set(false) },
+            { takenPieces.remove(Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition)) }
+        )
+
+        runOnUiThread {
             animator.start()
         }
     }
 
-    fun queueAnimation(game: Game, animationData: AnimationData) {
+    fun queueAnimation(animationData: AnimationData) {
         animationQueue.add(animationData)
     }
 

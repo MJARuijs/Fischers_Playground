@@ -129,7 +129,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val takenPiecePosition = takenPieceData?.second
 
         if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
-            performCastle(move.team, fromPosition, toPosition, runInBackground)
+            performCastle(move.team, fromPosition, toPosition)
         } else {
             val animation = createAnimation(fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
                 if (move.promotedPiece != null) {
@@ -138,8 +138,8 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             })
 
             if (runInBackground) {
-                animation.onStart()
-                animation.onFinish()
+                animation.invokeOnStartCalls()
+                animation.invokeOnFinishCalls()
             } else {
                 queueAnimation(animation)
             }
@@ -179,7 +179,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val takenPiecePosition = takenPieceData?.second
 
         if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
-            performCastle(move.team, fromPosition, toPosition, runInBackground)
+            performCastle(move.team, fromPosition, toPosition)
         } else {
             val animation = createAnimation(fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
                 if (move.promotedPiece != null) {
@@ -188,8 +188,8 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             })
 
             if (runInBackground) {
-                animation.onStart()
-                animation.onFinish()
+                animation.invokeOnStartCalls()
+                animation.invokeOnFinishCalls()
             } else {
                 queueAnimation(animation)
             }
@@ -201,9 +201,9 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         updateCheckData(move.team, isCheck, isCheckMate)
     }
 
-    private fun movePlayer(move: Move) {
-        movePlayer(move.getFromPosition(team), move.getToPosition(team), true)
-    }
+//    private fun movePlayer(move: Move) {
+//        movePlayer(move.getFromPosition(team), move.getToPosition(team), true)
+//    }
 
     private fun movePlayer(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
         if (!runInBackground) {

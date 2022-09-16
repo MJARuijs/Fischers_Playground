@@ -16,6 +16,7 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.NewsType
+import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.*
 import com.mjaruijs.fischersplayground.fragments.ChatFragment
@@ -119,6 +120,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun setGameParameters(game: MultiPlayerGame) {
         this.game = game
+        this.game.onMoveMade = ::onMoveMade
 
 //        game.showPreviousMove()
         opponentName = game.opponentName
@@ -150,6 +152,11 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }.start()
 
         super.setGameParameters(game)
+    }
+
+    private fun onMoveMade(move: Move) {
+        dataManager[gameId] = game as MultiPlayerGame
+        dataManager.saveData(applicationContext)
     }
 
     override fun onContextCreated() {

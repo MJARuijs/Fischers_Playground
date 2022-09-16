@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.opengl.surfaceviews
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
@@ -9,13 +10,11 @@ import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
-import com.mjaruijs.fischersplayground.util.RenderThread
 import kotlin.math.abs
 
 class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSurfaceView(context, attributeSet) {
 
-    private lateinit var renderer: OpenGLRenderer
-//    private val renderThread = RenderThread()
+    private val renderer: OpenGLRenderer
 
     private var onSurfaceCreated: () -> Unit = {}
     private lateinit var onCameraRotated: () -> Unit
@@ -28,15 +27,12 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
     var isActive = false
 
     init {
-//        renderThread.start()
-
         setEGLContextClientVersion(3)
         setEGLConfigChooser(ConfigChooser())
-//        renderer = OpenGLRenderer.getInstance(context, ::onContextCreated, true)
-//        renderThread.addTask {
-            renderer = OpenGLRenderer(context, resources, ::onContextCreated, true)
-            setRenderer(renderer)
-//        }
+        preserveEGLContextOnPause = true
+
+        renderer = OpenGLRenderer(context, resources, ::onContextCreated, true)
+        setRenderer(renderer)
 
         renderMode = RENDERMODE_WHEN_DIRTY
     }
@@ -60,6 +56,7 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
     private var currentDistance = 0f
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event == null || !isActive) {
             return false

@@ -7,7 +7,7 @@ import com.mjaruijs.fischersplayground.chess.game.ArrayBasedGameState
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val translation: Vector2, requestRender: () -> Unit, var onAnimationStarted: () -> Unit, animationDuration: Long = 500L) {
+class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val translation: Vector2, requestRender: () -> Unit, private val onStartCalls: ArrayList<() -> Unit>, private val onFinishCalls: ArrayList<() -> Unit>, animationDuration: Long = 500L) {
 
     private val xFinished = AtomicBoolean(false)
     private val yFinished = AtomicBoolean(false)
@@ -16,8 +16,6 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val tran
     private val piece = state[piecePosition] ?: throw IllegalArgumentException("No piece was found at square: $piecePosition.. Failed to animate..")
     private val xAnimator = ValueAnimator.ofFloat(translation.x, 0.0f)
     private val yAnimator = ValueAnimator.ofFloat(translation.y, 0.0f)
-
-    private val onFinishCalls = ArrayList<() -> Unit>()
 
     init {
         xAnimator.duration = animationDuration
@@ -51,7 +49,7 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val tran
         }
     }
 
-    fun addOnFinishCall(call: () -> Unit) {
+    fun addOnFinishCall(vararg call: () -> Unit) {
         onFinishCalls += call
     }
 
@@ -59,7 +57,9 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val tran
         if (!onStartExecuted.get()) {
             onStartExecuted.set(true)
             piece.translation = translation
-            onAnimationStarted()
+            for (onStartCall in onStartCalls) {
+                onStartCall()
+            }
         }
     }
 

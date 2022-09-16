@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.activities.game
 
 import android.os.Bundle
-import android.os.Parcelable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -12,8 +11,6 @@ import com.mjaruijs.fischersplayground.activities.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.chess.pieces.Move
-import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.*
@@ -67,6 +64,7 @@ abstract class GameActivity : ClientActivity() {
             }
 
             glView = findViewById(R.id.opengl_view)
+            println("Before glView.init()")
             glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
 
             if (savedInstanceState == null) {
@@ -149,7 +147,6 @@ abstract class GameActivity : ClientActivity() {
         game.onPieceTaken = ::onPieceTaken
         game.onPieceRegained = ::onPieceRegained
         game.onCheckMate = ::onCheckMate
-        game.onMoveMade = ::onMoveMade
 
         glView.setGame(game)
     }
@@ -193,11 +190,6 @@ abstract class GameActivity : ClientActivity() {
 
     protected fun requestRender() {
         glView.requestRender()
-    }
-
-    private fun onMoveMade(move: Move) {
-        dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData(applicationContext)
     }
 
     private fun onCheckMate(team: Team) {
