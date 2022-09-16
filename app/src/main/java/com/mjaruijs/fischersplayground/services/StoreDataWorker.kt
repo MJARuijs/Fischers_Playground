@@ -60,7 +60,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             else -> throw IllegalArgumentException("Could not parse data with unknown topic: $topic")
         }
 
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "DataWorker doWork: $topic")
 
         return if (output is Parcelable) {
             val dataBuilder = Data.Builder().putParcelable("output", output)
@@ -90,7 +90,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val game = dataManager[gameId]
 
         try {
-            game.moveOpponent(move, false)
+            game.moveOpponent(move)
             game.lastUpdated = timeStamp
             dataManager[gameId] = game
         } catch (e: Exception) {

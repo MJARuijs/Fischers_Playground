@@ -94,7 +94,6 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        dataManager.saveData(applicationContext)
 
         incomingInviteDialog.destroy()
         unregisterReceiver(networkReceiver)
@@ -117,7 +116,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         stayingInApp = stayInAppOnBackPress
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "ClientActivity onBackPressed")
 
         if (stayingInApp) {
             super.onBackPressed()

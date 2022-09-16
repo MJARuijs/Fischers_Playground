@@ -42,7 +42,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     var queueAnimation: (AnimationData) -> Unit = {}
 
-    var onMoveMade: (Move) -> Unit = {}
+    var onMoveMade: (Move) -> Unit = {
+        println("onMoveMade() called, but not yet set")
+    }
 
     init {
         board.requestPossibleMoves = { square ->
@@ -238,10 +240,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         decrementMoveCounter()
 
         animation.onFinishCalls += {
-            val isCheck = isPlayerChecked(state, move.team)
-            val isCheckMate = if (isCheck) isPlayerCheckMate(state, move.team) else false
-
-            updateCheckData(!move.team, isCheck, isCheckMate)
+            finishMove(move)
         }
 
         if (runInBackground) {
@@ -269,8 +268,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         } else {
             createAnimation(fromPosition, toPosition, takenPiece, takenPiecePosition)
         }
-
-//        animation.runInBackground = false
 
         val animationFinished = AtomicBoolean(false)
         animation.onStartCalls += {
@@ -328,6 +325,13 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         onMoveMade(move)
         return move
+    }
+
+    protected fun finishMove(move: Move) {
+        val isCheck = isPlayerChecked(state, move.team)
+        val isCheckMate = if (isCheck) isPlayerCheckMate(state, move.team) else false
+
+        updateCheckData(!move.team, isCheck, isCheckMate)
     }
 
     protected fun take(currentPiece: Piece, fromPosition: Vector2, toPosition: Vector2): Pair<Piece, Vector2>? {

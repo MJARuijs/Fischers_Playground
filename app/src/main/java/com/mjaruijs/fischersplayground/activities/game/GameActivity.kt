@@ -64,7 +64,6 @@ abstract class GameActivity : ClientActivity() {
             }
 
             glView = findViewById(R.id.opengl_view)
-            println("Before glView.init()")
             glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
 
             if (savedInstanceState == null) {

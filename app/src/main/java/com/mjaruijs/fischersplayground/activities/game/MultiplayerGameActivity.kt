@@ -109,6 +109,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onPause() {
         dataManager[gameId] = (game as MultiPlayerGame)
+        dataManager.saveData(applicationContext, "MPactivity onPause")
+        println("Just tried to save shizzle: ${dataManager[gameId].moves.size}")
         keyboardHeightProvider.observer = null
         super.onPause()
     }
@@ -119,6 +121,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun setGameParameters(game: MultiPlayerGame) {
+//        game.restoreMoves()
         this.game = game
         this.game.onMoveMade = ::onMoveMade
 
@@ -156,7 +159,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private fun onMoveMade(move: Move) {
         dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "MPactivity onMoveMade")
     }
 
     override fun onContextCreated() {
@@ -170,13 +173,13 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         networkManager.sendMessage(NetworkMessage(Topic.MOVE, "$gameId|$userId|$moveNotation|${game.lastUpdated}"))
         (game as MultiPlayerGame).confirmMove()
         dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "MPactivity confirmMove")
     }
 
     private fun cancelMove() {
         (game as MultiPlayerGame).cancelMove()
         dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "MPactivity cancelMove")
     }
 
     override fun onDisplaySizeChanged(width: Int, height: Int) {
@@ -285,7 +288,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun onOpponentMoved(output: Parcelable) {
         val moveData = output as MoveData
         if (moveData.gameId == gameId) {
-            (game as MultiPlayerGame).moveOpponent(moveData.move, false)
+            (game as MultiPlayerGame).moveOpponent(moveData.move)
             requestRender()
         } else {
             super.onOpponentMoved(output)
@@ -385,7 +388,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun rejectUndoRequest() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_REQUESTED_UNDO)
         dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "MPactivity rejectUndoRequest")
         networkManager.sendMessage(NetworkMessage(Topic.UNDO_REJECTED, "$gameId|$userId"))
     }
 
@@ -404,7 +407,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         requestRender()
 
         dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "MPactivity acceptUndoRequest")
         networkManager.sendMessage(NetworkMessage(Topic.UNDO_ACCEPTED, "$gameId|$userId"))
 
     }
@@ -412,14 +415,14 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun rejectDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
         dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "MPactivity rejectDrawOffer")
         networkManager.sendMessage(NetworkMessage(Topic.DRAW_REJECTED, "$gameId|$userId"))
     }
 
     private fun acceptDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
         dataManager[gameId] = game as MultiPlayerGame
-        dataManager.saveData(applicationContext)
+        dataManager.saveData(applicationContext, "MPactivity acceptDrawOffer")
         networkManager.sendMessage(NetworkMessage(Topic.DRAW_ACCEPTED, "$gameId|$userId"))
         closeAndSaveGameAsDraw()
     }

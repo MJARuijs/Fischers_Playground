@@ -65,7 +65,6 @@ class MainActivity : ClientActivity() {
         }
 
         if (!initialized) {
-            println("NOT INITIALIZED")
             initialized = true
 
             preloadModels()
@@ -164,7 +163,7 @@ class MainActivity : ClientActivity() {
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
         dataManager.savedInvites[inviteId] = InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING)
-        dataManager.saveInvites(applicationContext)
+        dataManager.saveData(applicationContext, "MainActivity onInvite")
         dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
     }
 
@@ -203,8 +202,7 @@ class MainActivity : ClientActivity() {
     private fun onGameDeleted(gameId: String) {
         dataManager.removeGame(gameId)
         dataManager.savedInvites.remove(gameId)
-        dataManager.saveGames(applicationContext)
-        dataManager.saveInvites(applicationContext)
+        dataManager.saveData(applicationContext, "MainActivity onGameDeleted")
     }
 
     override fun onNewGameStarted(output: Parcelable) {

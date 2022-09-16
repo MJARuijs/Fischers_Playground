@@ -11,21 +11,21 @@ import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
 
-class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", moves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated, moves) {
+class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", private val savedMoves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated) {
 
     var sendMoveData: (String) -> Unit = {
         println("Multiplayer move was made, but no data was actually sent. Did you forget to set the sendMoveData() function?")
     }
 
     init {
-        status = if (moves.isEmpty()) {
+        status = if (savedMoves.isEmpty()) {
             if (isPlayingWhite) {
                 GameStatus.PLAYER_MOVE
             } else {
                 GameStatus.OPPONENT_MOVE
             }
         } else {
-            val lastMove = moves.last()
+            val lastMove = savedMoves.last()
             if (lastMove.team == team) {
                 GameStatus.OPPONENT_MOVE
             } else {
@@ -33,9 +33,19 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
-        for (move in moves) {
-            move(move, true)
-        }
+
+        restoreMoves()
+
+//        for (move in moves) {
+//            restoreMove(move)
+//        }
+
+//        val iterator = moves.iterator()
+//
+//        while (iterator.hasNext()) {
+//            val move = iterator.next()
+//            restoreMove(move)
+//        }
     }
 
     fun addMessage(message: ChatMessage) {
@@ -94,25 +104,21 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         moveToBeConfirmed = ""
     }
 
-    fun moveOpponent(move: Move, runInBackground: Boolean) {
-        if (!runInBackground) {
-            if (status != GameStatus.OPPONENT_MOVE) {
-                println("RETURNING BECAUSE NOT OPPONENTS MOVE")
-                return
-            }
+    fun moveOpponent(move: Move) {
+        if (status != GameStatus.OPPONENT_MOVE) {
+            println("RETURNING BECAUSE NOT OPPONENTS MOVE")
+            return
         }
 
-        if (!runInBackground) {
-            if (isShowingCurrentMove()) {
-                incrementMoveCounter()
-            }
-            moves += move
+        if (isShowingCurrentMove()) {
+            incrementMoveCounter()
         }
+        moves += move
 
         status = GameStatus.PLAYER_MOVE
         onMoveMade(move)
 
-        if (!runInBackground && !isShowingCurrentMove()) {
+        if (!isShowingCurrentMove()) {
             return
         }
 
@@ -137,12 +143,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
                 }
             })
 
-            if (runInBackground) {
-                animation.invokeOnStartCalls()
-                animation.invokeOnFinishCalls()
-            } else {
-                queueAnimation(animation)
-            }
+            queueAnimation(animation)
         }
 
         val isCheck = isPlayerChecked(state, team)
@@ -151,27 +152,50 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         updateCheckData(move.team, isCheck, isCheckMate)
     }
 
-    private fun move(move: Move, runInBackground: Boolean) {
-        if (!runInBackground) {
-            if (isShowingCurrentMove()) {
-                incrementMoveCounter()
-            }
-            moves += move
+    fun restoreMoves() {
+        val movesToBeAdded = ArrayList<Move>()
+
+        for (move in savedMoves) {
+//            movesToBeAdded += move
+            restoreMove(move)
         }
 
-        status = if (status == GameStatus.PLAYER_MOVE) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
-        onMoveMade(move)
+//        for (move in movesToBeAdded) {
+//            this.moves += move
+//        }
+    }
 
-        if (!runInBackground && !isShowingCurrentMove()) {
-            return
-        }
+    private fun restoreMove(move: Move) {
+        println("restoring move: ${move.toChessNotation()}")
+//        if (isShowingCurrentMove()) {
+//            incrementMoveCounter()
+//        }
 
-        possibleMoves.clear()
+        moves += move
+
+//        status = if (status == GameStatus.PLAYER_MOVE) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
+        status = if (move.team == team) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
+//        onMoveMade(move)
 
         val fromPosition = move.getFromPosition(team)
         val toPosition = move.getToPosition(team)
 
-        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+        val currentPositionPiece = state[fromPosition]
+
+        if (currentPositionPiece == null) {
+            for (x in 0 until 8) {
+                for (y in 0 until 8) {
+                    val piece = state[x, y]
+                    if (piece != null) {
+                        println("${piece.type} at $x, $y")
+                    }
+                }
+            }
+
+            println("Going to throw Exception")
+            throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+        }
+        println("Successfully found piece at $fromPosition")
 
         val takenPieceData = take(currentPositionPiece, fromPosition, toPosition)
 
@@ -187,38 +211,28 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
                 }
             })
 
-            if (runInBackground) {
-                animation.invokeOnStartCalls()
-                animation.invokeOnFinishCalls()
-            } else {
-                queueAnimation(animation)
-            }
+            animation.invokeOnStartCalls()
+            animation.invokeOnFinishCalls()
         }
 
         val isCheck = isPlayerChecked(state, team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
 
         updateCheckData(move.team, isCheck, isCheckMate)
+
+        currentMoveIndex++
     }
 
-//    private fun movePlayer(move: Move) {
-//        movePlayer(move.getFromPosition(team), move.getToPosition(team), true)
-//    }
-
-    private fun movePlayer(fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
-        if (!runInBackground) {
-            if (status != GameStatus.PLAYER_MOVE) {
-                return
-            }
+    private fun movePlayer(fromPosition: Vector2, toPosition: Vector2) {
+        if (status != GameStatus.PLAYER_MOVE) {
+            return
         }
 
-        val move = move(team, fromPosition, toPosition, runInBackground)
+        val move = move(team, fromPosition, toPosition, false)
 
-        if (!runInBackground) {
-            val positionUpdateMessage = move.toChessNotation()
-            moveToBeConfirmed = positionUpdateMessage
-            sendMoveData(moveToBeConfirmed)
-        }
+        val positionUpdateMessage = move.toChessNotation()
+        moveToBeConfirmed = positionUpdateMessage
+        sendMoveData(moveToBeConfirmed)
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {
@@ -235,7 +249,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
             if (possibleMoves.contains(clickedSquare)) {
                 Thread {
-                    movePlayer(previouslySelectedSquare, clickedSquare, false)
+                    movePlayer(previouslySelectedSquare, clickedSquare)
                 }.start()
                 return Action.PIECE_MOVED
             }

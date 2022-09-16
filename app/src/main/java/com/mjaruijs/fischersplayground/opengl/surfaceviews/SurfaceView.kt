@@ -6,6 +6,7 @@ import android.content.Context.MODE_PRIVATE
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.MotionEvent
+import com.mjaruijs.fischersplayground.activities.SettingsActivity
 import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.GRAPHICS_3D_KEY
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
@@ -20,12 +21,11 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     init {
         setEGLContextClientVersion(3)
         setEGLConfigChooser(ConfigChooser())
-        preserveEGLContextOnPause = true
 
-        val preferences = context.getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val preferences = context.getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
         val is3D = preferences.getBoolean(GRAPHICS_3D_KEY, false)
 
-        renderer = OpenGLRenderer(context, resources, ::onContextCreated, is3D)
+        renderer = OpenGLRenderer(context, resources, ::onContextCreated, ::requestRender, is3D)
         setRenderer(renderer)
         renderMode = RENDERMODE_WHEN_DIRTY
     }
@@ -35,6 +35,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         this.onSurfaceCreated = onSurfaceCreated
         this.onClick = onClick
         renderer.runOnUiThread = runOnUiThread
+
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
         renderer.isPlayerWhite = isPlayerWhite
     }

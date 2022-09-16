@@ -30,6 +30,33 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
         return super.showNextMove()
     }
 
+    fun mv(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
+        if (!isShowingCurrentMove()) {
+            val moveCount = moves.size
+            for (i in currentMoveIndex + 1 until moveCount) {
+                if (i == -1) {
+                    continue
+                }
+                moves.removeLast()
+            }
+            currentMoveIndex = moves.size - 1
+        }
+        teamToMove = !teamToMove
+
+        val actualFromPosition: Vector2
+        val actualToPosition: Vector2
+
+        if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
+            actualFromPosition = fromPosition
+            actualToPosition = toPosition
+        } else {
+            actualFromPosition = fromPosition
+            actualToPosition = toPosition
+        }
+
+        move(team, actualFromPosition, actualToPosition, runInBackground)
+    }
+
     override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
         if (!isShowingCurrentMove()) {
             val moveCount = moves.size
@@ -50,17 +77,11 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
             actualFromPosition = fromPosition
             actualToPosition = toPosition
         } else {
-//            actualFromPosition = Vector2(7, 7) - fromPosition
-//            actualToPosition = Vector2(7, 7) - toPosition
             actualFromPosition = fromPosition
             actualToPosition = toPosition
         }
 
-//        println("fromPosition: $fromPosition, toPosition: $toPosition, actualFromPosition: $actualFromPosition, actualToPosition: $actualToPosition")
-
-
-
-        return super.move(team, actualFromPosition, actualToPosition, runInBackground)
+        return super.move(team, actualFromPosition, actualToPosition, false)
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {

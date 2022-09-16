@@ -95,14 +95,17 @@ class DataManager(context: Context) {
 
     }
 
-    fun saveData(context: Context) {
+    fun saveData(context: Context, caller: String) {
         while (isLocked()) {
             Thread.sleep(1)
+            println("Want to save but dataManager is locked")
         }
 
         lock()
+
         Thread {
-            saveGames(context)
+            println("Saving data! $caller")
+            saveGames(context, caller)
             saveInvites(context)
             saveRecentOpponents(context)
             unlock()
@@ -232,7 +235,7 @@ class DataManager(context: Context) {
         saveRecentOpponents(context)
     }
 
-    fun saveGames(context: Context) {
+    private fun saveGames(context: Context, caller: String) {
         var content = ""
 
         for ((gameId, game) in savedGames) {
@@ -269,10 +272,14 @@ class DataManager(context: Context) {
             content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
         }
 
+//        if (caller.startsWith("ClientActivity")) {
+            println("Saving $content")
+//        }
+
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
     }
 
-    fun saveInvites(context: Context) {
+    private fun saveInvites(context: Context) {
         var content = ""
 
         for ((inviteId, invite) in savedInvites) {

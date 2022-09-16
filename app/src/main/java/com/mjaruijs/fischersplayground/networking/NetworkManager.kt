@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
-import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -13,8 +12,8 @@ class NetworkManager {
     companion object {
 
         private const val PUBLIC_SERVER_IP = "217.101.191.23"
-        private const val LOCAL_SERVER_IP = "192.168.178.103"
-//        private const val LOCAL_SERVER_IP = "10.248.59.63"
+//        private const val LOCAL_SERVER_IP = "192.168.178.103"
+        private const val LOCAL_SERVER_IP = "10.248.59.63"
         private const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
@@ -36,13 +35,6 @@ class NetworkManager {
     private lateinit var client: EncodedClient
 
     private val messageQueue = ArrayList<NetworkMessage>()
-
-    fun isRunning(): Boolean {
-        if (initialized.get()) {
-            return true
-        }
-        return false
-    }
 
     private fun log(message: String) {
         println("Networker: $message")
@@ -86,10 +78,7 @@ class NetworkManager {
                 Thread(manager).start()
                 manager.register(client)
 
-//                println("processing queued messages")
-
                 for (message in messageQueue) {
-//                    println("Sending queued message: $message")
                     sendMessage(message)
                 }
                 messageQueue.clear()
@@ -98,14 +87,13 @@ class NetworkManager {
     }
 
     fun sendMessage(message: NetworkMessage) {
-
         Thread {
             while (clientInitializing.get()) {
                 Thread.sleep(1)
             }
 
             if (initialized.get()) {
-                log("Sending message: $message")
+//                log("Sending message: $message")
                 try {
                     client.write(message.toString())
                     messageQueue.remove(message)
@@ -121,9 +109,7 @@ class NetworkManager {
     }
 
     private fun onRead(message: NetworkMessage, context: Context) {
-//        if (message.topic != Topic.USER_STATUS_CHANGED) {
-            log("Received message: $message")
-//        }
+//        log("Received message: $message")
 
         val messageData = message.content.split('|').toTypedArray()
 

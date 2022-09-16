@@ -29,9 +29,8 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
     init {
         setEGLContextClientVersion(3)
         setEGLConfigChooser(ConfigChooser())
-        preserveEGLContextOnPause = true
 
-        renderer = OpenGLRenderer(context, resources, ::onContextCreated, true)
+        renderer = OpenGLRenderer(context, resources, ::onContextCreated, ::requestRender, true)
         setRenderer(renderer)
 
         renderMode = RENDERMODE_WHEN_DIRTY

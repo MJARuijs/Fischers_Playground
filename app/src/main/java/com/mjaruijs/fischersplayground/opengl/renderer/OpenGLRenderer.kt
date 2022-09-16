@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import androidx.appcompat.app.AppCompatActivity
+import com.mjaruijs.fischersplayground.activities.SettingsActivity
 import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.CAMERA_ZOOM_KEY
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
@@ -19,7 +20,7 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.PI
 
-class OpenGLRenderer(context: Context, private val resources: Resources, private var onContextCreated: () -> Unit, private var is3D: Boolean) : GLSurfaceView.Renderer {
+class OpenGLRenderer(context: Context, private val resources: Resources, private var onContextCreated: () -> Unit, private val requestRender: () -> Unit, private var is3D: Boolean) : GLSurfaceView.Renderer {
 
     private lateinit var board: Board
     private lateinit var game: Game
@@ -42,12 +43,11 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     var isPlayerWhite = true
 
     lateinit var runOnUiThread: (() -> Unit) -> Unit
-    var requestRender: () -> Unit = {}
-    var onPixelsRead: (ByteBuffer) -> Unit = {}
+    private var onPixelsRead: (ByteBuffer) -> Unit = {}
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
 
     init {
-        val preferences = context.getSharedPreferences("graphics_preferences", AppCompatActivity.MODE_PRIVATE)
+        val preferences = context.getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, AppCompatActivity.MODE_PRIVATE)
         camera.setZoom(preferences.getFloat(CAMERA_ZOOM_KEY, DEFAULT_ZOOM))
     }
 

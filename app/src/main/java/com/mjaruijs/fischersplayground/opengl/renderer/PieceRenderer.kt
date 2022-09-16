@@ -113,8 +113,6 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             takenPieces += Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition!!)
         }
 
-        println("Trying to start animation at ${currentAnimation.piecePosition}}")
-
         val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls)
         animator.addOnFinishCall(
             { animationRunning.set(false) },
