@@ -49,7 +49,7 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
         leftButton.setIconScaleType(ScaleType.SQUARE)
             .setColor(57, 57, 57)
             .setCornerRadius(20.0f)
-            .setOnClickListener {
+            .setOnClick {
                 onLeftButtonClick()
                 dismiss()
             }
@@ -67,7 +67,7 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
         rightButton.setIconScaleType(ScaleType.SQUARE)
             .setColor(235, 186, 145)
             .setCornerRadius(20.0f)
-            .setOnClickListener {
+            .setOnClick {
                 onRightButtonClick()
                 dismiss()
             }
@@ -84,7 +84,7 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
     }
 
     fun setLeftOnClick(onClick: () -> Unit): DoubleButtonDialog {
-        leftButton.setOnClickListener {
+        leftButton.setOnClick {
             onClick()
             dismiss()
         }
@@ -92,7 +92,7 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
     }
 
     fun setRightOnClick(onClick: () -> Unit): DoubleButtonDialog {
-        rightButton.setOnClickListener {
+        rightButton.setOnClick {
             onClick()
             dismiss()
         }

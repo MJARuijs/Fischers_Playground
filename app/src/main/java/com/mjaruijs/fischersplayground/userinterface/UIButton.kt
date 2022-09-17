@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.userinterface
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.os.Build
@@ -17,6 +18,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+@SuppressLint("ClickableViewAccessibility")
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
 
     private var backgroundHoverColor = Color.argb(0.0f, 0.1f, 0.1f, 0.1f)
@@ -33,11 +35,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     private var maxTextSize = 0f
     private var buttonTextSize = 200.0f
     private var buttonTextColor = 0
-
-    private var drawablePadding = 0
-    private var textXOffset = 0
-    private var textYOffset = 0
-
     private var cornerRadius = 0.0f
 
     private var centerVertically = true
@@ -46,7 +43,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     private var changeTextColorOnHover = true
     private var changeIconColorOnHover = true
 
-    private var heldDown = false
     private var startClickTimer = -1L
 
     private var iconScaleType = ScaleType.SCALE_WITH_PARENT
@@ -54,11 +50,19 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     var disabled = false
     var buttonText = ""
 
-    var onHold: () -> Unit = {}
-    var onRelease: () -> Unit = {}
-    var onButtonInitialized: (Float) -> Unit = {}
+    private var repeatOnHold = false
+    private var delayBetweenHoldTriggers = 250L
+    private val maxClickDelay = 250L
 
-    private var holding = AtomicBoolean(false)
+    private var onClick: (UIButton) -> Unit = {}
+    private var onHold: () -> Unit = {}
+    private var onRelease: () -> Unit = {}
+    private var onButtonInitialized: (Float) -> Unit = {}
+
+    private var runOnUiThread: (() -> Unit) -> Unit = {}
+
+    private val buttonDown = AtomicBoolean(false)
+    private val holding = AtomicBoolean(false)
 
     private val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -88,57 +92,56 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
             when (event.action) {
                 MotionEvent.ACTION_BUTTON_PRESS -> {
-                    if (vibrateOnTrigger) {
-                        vibrate()
-                    }
-                    performClick()
+                    onClick()
                 }
                 MotionEvent.ACTION_DOWN -> {
                     startClickTimer = System.currentTimeMillis()
-                    heldDown = true
-                    holding.set(true)
 
                     if (changeIconColorOnHover || changeTextColorOnHover) {
-                        if (changeIconColorOnHover) {
-                            paint.color = addColors(paint.color, backgroundHoverColor)
-                        }
-                        if (changeTextColorOnHover) {
-                            textPaint.color = subtractColors(textPaint.color, textHoverColor)
-                        }
-
-                        invalidate()
+                        addHoverColors()
                     }
 
+                    buttonDown.set(true)
                     Thread {
-                        while (holding.get()) {
-                            onHold()
+                        if (repeatOnHold) {
+                            var previousTriggerTime = startClickTimer
+
+                            while (buttonDown.get()) {
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - startClickTimer >= maxClickDelay) {
+                                    holding.set(true)
+                                    break
+                                }
+                            }
+
+                            while (holding.get()) {
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - previousTriggerTime >= delayBetweenHoldTriggers) {
+                                    previousTriggerTime = currentTime
+                                    runOnUiThread {
+                                        onClick()
+                                    }
+                                }
+                            }
                         }
 
                         onRelease()
                     }.start()
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (changeIconColorOnHover || changeTextColorOnHover) {
-                        if (changeIconColorOnHover) {
-                            paint.color = subtractColors(paint.color, backgroundHoverColor)
-                        }
-                        if (changeTextColorOnHover) {
-                            textPaint.color = addColors(textPaint.color, textHoverColor)
-                        }
+                    holding.set(false)
+                    buttonDown.set(false)
 
-                        invalidate()
+                    if (changeIconColorOnHover || changeTextColorOnHover) {
+                        removeHoverColors()
                     }
 
                     val buttonReleasedTime = System.currentTimeMillis()
-                    if (buttonReleasedTime - startClickTimer < 500) {
-                        if (vibrateOnTrigger) {
-                            vibrate()
-                        }
-                        performClick()
-                    }
+                    println("UP $buttonReleasedTime $startClickTimer ${buttonReleasedTime - startClickTimer}")
 
-                    heldDown = false
-                    holding.set(false)
+                    if (buttonReleasedTime - startClickTimer < maxClickDelay) {
+                        onClick()
+                    }
                 }
             }
 
@@ -146,9 +149,54 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         }
     }
 
+    private fun onClick() {
+        if (vibrateOnTrigger) {
+            vibrate()
+        }
+        onClick(this)
+    }
+
     private fun vibrate() {
         (vibrator as Vibrator).vibrate(VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE))
     }
+
+    private fun addHoverColors() {
+        if (changeIconColorOnHover) {
+            paint.color = addColors(paint.color, backgroundHoverColor)
+        }
+        if (changeTextColorOnHover) {
+            textPaint.color = subtractColors(textPaint.color, textHoverColor)
+        }
+
+        invalidate()
+    }
+
+    private fun removeHoverColors() {
+        if (changeIconColorOnHover) {
+            paint.color = subtractColors(paint.color, backgroundHoverColor)
+        }
+        if (changeTextColorOnHover) {
+            textPaint.color = addColors(textPaint.color, textHoverColor)
+        }
+
+        invalidate()
+    }
+
+    fun setOnClick(onClick: (UIButton) -> Unit): UIButton {
+        this.onClick = onClick
+        return this
+    }
+
+    fun setRepeatOnHold(delay: Long, runOnUiThread: (() -> Unit) -> Unit): UIButton {
+        repeatOnHold = true
+        delayBetweenHoldTriggers = delay
+        this.runOnUiThread = runOnUiThread
+        return this
+    }
+
+    fun isHeld() = holding.get()
+
+    fun isDown() = buttonDown.get()
 
     fun setOnHoldListener(onHold: () -> Unit): UIButton {
         this.onHold = onHold
@@ -193,6 +241,8 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     }
 
     fun disable(): UIButton {
+        holding.set(false)
+        buttonDown.set(false)
         disabled = true
         textPaint.color = Color.GRAY
         invalidate()
@@ -223,11 +273,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         return this
     }
 
-    fun setDrawablePadding(padding: Int): UIButton {
-        drawablePadding = padding
-        return this
-    }
-
     fun setButtonTextColor(color: Int): UIButton {
         textPaint.color = color
         buttonTextColor = color
@@ -246,7 +291,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
 
     fun setText(text: String): UIButton {
         this.buttonText = text
-//        setTextSize(buttonText, width.toFloat())
         invalidate()
         return this
     }
@@ -266,16 +310,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         invalidate()
 
         calculateBitmapBounds()
-        return this
-    }
-
-    fun setTextXOffset(offset: Int): UIButton {
-        textXOffset = offset
-        return this
-    }
-
-    fun setTextYOffset(offset: Int): UIButton {
-        textYOffset = offset
         return this
     }
 
@@ -359,7 +393,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         }
 
         val xPos = measuredWidth / 2.0f
-        val yPos = (measuredHeight / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)
 
         if (cornerRadius == 0.0f) {
             canvas.drawRect(0f, 0f, measuredWidth.toFloat(), measuredHeight.toFloat(), paint)
@@ -368,28 +401,14 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         }
 
         if (bitmap != null) {
-//            println("Bounds for $buttonText: ${bitmapBounds.left}, ${bitmapBounds.top}, ${bitmapBounds.right}, ${bitmapBounds.bottom}")
-//            canvas.drawRect(bitmapBounds, debugPaint)
             canvas.drawBitmap(bitmap!!, null, bitmapBounds, textPaint)
         }
 
         if (textAlignment == TextAlignment.CENTER) {
-//            println("$buttonText : Center $height ${textPaint.ascent()}")
-            canvas.drawText(buttonText, xPos + textXOffset, measuredHeight.toFloat() / 2f - (textPaint.ascent() + textPaint.descent()) / 2f, textPaint)
+            canvas.drawText(buttonText, xPos, measuredHeight.toFloat() / 2f - (textPaint.ascent() + textPaint.descent()) / 2f, textPaint)
         } else if (textAlignment == TextAlignment.BOTTOM) {
-//            println("$buttonText : bottom $height ${textPaint.ascent()} ${textPaint.descent()}")
-            canvas.drawText(buttonText, xPos + textXOffset, measuredHeight.toFloat() - textPaint.descent(), textPaint)
+            canvas.drawText(buttonText, xPos, measuredHeight.toFloat() - textPaint.descent(), textPaint)
         }
-
-//        if (bitmap == null) {
-//            println("DRAWING TEXT NULL: $buttonText")
-//            canvas.drawText(buttonText, xPos + textXOffset, yPos + textYOffset, textPaint)
-//        } else {
-//            println("DRAWING TEXT : $buttonText")
-//
-//            canvas.drawText(buttonText, xPos + textXOffset, rect.height() + abs(textPaint.ascent()), textPaint)
-////            canvas.drawText(buttonText, 0f, 0f, textPaint)
-//        }
     }
 
     private fun calculateMaxTextSize(): Float {
@@ -397,8 +416,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         val bounds = Rect()
         textPaint.getTextBounds(buttonText, 0, buttonText.length, bounds)
         maxTextSize = size * measuredWidth.toFloat() / bounds.width()
-
-//        println("Max text size for : $buttonText: $maxTextSize")
 
         return maxTextSize
     }

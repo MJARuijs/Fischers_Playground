@@ -4,7 +4,6 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
@@ -23,7 +22,6 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val textOffset = 0
         val textColor = Color.WHITE
         val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
 
@@ -37,7 +35,6 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
             .setColor(buttonBackgroundColor)
             .setButtonTextColor(textColor)
             .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
@@ -53,7 +50,6 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
             .setColor(buttonBackgroundColor)
             .setButtonTextColor(textColor)
             .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .disable()

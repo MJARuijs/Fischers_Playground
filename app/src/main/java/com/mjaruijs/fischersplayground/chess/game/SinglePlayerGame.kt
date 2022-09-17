@@ -16,21 +16,21 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
 
     override fun getPieceMoves(piece: Piece, square: Vector2, state: ArrayBasedGameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(if (isPlayingWhite) Team.WHITE else Team.BLACK, piece, square, true, state, moves, lookingForCheck)
 
-    override fun showPreviousMove(runInBackground: Boolean): Pair<Boolean, Boolean> {
+    override fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long): Pair<Boolean, Boolean> {
         if (currentMoveIndex != -1) {
             teamToMove = !teamToMove
         }
-        return super.showPreviousMove(runInBackground)
+        return super.showPreviousMove(runInBackground, animationSpeed)
     }
 
-    override fun showNextMove(): Pair<Boolean, Boolean> {
+    override fun showNextMove(animationSpeed: Long): Pair<Boolean, Boolean> {
         if (!isShowingCurrentMove()) {
             teamToMove = !teamToMove
         }
-        return super.showNextMove()
+        return super.showNextMove(animationSpeed)
     }
 
-    fun mv(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean) {
+    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean, animationSpeed: Long): Move {
         if (!isShowingCurrentMove()) {
             val moveCount = moves.size
             for (i in currentMoveIndex + 1 until moveCount) {
@@ -54,34 +54,7 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
             actualToPosition = toPosition
         }
 
-        move(team, actualFromPosition, actualToPosition, runInBackground)
-    }
-
-    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
-        if (!isShowingCurrentMove()) {
-            val moveCount = moves.size
-            for (i in currentMoveIndex + 1 until moveCount) {
-                if (i == -1) {
-                    continue
-                }
-                moves.removeLast()
-            }
-            currentMoveIndex = moves.size - 1
-        }
-        teamToMove = !teamToMove
-
-        val actualFromPosition: Vector2
-        val actualToPosition: Vector2
-
-        if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
-            actualFromPosition = fromPosition
-            actualToPosition = toPosition
-        } else {
-            actualFromPosition = fromPosition
-            actualToPosition = toPosition
-        }
-
-        return super.move(team, actualFromPosition, actualToPosition, false)
+        return super.move(team, actualFromPosition, actualToPosition, false, animationSpeed)
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {

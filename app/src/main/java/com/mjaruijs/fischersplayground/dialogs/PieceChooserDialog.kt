@@ -39,79 +39,79 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                 .setTexturedDrawable(R.drawable.white_knight)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
-                .setOnClickListener {
+                .setOnClick {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.KNIGHT, team)
                 }
 
 
-            bishopButton = dialog.findViewById<UIButton>(R.id.bishop_button)
+            bishopButton = dialog.findViewById(R.id.bishop_button)
             bishopButton
                 .setTexturedDrawable(R.drawable.white_bishop)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
-                .setOnClickListener {
+                .setOnClick {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.BISHOP, team)
                 }
 
 
-            rookButton = dialog.findViewById<UIButton>(R.id.rook_button)
+            rookButton = dialog.findViewById(R.id.rook_button)
             rookButton
                 .setTexturedDrawable(R.drawable.white_rook)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
-                .setOnClickListener {
+                .setOnClick {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.ROOK, team)
                 }
 
-            queenButton = dialog.findViewById<UIButton>(R.id.queen_button)
+            queenButton = dialog.findViewById(R.id.queen_button)
             queenButton
                 .setTexturedDrawable(R.drawable.white_queen)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
-                .setOnClickListener {
+                .setOnClick {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
         } else {
-            knightButton = dialog.findViewById<UIButton>(R.id.knight_button)
+            knightButton = dialog.findViewById(R.id.knight_button)
             knightButton
                 .setTexturedDrawable(R.drawable.black_knight)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
-                .setOnClickListener {
+                .setOnClick {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
 
-            bishopButton = dialog.findViewById<UIButton>(R.id.bishop_button)
+            bishopButton = dialog.findViewById(R.id.bishop_button)
             bishopButton
                 .setTexturedDrawable(R.drawable.black_bishop)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
-                .setOnClickListener {
+                .setOnClick {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
 
-            rookButton = dialog.findViewById<UIButton>(R.id.rook_button)
+            rookButton = dialog.findViewById(R.id.rook_button)
             rookButton
                 .setTexturedDrawable(R.drawable.black_rook)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
-                .setOnClickListener {
+                .setOnClick {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
 
-            queenButton = dialog.findViewById<UIButton>(R.id.queen_button)
+            queenButton = dialog.findViewById(R.id.queen_button)
             queenButton
                 .setTexturedDrawable(R.drawable.black_queen)
                 .setColor(Color.rgb(235, 186, 145))
                 .setCornerRadius(20f)
-                .setOnClickListener {
+                .setOnClick {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }

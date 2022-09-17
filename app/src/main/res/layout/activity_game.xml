@@ -8,46 +8,51 @@
     android:background="#3F3F3F"
     tools:context=".activities.game.GameActivity">
 
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/opponent_fragment_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/opengl_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
         android:id="@+id/opengl_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/player_fragment_container"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/opponent_fragment_container" />
 
     <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/opponent_fragment_container"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/player_fragment_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/action_buttons_fragment"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/opengl_view" />
+        app:layout_constraintTop_toBottomOf="@+id/opengl_view" />
 
     <ImageView
         android:id="@+id/open_chat_button"
         android:layout_width="30dp"
         android:layout_height="60dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="4dp"
         android:background="#808080"
-        app:layout_constraintBottom_toTopOf="@+id/action_buttons_fragment"
+        app:layout_constraintBottom_toBottomOf="@+id/player_fragment_container"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/player_fragment_container"
         app:srcCompat="@drawable/arrow_forward" />
 
     <androidx.fragment.app.FragmentContainerView
@@ -62,8 +67,8 @@
         android:id="@+id/chat_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintEnd_toStartOf="@+id/open_chat_button"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/open_chat_button"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

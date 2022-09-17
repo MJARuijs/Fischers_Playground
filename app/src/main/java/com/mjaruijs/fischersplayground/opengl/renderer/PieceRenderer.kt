@@ -113,7 +113,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             takenPieces += Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition!!)
         }
 
-        val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls)
+        val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
         animator.addOnFinishCall(
             { animationRunning.set(false) },
             { takenPieces.remove(Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition)) }

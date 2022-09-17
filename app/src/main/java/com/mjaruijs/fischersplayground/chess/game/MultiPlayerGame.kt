@@ -13,6 +13,7 @@ import com.mjaruijs.fischersplayground.util.FloatUtils
 
 class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", private val savedMoves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated) {
 
+
     var sendMoveData: (String) -> Unit = {
         println("Multiplayer move was made, but no data was actually sent. Did you forget to set the sendMoveData() function?")
     }
@@ -33,19 +34,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
-
         restoreMoves()
-
-//        for (move in moves) {
-//            restoreMove(move)
-//        }
-
-//        val iterator = moves.iterator()
-//
-//        while (iterator.hasNext()) {
-//            val move = iterator.next()
-//            restoreMove(move)
-//        }
     }
 
     fun addMessage(message: ChatMessage) {
@@ -104,7 +93,52 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         moveToBeConfirmed = ""
     }
 
-    fun moveOpponent(move: Move) {
+    private fun restoreMoves() {
+        for (move in savedMoves) {
+            restoreMove(move)
+        }
+    }
+
+    private fun restoreMove(move: Move) {
+        moves += move
+        status = if (move.team == team) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
+
+        val fromPosition = move.getFromPosition(team)
+        val toPosition = move.getToPosition(team)
+
+        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+
+        val takenPieceData = take(currentPositionPiece, fromPosition, toPosition)
+
+        val takenPiece = takenPieceData?.first
+        val takenPiecePosition = takenPieceData?.second
+
+        if (takenPiece != null) {
+            takenPieces += takenPiece
+        }
+
+        if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
+            performCastle(move.team, fromPosition, toPosition, 0L)
+        } else {
+            val animation = createAnimation(0L, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
+                if (move.promotedPiece != null) {
+                    state[toPosition] = Piece(move.promotedPiece, move.team)
+                }
+            })
+
+            animation.invokeOnStartCalls()
+            animation.invokeOnFinishCalls()
+        }
+
+        val isCheck = isPlayerChecked(state, team)
+        val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
+
+        updateCheckData(move.team, isCheck, isCheckMate)
+
+        currentMoveIndex++
+    }
+
+    fun moveOpponent(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         if (status != GameStatus.OPPONENT_MOVE) {
             println("RETURNING BECAUSE NOT OPPONENTS MOVE")
             return
@@ -135,9 +169,9 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val takenPiecePosition = takenPieceData?.second
 
         if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
-            performCastle(move.team, fromPosition, toPosition)
+            performCastle(move.team, fromPosition, toPosition, animationSpeed)
         } else {
-            val animation = createAnimation(fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
+            val animation = createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
                 if (move.promotedPiece != null) {
                     state[toPosition] = Piece(move.promotedPiece, move.team)
                 }
@@ -150,77 +184,6 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
 
         updateCheckData(move.team, isCheck, isCheckMate)
-    }
-
-    fun restoreMoves() {
-        val movesToBeAdded = ArrayList<Move>()
-
-        for (move in savedMoves) {
-//            movesToBeAdded += move
-            restoreMove(move)
-        }
-
-//        for (move in movesToBeAdded) {
-//            this.moves += move
-//        }
-    }
-
-    private fun restoreMove(move: Move) {
-        println("restoring move: ${move.toChessNotation()}")
-//        if (isShowingCurrentMove()) {
-//            incrementMoveCounter()
-//        }
-
-        moves += move
-
-//        status = if (status == GameStatus.PLAYER_MOVE) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
-        status = if (move.team == team) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
-//        onMoveMade(move)
-
-        val fromPosition = move.getFromPosition(team)
-        val toPosition = move.getToPosition(team)
-
-        val currentPositionPiece = state[fromPosition]
-
-        if (currentPositionPiece == null) {
-            for (x in 0 until 8) {
-                for (y in 0 until 8) {
-                    val piece = state[x, y]
-                    if (piece != null) {
-                        println("${piece.type} at $x, $y")
-                    }
-                }
-            }
-
-            println("Going to throw Exception")
-            throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
-        }
-        println("Successfully found piece at $fromPosition")
-
-        val takenPieceData = take(currentPositionPiece, fromPosition, toPosition)
-
-        val takenPiece = takenPieceData?.first
-        val takenPiecePosition = takenPieceData?.second
-
-        if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
-            performCastle(move.team, fromPosition, toPosition)
-        } else {
-            val animation = createAnimation(fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
-                if (move.promotedPiece != null) {
-                    state[toPosition] = Piece(move.promotedPiece, move.team)
-                }
-            })
-
-            animation.invokeOnStartCalls()
-            animation.invokeOnFinishCalls()
-        }
-
-        val isCheck = isPlayerChecked(state, team)
-        val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
-
-        updateCheckData(move.team, isCheck, isCheckMate)
-
-        currentMoveIndex++
     }
 
     private fun movePlayer(fromPosition: Vector2, toPosition: Vector2) {
@@ -269,9 +232,5 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
         return Action.NO_OP
     }
-
-//    override fun toString(): String {
-//        return "$gameId|$lastUpdated|$opponentName|$status|$isPlayingWhite|true"
-//    }
 
 }

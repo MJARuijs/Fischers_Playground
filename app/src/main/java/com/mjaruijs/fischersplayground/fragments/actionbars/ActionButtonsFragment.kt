@@ -52,7 +52,6 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val textOffset = 65
         val textColor = Color.WHITE
         val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
 
@@ -64,16 +63,20 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
             .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .disable()
-            .setOnClickListener {
-                if ((it as UIButton).disabled) {
-                    return@setOnClickListener
+            .setRepeatOnHold(100L, ::runOnUiThread)
+            .setOnClick {
+                if (it.disabled) {
+                    return@setOnClick
                 }
 
-                val buttonStates = game.showPreviousMove(false)
+                val buttonStates = if (it.isHeld()) {
+                    game.showPreviousMove(false, 100L)
+                } else {
+                    game.showPreviousMove(false)
+                }
                 if (buttonStates.first) {
                     it.disable()
                 }
@@ -91,16 +94,21 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
             .setButtonTextColor(textColor)
             .setColor(buttonBackgroundColor)
             .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
             .disable()
+            .setRepeatOnHold(100L, ::runOnUiThread)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
-                if ((it as UIButton).disabled) {
-                    return@setOnClickListener
+            .setOnClick {
+                if (it.disabled) {
+                    return@setOnClick
                 }
 
-                val buttonStates = game.showNextMove()
+                val buttonStates = if (it.isHeld()) {
+                    game.showNextMove(100L)
+                } else {
+                    game.showNextMove()
+                }
+
                 if (buttonStates.first) {
                     it.disable()
                 }
@@ -125,6 +133,12 @@ open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> U
             for (button in buttons) {
                 button.setFinalTextSize(maxTextSize)
             }
+        }
+    }
+
+    fun runOnUiThread(callback: () -> Unit) {
+        requireActivity().runOnUiThread {
+            callback()
         }
     }
 

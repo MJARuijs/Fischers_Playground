@@ -312,7 +312,7 @@ class MainActivity : ClientActivity() {
     }
 
     private fun hideActivityDecorations() {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val preferences = getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
         val isFullscreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
 
         supportActionBar?.hide()
@@ -349,7 +349,7 @@ class MainActivity : ClientActivity() {
             .setColor(Color.TRANSPARENT)
             .setChangeIconColorOnHover(false)
             .setChangeTextColorOnHover(true)
-            .setOnClickListener {
+            .setOnClick {
                 stayingInApp = true
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)
@@ -362,7 +362,7 @@ class MainActivity : ClientActivity() {
             .setCornerRadius(45.0f)
             .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
+            .setOnClick {
                 stayingInApp = true
                 val intent = Intent(this, PractiseGameActivity::class.java)
                     .putExtra("id", userId)
@@ -381,7 +381,7 @@ class MainActivity : ClientActivity() {
             .setCornerRadius(45.0f)
             .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
+            .setOnClick {
                 createGameDialog.show()
             }
     }

@@ -54,6 +54,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         try {
             gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
+            setGameParameters(dataManager[gameId])
 
             initChatBox()
 
@@ -75,7 +76,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onResume() {
-        setGameParameters(dataManager[gameId])
         setGameCallbacks()
 
         (game as MultiPlayerGame).sendMoveData = {
@@ -120,12 +120,10 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         super.onDestroy()
     }
 
-    override fun setGameParameters(game: MultiPlayerGame) {
-//        game.restoreMoves()
+    private fun setGameParameters(game: MultiPlayerGame) {
         this.game = game
-        this.game.onMoveMade = ::onMoveMade
+        game.onMoveMade = ::onMoveMade
 
-//        game.showPreviousMove()
         opponentName = game.opponentName
         isPlayingWhite = game.isPlayingWhite
 
@@ -151,10 +149,14 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             runOnUiThread {
                 getActionBarFragment()?.game = game
                 setOpponentStatusIcon(game.opponentStatus)
+
+                evaluateActionButtons()
+
+                for (takenPiece in game.takenPieces) {
+                    onPieceTaken(takenPiece)
+                }
             }
         }.start()
-
-        super.setGameParameters(game)
     }
 
     private fun onMoveMade(move: Move) {
@@ -266,13 +268,13 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         chatBoxAnimator.start()
         chatButtonAnimator.start()
 
+        evaluateActionButtons()
+
         chatOpened = false
     }
 
     override fun finishActivity(status: GameStatus) {
-//        dataManager[gameId].status = status
         (game as MultiPlayerGame).status = status
-//        dataManager.saveData(applicationContext)
         super.finishActivity(status)
     }
 

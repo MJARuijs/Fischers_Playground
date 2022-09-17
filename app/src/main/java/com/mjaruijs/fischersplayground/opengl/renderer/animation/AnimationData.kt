@@ -1,9 +1,10 @@
 package com.mjaruijs.fischersplayground.opengl.renderer.animation
 
+import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 
-data class AnimationData(val timeStamp: Long, val piecePosition: Vector2, val translation: Vector2, val takenPiece: Piece?, val takenPiecePosition: Vector2?, var onStart: () -> Unit, var onFinish: () -> Unit, var nextAnimation: AnimationData?, var runInBackground: Boolean = true) : Comparable<AnimationData> {
+data class AnimationData(val animationSpeed: Long = Game.DEFAULT_ANIMATION_SPEED, val timeStamp: Long, val piecePosition: Vector2, val translation: Vector2, val takenPiece: Piece?, val takenPiecePosition: Vector2?, var onStart: () -> Unit, var onFinish: () -> Unit, var nextAnimation: AnimationData?, var runInBackground: Boolean = true) : Comparable<AnimationData> {
 
     val onStartCalls = ArrayList<() -> Unit>()
 

@@ -40,12 +40,10 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
         confirmResignationDialog = DoubleButtonDialog(requireActivity(), "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", onResign)
         offerDrawDialog = DoubleButtonDialog(requireActivity(), "Offer Draw", "Are you sure you want to offer a draw?", "Cancel", "Yes", onOfferDraw)
 
-        val textOffset = 65
         val textColor = Color.WHITE
         val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
         resignButton = view.findViewById(R.id.resign_button)
         resignButton
-            .setTextYOffset(textOffset)
             .setText("Resign")
             .setColoredDrawable(R.drawable.resign)
             .setButtonTextSize(50f)
@@ -54,9 +52,9 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
             .setChangeIconColorOnHover(false)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
+            .setOnClick {
                 if (isChatOpened()) {
-                    return@setOnClickListener
+                    return@setOnClick
                 }
 
                 confirmResignationDialog.show()
@@ -70,12 +68,11 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
             .setButtonTextSize(50f)
             .setButtonTextColor(textColor)
             .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
+            .setOnClick {
                 if (isChatOpened()) {
-                    return@setOnClickListener
+                    return@setOnClick
                 }
 
                 offerDrawDialog.setRightOnClick {
@@ -92,12 +89,11 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
             .setColor(buttonBackgroundColor)
             .setButtonTextColor(textColor)
             .setChangeIconColorOnHover(false)
-            .setTextYOffset(textOffset)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
+            .setOnClick {
                 if (isChatOpened()) {
-                    return@setOnClickListener
+                    return@setOnClick
                 }
 
                 networkManager.sendMessage(NetworkMessage(Topic.UNDO_REQUESTED, "$gameId|$userId"))
@@ -113,7 +109,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
         cancelMoveButton
             .setIconScaleType(ScaleType.SQUARE)
             .setColoredDrawable(R.drawable.close_icon)
-            .setOnClickListener {
+            .setOnClick {
                 hideExtraButtons()
                 onCancelMove()
             }
@@ -123,7 +119,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
             .setIconScaleType(ScaleType.SQUARE)
             .setColoredDrawable(R.drawable.check_mark_icon)
             .setColor(235, 186, 145)
-            .setOnClickListener {
+            .setOnClick {
                 hideExtraButtons()
                 if (moveNotation != null) {
                     onConfirmMove(moveNotation!!)

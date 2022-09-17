@@ -10,7 +10,7 @@ import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
-import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
+import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.*
@@ -25,22 +25,22 @@ import com.mjaruijs.fischersplayground.util.Logger
 abstract class GameActivity : ClientActivity() {
 
     private lateinit var checkMateDialog: SingleButtonDialog
+    private lateinit var glView: SurfaceView
+
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
     private var displayWidth = 0
     private var displayHeight = 0
 
     private var isSinglePlayer = true
-    var isPlayingWhite = true
+    protected var isPlayingWhite = true
 
     lateinit var gameId: String
     lateinit var opponentName: String
 
-    open lateinit var game: Game
-
-    lateinit var glView: SurfaceView
-
     protected var loadFragments = false
+
+    open lateinit var game: Game
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,6 +133,17 @@ abstract class GameActivity : ClientActivity() {
         return null
     }
 
+    protected fun evaluateActionButtons() {
+        if (game.moves.isNotEmpty()) {
+            if (game.getMoveIndex() != -1) {
+                getActionBarFragment()?.enableBackButton()
+            }
+            if (!game.isShowingCurrentMove()) {
+                getActionBarFragment()?.enableForwardButton()
+            }
+        }
+    }
+
     open fun onContextCreated() {
         restorePreferences()
     }
@@ -205,6 +216,8 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
+    protected fun onPieceTaken(piece: Piece) = onPieceTaken(piece.type, piece.team)
+
     private fun onPieceTaken(pieceType: PieceType, team: Team) {
         if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
             val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
@@ -252,17 +265,6 @@ abstract class GameActivity : ClientActivity() {
         } else {
             val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
-        }
-    }
-
-    open fun setGameParameters(game: MultiPlayerGame) {
-        if (game.moves.isNotEmpty()) {
-            if (game.getMoveIndex() != -1) {
-                getActionBarFragment()?.enableBackButton()
-            }
-            if (!game.isShowingCurrentMove()) {
-                getActionBarFragment()?.enableForwardButton()
-            }
         }
     }
 

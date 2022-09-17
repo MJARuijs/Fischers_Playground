@@ -17,11 +17,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     val board: Board = Board()
 
-    private val takenPieces = ArrayList<Piece>()
-    private val piecesTakenByOpponent = ArrayList<Piece>()
+    val takenPieces = ArrayList<Piece>()
 
     protected var possibleMoves = ArrayList<Vector2>()
-    protected var currentMoveIndex = if (moves.isEmpty()) -1 else moves.size - 1
+    var currentMoveIndex = if (moves.isEmpty()) -1 else moves.size - 1
 
     protected val team = if (isPlayingWhite) Team.WHITE else Team.BLACK
 
@@ -36,8 +35,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     var disableForwardButton: () -> Unit = {}
     var onPieceTaken: (PieceType, Team) -> Unit = { _, _ -> }
     var onPieceRegained: (PieceType, Team) -> Unit = { _, _ -> }
-//    var onCheck: (Vector2) -> Unit = {}
-//    var onCheckCleared: () -> Unit = {}
     var onCheckMate: (Team) -> Unit = {}
 
     var queueAnimation: (AnimationData) -> Unit = {}
@@ -89,13 +86,13 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return currentMoveIndex
     }
 
-    open fun showPreviousMove(runInBackground: Boolean): Pair<Boolean, Boolean> {
+    open fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
         if (currentMoveIndex == -1) {
             return Pair(first = true, second = false)
         }
 
         val currentMove = moves[currentMoveIndex]
-        undoMove(currentMove, runInBackground)
+        undoMove(currentMove, runInBackground, animationSpeed)
 
         val shouldDisableBackButton = currentMoveIndex == -1
         val shouldEnableForwardButton = currentMoveIndex == moves.size - 2
@@ -103,13 +100,13 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return Pair(shouldDisableBackButton, shouldEnableForwardButton)
     }
 
-    open fun showNextMove(): Pair<Boolean, Boolean> {
+    open fun showNextMove(animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
         if (currentMoveIndex >= moves.size - 1) {
             return Pair(first = true, second = false)
         }
 
         val nextMove = moves[incrementMoveCounter()]
-        redoMove(nextMove)
+        redoMove(nextMove, animationSpeed)
 
         val shouldDisableForwardButton = currentMoveIndex == moves.size - 1
         val shouldEnableBackButton = currentMoveIndex == 0
@@ -138,9 +135,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         promotionLock.set(false)
     }
 
-    protected fun createAnimation(fromPosition: Vector2, toPosition: Vector2, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null, onStart: () -> Unit = {}, onFinish: () -> Unit = {}): AnimationData {
+    protected fun createAnimation(animationSpeed: Long, fromPosition: Vector2, toPosition: Vector2, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null, onStart: () -> Unit = {}, onFinish: () -> Unit = {}): AnimationData {
         val translation = toPosition - fromPosition
-        return AnimationData(System.nanoTime(), fromPosition, translation, takenPiece, takenPiecePosition, {
+        return AnimationData(animationSpeed, System.nanoTime(), fromPosition, translation, takenPiece, takenPiecePosition, {
             state[toPosition] = state[fromPosition]
             state[fromPosition] = null
             onStart()
@@ -165,12 +162,12 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    private fun redoMove(move: Move) {
+    private fun redoMove(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         val fromPosition = move.getFromPosition(team)
         val toPosition = move.getToPosition(team)
 
         val animation = if (move.movedPiece == PieceType.KING && abs(toPosition.x - fromPosition.x) == 2.0f) {
-            performCastle(move.team, fromPosition, toPosition)
+            performCastle(move.team, fromPosition, toPosition, animationSpeed)
         } else {
             val takenPiece = if (move.pieceTaken == null) {
                 null
@@ -180,7 +177,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
             val takenPiecePosition = move.getTakenPosition(team)
 
-            createAnimation(fromPosition, toPosition, takenPiece, takenPiecePosition, {
+            createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition, {
                 onStartRedoMove(move, toPosition, takenPiecePosition)
             }, {
                 onFinishRedoMove(move, toPosition)
@@ -215,12 +212,12 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    fun undoMove(move: Move, runInBackground: Boolean) {
+    fun undoMove(move: Move, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         val toPosition = move.getToPosition(team)
         val fromPosition = move.getFromPosition(team)
 
         val animation = if (move.movedPiece == PieceType.KING && abs(fromPosition.x - toPosition.x) == 2.0f) {
-            undoCastle(fromPosition, toPosition)
+            undoCastle(fromPosition, toPosition, animationSpeed)
         } else {
             val takenPiece = if (move.pieceTaken == null) {
                 null
@@ -230,7 +227,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
             val takenPiecePosition = move.getTakenPosition(team)
 
-            createAnimation(toPosition, fromPosition, takenPiece, takenPiecePosition, {
+            createAnimation(animationSpeed, toPosition, fromPosition, takenPiece, takenPiecePosition, {
                 onStartUndoMove(move, toPosition, takenPiecePosition)
             }, {
                 onFinishUndoMove(move, fromPosition)
@@ -251,7 +248,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean): Move {
+    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Move {
         possibleMoves.clear()
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
@@ -264,9 +261,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         var promotedPiece: PieceType? = null
 
         val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
-            performCastle(team, fromPosition, toPosition)
+            performCastle(team, fromPosition, toPosition, animationSpeed)
         } else {
-            createAnimation(fromPosition, toPosition, takenPiece, takenPiecePosition)
+            createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition)
         }
 
         val animationFinished = AtomicBoolean(false)
@@ -359,12 +356,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         if (takenPiece != null) {
             onPieceTaken(takenPiece.type, takenPiece.team)
-            if (this.team == team) {
-                takenPieces += takenPiece
-            } else {
-                piecesTakenByOpponent += takenPiece
-            }
-
             return Pair(takenPiece, takenPiecePosition)
         }
 
@@ -456,7 +447,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return false
     }
 
-    private fun undoCastle(fromPosition: Vector2, toPosition: Vector2): AnimationData {
+    private fun undoCastle(fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long): AnimationData {
         val direction = if (fromPosition.x < toPosition.x) -1 else 1
         val newX = if (fromPosition.x < toPosition.x) 7 else 0
 
@@ -464,20 +455,13 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val oldRookPosition = Vector2(toPosition.x.roundToInt() + direction, y)
         val newRookPosition = Vector2(newX, y)
 
-        val kingAnimation = createAnimation(toPosition, fromPosition)
-        val rookAnimation = createAnimation(oldRookPosition, newRookPosition)
+        val kingAnimation = createAnimation(animationSpeed, toPosition, fromPosition)
+        val rookAnimation = createAnimation(animationSpeed, oldRookPosition, newRookPosition)
         kingAnimation.nextAnimation = rookAnimation
-//        if (runInBackground) {
-//            kingAnimation.onStart()
-//            rookAnimation.onStart()
-//        } else {
-//            kingAnimation.nextAnimation = createAnimation(oldRookPosition, newRookPosition)
-//            queueAnimation(kingAnimation)
-//        }
         return kingAnimation
     }
 
-    protected fun performCastle(team: Team, fromPosition: Vector2, toPosition: Vector2): AnimationData {
+    protected fun performCastle(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long): AnimationData {
         val rookDirection = if (toPosition.x < fromPosition.x) 1 else -1
 
         val oldRookPosition = if (toPosition.x > fromPosition.x) {
@@ -488,8 +472,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         val newRookPosition = toPosition + Vector2(rookDirection, 0)
 
-        val kingAnimation = createAnimation(fromPosition, toPosition)
-        val rookAnimation = createAnimation(oldRookPosition, newRookPosition)
+        val kingAnimation = createAnimation(animationSpeed, fromPosition, toPosition)
+        val rookAnimation = createAnimation(animationSpeed, oldRookPosition, newRookPosition)
         kingAnimation.nextAnimation = rookAnimation
         return kingAnimation
     }
@@ -523,6 +507,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         throw IllegalArgumentException("No king was found for team: $team")
+    }
+
+    companion object {
+        const val DEFAULT_ANIMATION_SPEED = 500L
     }
 
 }

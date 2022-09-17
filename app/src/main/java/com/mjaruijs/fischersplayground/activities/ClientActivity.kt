@@ -15,7 +15,6 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
-import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
@@ -33,7 +32,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
     protected var userId: String = DEFAULT_USER_ID
     protected var userName = DEFAULT_USER_NAME
-    private var initialized = false
 
     protected lateinit var networkManager: NetworkManager
     protected lateinit var dataManager: DataManager
@@ -71,18 +69,11 @@ abstract class ClientActivity : AppCompatActivity() {
 
         incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
 
-        initialized = getPreference(USER_PREFERENCE_FILE).getBoolean(INITIALIZED_KEY, false)
-        if (!initialized) {
-//            preloadModels()
-
-//            networkManager.run(this)
-//
-//            if (userId != DEFAULT_USER_ID) {
-//                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
-//            }
-//
-//            initialized = true
-//            getPreference(USER_PREFERENCE_FILE).edit().putBoolean(INITIALIZED_KEY, true).commit()
+        if (!networkManager.isConnected()) {
+            networkManager.run(applicationContext)
+            if (userId != DEFAULT_USER_ID) {
+                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+            }
         }
 
         dataManager.loadData(applicationContext)

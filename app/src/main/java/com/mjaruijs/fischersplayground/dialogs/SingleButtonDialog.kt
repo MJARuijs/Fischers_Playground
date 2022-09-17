@@ -39,7 +39,7 @@ class SingleButtonDialog(parent: Activity, title: String, message: String, butto
         button.setIconScaleType(ScaleType.SQUARE)
             .setColor(235, 186, 145)
             .setCornerRadius(20.0f)
-            .setOnClickListener {
+            .setOnClick {
                 onButtonClick()
                 dismiss()
             }
@@ -56,7 +56,7 @@ class SingleButtonDialog(parent: Activity, title: String, message: String, butto
     }
 
     fun setOnClick(onClick: () -> Unit): SingleButtonDialog {
-        button.setOnClickListener {
+        button.setOnClick {
             onClick()
             dismiss()
         }

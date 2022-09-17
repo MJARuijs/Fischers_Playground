@@ -28,8 +28,8 @@ class NetworkManager {
 
     }
 
-    private val clientInitializing = AtomicBoolean(false)
-    private val initialized = AtomicBoolean(false)
+    private val clientConnecting = AtomicBoolean(false)
+    private val clientConnected = AtomicBoolean(false)
 
     private lateinit var manager: Manager
     private lateinit var client: EncodedClient
@@ -42,17 +42,21 @@ class NetworkManager {
 
     fun stop(): Boolean {
         messageQueue.clear()
-        if (initialized.get()) {
+        if (clientConnected.get()) {
             client.close()
-            initialized.set(false)
+            clientConnected.set(false)
         }
-        clientInitializing.set(false)
+        clientConnecting.set(false)
         manager.stop()
         return true
     }
 
+    fun isConnected(): Boolean {
+        return clientConnected.get()
+    }
+
     fun run(context: Context, address: String = LOCAL_SERVER_IP, port: Int = SERVER_PORT) {
-        if (initialized.get()) {
+        if (clientConnected.get()) {
             return
         }
 
@@ -64,17 +68,17 @@ class NetworkManager {
 
         Thread {
             try {
-                clientInitializing.set(true)
+                clientConnecting.set(true)
                 client = EncodedClient(address, port, ::onRead)
-                initialized.set(true)
+                clientConnected.set(true)
             } catch (e: Exception) {
                 log("Failed to connect to server..")
-                initialized.set(false)
+                clientConnected.set(false)
             } finally {
-                clientInitializing.set(false)
+                clientConnecting.set(false)
             }
 
-            if (initialized.get()) {
+            if (clientConnected.get()) {
                 Thread(manager).start()
                 manager.register(client)
 
@@ -88,12 +92,11 @@ class NetworkManager {
 
     fun sendMessage(message: NetworkMessage) {
         Thread {
-            while (clientInitializing.get()) {
+            while (clientConnecting.get()) {
                 Thread.sleep(1)
             }
 
-            if (initialized.get()) {
-//                log("Sending message: $message")
+            if (clientConnected.get()) {
                 try {
                     client.write(message.toString())
                     messageQueue.remove(message)
@@ -102,7 +105,6 @@ class NetworkManager {
                 }
             } else {
                 messageQueue += message
-//                println("Queueing message: $message")
             }
 
         }.start()

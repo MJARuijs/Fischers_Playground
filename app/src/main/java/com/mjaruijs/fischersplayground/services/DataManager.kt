@@ -272,10 +272,6 @@ class DataManager(context: Context) {
             content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
         }
 
-//        if (caller.startsWith("ClientActivity")) {
-            println("Saving $content")
-//        }
-
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
     }
 
