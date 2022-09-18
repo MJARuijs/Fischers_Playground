@@ -36,7 +36,11 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private var chatInitialized = false
     private var chatOpened = false
-    private var chatTranslation = 0
+//    private var openChatTranslation = 0
+//    private var closedChatTranslation = 0
+
+    private var chatButtonWidth = 0
+    private var chatBoxWidth = 0
 
     private lateinit var undoRequestedDialog: DoubleButtonDialog
     private lateinit var undoAcceptedDialog: SingleButtonDialog
@@ -77,17 +81,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onResume() {
         setGameCallbacks()
-
-        (game as MultiPlayerGame).sendMoveData = {
-            val showPopup = getPreference(GAME_PREFERENCES_KEY).getBoolean(SettingsActivity.CONFIRM_MOVES_KEY, false)
-            if (showPopup) {
-                runOnUiThread {
-                    (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons(it)
-                }
-            } else {
-                confirmMove(it)
-            }
-        }
 
         undoRequestedDialog = DoubleButtonDialog(this, "Undo Requested", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest)
         undoAcceptedDialog = SingleButtonDialog(this, "Move Reversed", "Your undo request has been accepted!", "Continue")
@@ -159,7 +152,24 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }.start()
     }
 
+    private fun sendMoveData(moveNotation: String) {
+        val showPopup = getPreference(GAME_PREFERENCES_KEY).getBoolean(SettingsActivity.CONFIRM_MOVES_KEY, false)
+        if (showPopup) {
+            runOnUiThread {
+                (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons(moveNotation)
+            }
+        } else {
+            confirmMove(moveNotation)
+        }
+    }
+
     private fun onMoveMade(move: Move) {
+        println("Move made by ${move.team} ${game.getCurrentTeam()}")
+        if (move.team == game.getCurrentTeam()) {
+            val positionUpdateMessage = move.toChessNotation()
+            (game as MultiPlayerGame).moveToBeConfirmed = positionUpdateMessage
+            sendMoveData(positionUpdateMessage)
+        }
         dataManager[gameId] = game as MultiPlayerGame
         dataManager.saveData(applicationContext, "MPactivity onMoveMade")
     }
@@ -182,31 +192,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         (game as MultiPlayerGame).cancelMove()
         dataManager[gameId] = game as MultiPlayerGame
         dataManager.saveData(applicationContext, "MPactivity cancelMove")
-    }
-
-    override fun onDisplaySizeChanged(width: Int, height: Int) {
-        super.onDisplaySizeChanged(width, height)
-
-        if (!chatInitialized) {
-            val chatFragment = findViewById<FragmentContainerView>(R.id.chat_container)
-
-            val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
-            val chatButtonWidth = openChatButton.width
-            chatTranslation = width - chatButtonWidth
-
-            chatFragment.translationX -= chatTranslation
-            openChatButton.translationX -= chatTranslation
-            chatInitialized = true
-
-            val buttonHeight = getActionBarFragment()!!.view!!.measuredHeight
-            (getActionBarFragment() as MultiplayerActionButtonsFragment).initializeAnimator(buttonHeight)
-
-            if ((game as MultiPlayerGame).hasPendingMove()) {
-                runOnUiThread {
-                    (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons((game as MultiPlayerGame).moveToBeConfirmed, 0L)
-                }
-            }
-        }
     }
 
     override fun onClick(x: Float, y: Float) {
@@ -241,36 +226,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         (game as MultiPlayerGame).clearAllNews()
     }
 
-    private fun getChatFragment(): ChatFragment? {
-        return (supportFragmentManager.fragments.find { fragment -> fragment is ChatFragment } as ChatFragment?)
-    }
-
-    private fun isChatOpened(): Boolean {
-        return chatOpened
-    }
-
-    private fun onChatMessageSent(message: ChatMessage) {
-        networkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "$gameId|$userId|${message.timeStamp}|${message.message}"))
-        (game as MultiPlayerGame).chatMessages += message
-    }
-
     override fun onKeyboardHeightChanged(height: Int) {
         getChatFragment()?.translate(height)
-    }
-
-    private fun closeChat() {
-        val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", -chatTranslation.toFloat())
-        val chatButtonAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.open_chat_button), "x", 0.0f)
-
-        chatBoxAnimator.duration = 500L
-        chatButtonAnimator.duration = 500L
-
-        chatBoxAnimator.start()
-        chatButtonAnimator.start()
-
-        evaluateActionButtons()
-
-        chatOpened = false
     }
 
     override fun finishActivity(status: GameStatus) {
@@ -441,12 +398,69 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|$gameId"))
     }
 
-    private fun initChatBox() {
-        val chatBox = findViewById<ImageView>(R.id.open_chat_button) ?: return
+    override fun onDisplaySizeChanged(width: Int, height: Int) {
+        super.onDisplaySizeChanged(width, height)
 
-        chatBox.setOnClickListener {
-            val chatBoxEndX = if (chatOpened) -chatTranslation else 0
-            val chatButtonEndX = if (chatOpened) 0 else chatTranslation
+        if (!chatInitialized) {
+            val chatFragment = findViewById<FragmentContainerView>(R.id.chat_container)
+
+            val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
+            chatButtonWidth = openChatButton.width
+            chatBoxWidth = chatFragment.width
+
+//            openChatTranslation = chatButtonWidth
+//            closedChatTranslation = width
+
+            chatFragment.translationX = (chatBoxWidth + chatButtonWidth).toFloat()
+            openChatButton.translationX = chatBoxWidth.toFloat()
+
+            chatInitialized = true
+
+            val buttonHeight = getActionBarFragment()!!.view!!.measuredHeight
+            (getActionBarFragment() as MultiplayerActionButtonsFragment).initializeAnimator(buttonHeight)
+
+            if ((game as MultiPlayerGame).hasPendingMove()) {
+                runOnUiThread {
+                    (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons((game as MultiPlayerGame).moveToBeConfirmed, 0L)
+                }
+            }
+        }
+    }
+
+    private fun getChatFragment(): ChatFragment? {
+        return (supportFragmentManager.fragments.find { fragment -> fragment is ChatFragment } as ChatFragment?)
+    }
+
+    private fun isChatOpened(): Boolean {
+        return chatOpened
+    }
+
+    private fun onChatMessageSent(message: ChatMessage) {
+        networkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "$gameId|$userId|${message.timeStamp}|${message.message}"))
+        (game as MultiPlayerGame).chatMessages += message
+    }
+
+    private fun closeChat() {
+        val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", (chatButtonWidth + chatBoxWidth).toFloat())
+        val chatButtonAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.open_chat_button), "x", chatBoxWidth.toFloat())
+
+        chatBoxAnimator.duration = 500L
+        chatButtonAnimator.duration = 500L
+
+        chatBoxAnimator.start()
+        chatButtonAnimator.start()
+
+        evaluateActionButtons()
+
+        chatOpened = false
+    }
+
+    private fun initChatBox() {
+        val openChatButton = findViewById<ImageView>(R.id.open_chat_button) ?: return
+
+        openChatButton.setOnClickListener {
+            val chatBoxEndX = if (chatOpened) (chatBoxWidth + chatButtonWidth) else chatButtonWidth
+            val chatButtonEndX = if (chatOpened) chatBoxWidth else 0
 
             val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", chatBoxEndX.toFloat())
             val chatButtonAnimator = ObjectAnimator.ofFloat(it, "x", chatButtonEndX.toFloat())

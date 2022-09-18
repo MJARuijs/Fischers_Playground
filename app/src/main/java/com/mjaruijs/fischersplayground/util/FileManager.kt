@@ -52,8 +52,8 @@ object FileManager {
         }
     }
 
-    fun delete(context: Context, fileName: String) {
-        context.deleteFile(fileName)
+    fun delete(fileName: String) {
+        File(fileName).delete()
     }
 
 }

@@ -120,6 +120,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         )
 
         runOnUiThread {
+            println("UIThread is: ${Thread.currentThread().id}")
             animator.start()
         }
     }

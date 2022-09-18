@@ -8,10 +8,7 @@ import android.os.Bundle
 import android.transition.ChangeBounds
 import android.transition.TransitionManager
 import android.view.View
-import android.widget.CheckBox
-import android.widget.ImageView
-import android.widget.SeekBar
-import android.widget.TextView
+import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -23,6 +20,7 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
+import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
 import kotlin.math.roundToInt
 
@@ -111,6 +109,35 @@ class SettingsActivity : ClientActivity() {
         restoreGamePreferences()
         restoreFullscreenPreference()
         restore3DPreference()
+
+
+        //TODO: Delete this button later
+        findViewById<Button>(R.id.delete_server_button).setOnClickListener {
+            val path = "/data/data/com.mjaruijs.fischersplayground"
+            val preferenceFiles = arrayListOf(
+                "fcm_token",
+                "user_data",
+                "fire_base",
+                "FirebaseAppHeartBeat",
+                "com.google.android.gms.appid"
+            )
+
+            for (file in preferenceFiles) {
+                getSharedPreferences(file, MODE_PRIVATE).edit().clear().commit()
+                FileManager.delete("$path/shared_prefs/$file.xml")
+            }
+
+            val dataFiles = arrayListOf(
+                "mp_games",
+                "received_invites",
+                "recent_opponents"
+            )
+
+            for (file in dataFiles) {
+                FileManager.delete("$path/files/$file.txt")
+            }
+
+        }
     }
 
     override fun onBackPressed() {

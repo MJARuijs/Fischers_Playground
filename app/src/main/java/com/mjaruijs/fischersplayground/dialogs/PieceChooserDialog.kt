@@ -44,7 +44,6 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     onPieceSelected(square, PieceType.KNIGHT, team)
                 }
 
-
             bishopButton = dialog.findViewById(R.id.bishop_button)
             bishopButton
                 .setTexturedDrawable(R.drawable.white_bishop)
@@ -54,7 +53,6 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.BISHOP, team)
                 }
-
 
             rookButton = dialog.findViewById(R.id.rook_button)
             rookButton

@@ -248,7 +248,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Move {
+    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         possibleMoves.clear()
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
@@ -266,14 +266,49 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition)
         }
 
-        val animationFinished = AtomicBoolean(false)
+        val animationStarted = AtomicBoolean(false)
         animation.onStartCalls += {
-            animationFinished.set(true)
+            animationStarted.set(true)
         }
-        animation.onFinish = {
+        animation.onFinishCalls += {
             if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
                 promotedPiece = promotePawn(toPosition)
             }
+
+            val isCheck = isPlayerChecked(state, !team)
+            val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
+
+            updateCheckData(team, isCheck, isCheckMate)
+
+            val actualFromPosition: Vector2
+            val actualToPosition: Vector2
+            val actualTakenPosition: Vector2?
+
+            if (this.team == Team.WHITE) {
+                actualFromPosition = fromPosition
+                actualToPosition = toPosition
+                actualTakenPosition = takenPiecePosition
+            } else {
+                actualFromPosition = Vector2(7, 7) - fromPosition
+                actualToPosition = Vector2(7, 7) - toPosition
+                actualTakenPosition = if (takenPiecePosition != null) {
+                    Vector2(7, 7) - takenPiecePosition
+                } else {
+                    null
+                }
+            }
+
+            val move = Move(team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, takenPiece?.type, actualTakenPosition, promotedPiece)
+            if (!runInBackground) {
+                lastUpdated = Time.getFullTimeStamp()
+
+                if (isShowingCurrentMove()) {
+                    incrementMoveCounter()
+                }
+                moves += move
+            }
+
+            onMoveMade(move)
         }
 
         if (runInBackground) {
@@ -282,46 +317,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         } else {
             queueAnimation(animation)
         }
-
-        while (!animationFinished.get()) {
-            Thread.sleep(10)
-        }
-
-        val isCheck = isPlayerChecked(state, !team)
-        val isCheckMate = if (isCheck) isPlayerCheckMate(state, !team) else false
-
-        updateCheckData(team, isCheck, isCheckMate)
-
-        val actualFromPosition: Vector2
-        val actualToPosition: Vector2
-        val actualTakenPosition: Vector2?
-
-        if (this.team == Team.WHITE) {
-            actualFromPosition = fromPosition
-            actualToPosition = toPosition
-            actualTakenPosition = takenPiecePosition
-        } else {
-            actualFromPosition = Vector2(7, 7) - fromPosition
-            actualToPosition = Vector2(7, 7) - toPosition
-            actualTakenPosition = if (takenPiecePosition != null) {
-                Vector2(7, 7) - takenPiecePosition
-            } else {
-                null
-            }
-        }
-
-        val move = Move(team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, takenPiece?.type, actualTakenPosition, promotedPiece)
-        if (!runInBackground) {
-            lastUpdated = Time.getFullTimeStamp()
-
-            if (isShowingCurrentMove()) {
-                incrementMoveCounter()
-            }
-            moves += move
-        }
-
-        onMoveMade(move)
-        return move
     }
 
     protected fun finishMove(move: Move) {

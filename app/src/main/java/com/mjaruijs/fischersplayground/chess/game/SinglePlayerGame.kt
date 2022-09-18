@@ -30,7 +30,7 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
         return super.showNextMove(animationSpeed)
     }
 
-    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean, animationSpeed: Long): Move {
+    fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         if (!isShowingCurrentMove()) {
             val moveCount = moves.size
             for (i in currentMoveIndex + 1 until moveCount) {
@@ -54,7 +54,7 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
             actualToPosition = toPosition
         }
 
-        return super.move(team, actualFromPosition, actualToPosition, false, animationSpeed)
+        move(team, actualFromPosition, actualToPosition, false, animationSpeed)
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {
@@ -63,7 +63,7 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
 
             if (possibleMoves.contains(clickedSquare)) {
                 Thread {
-                    move(teamToMove, previouslySelectedSquare, clickedSquare, false)
+                    move(teamToMove, previouslySelectedSquare, clickedSquare)
                 }.start()
 
                 return Action.PIECE_MOVED

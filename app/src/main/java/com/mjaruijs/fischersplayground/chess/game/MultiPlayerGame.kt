@@ -13,11 +13,6 @@ import com.mjaruijs.fischersplayground.util.FloatUtils
 
 class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", private val savedMoves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated) {
 
-
-    var sendMoveData: (String) -> Unit = {
-        println("Multiplayer move was made, but no data was actually sent. Did you forget to set the sendMoveData() function?")
-    }
-
     init {
         status = if (savedMoves.isEmpty()) {
             if (isPlayingWhite) {
@@ -175,15 +170,15 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
                 if (move.promotedPiece != null) {
                     state[toPosition] = Piece(move.promotedPiece, move.team)
                 }
+
+                val isCheck = isPlayerChecked(state, team)
+                val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
+
+                updateCheckData(move.team, isCheck, isCheckMate)
             })
 
             queueAnimation(animation)
         }
-
-        val isCheck = isPlayerChecked(state, team)
-        val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
-
-        updateCheckData(move.team, isCheck, isCheckMate)
     }
 
     private fun movePlayer(fromPosition: Vector2, toPosition: Vector2) {
@@ -191,11 +186,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             return
         }
 
-        val move = move(team, fromPosition, toPosition, false)
-
-        val positionUpdateMessage = move.toChessNotation()
-        moveToBeConfirmed = positionUpdateMessage
-        sendMoveData(moveToBeConfirmed)
+        move(team, fromPosition, toPosition, false)
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {

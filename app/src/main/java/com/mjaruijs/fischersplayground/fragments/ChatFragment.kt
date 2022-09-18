@@ -19,7 +19,6 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatAdapter
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.util.Time
-import kotlin.math.abs
 
 class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val close: () -> Unit) : Fragment(R.layout.chat_fragment) {
 
@@ -96,10 +95,6 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
 
                     totalDX += dx
 
-                    if (abs(dx) > 5.0f) {
-//                        translate(-dx)
-                    }
-
                     previousX = event.x
                     previousY = event.y
                 }
@@ -108,7 +103,7 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
                     val totalHoldTime = currentTime - holdStartTime
                     holdStartTime = 0L
 
-                    if (totalDX < -20f) {
+                    if (totalDX > 20f) {
                         closeKeyboard()
                         close()
                     } else if (totalHoldTime < 250L) {

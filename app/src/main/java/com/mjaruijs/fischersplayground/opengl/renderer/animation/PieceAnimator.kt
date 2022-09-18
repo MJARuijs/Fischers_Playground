@@ -69,9 +69,12 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val tran
     }
 
     private fun onFinish() {
-        for (call in onFinishCalls) {
-            call()
-        }
+        Thread {
+            for (call in onFinishCalls) {
+                call()
+            }
+        }.start()
+
     }
 
 }

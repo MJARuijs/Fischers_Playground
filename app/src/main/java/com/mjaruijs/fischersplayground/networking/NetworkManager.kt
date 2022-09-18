@@ -12,8 +12,8 @@ class NetworkManager {
     companion object {
 
         private const val PUBLIC_SERVER_IP = "217.101.191.23"
-//        private const val LOCAL_SERVER_IP = "192.168.178.103"
-        private const val LOCAL_SERVER_IP = "10.248.59.63"
+        private const val LOCAL_SERVER_IP = "192.168.178.103"
+//        private const val LOCAL_SERVER_IP = "10.248.59.63"
         private const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
@@ -60,6 +60,8 @@ class NetworkManager {
             return
         }
 
+        log("Starting networker")
+
         manager = Manager("Client")
         manager.context = context
         manager.setOnClientDisconnect {
@@ -98,6 +100,7 @@ class NetworkManager {
 
             if (clientConnected.get()) {
                 try {
+                    log("Sending message: ${message.content}")
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
@@ -111,7 +114,7 @@ class NetworkManager {
     }
 
     private fun onRead(message: NetworkMessage, context: Context) {
-//        log("Received message: $message")
+        log("Received message: $message")
 
         val messageData = message.content.split('|').toTypedArray()
 

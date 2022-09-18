@@ -269,7 +269,9 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
-        runOnUiThread { pieceChooserDialog.show(square, team) }
+        runOnUiThread {
+            pieceChooserDialog.show(square, team)
+        }
         return PieceType.QUEEN
     }
 
