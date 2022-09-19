@@ -16,6 +16,7 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
@@ -45,6 +46,7 @@ class MainActivity : ClientActivity() {
     private lateinit var gameAdapter: GameAdapter
 
     private var hasNewToken = false
+    private var showFinishedGames = false
 
     private var maxTextSize = Float.MAX_VALUE
 
@@ -53,7 +55,6 @@ class MainActivity : ClientActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
-        hideActivityDecorations()
 
         createUsernameDialog.create(this)
         createUsernameDialog.setLayout()
@@ -78,16 +79,6 @@ class MainActivity : ClientActivity() {
 
         initUIComponents()
 
-//        try {
-//            val newsTopic = intent.getStringExtra("news_topic")
-//            if (newsTopic != null) {
-//                Toast.makeText(applicationContext, "Got news: $newsTopic", Toast.LENGTH_SHORT).show()
-//                processNotification(newsTopic)
-//            }
-//        } catch (e: Exception) {
-//            Logger.log(this, e.stackTraceToString(), "main_activity_crash_report.txt")
-//        }
-
         FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
             val token = result.token
             val currentToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
@@ -103,6 +94,30 @@ class MainActivity : ClientActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideActivityDecorations()
+        manageGameVisibility()
+
+        Thread {
+            while (dataManager.isLocked()) {
+                Thread.sleep(1)
+            }
+            runOnUiThread {
+                restoreSavedGames(dataManager.getSavedGames())
+                restoreSavedInvites(dataManager.savedInvites)
+                updateRecentOpponents(dataManager.recentOpponents)
+            }
+        }.start()
+
+        stayingInApp = false
+    }
+
+    override fun onDestroy() {
+        createGameDialog.dismiss()
+        super.onDestroy()
     }
 
     override fun onMessageReceived(topic: Topic, content: Array<String>) {
@@ -169,7 +184,7 @@ class MainActivity : ClientActivity() {
 
     private fun onGameClicked(gameCard: GameCardItem) {
         stayingInApp = true
-        gameAdapter.clearUpdate(gameCard, userId)
+        gameAdapter.clearUpdate(gameCard)
 
         if (gameCard.gameStatus == GameStatus.INVITE_RECEIVED) {
             showNewInviteDialog(gameCard.id, gameCard.opponentName)
@@ -279,29 +294,6 @@ class MainActivity : ClientActivity() {
         networkManager.sendMessage(NetworkMessage(Topic.SET_USER_NAME, userName))
     }
 
-    override fun onResume() {
-        super.onResume()
-
-        Thread {
-            while (dataManager.isLocked()) {
-                Thread.sleep(1)
-            }
-            runOnUiThread {
-                restoreSavedGames(dataManager.getSavedGames())
-                restoreSavedInvites(dataManager.savedInvites)
-                updateRecentOpponents(dataManager.recentOpponents)
-            }
-        }.start()
-
-        stayingInApp = false
-    }
-
-    override fun onDestroy() {
-        createGameDialog.dismiss()
-
-        super.onDestroy()
-    }
-
     private fun savePreference(key: String, value: String) {
         val preferences = getPreference(USER_PREFERENCE_FILE)
 
@@ -311,9 +303,20 @@ class MainActivity : ClientActivity() {
         }
     }
 
+    private fun manageGameVisibility() {
+        val preferences = getSharedPreferences(SettingsActivity.GAME_PREFERENCES_KEY, MODE_PRIVATE)
+        showFinishedGames = preferences.getBoolean(SettingsActivity.SHOW_FINISHED_GAMES_KEY, false)
+
+        if (!showFinishedGames) {
+            gameAdapter.removeFinishedGames()
+        }
+    }
+
     private fun hideActivityDecorations() {
         val preferences = getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
         val isFullscreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
+
+        println("isFullScreen: $isFullscreen")
 
         supportActionBar?.hide()
 
@@ -388,6 +391,10 @@ class MainActivity : ClientActivity() {
 
     override fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
         for ((gameId, game) in games ?: return) {
+            if (!showFinishedGames && game.isFinished()) {
+                continue
+            }
+
             val doesCardExist = gameAdapter.updateGameCard(gameId, game.status, game.lastUpdated, game.isPlayingWhite, false)
 
             if (!doesCardExist) {

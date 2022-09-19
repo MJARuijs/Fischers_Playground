@@ -1,13 +1,13 @@
 package com.mjaruijs.fischersplayground.activities.game
 
-import android.os.Bundle
+import android.os.*
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.ClientActivity
-import com.mjaruijs.fischersplayground.activities.SettingsActivity
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -16,6 +16,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.*
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
+import com.mjaruijs.fischersplayground.fragments.actionbars.MultiplayerActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
@@ -24,7 +25,7 @@ import com.mjaruijs.fischersplayground.util.Logger
 
 abstract class GameActivity : ClientActivity() {
 
-    private lateinit var checkMateDialog: SingleButtonDialog
+    private lateinit var checkMateDialog: DoubleButtonDialog
     private lateinit var glView: SurfaceView
 
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
@@ -41,6 +42,7 @@ abstract class GameActivity : ClientActivity() {
     protected var loadFragments = false
 
     open lateinit var game: Game
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,7 +83,7 @@ abstract class GameActivity : ClientActivity() {
     override fun onResume() {
         super.onResume()
 
-        checkMateDialog = SingleButtonDialog(this, "Checkmate!", "Exit", ::closeAndSaveGameAsWin)
+        checkMateDialog = DoubleButtonDialog(this, "Checkmate!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin, 0.7f)
         stayingInApp = false
 
         pieceChooserDialog.setLayout()
@@ -192,25 +194,33 @@ abstract class GameActivity : ClientActivity() {
 
     open fun onClick(x: Float, y: Float) {
         try {
+            val vibrateOnClick = getSharedPreferences(SettingsActivity.GAME_PREFERENCES_KEY, MODE_PRIVATE).getBoolean(SettingsActivity.VIBRATE_KEY, false)
+            if (vibrateOnClick) {
+                vibrate()
+            }
             game.onClick(x, y, displayWidth, displayHeight)
         } catch (e: Exception) {
             Logger.log(applicationContext, e.stackTraceToString(), "onclick_crash_log.txt")
         }
     }
 
+    private fun vibrate() {
+        vibrator.vibrate(VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE))
+    }
+
     protected fun requestRender() {
         glView.requestRender()
     }
 
-    private fun onCheckMate(team: Team) {
+    open fun onCheckMate(team: Team) {
         runOnUiThread {
             if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
                 checkMateDialog.setMessage("You won!")
-                    .setOnClick { closeAndSaveGameAsWin() }
+                    .setRightOnClick { closeAndSaveGameAsWin() }
                     .show()
             } else {
                 checkMateDialog.setMessage("$opponentName has won!")
-                    .setOnClick { closeAndSaveGameAsLoss() }
+                    .setRightOnClick { closeAndSaveGameAsLoss() }
                     .show()
             }
         }
@@ -241,6 +251,13 @@ abstract class GameActivity : ClientActivity() {
     open fun finishActivity(status: GameStatus) {
         stayingInApp = true
         finish()
+    }
+
+    open fun viewBoardAfterFinish() {
+        checkMateDialog.dismiss()
+        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableResignButton()
+        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableDrawButton()
+        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableUndoButton()
     }
 
     open fun closeAndSaveGameAsWin() {

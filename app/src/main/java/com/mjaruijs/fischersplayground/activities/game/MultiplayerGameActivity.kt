@@ -8,8 +8,8 @@ import android.widget.ImageView
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.activities.SettingsActivity
-import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.GAME_PREFERENCES_KEY
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Companion.GAME_PREFERENCES_KEY
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightObserver
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvider
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
@@ -18,6 +18,7 @@ import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
+import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.*
 import com.mjaruijs.fischersplayground.fragments.ChatFragment
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
@@ -36,8 +37,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private var chatInitialized = false
     private var chatOpened = false
-//    private var openChatTranslation = 0
-//    private var closedChatTranslation = 0
+    private var reviewingFinishedGame = false
 
     private var chatButtonWidth = 0
     private var chatBoxWidth = 0
@@ -82,7 +82,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun onResume() {
         setGameCallbacks()
 
-        undoRequestedDialog = DoubleButtonDialog(this, "Undo Requested", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest)
+        undoRequestedDialog = DoubleButtonDialog(this, "Undo Requested", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest, 0.5f)
         undoAcceptedDialog = SingleButtonDialog(this, "Move Reversed", "Your undo request has been accepted!", "Continue")
         undoRejectedDialog = SingleButtonDialog(this, "Undo Rejected", "Your undo request was rejected!", "Continue")
 
@@ -164,7 +164,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun onMoveMade(move: Move) {
-        println("Move made by ${move.team} ${game.getCurrentTeam()}")
         if (move.team == game.getCurrentTeam()) {
             val positionUpdateMessage = move.toChessNotation()
             (game as MultiPlayerGame).moveToBeConfirmed = positionUpdateMessage
@@ -233,6 +232,17 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun finishActivity(status: GameStatus) {
         (game as MultiPlayerGame).status = status
         super.finishActivity(status)
+    }
+
+    override fun onCheckMate(team: Team) {
+        if (!reviewingFinishedGame) {
+            super.onCheckMate(team)
+        }
+    }
+
+    override fun viewBoardAfterFinish() {
+        reviewingFinishedGame = true
+        super.viewBoardAfterFinish()
     }
 
     private fun onOfferDraw() {

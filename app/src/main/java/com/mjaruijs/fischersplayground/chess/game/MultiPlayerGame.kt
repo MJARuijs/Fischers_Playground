@@ -32,6 +32,10 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         restoreMoves()
     }
 
+    fun isFinished(): Boolean {
+        return status == GameStatus.GAME_WON || status == GameStatus.GAME_DRAW || status == GameStatus.GAME_LOST
+    }
+
     fun addMessage(message: ChatMessage) {
         chatMessages += message
     }

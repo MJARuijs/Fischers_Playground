@@ -127,6 +127,18 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
             }
     }
 
+    fun disableResignButton() {
+        resignButton.disable()
+    }
+
+    fun disableDrawButton() {
+        offerDrawButton.disable()
+    }
+
+    fun disableUndoButton() {
+        redoButton.disable()
+    }
+
     override fun onPause() {
         super.onPause()
 

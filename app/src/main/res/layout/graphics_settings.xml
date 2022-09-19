@@ -5,7 +5,7 @@
     android:id="@+id/graphics_3d_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    tools:context=".activities.SettingsActivity">
+    tools:context=".activities.settings.SettingsActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/graphics_controls_layout"

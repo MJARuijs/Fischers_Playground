@@ -6,8 +6,8 @@ import android.graphics.Bitmap
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import androidx.appcompat.app.AppCompatActivity
-import com.mjaruijs.fischersplayground.activities.SettingsActivity
-import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.CAMERA_ZOOM_KEY
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Companion.CAMERA_ZOOM_KEY
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures

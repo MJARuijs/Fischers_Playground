@@ -5,7 +5,7 @@
     android:id="@+id/settings_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activities.SettingsActivity">
+    tools:context=".activities.settings.SettingsActivity">
 
     <ImageView
         android:id="@+id/settings_background"

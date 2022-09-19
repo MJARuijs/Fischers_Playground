@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.userinterface
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.graphics.*
 import android.os.Build
 import android.os.VibrationEffect
@@ -12,6 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.max
@@ -150,7 +152,8 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     }
 
     private fun onClick() {
-        if (vibrateOnTrigger) {
+        val vibrateOnClick = context.getSharedPreferences(SettingsActivity.GAME_PREFERENCES_KEY, MODE_PRIVATE).getBoolean(SettingsActivity.VIBRATE_KEY, false)
+        if (vibrateOnClick) {
             vibrate()
         }
         onClick(this)

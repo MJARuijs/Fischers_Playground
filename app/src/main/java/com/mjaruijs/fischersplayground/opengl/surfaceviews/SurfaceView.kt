@@ -6,8 +6,8 @@ import android.content.Context.MODE_PRIVATE
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.MotionEvent
-import com.mjaruijs.fischersplayground.activities.SettingsActivity
-import com.mjaruijs.fischersplayground.activities.SettingsActivity.Companion.GRAPHICS_3D_KEY
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Companion.GRAPHICS_3D_KEY
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
 

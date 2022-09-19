@@ -10,7 +10,7 @@ import com.mjaruijs.fischersplayground.userinterface.ScaleType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import kotlin.math.roundToInt
 
-class DoubleButtonDialog(parent: Activity, title: String, message: String, leftButtonIconLocation: Int?, leftButtonText: String?, private var onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int?, rightButtonText: String?, private var onRightButtonClick: () -> Unit) {
+class DoubleButtonDialog(parent: Activity, title: String, message: String, leftButtonIconLocation: Int?, leftButtonText: String?, private var onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int?, rightButtonText: String?, private var onRightButtonClick: () -> Unit, minWidth: Float = 0.5f) {
 
     constructor(parent: Activity, title: String, message: String, leftButtonIconLocation: Int, onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit) : this(parent, title, message, leftButtonIconLocation, null, onLeftButtonClick, rightButtonIconLocation, null, onRightButtonClick)
 
@@ -18,7 +18,7 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
 
     constructor(parent: Activity, title: String, leftButtonIconLocation: Int, onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit) : this(parent, title, "", leftButtonIconLocation, null, onLeftButtonClick, rightButtonIconLocation, null, onRightButtonClick)
 
-    constructor(parent: Activity, title: String, leftButtonText: String, onLeftButtonClick: () -> Unit, rightButtonText: String, onRightButtonClick: () -> Unit) : this(parent, title, "", null, leftButtonText, onLeftButtonClick, null, rightButtonText, onRightButtonClick)
+    constructor(parent: Activity, title: String, leftButtonText: String, onLeftButtonClick: () -> Unit, rightButtonText: String, onRightButtonClick: () -> Unit, minWidth: Float) : this(parent, title, "", null, leftButtonText, onLeftButtonClick, null, rightButtonText, onRightButtonClick, minWidth)
 
     constructor(parent: Activity, title: String, leftButtonIconLocation: Int, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit = {}) : this(parent, title, "", leftButtonIconLocation, null, {}, rightButtonIconLocation, null, onRightButtonClick)
 
@@ -33,6 +33,9 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
     private val leftButton: UIButton
     private val rightButton: UIButton
 
+    private var maxTextSize = Float.MAX_VALUE
+    private var numberOfInitializedButtons = 0
+
     init {
         dialog.setContentView(R.layout.double_button_dialog)
         dialog.show()
@@ -43,12 +46,13 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
         leftButton = dialog.findViewById(R.id.left_dialog_button)
         rightButton = dialog.findViewById(R.id.right_dialog_button)
         messageView = dialog.findViewById(R.id.dialog_message)
-        messageView.minWidth = (parent.resources.displayMetrics.widthPixels * 0.5f).roundToInt()
+        messageView.minWidth = (parent.resources.displayMetrics.widthPixels * minWidth).roundToInt()
         messageView.text = message
         titleView.text = title
         leftButton.setIconScaleType(ScaleType.SQUARE)
             .setColor(57, 57, 57)
             .setCornerRadius(20.0f)
+            .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
                 onLeftButtonClick()
                 dismiss()
@@ -67,6 +71,7 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
         rightButton.setIconScaleType(ScaleType.SQUARE)
             .setColor(235, 186, 145)
             .setCornerRadius(20.0f)
+            .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
                 onRightButtonClick()
                 dismiss()
@@ -80,6 +85,19 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
             rightButton.setText(rightButtonText)
                 .setButtonTextColor(Color.WHITE)
                 .setButtonTextSize(50.0f)
+        }
+    }
+
+    private fun onButtonInitialized(textSize: Float) {
+        if (textSize < maxTextSize) {
+            maxTextSize = textSize
+        }
+
+        numberOfInitializedButtons++
+
+        if (numberOfInitializedButtons == 2) {
+            leftButton.setFinalTextSize(maxTextSize)
+            rightButton.setFinalTextSize(maxTextSize)
         }
     }
 

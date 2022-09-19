@@ -44,18 +44,6 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    fun updateGameCard(gameId: String, newStatus: GameStatus, isPlayerWhite: Boolean? = null): Boolean {
-        val game = games.find { game -> game.id == gameId } ?: return false
-
-        game.gameStatus = newStatus
-        game.isPlayingWhite = isPlayerWhite
-
-        sort()
-        notifyDataSetChanged()
-        return true
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
     fun updateCardStatus(id: String, newStatus: GameStatus, timeStamp: Long) {
         val game = games.find { game -> game.id == id } ?: throw IllegalArgumentException("Could not update game card with id: $id, since it does not exist..")
         game.gameStatus = newStatus
@@ -84,12 +72,10 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
         notifyItemChanged(gameIndex)
     }
 
-    fun clearUpdate(gameCardItem: GameCardItem, userId: String) {
+    fun clearUpdate(gameCardItem: GameCardItem) {
         gameCardItem.hasUpdate = false
         val gameIndex = games.indexOf(gameCardItem)
         notifyItemChanged(gameIndex)
-
-//        NetworkManager.sendMessage(Message(Topic.INFO, "clear_update", "$userId|${gameCardItem.id}"))
     }
 
     private fun clearUpdate(gameId: String) {
@@ -116,6 +102,20 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
         games.removeIf { gameCard -> gameCard.id == gameId }
         notifyDataSetChanged()
         onGameDeleted(gameId)
+    }
+
+    fun removeFinishedGames() {
+        games.forEach { gameCard ->
+            println("Status: ${gameCard.gameStatus}")
+            if (gameCard.gameStatus == GameStatus.GAME_WON || gameCard.gameStatus == GameStatus.GAME_DRAW || gameCard.gameStatus == GameStatus.GAME_LOST) {
+                println("Can be removed: ${gameCard.id}")
+            }
+        }
+        games.removeIf { gameCard ->
+            gameCard.gameStatus == GameStatus.GAME_WON || gameCard.gameStatus == GameStatus.GAME_DRAW || gameCard.gameStatus == GameStatus.GAME_LOST
+        }
+        println("Games size: ${games.size}")
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GameViewHolder {

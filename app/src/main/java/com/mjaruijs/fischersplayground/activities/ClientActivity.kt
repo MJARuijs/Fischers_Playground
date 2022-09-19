@@ -1,10 +1,9 @@
 package com.mjaruijs.fischersplayground.activities
 
+import android.content.Context
 import android.content.IntentFilter
 import android.content.SharedPreferences
-import android.os.Bundle
-import android.os.Parcel
-import android.os.Parcelable
+import android.os.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.Data
@@ -35,6 +34,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     protected lateinit var networkManager: NetworkManager
     protected lateinit var dataManager: DataManager
+    protected lateinit var vibrator: Vibrator
 
     open val stayInAppOnBackPress = true
 
@@ -66,6 +66,14 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
 
         incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
 
