@@ -11,8 +11,9 @@ class NetworkManager {
 
     companion object {
 
-        private const val PUBLIC_SERVER_IP = "217.101.191.23"
-        private const val LOCAL_SERVER_IP = "192.168.178.103"
+        private const val PUBLIC_SERVER_IP = "94.208.124.161"
+//        private const val PUBLIC_SERVER_IP = "217.101.191.23"
+        private const val LOCAL_SERVER_IP = "192.168.178.101"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
         private const val SERVER_PORT = 4500
 
@@ -55,7 +56,7 @@ class NetworkManager {
         return clientConnected.get()
     }
 
-    fun run(context: Context, address: String = LOCAL_SERVER_IP, port: Int = SERVER_PORT) {
+    fun run(context: Context, address: String = PUBLIC_SERVER_IP, port: Int = SERVER_PORT) {
         if (clientConnected.get()) {
             return
         }
@@ -71,7 +72,7 @@ class NetworkManager {
         Thread {
             try {
                 clientConnecting.set(true)
-                client = EncodedClient(address, port, ::onRead)
+                client = EncodedClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
             } catch (e: Exception) {
                 log("Failed to connect to server..")

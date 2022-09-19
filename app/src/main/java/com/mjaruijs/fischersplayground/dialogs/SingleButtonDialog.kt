@@ -28,6 +28,8 @@ class SingleButtonDialog(parent: Activity, title: String, message: String, butto
         dialog.setContentView(R.layout.single_button_dialog)
         dialog.show()
         dialog.dismiss()
+        dialog.setCancelable(false)
+        dialog.setCanceledOnTouchOutside(false)
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val titleView = dialog.findViewById<TextView>(R.id.dialog_title)

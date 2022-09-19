@@ -70,11 +70,9 @@ class MainActivity : ClientActivity() {
 
             preloadModels()
 
-            networkManager.run(this)
-
-            if (userId != DEFAULT_USER_ID) {
-                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
-            }
+//            if (userId != DEFAULT_USER_ID) {
+//                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+//            }
         }
 
         initUIComponents()
@@ -214,12 +212,6 @@ class MainActivity : ClientActivity() {
         incomingInviteDialog.show()
     }
 
-    private fun onGameDeleted(gameId: String) {
-        dataManager.removeGame(gameId)
-        dataManager.savedInvites.remove(gameId)
-        dataManager.saveData(applicationContext, "MainActivity onGameDeleted")
-    }
-
     override fun onNewGameStarted(output: Parcelable) {
         val gameCard = output as GameCardItem
         val doesCardExist = gameAdapter.updateGameCard(gameCard.id, gameCard.gameStatus, gameCard.lastUpdated, gameCard.isPlayingWhite, gameCard.hasUpdate)
@@ -339,7 +331,7 @@ class MainActivity : ClientActivity() {
     }
 
     private fun initUIComponents() {
-        gameAdapter = GameAdapter(::onGameClicked, ::onGameDeleted)
+        gameAdapter = GameAdapter(::onGameClicked)
 
         val gameRecyclerView = findViewById<RecyclerView>(R.id.game_list)
         gameRecyclerView.layoutManager = LinearLayoutManager(this)

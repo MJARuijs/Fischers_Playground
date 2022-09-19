@@ -78,6 +78,7 @@ abstract class ClientActivity : AppCompatActivity() {
         incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
 
         if (!networkManager.isConnected()) {
+
             networkManager.run(applicationContext)
             if (userId != DEFAULT_USER_ID) {
                 networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))

@@ -103,7 +103,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun onPause() {
         dataManager[gameId] = (game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity onPause")
-        println("Just tried to save shizzle: ${dataManager[gameId].moves.size}")
         keyboardHeightProvider.observer = null
         super.onPause()
     }
@@ -417,9 +416,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
             chatButtonWidth = openChatButton.width
             chatBoxWidth = chatFragment.width
-
-//            openChatTranslation = chatButtonWidth
-//            closedChatTranslation = width
 
             chatFragment.translationX = (chatBoxWidth + chatButtonWidth).toFloat()
             openChatButton.translationX = chatBoxWidth.toFloat()

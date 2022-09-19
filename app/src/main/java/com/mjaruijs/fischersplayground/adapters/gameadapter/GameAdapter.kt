@@ -6,17 +6,15 @@ import android.view.View
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.util.Time
-import kotlin.IllegalArgumentException
-import kotlin.collections.ArrayList
 
-class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val onGameDeleted: (String) -> Unit) : RecyclerView.Adapter<GameAdapter.GameViewHolder>() {
+class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerView.Adapter<GameAdapter.GameViewHolder>() {
 
     private val games = ArrayList<GameCardItem>()
 
@@ -98,51 +96,36 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
         }
     }
 
-    private fun delete(gameId: String) {
-        games.removeIf { gameCard -> gameCard.id == gameId }
-        notifyDataSetChanged()
-        onGameDeleted(gameId)
-    }
-
     fun removeFinishedGames() {
-        games.forEach { gameCard ->
-            println("Status: ${gameCard.gameStatus}")
-            if (gameCard.gameStatus == GameStatus.GAME_WON || gameCard.gameStatus == GameStatus.GAME_DRAW || gameCard.gameStatus == GameStatus.GAME_LOST) {
-                println("Can be removed: ${gameCard.id}")
-            }
-        }
         games.removeIf { gameCard ->
             gameCard.gameStatus == GameStatus.GAME_WON || gameCard.gameStatus == GameStatus.GAME_DRAW || gameCard.gameStatus == GameStatus.GAME_LOST
         }
-        println("Games size: ${games.size}")
         notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GameViewHolder {
-        return GameViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.match_card, parent, false))
+        return GameViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.game_card, parent, false))
     }
 
     override fun onBindViewHolder(holder: GameViewHolder, position: Int) {
         val gameCard = games[position]
+
         holder.gameStatusView.setBackgroundColor(gameCard.gameStatus.color)
         holder.opponentNameView.text = gameCard.opponentName
         holder.updateIndicator.visibility = if (gameCard.hasUpdate) VISIBLE else INVISIBLE
-        holder.gameLayout.setOnClickListener {
+        holder.layout.setOnClickListener {
             onGameClicked(gameCard)
-        }
-        holder.deleteButton.setOnClickListener {
-            delete(gameCard.id)
         }
     }
 
     override fun getItemCount() = games.size
 
     inner class GameViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val gameCard: CardView = view.findViewById(R.id.game_card)
         val opponentNameView: TextView = view.findViewById(R.id.opponent_name)
         val gameStatusView: View = view.findViewById(R.id.game_status_view)
-        val gameLayout: ConstraintLayout = view.findViewById(R.id.game_layout)
         val updateIndicator: ImageView = view.findViewById(R.id.update_indicator)
-        val deleteButton: Button = view.findViewById(R.id.delete_match_button)
+        val layout: ConstraintLayout = view.findViewById(R.id.game_layout)
     }
 
 }

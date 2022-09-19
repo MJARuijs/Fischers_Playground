@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.fragments
 
 import android.content.Context
 import android.os.Bundle
-import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -18,6 +17,7 @@ import com.mjaruijs.fischersplayground.adapters.MarginItemDecoration
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatAdapter
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
+import com.mjaruijs.fischersplayground.listeners.OnSwipeTouchListener
 import com.mjaruijs.fischersplayground.util.Time
 
 class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val close: () -> Unit) : Fragment(R.layout.chat_fragment) {
@@ -32,12 +32,6 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
 
     private lateinit var sendButton: CardView
     private var keyboardHeight = -1
-
-    private var previousX = 0f
-    private var previousY = 0f
-
-    private var totalDX = 0f
-    private var holdStartTime = 0L
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -77,43 +71,16 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
             close()
         }
 
-        chatRecycler.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                return true
-            }
+        chatRecycler.addOnItemTouchListener(OnSwipeTouchListener(OnSwipeTouchListener.SwipeDirection.RIGHT, ::onSwipe, ::onClick))
+    }
 
-            override fun onTouchEvent(rv: RecyclerView, event: MotionEvent) {
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    totalDX = 0f
-                    holdStartTime = System.currentTimeMillis()
+    private fun onClick() {
+        closeKeyboard()
+    }
 
-                    previousX = event.x
-                    previousY = event.y
-                }
-                if (event.action == MotionEvent.ACTION_MOVE) {
-                    val dx = event.x - previousX
-
-                    totalDX += dx
-
-                    previousX = event.x
-                    previousY = event.y
-                }
-                if (event.action == MotionEvent.ACTION_UP) {
-                    val currentTime = System.currentTimeMillis()
-                    val totalHoldTime = currentTime - holdStartTime
-                    holdStartTime = 0L
-
-                    if (totalDX > 20f) {
-                        closeKeyboard()
-                        close()
-                    } else if (totalHoldTime < 250L) {
-                        closeKeyboard()
-                    }
-                }
-            }
-
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
-        })
+    private fun onSwipe() {
+        closeKeyboard()
+        close()
     }
 
     private fun closeKeyboard() {
