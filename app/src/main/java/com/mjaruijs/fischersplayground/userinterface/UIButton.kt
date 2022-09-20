@@ -139,8 +139,6 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
                     }
 
                     val buttonReleasedTime = System.currentTimeMillis()
-                    println("UP $buttonReleasedTime $startClickTimer ${buttonReleasedTime - startClickTimer}")
-
                     if (buttonReleasedTime - startClickTimer < maxClickDelay) {
                         onClick()
                     }

@@ -10,9 +10,9 @@ import java.nio.channels.ClosedChannelException
 import java.nio.channels.SocketChannel
 import java.util.*
 
-open class EncodedClient(channel: SocketChannel, val address: String, val callback: (NetworkMessage, Context) -> Unit) : NonBlockingClient(channel) {
+open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, Context) -> Unit) : NonBlockingClient(channel) {
 
-    constructor(address: String, port: Int, callback: (NetworkMessage, Context) -> Unit): this(SocketChannel.open(InetSocketAddress(address, port)), address, callback)
+    constructor(address: String, port: Int, callback: (NetworkMessage, Context) -> Unit): this(SocketChannel.open(InetSocketAddress(address, port)), callback)
 
     final override fun write(bytes: ByteArray) {
         try {

@@ -36,6 +36,7 @@ class PlayerAdapter(var id: String, private val onInvite: (String, Long, String,
         holder.nameButton.setButtonTextSize(150f)
         holder.nameButton.setColor(Color.TRANSPARENT)
         holder.nameButton.setOnClick {
+
             val inviteId = "${id}_${players[position].id}_${System.nanoTime()}"
             val timeStamp = Time.getFullTimeStamp()
 

@@ -60,7 +60,7 @@ class MainActivity : ClientActivity() {
         createUsernameDialog.setLayout()
 
         if (userName == DEFAULT_USER_NAME) {
-            createUsernameDialog.show(::saveUserName)
+//            createUsernameDialog.show(::saveUserName)
         } else {
             findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
         }
@@ -69,10 +69,6 @@ class MainActivity : ClientActivity() {
             initialized = true
 
             preloadModels()
-
-//            if (userId != DEFAULT_USER_ID) {
-//                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
-//            }
         }
 
         initUIComponents()
@@ -308,8 +304,6 @@ class MainActivity : ClientActivity() {
         val preferences = getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
         val isFullscreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
 
-        println("isFullScreen: $isFullscreen")
-
         supportActionBar?.hide()
 
         if (isFullscreen) {
@@ -377,9 +371,11 @@ class MainActivity : ClientActivity() {
             .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
-                createGameDialog.show()
+                networkManager.stop()
+//                createGameDialog.show()
             }
     }
+
 
     override fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
         for ((gameId, game) in games ?: return) {

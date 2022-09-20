@@ -3,6 +3,9 @@ package com.mjaruijs.fischersplayground.activities
 import android.content.Context
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -15,6 +18,7 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
+import com.mjaruijs.fischersplayground.networking.ConnectivityCallback
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
@@ -77,12 +81,20 @@ abstract class ClientActivity : AppCompatActivity() {
 
         incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
 
-        if (!networkManager.isConnected()) {
+        val networkRequest = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            .build()
 
-            networkManager.run(applicationContext)
-            if (userId != DEFAULT_USER_ID) {
-                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
-            }
+        val connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
+        connectivityManager.requestNetwork(networkRequest, ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost))
+
+        if (!networkManager.isConnected()) {
+//            networkManager.run(applicationContext)
+//            if (userId != DEFAULT_USER_ID) {
+//                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+//            }
         }
 
         dataManager.loadData(applicationContext)
@@ -126,12 +138,25 @@ abstract class ClientActivity : AppCompatActivity() {
         }
     }
 
+    private fun onNetworkAvailable() {
+        println("Connecting to server")
+        networkManager.run(applicationContext)
+        if (userId != DEFAULT_USER_ID) {
+            networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+        }
+    }
+
+    private fun onNetworkLost() {
+        println("Stopping connection with server")
+        networkManager.stop()
+    }
+
     open fun sendResumeStatusToServer() {
         networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
     }
 
     private fun sendAwayStatusToServer() {
-        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
+//        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
     }
 
     open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}

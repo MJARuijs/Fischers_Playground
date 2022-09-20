@@ -13,7 +13,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
-class SecureClient(channel: SocketChannel, address: String, callback: (NetworkMessage, Context) -> Unit) : EncodedClient(channel, address, callback) {
+class SecureClient(channel: SocketChannel, address: String, callback: (NetworkMessage, Context) -> Unit) : EncodedClient(channel, callback) {
 
     private companion object {
         val symmetricGenerator: KeyGenerator = KeyGenerator.getInstance("AES")

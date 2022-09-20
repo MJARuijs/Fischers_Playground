@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -18,7 +18,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FischersPlayground">
-
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-5541201046009046~4593561256" />
         <activity
             android:name=".activities.settings.SettingsActivity"
             android:exported="false" />
@@ -47,9 +49,6 @@
             android:name=".activities.game.PractiseGameActivity"
             android:parentActivityName=".activities.MainActivity"
             android:windowSoftInputMode="adjustNothing" />
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-5541201046009046~4593561256" />
         <service
             android:name=".services.FirebaseService"
             android:directBootAware="true"
@@ -59,6 +58,7 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
     </application>
 
 </manifest>

@@ -50,7 +50,7 @@ class Manager(private val name: String) : Runnable {
                             val client = key.attachment() as NonBlockingClient
                             try {
                                 client.onRead(context)
-                            } catch (exception: ClientException) {
+                            } catch (exception: Exception) {
 //                                if (::onClientDisconnect.isInitialized) {
 //                                    val clientInfo = client.channel.remoteAddress.toString()
 //                                    val startIndex = clientInfo.indexOf("/")
@@ -58,17 +58,21 @@ class Manager(private val name: String) : Runnable {
 //                                    val address = clientInfo.substring(startIndex + 1, endIndex)
 //                                    onClientDisconnect()
 //                                }
-
+                                exception.printStackTrace()
                                 Logger.warn("${name}_Manager: CLIENT DISCONNECTED! ${client.channel.remoteAddress}")
                                 client.close()
                                 key.cancel()
+                                onClientDisconnect()
+//                                stop()
                             }
                         }
                     }
                 }
             } catch (e: Exception) {
-                stop()
+                println("Client disconnected ${e.stackTraceToString()}")
                 onClientDisconnect()
+                stop()
+
 //                Logger.warn("STOPPED: ${e.message}")
             }
         }
