@@ -135,7 +135,7 @@ abstract class GameActivity : ClientActivity() {
         return null
     }
 
-    protected fun evaluateActionButtons() {
+    open fun evaluateActionButtons() {
         if (game.moves.isNotEmpty()) {
             if (game.getMoveIndex() != -1) {
                 getActionBarFragment()?.enableBackButton()

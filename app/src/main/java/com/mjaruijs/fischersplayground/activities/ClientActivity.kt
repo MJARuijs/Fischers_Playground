@@ -46,6 +46,8 @@ abstract class ClientActivity : AppCompatActivity() {
 
     protected var stayingInApp = false
 
+    protected var leftApp = false
+
     open var activityName: String = ""
 
     private fun isUserRegisteredAtServer(): Boolean {
@@ -71,6 +73,8 @@ abstract class ClientActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
+        leftApp = false
+
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
@@ -87,10 +91,11 @@ abstract class ClientActivity : AppCompatActivity() {
             .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
             .build()
 
-        val connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
-        connectivityManager.requestNetwork(networkRequest, ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost))
-
         if (!networkManager.isConnected()) {
+
+            val connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
+            connectivityManager.requestNetwork(networkRequest, ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost))
+
 //            networkManager.run(applicationContext)
 //            if (userId != DEFAULT_USER_ID) {
 //                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
@@ -111,7 +116,11 @@ abstract class ClientActivity : AppCompatActivity() {
         unregisterReceiver(networkReceiver)
 
         if (!stayingInApp) {
+            println("ON PAUSE AND LEAVING APP")
+            leftApp = true
             networkManager.stop()
+        } else {
+            println("ON PAUSE BUT STAYING IN APP")
         }
 
         super.onPause()
@@ -139,16 +148,21 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     private fun onNetworkAvailable() {
-        println("Connecting to server")
-        networkManager.run(applicationContext)
-        if (userId != DEFAULT_USER_ID) {
-            networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+        if (!leftApp) {
+            println("Connecting to server")
+
+            networkManager.run(applicationContext)
+            if (userId != DEFAULT_USER_ID) {
+                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+            }
         }
     }
 
     private fun onNetworkLost() {
-        println("Stopping connection with server")
-        networkManager.stop()
+        if (!leftApp) {
+            println("Stopping connection with server")
+            networkManager.stop()
+        }
     }
 
     open fun sendResumeStatusToServer() {
@@ -156,7 +170,7 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     private fun sendAwayStatusToServer() {
-//        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
+        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
     }
 
     open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}

@@ -6,14 +6,21 @@ import android.net.NetworkCapabilities
 
 class ConnectivityCallback(private val onNetworkAvailable: () -> Unit, private val onNetworkLost: () -> Unit) : ConnectivityManager.NetworkCallback() {
 
+    private var connected = false
+
     private var connectedThroughWifi = false
     private var connectedThroughCellular = false
 
     override fun onAvailable(network: Network) {
         super.onAvailable(network)
-//        println("Network available")
 //        if (!connectedThroughWifi) {
-            onNetworkAvailable()
+//        if (!connected) {
+//            println("Network available")
+//
+//            connected = true
+//            onNetworkAvailable()
+//        }
+
 //            connectedThroughWifi = true
 //        }
     }
@@ -25,14 +32,42 @@ class ConnectivityCallback(private val onNetworkAvailable: () -> Unit, private v
             return
         }
 
-//        println("Capabilities changed")
+        val hasWifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        val hasMobileData = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+
+        println("hasWifi: $hasWifi. HasMobile: $hasMobileData")
+
+        if (!connected) {
+            connected = true
+            connectedThroughWifi = hasWifi
+            onNetworkAvailable()
+        } else if (!connectedThroughWifi) {
+            if (hasWifi) {
+                onNetworkLost()
+                onNetworkAvailable()
+            }
+            connectedThroughWifi = hasWifi
+        }
+
+//        if (connected) {
+//            if (connectedThroughWifi) {
 //
-//        val hasWifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-//        val hasMobileData = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+//            } else {
+//                onNetworkLost()
+//                onNetworkAvailable()
+//            }
+//        }
+
+
+//        if (!connected) {
+//            connectedThroughWifi = hasWifi
+////            if (connected) {
+////                onNetworkLost()
+////            }
+//            onNetworkAvailable()
 //
-//        if ()
-//
-//        println("hasWifi: $hasWifi. HasMobile: $hasMobileData")
+//            connected = true
+//        }
 
 //        if (!connected) {
 //            onNetworkAvailable()
@@ -55,10 +90,10 @@ class ConnectivityCallback(private val onNetworkAvailable: () -> Unit, private v
         println("Network lost")
         super.onLost(network)
 
-//        connected = false
-//        connectedThroughWifi = false
-//
-//        onNetworkLost()
+        connected = false
+        connectedThroughWifi = false
+
+        onNetworkLost()
     }
 
 }

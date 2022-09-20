@@ -99,6 +99,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     }
 
     private fun restoreMove(move: Move) {
+        println("Restoring move: ${move.toChessNotation()}")
         moves += move
         status = if (move.team == team) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
 
@@ -116,25 +117,41 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             takenPieces += takenPiece
         }
 
-        if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
+        val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(move.team, fromPosition, toPosition, 0L)
         } else {
-            val animation = createAnimation(0L, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
+            createAnimation(0L, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
                 if (move.promotedPiece != null) {
                     state[toPosition] = Piece(move.promotedPiece, move.team)
                 }
             })
-
-            animation.invokeOnStartCalls()
-            animation.invokeOnFinishCalls()
         }
 
-        val isCheck = isPlayerChecked(state, team)
-        val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
+        if (animation.nextAnimation == null) {
+            animation.onFinishCalls += {
+                val isCheck = isPlayerChecked(state, team)
+                val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
 
-        updateCheckData(move.team, isCheck, isCheckMate)
+                updateCheckData(move.team, isCheck, isCheckMate)
 
-        currentMoveIndex++
+                currentMoveIndex++
+            }
+        } else {
+            animation.nextAnimation!!.onFinishCalls += {
+                val isCheck = isPlayerChecked(state, team)
+                val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
+
+                updateCheckData(move.team, isCheck, isCheckMate)
+
+                currentMoveIndex++
+            }
+        }
+
+        animation.invokeOnStartCalls()
+        animation.invokeOnFinishCalls()
+
+        animation.nextAnimation?.invokeOnStartCalls()
+        animation.nextAnimation?.invokeOnFinishCalls()
     }
 
     fun moveOpponent(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
@@ -167,22 +184,33 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val takenPiece = takenPieceData?.first
         val takenPiecePosition = takenPieceData?.second
 
-        if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
+        val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(move.team, fromPosition, toPosition, animationSpeed)
         } else {
-            val animation = createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
+            createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
                 if (move.promotedPiece != null) {
                     state[toPosition] = Piece(move.promotedPiece, move.team)
                 }
+            })
+        }
 
+        if (animation.nextAnimation == null) {
+            animation.onFinishCalls += {
                 val isCheck = isPlayerChecked(state, team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
 
                 updateCheckData(move.team, isCheck, isCheckMate)
-            })
+            }
+        } else {
+            animation.nextAnimation!!.onFinishCalls += {
+                val isCheck = isPlayerChecked(state, team)
+                val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
 
-            queueAnimation(animation)
+                updateCheckData(move.team, isCheck, isCheckMate)
+            }
         }
+
+        queueAnimation(animation)
     }
 
     private fun movePlayer(fromPosition: Vector2, toPosition: Vector2) {

@@ -13,9 +13,9 @@ class NetworkManager {
 
         private const val PUBLIC_SERVER_IP = "94.208.124.161"
 //        private const val PUBLIC_SERVER_IP = "217.101.191.23"
-        private const val LOCAL_SERVER_IP = "192.168.178.18"
+        private const val LOCAL_SERVER_IP = "192.168.178.103"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
-        private const val SERVER_PORT = 4501
+        private const val SERVER_PORT = 4502
 
         private var instance: NetworkManager? = null
 
@@ -44,11 +44,11 @@ class NetworkManager {
     fun stop(): Boolean {
         messageQueue.clear()
         if (clientConnected.get()) {
-            println("Client was connected; closing channel")
+//            println("Client was connected; closing channel")
             client.close()
             clientConnected.set(false)
         } else {
-            println("No client was connected; no need to close channel")
+//            println("No client was connected; no need to close channel")
         }
         clientConnecting.set(false)
         manager.stop()

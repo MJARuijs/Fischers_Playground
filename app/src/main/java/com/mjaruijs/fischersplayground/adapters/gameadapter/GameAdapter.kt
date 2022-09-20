@@ -6,6 +6,7 @@ import android.view.View
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
@@ -14,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.util.Time
 
-class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerView.Adapter<GameAdapter.GameViewHolder>() {
+class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val onGameDeleted: (String) -> Unit) : RecyclerView.Adapter<GameAdapter.GameViewHolder>() {
 
     private val games = ArrayList<GameCardItem>()
 
@@ -116,6 +117,11 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
         holder.layout.setOnClickListener {
             onGameClicked(gameCard)
         }
+        holder.deleteButton.setOnClickListener {
+            games.removeIf { card -> gameCard.id == card.id }
+            onGameDeleted(gameCard.id)
+            notifyDataSetChanged()
+        }
     }
 
     override fun getItemCount() = games.size
@@ -126,6 +132,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit) : RecyclerV
         val gameStatusView: View = view.findViewById(R.id.game_status_view)
         val updateIndicator: ImageView = view.findViewById(R.id.update_indicator)
         val layout: ConstraintLayout = view.findViewById(R.id.game_layout)
+        val deleteButton: Button = view.findViewById(R.id.delete_button)
     }
 
 }

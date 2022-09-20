@@ -236,13 +236,22 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         decrementMoveCounter()
 
-        animation.onFinishCalls += {
-            finishMove(move)
+        if (animation.nextAnimation == null) {
+            animation.onFinishCalls += {
+                finishMove(move)
+            }
+        } else {
+            animation.nextAnimation!!.onFinishCalls += {
+                finishMove(move)
+            }
         }
 
         if (runInBackground) {
             animation.invokeOnStartCalls()
             animation.invokeOnFinishCalls()
+
+            animation.nextAnimation?.invokeOnStartCalls()
+            animation.nextAnimation?.invokeOnFinishCalls()
         } else {
             queueAnimation(animation)
         }
@@ -319,7 +328,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    protected fun finishMove(move: Move) {
+    private fun finishMove(move: Move) {
         val isCheck = isPlayerChecked(state, move.team)
         val isCheckMate = if (isCheck) isPlayerCheckMate(state, move.team) else false
 

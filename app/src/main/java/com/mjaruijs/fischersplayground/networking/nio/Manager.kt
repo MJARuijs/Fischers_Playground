@@ -23,7 +23,9 @@ class Manager(private val name: String) : Runnable {
     fun register(obj: Registrable) {
         registering.set(true)
         selector.wakeup()
-        obj.register(selector)
+        if (selector.isOpen) {
+            obj.register(selector)
+        }
         registering.set(false)
     }
 
@@ -58,7 +60,6 @@ class Manager(private val name: String) : Runnable {
 //                                    val address = clientInfo.substring(startIndex + 1, endIndex)
 //                                    onClientDisconnect()
 //                                }
-                                exception.printStackTrace()
                                 Logger.warn("${name}_Manager: CLIENT DISCONNECTED! ${client.channel.remoteAddress}")
                                 client.close()
                                 key.cancel()
@@ -69,7 +70,7 @@ class Manager(private val name: String) : Runnable {
                     }
                 }
             } catch (e: Exception) {
-                println("Client disconnected ${e.stackTraceToString()}")
+                println("Client disconnected")
                 onClientDisconnect()
                 stop()
 

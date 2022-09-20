@@ -151,6 +151,16 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }.start()
     }
 
+    override fun evaluateActionButtons() {
+        super.evaluateActionButtons()
+        if ((game as MultiPlayerGame).isFinished()) {
+            val actionBar = (getActionBarFragment() as MultiplayerActionButtonsFragment)
+            actionBar.disableUndoButton()
+            actionBar.disableDrawButton()
+            actionBar.disableResignButton()
+        }
+    }
+
     private fun sendMoveData(moveNotation: String) {
         val showPopup = getPreference(GAME_PREFERENCES_KEY).getBoolean(SettingsActivity.CONFIRM_MOVES_KEY, false)
         if (showPopup) {

@@ -60,7 +60,7 @@ class MainActivity : ClientActivity() {
         createUsernameDialog.setLayout()
 
         if (userName == DEFAULT_USER_NAME) {
-//            createUsernameDialog.show(::saveUserName)
+            createUsernameDialog.show(::saveUserName)
         } else {
             findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
         }
@@ -216,6 +216,12 @@ class MainActivity : ClientActivity() {
         }
     }
 
+    private fun onGameDeleted(gameId: String) {
+        dataManager.removeGame(gameId)
+        dataManager.savedInvites.remove(gameId)
+        dataManager.saveData(applicationContext, "MainActivity onGameDeleted")
+    }
+
     override fun onIncomingInvite(output: Parcelable) {
         val inviteData = output as InviteData
 
@@ -325,7 +331,7 @@ class MainActivity : ClientActivity() {
     }
 
     private fun initUIComponents() {
-        gameAdapter = GameAdapter(::onGameClicked)
+        gameAdapter = GameAdapter(::onGameClicked, ::onGameDeleted)
 
         val gameRecyclerView = findViewById<RecyclerView>(R.id.game_list)
         gameRecyclerView.layoutManager = LinearLayoutManager(this)
@@ -371,8 +377,8 @@ class MainActivity : ClientActivity() {
             .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
-                networkManager.stop()
-//                createGameDialog.show()
+//                networkManager.stop()
+                createGameDialog.show()
             }
     }
 
