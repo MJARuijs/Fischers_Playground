@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -121,6 +122,11 @@ class NetworkManager {
         log("Received message: $message")
 
         val messageData = message.content.split('|').toTypedArray()
+
+        if (message.topic == Topic.HEART_BEAT) {
+            sendMessage(NetworkMessage(Topic.HEART_BEAT, ""))
+            return
+        }
 
         val intent = Intent("mjaruijs.fischers_playground")
             .putExtra("topic", message.topic.toString())

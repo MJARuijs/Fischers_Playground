@@ -46,7 +46,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     protected var stayingInApp = false
 
-    protected var leftApp = false
+    private var leftApp = false
 
     open var activityName: String = ""
 
@@ -116,11 +116,8 @@ abstract class ClientActivity : AppCompatActivity() {
         unregisterReceiver(networkReceiver)
 
         if (!stayingInApp) {
-            println("ON PAUSE AND LEAVING APP")
             leftApp = true
             networkManager.stop()
-        } else {
-            println("ON PAUSE BUT STAYING IN APP")
         }
 
         super.onPause()
@@ -149,8 +146,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
     private fun onNetworkAvailable() {
         if (!leftApp) {
-            println("Connecting to server")
-
             networkManager.run(applicationContext)
             if (userId != DEFAULT_USER_ID) {
                 networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
@@ -160,7 +155,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
     private fun onNetworkLost() {
         if (!leftApp) {
-            println("Stopping connection with server")
             networkManager.stop()
         }
     }

@@ -78,7 +78,6 @@ class MainActivity : ClientActivity() {
             val currentToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
 
             if (token != currentToken) {
-                println("GOT NEW TOKEN: $token")
                 getPreference(FIRE_BASE_PREFERENCE_FILE).edit().putString("token", token).apply()
 
                 if (userName == DEFAULT_USER_NAME) {
@@ -130,7 +129,6 @@ class MainActivity : ClientActivity() {
 
         if (hasNewToken) {
             val token = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
-            println("SENDING NEW TOKEN: $token")
             networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
         }
         createGameDialog.updateId(id)

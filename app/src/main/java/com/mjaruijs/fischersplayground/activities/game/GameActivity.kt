@@ -119,7 +119,6 @@ abstract class GameActivity : ClientActivity() {
         opponentBundle.putString("team", if (isPlayingWhite) "BLACK" else "WHITE")
         opponentBundle.putBoolean("hide_status_icon", isSinglePlayer)
 
-        // TODO: Uncomment this part
         supportFragmentManager.commit {
             setReorderingAllowed(true)
             replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")

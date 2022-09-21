@@ -99,7 +99,6 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     }
 
     private fun restoreMove(move: Move) {
-        println("Restoring move: ${move.toChessNotation()}")
         moves += move
         status = if (move.team == team) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
 

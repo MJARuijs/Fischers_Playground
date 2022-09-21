@@ -25,8 +25,6 @@ object FileManager {
             val writer = OutputStreamWriter(context.openFileOutput(fileName, Context.MODE_PRIVATE))
             writer.write(content)
             writer.close()
-
-//            println("Wrote: $content")
             true
         } catch (e: IOException) {
             e.printStackTrace()
@@ -40,13 +38,7 @@ object FileManager {
             val inputReader = InputStreamReader(inputStream)
             val bufferedReader = BufferedReader(inputReader)
 
-            val lines = bufferedReader.readLines()
-
-//            println("read: ")
-//            lines.forEach { line -> println(line) }
-//            println()
-
-            lines
+            bufferedReader.readLines()
         } catch (e: FileNotFoundException) {
             null
         }

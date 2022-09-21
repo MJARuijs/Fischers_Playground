@@ -28,6 +28,7 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     DRAW_REJECTED(ParcelableString),
     CHAT_MESSAGE(ChatMessage.Data),
     USER_STATUS_CHANGED(ParcelableString),
+    HEART_BEAT,
     NEWS,
     RECONNECT_TO_SERVER;
 

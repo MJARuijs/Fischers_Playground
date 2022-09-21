@@ -11,6 +11,8 @@ abstract class NonBlockingClient(internal val channel: SocketChannel) : Client, 
     private lateinit var key: SelectionKey
 
     init {
+        println(channel.socket().soTimeout)
+        channel.socket().keepAlive = true
         channel.configureBlocking(false)
     }
 

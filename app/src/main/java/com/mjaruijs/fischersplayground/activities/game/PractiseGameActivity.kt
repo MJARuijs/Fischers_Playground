@@ -37,21 +37,12 @@ class PractiseGameActivity : GameActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        println("DESTROYING PRACTICE ACTIVITY")
-    }
-
     override fun onContextCreated() {
         super.onContextCreated()
-//        game = SinglePlayerGame()
-//        getActionBarFragment().game = game
         setGameCallbacks()
     }
 
     override fun onResume() {
-//        setGameCallbacks()
-
         getActionBarFragment()?.game = game
         super.onResume()
     }

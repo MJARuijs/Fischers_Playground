@@ -6,9 +6,6 @@ import android.opengl.GLES30.GL_TEXTURE_2D_ARRAY
 class Sampler(val index: Int) {
 
     fun bind(texture: Texture, print: String? = null) {
-        if (print != null) {
-            println("ACTIVATING $print: ${texture.handle} on $index")
-        }
         glActiveTexture(GL_TEXTURE0 + index)
         glBindTexture(GL_TEXTURE_2D, texture.handle)
         glActiveTexture(GL_TEXTURE0)

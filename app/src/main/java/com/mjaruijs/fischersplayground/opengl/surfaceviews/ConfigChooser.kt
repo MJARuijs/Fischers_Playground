@@ -1,16 +1,18 @@
 package com.mjaruijs.fischersplayground.opengl.surfaceviews
 
+import android.content.Context
 import android.opengl.EGL14.*
 import android.opengl.GLSurfaceView
+import android.widget.Toast
 import javax.microedition.khronos.egl.EGL10
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.egl.EGLDisplay
 
-class ConfigChooser : GLSurfaceView.EGLConfigChooser {
+class ConfigChooser(private val context: Context) : GLSurfaceView.EGLConfigChooser {
 
     override fun chooseConfig(egl: EGL10?, display: EGLDisplay?): EGLConfig? {
         if (egl == null) {
-            println("Couldn't choose an EGL configuration.. EGL is null..")
+            Toast.makeText(context, "Couldn't choose an EGL configuration.. EGL is null..", Toast.LENGTH_SHORT).show()
             return null
         }
 
