@@ -39,9 +39,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     var queueAnimation: (AnimationData) -> Unit = {}
 
-    var onMoveMade: (Move) -> Unit = {
-        println("onMoveMade() called, but not yet set")
-    }
+    var onMoveMade: (Move) -> Unit = {}
 
     init {
         board.requestPossibleMoves = { square ->

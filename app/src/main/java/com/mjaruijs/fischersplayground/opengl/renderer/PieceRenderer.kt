@@ -46,19 +46,19 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     private val pieceTextures2D = HashMap<Piece, Int>()
     private val pieceTextures3D = HashMap<Piece, Int>()
 
-//    private val pawnMesh = MeshLoader.preload(resources, R.raw.pawn_bytes)
-//    private val bishopMesh = MeshLoader.preload(resources, R.raw.bishop_bytes)
-//    private val knightMesh = MeshLoader.preload(resources, R.raw.knight_bytes)
-//    private val rookMesh = MeshLoader.preload(resources, R.raw.rook_bytes)
-//    private val queenMesh = MeshLoader.preload(resources, R.raw.queen_bytes)
-//    private val kingMesh = MeshLoader.preload(resources, R.raw.king_bytes)
+    private val pawnMesh = MeshLoader.preload(resources, R.raw.pawn_bytes)
+    private val bishopMesh = MeshLoader.preload(resources, R.raw.bishop_bytes)
+    private val knightMesh = MeshLoader.preload(resources, R.raw.knight_bytes)
+    private val rookMesh = MeshLoader.preload(resources, R.raw.rook_bytes)
+    private val queenMesh = MeshLoader.preload(resources, R.raw.queen_bytes)
+    private val kingMesh = MeshLoader.preload(resources, R.raw.king_bytes)
 
-//    private val pawn = Entity(pawnMesh)
-//    private val bishop = Entity(bishopMesh)
-//    private val knight = Entity(knightMesh)
-//    private val rook = Entity(rookMesh)
-//    private val queen = Entity(queenMesh)
-//    private val king = Entity(kingMesh)
+    private val pawn = Entity(pawnMesh)
+    private val bishop = Entity(bishopMesh)
+    private val knight = Entity(knightMesh)
+    private val rook = Entity(rookMesh)
+    private val queen = Entity(queenMesh)
+    private val king = Entity(kingMesh)
 
     private val ambientLight = AmbientLight(Color.DARK)
     private val directionalLight = DirectionalLight(Color.WHITE, Vector3(0.0f, -0.5f, 1f))
@@ -104,7 +104,6 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     private fun startAnimation(currentAnimation: AnimationData?) {
         if (currentAnimation == null) {
-            println("returning animationData")
             return
         }
 
@@ -123,7 +122,6 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         )
 
         runOnUiThread {
-            println("UIThread is: ${Thread.currentThread().id}")
             animator.start()
         }
     }
@@ -222,17 +220,17 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 piece3DProgram.set("textureId", getPieceTexture3d(piece, pieceTextures).toFloat())
 //                piece3DProgram.set("translation", translation)
 
-//                when (piece.type) {
-//                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.KNIGHT -> {
-//                        val rotation = if (piece.team == Team.WHITE) whiteKnightRotation else blackKnightRotation
-//                        knight.render(piece3DProgram, translation, rotation, pieceScale)
-//                    }
-//                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
-//                }
+                when (piece.type) {
+                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
+                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
+                    PieceType.KNIGHT -> {
+                        val rotation = if (piece.team == Team.WHITE) whiteKnightRotation else blackKnightRotation
+                        knight.render(piece3DProgram, translation, rotation, pieceScale)
+                    }
+                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
+                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
+                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
+                }
             }
         }
 
@@ -241,12 +239,12 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     fun destroy() {
         quad.destroy()
-//        pawnMesh.destroy()
-//        knightMesh.destroy()
-//        bishopMesh.destroy()
-//        rookMesh.destroy()
-//        queenMesh.destroy()
-//        kingMesh.destroy()
+        pawnMesh.destroy()
+        knightMesh.destroy()
+        bishopMesh.destroy()
+        rookMesh.destroy()
+        queenMesh.destroy()
+        kingMesh.destroy()
         piece2DProgram.destroy()
         piece3DProgram.destroy()
         runAnimationThread.set(false)

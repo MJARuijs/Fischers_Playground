@@ -125,7 +125,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         if (!stayingInApp) {
-            getPreference(USER_PREFERENCE_FILE).edit().putBoolean(INITIALIZED_KEY, false).commit()
+            leftApp = true
             sendAwayStatusToServer()
         }
 
@@ -169,8 +169,8 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}
 
-    open fun onMessageReceived(topic: Topic, content: Array<String>) {
-        sendDataToWorker(topic, content, when (topic) {
+    open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
+        sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite
             Topic.NEW_GAME -> ::onNewGameStarted
             Topic.MOVE -> ::onOpponentMoved
@@ -241,12 +241,13 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 
-    private fun sendDataToWorker(topic: Topic, data: Array<String>, onResult: (Parcelable) -> Unit) {
+    private fun sendDataToWorker(topic: Topic, data: Array<String>, messageId: Long, onResult: (Parcelable) -> Unit) {
         val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
             .setInputData(
                 workDataOf(
                     Pair("topic", topic.toString()),
-                    Pair("data", data)
+                    Pair("content", data),
+                    Pair("messageId", messageId)
                 )
             )
             .build()
@@ -257,6 +258,7 @@ abstract class ClientActivity : AppCompatActivity() {
         workManager.getWorkInfoByIdLiveData(worker.id)
             .observe(this) {
                 if (it != null && it.state.isFinished) {
+
                     val result = it.outputData.getParcelable(topic.dataType, "output") ?: return@observe
                     onResult(result)
                 }

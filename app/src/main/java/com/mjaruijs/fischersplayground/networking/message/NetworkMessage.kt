@@ -1,8 +1,8 @@
 package com.mjaruijs.fischersplayground.networking.message
 
-class NetworkMessage(val topic: Topic, val content: String) {
+class NetworkMessage(val topic: Topic, val content: String, val id: Long = System.nanoTime()) {
 
-    override fun toString() = "[$topic;$content]"
+    override fun toString() = "[$topic;$content;$id]"
 
     companion object {
 
@@ -11,8 +11,9 @@ class NetworkMessage(val topic: Topic, val content: String) {
 
             val topic = Topic.fromString(data[0])
             val content = data[1]
+            val id = data[2].toLong()
 
-            return NetworkMessage(topic, content)
+            return NetworkMessage(topic, content, id)
         }
     }
 

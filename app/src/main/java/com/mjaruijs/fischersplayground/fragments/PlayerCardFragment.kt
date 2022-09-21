@@ -38,13 +38,11 @@ class PlayerCardFragment : Fragment(R.layout.player_card) {
         }
     }
 
-    fun addTakenPiece(pieceType: PieceType, team: Team) {
-//        val takenPieceView = view?.findViewById<TakenPiecesView>(R.id.taken_pieces_view) ?: throw IllegalArgumentException("No view was found with id: taken_pieces_view")
+    fun addTakenPiece(pieceType: PieceType) {
         takenPieceView.add(pieceType)
     }
 
-    fun removeTakenPiece(pieceType: PieceType, team: Team) {
-//        val takenPieceView = view?.findViewById<TakenPiecesView>(R.id.taken_pieces_view) ?: throw IllegalArgumentException("No view was found with id: taken_pieces_view")
+    fun removeTakenPiece(pieceType: PieceType) {
         takenPieceView.removeTakenPiece(pieceType)
     }
 

@@ -6,6 +6,7 @@ import com.mjaruijs.fischersplayground.networking.client.EncodedClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
+import com.mjaruijs.fischersplayground.services.DataManager
 import java.util.concurrent.atomic.AtomicBoolean
 
 class NetworkManager {
@@ -16,7 +17,7 @@ class NetworkManager {
 //        private const val PUBLIC_SERVER_IP = "217.101.191.23"
         private const val LOCAL_SERVER_IP = "192.168.178.103"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
-        private const val SERVER_PORT = 4502
+        private const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
 
@@ -38,18 +39,11 @@ class NetworkManager {
 
     private val messageQueue = ArrayList<NetworkMessage>()
 
-    private fun log(message: String) {
-        println("Networker: $message")
-    }
-
     fun stop(): Boolean {
         messageQueue.clear()
         if (clientConnected.get()) {
-//            println("Client was connected; closing channel")
             client.close()
             clientConnected.set(false)
-        } else {
-//            println("No client was connected; no need to close channel")
         }
         clientConnecting.set(false)
         manager.stop()
@@ -65,7 +59,7 @@ class NetworkManager {
             return
         }
 
-        log("Starting networker")
+//        log("Starting networker")
 
         manager = Manager("Client")
         manager.context = context
@@ -79,7 +73,7 @@ class NetworkManager {
                 client = EncodedClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
             } catch (e: Exception) {
-                log("Failed to connect to server..")
+//                log("Failed to connect to server..")
                 clientConnected.set(false)
             } finally {
                 clientConnecting.set(false)
@@ -105,7 +99,7 @@ class NetworkManager {
 
             if (clientConnected.get()) {
                 try {
-                    log("Sending message: ${message.content}")
+//                    log("Sending message: $message")
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
@@ -119,7 +113,7 @@ class NetworkManager {
     }
 
     private fun onRead(message: NetworkMessage, context: Context) {
-        log("Received message: $message")
+//        log("Received message: $message")
 
         val messageData = message.content.split('|').toTypedArray()
 
@@ -128,11 +122,21 @@ class NetworkManager {
             return
         }
 
-        val intent = Intent("mjaruijs.fischers_playground")
-            .putExtra("topic", message.topic.toString())
-            .putExtra("content", messageData)
+        sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
-        context.sendBroadcast(intent)
+        val dataManager = DataManager.getInstance(context)
+
+        if (!dataManager.handledMessages.contains(message.id)) {
+            dataManager.handledMessages += message.id
+            dataManager.saveHandledMessages(context)
+
+            val intent = Intent("mjaruijs.fischers_playground")
+                .putExtra("topic", message.topic.toString())
+                .putExtra("content", messageData)
+                .putExtra("messageId", message.id)
+
+            context.sendBroadcast(intent)
+        }
     }
 
 }

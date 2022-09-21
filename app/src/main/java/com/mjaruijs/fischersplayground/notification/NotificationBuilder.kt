@@ -46,9 +46,6 @@ class NotificationBuilder(context: Context) {
                 notificationBuilder.setGroupSummary(true)
             }
 
-//            val notificationId = generateId()
-//            notificationIds += notificationId
-//            notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
             return notificationBuilder.build()
         } catch (e: Exception){
             Logger.log(context, e.stackTraceToString(), "notification_builder_crash_log.txt")

@@ -31,40 +31,44 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 
 class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(context, workParams) {
 
-    private lateinit var id: String
+    private lateinit var userId: String
     private lateinit var dataManager: DataManager
 
     override fun doWork(): Result {
         val preferences = applicationContext.getSharedPreferences("user_data", Service.MODE_PRIVATE)
-        id = preferences.getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
+        userId = preferences.getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
 
         dataManager = DataManager.getInstance(applicationContext)
 
         val topic = Topic.fromString(inputData.getString("topic")!!)
-        val data = inputData.getStringArray("data")!!
+        val content = inputData.getStringArray("content")!!
+        val messageId = inputData.getLong("messageId", -1L)
+
+        if (messageId == -1L) {
+            throw IllegalArgumentException("NOPE")
+        }
 
         val output: Any = when (topic) {
-            Topic.INVITE -> onIncomingInvite(data)
-            Topic.NEW_GAME -> onNewGameStarted(data)
-            Topic.MOVE -> onOpponentMoved(data)
-            Topic.UNDO_REQUESTED -> onUndoRequested(data)
-            Topic.UNDO_ACCEPTED -> onUndoAccepted(data)
-            Topic.UNDO_REJECTED -> onUndoRejected(data)
-            Topic.RESIGN -> onOpponentResigned(data)
-            Topic.DRAW_OFFERED -> onDrawOffered(data)
-            Topic.DRAW_ACCEPTED -> onDrawAccepted(data)
-            Topic.DRAW_REJECTED -> onDrawRejected(data)
-            Topic.CHAT_MESSAGE -> onChatMessageReceived(data)
-            Topic.USER_STATUS_CHANGED -> onUserStatusChanged(data)
-            Topic.RECONNECT_TO_SERVER -> reconnectToServer(data)
-            else -> throw IllegalArgumentException("Could not parse data with unknown topic: $topic")
+            Topic.INVITE -> onIncomingInvite(content)
+            Topic.NEW_GAME -> onNewGameStarted(content)
+            Topic.MOVE -> onOpponentMoved(content)
+            Topic.UNDO_REQUESTED -> onUndoRequested(content)
+            Topic.UNDO_ACCEPTED -> onUndoAccepted(content)
+            Topic.UNDO_REJECTED -> onUndoRejected(content)
+            Topic.RESIGN -> onOpponentResigned(content)
+            Topic.DRAW_OFFERED -> onDrawOffered(content)
+            Topic.DRAW_ACCEPTED -> onDrawAccepted(content)
+            Topic.DRAW_REJECTED -> onDrawRejected(content)
+            Topic.CHAT_MESSAGE -> onChatMessageReceived(content)
+            Topic.USER_STATUS_CHANGED -> onUserStatusChanged(content)
+            Topic.RECONNECT_TO_SERVER -> reconnectToServer(content)
+            else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
 
         dataManager.saveData(applicationContext, "DataWorker doWork: $topic")
 
         return if (output is Parcelable) {
             val dataBuilder = Data.Builder().putParcelable("output", output)
-
             Result.success(dataBuilder.build())
         } else {
             Result.success()
@@ -222,7 +226,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
                 dataManager[gameId].opponentStatus = opponentStatus
 //                game.opponentStatus = opponentStatus
 //                dataManager[gameId] = game
-
             }
         }
 

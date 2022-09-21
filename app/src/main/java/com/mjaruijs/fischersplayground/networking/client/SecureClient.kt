@@ -66,13 +66,11 @@ class SecureClient(channel: SocketChannel, address: String, callback: (NetworkMe
 
             String(decryptedMessage, UTF_8)
         } catch (e: Exception) {
-            Logger.err(e.message)
             throw ClientException("")
         }
     }
 
     override fun write(message: String) {
-        Logger.info("Writing to phone: $message")
         val cipher = Cipher.getInstance("AES")
         cipher.init(Cipher.ENCRYPT_MODE, symmetricKey)
         val messageBytes = cipher.doFinal(message.toByteArray(UTF_8))

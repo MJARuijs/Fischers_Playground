@@ -14,13 +14,16 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 
 class DataManager(context: Context) {
 
     private val savedGames = HashMap<String, MultiPlayerGame>()
     val savedInvites = HashMap<String, InviteData>()
     val recentOpponents = Stack<Pair<String, String>>()
+    val handledMessages = HashSet<Long>()
 
     private val userId: String
 
@@ -85,6 +88,7 @@ class DataManager(context: Context) {
                 loadSavedGames(context)
                 loadInvites(context)
                 loadRecentOpponents(context)
+                loadHandledMessages(context)
             } catch (e: Exception) {
                 FileManager.write(context, "file_loading_crash.txt", e.stackTraceToString())
             } finally {
@@ -98,16 +102,17 @@ class DataManager(context: Context) {
     fun saveData(context: Context, caller: String) {
         while (isLocked()) {
             Thread.sleep(1)
-            println("Want to save but dataManager is locked")
+//            println("Want to save but dataManager is locked")
         }
 
         lock()
 
         Thread {
-            println("Saving data! $caller")
-            saveGames(context, caller)
+//            println("Saving data! $caller")
+            saveGames(context)
             saveInvites(context)
             saveRecentOpponents(context)
+            saveHandledMessages(context)
             unlock()
         }.start()
     }
@@ -203,6 +208,18 @@ class DataManager(context: Context) {
         }
     }
 
+    private fun loadHandledMessages(context: Context) {
+        val lines = FileManager.read(context, HANDLED_MESSAGES_FILE) ?: ArrayList()
+
+        for (messageId in lines) {
+            if (messageId.isBlank()) {
+                continue
+            }
+
+            handledMessages += messageId.toLong()
+        }
+    }
+
     fun updateRecentOpponents(context: Context, newOpponent: Pair<String, String>?) {
         if (newOpponent == null) {
             return
@@ -235,7 +252,7 @@ class DataManager(context: Context) {
         saveRecentOpponents(context)
     }
 
-    private fun saveGames(context: Context, caller: String) {
+    private fun saveGames(context: Context) {
         var content = ""
 
         for ((gameId, game) in savedGames) {
@@ -293,20 +310,27 @@ class DataManager(context: Context) {
         FileManager.write(context, RECENT_OPPONENTS_FILE, data)
     }
 
+    fun saveHandledMessages(context: Context) {
+        var data = ""
+
+        for (messageId in handledMessages) {
+            data += "$messageId\n"
+        }
+        FileManager.write(context, HANDLED_MESSAGES_FILE, data)
+    }
+
     companion object {
 
         const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
         const val INVITES_FILE = "received_invites.txt"
         const val RECENT_OPPONENTS_FILE = "recent_opponents.txt"
+        const val HANDLED_MESSAGES_FILE = "handled_messages.txt"
 
         private var instance: DataManager? = null
 
         fun getInstance(context: Context): DataManager {
             if (instance == null) {
                 instance = DataManager(context)
-            } else {
-                // TODO: Is this useful?
-//                instance!!.loadData()
             }
             instance!!.loadData(context)
 

@@ -93,7 +93,7 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
 //    }
 
     private fun recalculateWhiteBorders() {
-        for ((i, piece) in takenPieces.withIndex()) {
+        for ((i, _) in takenPieces.withIndex()) {
             takenPieces[i].rect.left = i * maxPieceWidth
             takenPieces[i].rect.right = (i + 1) * maxPieceWidth
         }

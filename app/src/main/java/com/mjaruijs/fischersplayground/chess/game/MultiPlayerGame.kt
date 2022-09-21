@@ -155,7 +155,6 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
     fun moveOpponent(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         if (status != GameStatus.OPPONENT_MOVE) {
-            println("RETURNING BECAUSE NOT OPPONENTS MOVE")
             return
         }
 

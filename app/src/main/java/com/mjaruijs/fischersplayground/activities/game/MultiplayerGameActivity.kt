@@ -215,7 +215,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show()
                 NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show()
                 NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show()
-                NewsType.OPPONENT_REJECTED_DRAW -> opponentRejectedDrawDialog.show(opponentName)
+                NewsType.OPPONENT_REJECTED_DRAW -> opponentRejectedDrawDialog.show()
                 NewsType.OPPONENT_REQUESTED_UNDO -> {
                     undoRequestedDialog.setMessage("$opponentName is requesting to undo their last move!")
                     undoRequestedDialog.show()
@@ -326,7 +326,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         val gameId = (output as ParcelableString).value
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_REJECTED_DRAW)
         if (gameId == this.gameId) {
-            opponentRejectedDrawDialog.show(opponentName)
+            opponentRejectedDrawDialog.show()
         }
     }
 
@@ -343,6 +343,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         if (messageData.gameId == this.gameId) {
             getChatFragment()?.addReceivedMessage(ChatMessage(messageData))
+            if (!chatOpened) {
+                findViewById<ImageView>(R.id.chat_update_icon).visibility = View.VISIBLE
+            }
         }
     }
 
@@ -387,7 +390,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         dataManager[gameId] = game as MultiPlayerGame
         dataManager.saveData(applicationContext, "MPactivity acceptUndoRequest")
         networkManager.sendMessage(NetworkMessage(Topic.UNDO_ACCEPTED, "$gameId|$userId"))
-
     }
 
     private fun rejectDrawOffer() {
@@ -422,17 +424,19 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         if (!chatInitialized) {
             val chatFragment = findViewById<FragmentContainerView>(R.id.chat_container)
-
             val openChatButton = findViewById<ImageView>(R.id.open_chat_button)
+            val chatNotificationIcon = findViewById<ImageView>(R.id.chat_update_icon) ?: return
+
             chatButtonWidth = openChatButton.width
             chatBoxWidth = chatFragment.width
 
             chatFragment.translationX = (chatBoxWidth + chatButtonWidth).toFloat()
             openChatButton.translationX = chatBoxWidth.toFloat()
+            chatNotificationIcon.x += chatBoxWidth
 
             chatInitialized = true
 
-            val buttonHeight = getActionBarFragment()!!.view!!.measuredHeight
+            val buttonHeight = getActionBarFragment()!!.requireView().measuredHeight
             (getActionBarFragment() as MultiplayerActionButtonsFragment).initializeAnimator(buttonHeight)
 
             if ((game as MultiPlayerGame).hasPendingMove()) {
@@ -475,6 +479,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         val openChatButton = findViewById<ImageView>(R.id.open_chat_button) ?: return
 
         openChatButton.setOnClickListener {
+            findViewById<ImageView>(R.id.chat_update_icon).visibility = View.GONE
             val chatBoxEndX = if (chatOpened) (chatBoxWidth + chatButtonWidth) else chatButtonWidth
             val chatButtonEndX = if (chatOpened) chatBoxWidth else 0
 

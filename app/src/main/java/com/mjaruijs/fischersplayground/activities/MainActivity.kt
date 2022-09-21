@@ -113,11 +113,11 @@ class MainActivity : ClientActivity() {
         super.onDestroy()
     }
 
-    override fun onMessageReceived(topic: Topic, content: Array<String>) {
+    override fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
         when (topic) {
             Topic.SET_USER_ID -> onIdReceived(content)
             Topic.SEARCH_PLAYERS -> onPlayersReceived(content)
-            else -> super.onMessageReceived(topic, content)
+            else -> super.onMessageReceived(topic, content, messageId)
         }
     }
 
@@ -147,25 +147,6 @@ class MainActivity : ClientActivity() {
             createGameDialog.addPlayers(name, id)
         }
     }
-
-//    private fun processNotification(topic: String) {
-//        when (topic) {
-//            "invite" -> {
-//                val opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: opponent_name")
-//                val inviteId = intent.getStringExtra("invite_id") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: invite_id")
-//                incomingInviteDialog.showInvite(opponentName, inviteId, networkManager)
-//            }
-//            "move" -> {
-//                val data = intent.getStringExtra("data") ?: throw IllegalArgumentException("Missing essential information to show invite dialog: data")
-//                processOpponentMoveData(data) {
-//                    val multiplayerIntent = Intent(this, MultiplayerGameActivity::class.java)
-//                    multiplayerIntent.putExtra("game_id", it.gameId)
-//                    startActivity(multiplayerIntent)
-//                    Toast.makeText(this, "Opponent made move!", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//        }
-//    }
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
@@ -375,11 +356,9 @@ class MainActivity : ClientActivity() {
             .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
-//                networkManager.stop()
                 createGameDialog.show()
             }
     }
-
 
     override fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
         for ((gameId, game) in games ?: return) {

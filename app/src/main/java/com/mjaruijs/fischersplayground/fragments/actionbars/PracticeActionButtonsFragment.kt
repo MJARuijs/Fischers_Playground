@@ -57,11 +57,11 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
                 isRecording = false
                 stopRecordingButton.disable()
 
-                println("Recorded moves: ")
-                for (move in recordedMoves) {
-                    println(move.toChessNotation())
-                }
-                println()
+//                println("Recorded moves: ")
+//                for (move in recordedMoves) {
+//                    println(move.toChessNotation())
+//                }
+//                println()
             }
 
         buttons += startRecordingButton

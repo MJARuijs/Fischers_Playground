@@ -24,20 +24,20 @@ class ShaderProgram(vararg shaders: Shader) {
         val linkStatus = IntBuffer.allocate(1)
         glGetProgramiv(handle, GL_LINK_STATUS, linkStatus)
 
-        if (linkStatus[0] != GL_TRUE) {
-            println("SHADERPROGRAM LINKING FAILED")
-            println(glGetProgramInfoLog(handle))
-        }
+//        if (linkStatus[0] != GL_TRUE) {
+//            println("SHADERPROGRAM LINKING FAILED")
+//            println(glGetProgramInfoLog(handle))
+//        }
 
         glValidateProgram(handle)
 
         val validateStatus = IntBuffer.allocate(1)
         glGetProgramiv(handle, GL_VALIDATE_STATUS, validateStatus)
 
-        if (validateStatus[0] != GL_TRUE) {
-            println("SHADERPROGRAM VALIDATION FAILED")
-            println(glGetProgramInfoLog(handle))
-        }
+//        if (validateStatus[0] != GL_TRUE) {
+//            println("SHADERPROGRAM VALIDATION FAILED")
+//            println(glGetProgramInfoLog(handle))
+//        }
     }
 
     fun start() {

@@ -30,6 +30,7 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     USER_STATUS_CHANGED(ParcelableString),
     HEART_BEAT,
     NEWS,
+    CONFIRM_MESSAGE,
     RECONNECT_TO_SERVER;
 
     companion object {

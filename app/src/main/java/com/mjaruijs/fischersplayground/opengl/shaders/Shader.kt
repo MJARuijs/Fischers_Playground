@@ -15,10 +15,10 @@ class Shader(type: ShaderType, sourceCode: String) {
         val compileStatus = IntBuffer.allocate(1)
         glGetShaderiv(handle, GL_COMPILE_STATUS, compileStatus)
 
-        if (compileStatus[0] != GL_TRUE) {
-            println("SHADER COMPILATION FAILED")
-            println(glGetShaderInfoLog(handle))
-        }
+//        if (compileStatus[0] != GL_TRUE) {
+//            println("SHADER COMPILATION FAILED")
+//            println(glGetShaderInfoLog(handle))
+//        }
     }
 
     fun destroy() {
