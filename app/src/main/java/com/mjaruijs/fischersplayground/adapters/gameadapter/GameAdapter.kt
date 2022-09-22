@@ -27,6 +27,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
         game.gameStatus = newStatus
         game.isPlayingWhite = isPlayerWhite
 
+
         if (hasUpdate) {
             hasUpdate(gameId)
         } else {

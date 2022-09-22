@@ -1,15 +1,17 @@
 package com.mjaruijs.fischersplayground.adapters.chatadapter
 
+import android.content.res.Resources
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 
-class ChatAdapter(private val messages: ArrayList<ChatMessage> = arrayListOf()) : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
+class ChatAdapter(private val resources: Resources, private val messages: ArrayList<ChatMessage> = arrayListOf()) : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
 
     private var recyclerWidth = 0
 
@@ -35,13 +37,14 @@ class ChatAdapter(private val messages: ArrayList<ChatMessage> = arrayListOf()) 
         val params = holder.messageCard.layoutParams as RelativeLayout.LayoutParams
         if (messageCard.type == MessageType.SENT) {
             params.addRule(RelativeLayout.ALIGN_PARENT_END)
+            holder.messageCard.setCardBackgroundColor(ResourcesCompat.getColor(resources, R.color.accent_color, null))
         } else {
             params.addRule(RelativeLayout.ALIGN_PARENT_START)
+            holder.messageCard.setCardBackgroundColor(ResourcesCompat.getColor(resources, R.color.background_color, null))
         }
 
         holder.messageCard.layoutParams = params
         holder.messageContentView.maxWidth = (recyclerWidth * 0.7f).toInt()
-
     }
 
     override fun getItemCount() = messages.size

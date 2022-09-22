@@ -153,7 +153,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         animation.nextAnimation?.invokeOnFinishCalls()
     }
 
-    fun moveOpponent(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    fun moveOpponent(move: Move, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         if (status != GameStatus.OPPONENT_MOVE) {
             return
         }
@@ -161,8 +161,8 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         if (isShowingCurrentMove()) {
             incrementMoveCounter()
         }
-        moves += move
 
+        moves += move
         status = GameStatus.PLAYER_MOVE
         onMoveMade(move)
 
@@ -216,6 +216,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             return
         }
 
+        status = GameStatus.OPPONENT_MOVE
         move(team, fromPosition, toPosition, false)
     }
 

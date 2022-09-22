@@ -13,6 +13,7 @@ import com.mjaruijs.fischersplayground.util.Logger
 
 class NotificationBuilder(context: Context) {
 
+//    private val dataManager = DataManager(context)
     private val dataManager = DataManager.getInstance(context)
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -35,7 +36,7 @@ class NotificationBuilder(context: Context) {
     fun build(context: Context, isGroupSummary: Boolean, title: String, message: String, channelId: String, onClickIntent: PendingIntent?): Notification {
         try {
             val notificationBuilder = NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(R.drawable.black_queen)
+                .setSmallIcon(R.drawable.white_queen)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setAutoCancel(true)
@@ -64,6 +65,7 @@ class NotificationBuilder(context: Context) {
     }
 
     fun createNotificationData(context: Context, topic: Topic, data: Array<String>): NotificationData? {
+        dataManager.loadData(context)
         return when (topic) {
             Topic.INVITE -> {
                 val opponentName = data[0]
@@ -79,39 +81,39 @@ class NotificationBuilder(context: Context) {
                 val gameId = data[0]
                 val moveNotation = data[1]
                 val move = moveNotation.substring(moveNotation.indexOf(':') + 1)
-                val game = dataManager[gameId]
-                NotificationData("Your move!", "${game.opponentName} played $move", MOVE_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
+                val game = dataManager.getGame(gameId)
+                NotificationData("Your move!", "${game!!.opponentName} played $move", MOVE_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.UNDO_REQUESTED -> {
-                val opponentName = dataManager[data[0]].opponentName
+                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 NotificationData("Undo requested!", "$opponentName has requested to undo their move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.UNDO_ACCEPTED -> {
-                val opponentName = dataManager[data[0]].opponentName
+                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 NotificationData("Move reversed!", "$opponentName has accepted your request to undo your move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.UNDO_REJECTED -> {
-                val opponentName = dataManager[data[0]].opponentName
+                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 NotificationData("Rejection!", "$opponentName has rejected your request to undo your move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.RESIGN -> {
-                val opponentName = dataManager[data[0]].opponentName
+                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 NotificationData("Game over!", "$opponentName has resigned. You won!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.DRAW_OFFERED -> {
-                val opponentName = dataManager[data[0]].opponentName
+                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 NotificationData("Draw offer!", "$opponentName has offered a draw!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.DRAW_ACCEPTED -> {
-                val opponentName = dataManager[data[0]].opponentName
+                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 NotificationData("It's a draw!", "$opponentName has accepted your draw offer!", MISCELLANEOUS_ID, createMainActivityIntent(context, data))
             }
             Topic.DRAW_REJECTED -> {
-                val opponentName = dataManager[data[0]].opponentName
+                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 NotificationData("The show must go on!", "$opponentName has rejected your draw offer!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.CHAT_MESSAGE -> {
-                val opponentName = dataManager[data[0]].opponentName
+                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 val message = data[2]
                 NotificationData("New message!", "$opponentName: $message", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }

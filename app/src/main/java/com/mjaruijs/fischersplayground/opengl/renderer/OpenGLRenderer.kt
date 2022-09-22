@@ -109,7 +109,9 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     }
 
     private fun queueAnimation(animationData: AnimationData) {
-        pieceRenderer.queueAnimation(animationData)
+        if (this::pieceRenderer.isInitialized) {
+            pieceRenderer.queueAnimation(animationData)
+        }
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {

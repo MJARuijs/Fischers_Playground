@@ -38,7 +38,7 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
 
         constraintLayout = view.findViewById(R.id.chat_layout)
 
-        chatAdapter = ChatAdapter()
+        chatAdapter = ChatAdapter(resources)
 
         chatRecycler = view.findViewById(R.id.chat_recycler_view)
         chatRecycler.layoutManager = LinearLayoutManager(context)
@@ -130,6 +130,7 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
 
     fun addMessages(messages: ArrayList<ChatMessage>) {
         for (message in messages) {
+            println("Restoring chat message: $message")
             chatAdapter += message
         }
         chatAdapter.notifyDataSetChanged()

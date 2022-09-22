@@ -21,13 +21,16 @@ import kotlin.collections.HashSet
 class DataManager(context: Context) {
 
     private val savedGames = HashMap<String, MultiPlayerGame>()
-    val savedInvites = HashMap<String, InviteData>()
-    val recentOpponents = Stack<Pair<String, String>>()
-    val handledMessages = HashSet<Long>()
+    private val savedInvites = HashMap<String, InviteData>()
+    private val recentOpponents = Stack<Pair<String, String>>()
+    private val handledMessages = HashSet<Long>()
 
     private val userId: String
 
-    private val lock = AtomicBoolean(false)
+    private val gamesLock = AtomicBoolean(false)
+    private val invitesLock = AtomicBoolean(false)
+    private val recentOpponentsLock = AtomicBoolean(false)
+    private val messageLock = AtomicBoolean(false)
 
     init {
         val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
@@ -37,83 +40,244 @@ class DataManager(context: Context) {
     }
 
     fun getSavedGames(): HashMap<String, MultiPlayerGame> {
-        while (isLocked()) {
-            Thread.sleep(1)
-        }
-        return savedGames
+        obtainGameLock()
+
+        val games = savedGames
+        unlockGames()
+
+        return games
     }
 
     fun removeGame(id: String) {
-        while (isLocked()) {
-            Thread.sleep(1)
-        }
+        obtainGameLock()
+
         savedGames.remove(id)
+        unlockGames()
     }
 
-    operator fun set(id: String, game: MultiPlayerGame) {
-        while (isLocked()) {
-            Thread.sleep(1)
-        }
+    fun getGame(id: String): MultiPlayerGame? {
+        obtainGameLock()
+
+        val game = savedGames[id]
+        unlockGames()
+        return game
+    }
+
+    fun setGame(id: String, game: MultiPlayerGame) {
+        obtainGameLock()
+
         savedGames[id] = game
+        unlockGames()
     }
 
-    operator fun get(id: String): MultiPlayerGame {
-        while (isLocked()) {
+    fun getSavedInvites(): HashMap<String, InviteData> {
+        obtainInvitesLock()
+
+        val invites = savedInvites
+        unlockInvites()
+        return invites
+    }
+
+    fun saveInvite(id: String, inviteData: InviteData) {
+        obtainInvitesLock()
+        savedInvites[id] = inviteData
+        unlockInvites()
+    }
+
+    fun removeSavedInvite(id: String) {
+        obtainInvitesLock()
+        savedInvites.remove(id)
+        unlockInvites()
+    }
+
+    fun getRecentOpponents(): Stack<Pair<String, String>> {
+        obtainOpponentsLock()
+        val opponents = recentOpponents
+        unlockOpponents()
+        return opponents
+    }
+
+    fun isLocked() = areGamesLocked() || areInvitesLocked() || areOpponentsLocked()
+
+    private fun areGamesLocked() = gamesLock.get()
+
+    private fun areInvitesLocked() = invitesLock.get()
+
+    private fun areOpponentsLocked() = recentOpponentsLock.get()
+
+    private fun areMessagesLocked() = messageLock.get()
+
+    private fun obtainGameLock() {
+        while (areGamesLocked()) {
             Thread.sleep(1)
         }
-        return savedGames[id] ?: throw IllegalArgumentException("No game could be found with id: $id")
+
+        lockGames()
     }
 
-    fun isLocked() = lock.get()
+    private fun obtainInvitesLock() {
+        while (areInvitesLocked()) {
+            Thread.sleep(1)
+        }
 
-    private fun lock() {
-        lock.set(true)
+        lockInvites()
     }
 
-    private fun unlock() {
-        lock.set(false)
+    private fun obtainOpponentsLock() {
+        while (areOpponentsLocked()) {
+            Thread.sleep(1)
+        }
+
+        lockOpponents()
+    }
+
+    private fun obtainMessageLock() {
+        while (areMessagesLocked()) {
+            Thread.sleep(1)
+        }
+
+        lockMessages()
+    }
+
+    private fun lockGames() {
+        gamesLock.set(true)
+    }
+
+    private fun unlockGames() {
+        gamesLock.set(false)
+    }
+
+    private fun lockInvites() {
+        invitesLock.set(true)
+    }
+
+    private fun unlockInvites() {
+        invitesLock.set(false)
+    }
+
+    private fun lockOpponents() {
+        recentOpponentsLock.set(true)
+    }
+
+    private fun unlockOpponents() {
+        recentOpponentsLock.set(false)
+    }
+
+    private fun lockMessages() {
+        messageLock.set(true)
+    }
+
+    private fun unlockMessages() {
+        messageLock.set(false)
+    }
+
+    fun handledMessage(id: Long) {
+        obtainMessageLock()
+        handledMessages += id
+        unlockMessages()
+    }
+
+    fun isMessageHandled(id: Long): Boolean {
+        obtainMessageLock()
+        val isHandled = handledMessages.contains(id)
+        unlockMessages()
+        return isHandled
     }
 
     fun loadData(context: Context) {
-        if (isLocked()) {
-            return
-        }
-
-        lock()
+        obtainGameLock()
         Thread {
             try {
                 savedGames.clear()
-                savedInvites.clear()
-                recentOpponents.clear()
                 loadSavedGames(context)
-                loadInvites(context)
-                loadRecentOpponents(context)
-                loadHandledMessages(context)
             } catch (e: Exception) {
-                FileManager.write(context, "file_loading_crash.txt", e.stackTraceToString())
+                FileManager.write(context, "games_loading_crash.txt", e.stackTraceToString())
             } finally {
-                unlock()
+                unlockGames()
             }
-
         }.start()
 
+        obtainInvitesLock()
+        Thread {
+            try {
+                savedInvites.clear()
+                loadInvites(context)
+            } catch (e: Exception) {
+                FileManager.write(context, "invites_loading_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockInvites()
+            }
+        }.start()
+
+        obtainOpponentsLock()
+        Thread {
+            try {
+                recentOpponents.clear()
+                loadRecentOpponents(context)
+            } catch (e: Exception) {
+                FileManager.write(context, "opponents_loading_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockOpponents()
+            }
+        }.start()
+
+        obtainMessageLock()
+        Thread {
+            try {
+                handledMessages.clear()
+                loadHandledMessages(context)
+            } catch (e: Exception) {
+                FileManager.write(context, "messages_loading_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockMessages()
+            }
+        }.start()
     }
 
     fun saveData(context: Context, caller: String) {
-        while (isLocked()) {
-            Thread.sleep(1)
-//            println("Want to save but dataManager is locked")
-        }
-
-        lock()
 
         Thread {
-//            println("Saving data! $caller")
-            saveGames(context)
-            saveInvites(context)
-            saveRecentOpponents(context)
-            saveHandledMessages(context)
-            unlock()
+            try {
+                obtainGameLock()
+                saveGames(context, caller)
+            } catch (e: Exception) {
+                FileManager.write(context, "games_saving_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockGames()
+            }
+        }.start()
+
+        obtainInvitesLock()
+        Thread {
+            try {
+                saveInvites(context)
+            } catch (e: Exception) {
+                FileManager.write(context, "invites_saving_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockInvites()
+            }
+        }.start()
+
+        obtainOpponentsLock()
+        Thread {
+            try {
+                saveRecentOpponents(context)
+            } catch (e: Exception) {
+                FileManager.write(context, "opponents_saving_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockOpponents()
+            }
+        }.start()
+
+        obtainMessageLock()
+        Thread {
+            try {
+                saveHandledMessages(context)
+            } catch (e: Exception) {
+                FileManager.write(context, "messages_saving_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockMessages()
+            }
         }.start()
     }
 
@@ -124,6 +288,8 @@ class DataManager(context: Context) {
             if (gameData.isBlank()) {
                 continue
             }
+
+            println("Loaded saved game: $gameData")
 
             val data = gameData.removePrefix("(").removeSuffix(")").split('|')
             val gameId = data[0]
@@ -252,7 +418,7 @@ class DataManager(context: Context) {
         saveRecentOpponents(context)
     }
 
-    private fun saveGames(context: Context) {
+    private fun saveGames(context: Context, caller: String) {
         var content = ""
 
         for ((gameId, game) in savedGames) {
@@ -288,6 +454,8 @@ class DataManager(context: Context) {
 
             content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
         }
+
+        println("$caller Saving games: $content")
 
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
     }

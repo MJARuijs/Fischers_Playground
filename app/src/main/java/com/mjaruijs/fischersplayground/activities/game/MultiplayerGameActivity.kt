@@ -38,6 +38,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private var chatInitialized = false
     private var chatOpened = false
     private var reviewingFinishedGame = false
+    private var contextCreated = false
 
     private var chatButtonWidth = 0
     private var chatBoxWidth = 0
@@ -58,7 +59,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         try {
             gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
-            setGameParameters(dataManager[gameId])
+            setGameParameters(dataManager.getGame(gameId)!!)
 
             initChatBox()
 
@@ -80,6 +81,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onResume() {
+        println("ON RESUME")
+        super.onResume()
+
         setGameCallbacks()
 
         undoRequestedDialog = DoubleButtonDialog(this, "Undo Requested", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest, 0.5f)
@@ -93,21 +97,27 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         keyboardHeightProvider.observer = this
 
+        if (contextCreated) {
+            game.showPreviousMove(true)
+            game.showNextMove()
+            getActionBarFragment()?.disableForwardButton()
+        }
+
         runOnUiThread {
             processNews()
         }
-
-        super.onResume()
     }
 
     override fun onPause() {
-        dataManager[gameId] = (game as MultiPlayerGame)
-        dataManager.saveData(applicationContext, "MPactivity onPause")
+//        dataManager.setGame(gameId, game as MultiPlayerGame)
+//        dataManager.saveData(applicationContext, "MPactivity onPause")
+        println("ON PAUSE MP ACTIVITY: ${(game as MultiPlayerGame).chatMessages.size}")
         keyboardHeightProvider.observer = null
         super.onPause()
     }
 
     override fun onDestroy() {
+        println("ON DESTROY")
         keyboardHeightProvider.close()
         super.onDestroy()
     }
@@ -129,7 +139,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             }
 
             runOnUiThread {
-                getChatFragment()?.addMessages(game.chatMessages)
+                println("MESSAGES: ${game.chatMessages.size}")
+                getChatFragment()?.addMessages((game as MultiPlayerGame).chatMessages)
             }
         }.start()
 
@@ -140,7 +151,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
             runOnUiThread {
                 getActionBarFragment()?.game = game
-                setOpponentStatusIcon(game.opponentStatus)
+                setOpponentStatusIcon((game as MultiPlayerGame).opponentStatus)
 
                 evaluateActionButtons()
 
@@ -178,27 +189,30 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             (game as MultiPlayerGame).moveToBeConfirmed = positionUpdateMessage
             sendMoveData(positionUpdateMessage)
         }
-        dataManager[gameId] = game as MultiPlayerGame
+        dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity onMoveMade")
     }
 
     override fun onContextCreated() {
+        println("CONTEXT CREATED")
         super.onContextCreated()
         game.showPreviousMove(true)
         game.showNextMove()
         getActionBarFragment()?.disableForwardButton()
+
+        contextCreated = true
     }
 
     private fun confirmMove(moveNotation: String) {
         networkManager.sendMessage(NetworkMessage(Topic.MOVE, "$gameId|$userId|$moveNotation|${game.lastUpdated}"))
         (game as MultiPlayerGame).confirmMove()
-        dataManager[gameId] = game as MultiPlayerGame
+        dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity confirmMove")
     }
 
     private fun cancelMove() {
         (game as MultiPlayerGame).cancelMove()
-        dataManager[gameId] = game as MultiPlayerGame
+        dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity cancelMove")
     }
 
@@ -266,7 +280,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun onOpponentMoved(output: Parcelable) {
         val moveData = output as MoveData
         if (moveData.gameId == gameId) {
-            (game as MultiPlayerGame).moveOpponent(moveData.move)
+            (game as MultiPlayerGame).moveOpponent(moveData.move, false)
             requestRender()
         } else {
             super.onOpponentMoved(output)
@@ -342,7 +356,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         val messageData = output as ChatMessage.Data
 
         if (messageData.gameId == this.gameId) {
-            getChatFragment()?.addReceivedMessage(ChatMessage(messageData))
+            val message = ChatMessage(messageData)
+            (game as MultiPlayerGame).addMessage(message)
+            getChatFragment()!!.addReceivedMessage(message)
             if (!chatOpened) {
                 findViewById<ImageView>(R.id.chat_update_icon).visibility = View.VISIBLE
             }
@@ -368,7 +384,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private fun rejectUndoRequest() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_REQUESTED_UNDO)
-        dataManager[gameId] = game as MultiPlayerGame
+        dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity rejectUndoRequest")
         networkManager.sendMessage(NetworkMessage(Topic.UNDO_REJECTED, "$gameId|$userId"))
     }
@@ -387,21 +403,21 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }
         requestRender()
 
-        dataManager[gameId] = game as MultiPlayerGame
+        dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity acceptUndoRequest")
         networkManager.sendMessage(NetworkMessage(Topic.UNDO_ACCEPTED, "$gameId|$userId"))
     }
 
     private fun rejectDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
-        dataManager[gameId] = game as MultiPlayerGame
+        dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity rejectDrawOffer")
         networkManager.sendMessage(NetworkMessage(Topic.DRAW_REJECTED, "$gameId|$userId"))
     }
 
     private fun acceptDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
-        dataManager[gameId] = game as MultiPlayerGame
+        dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity acceptDrawOffer")
         networkManager.sendMessage(NetworkMessage(Topic.DRAW_ACCEPTED, "$gameId|$userId"))
         closeAndSaveGameAsDraw()
@@ -416,7 +432,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun sendResumeStatusToServer() {
-        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|$gameId"))
+//        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|$gameId"))
     }
 
     override fun onDisplaySizeChanged(width: Int, height: Int) {
@@ -457,7 +473,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private fun onChatMessageSent(message: ChatMessage) {
         networkManager.sendMessage(NetworkMessage(Topic.CHAT_MESSAGE, "$gameId|$userId|${message.timeStamp}|${message.message}"))
-        (game as MultiPlayerGame).chatMessages += message
+        (game as MultiPlayerGame).addMessage(message)
     }
 
     private fun closeChat() {

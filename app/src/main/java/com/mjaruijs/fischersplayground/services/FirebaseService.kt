@@ -28,9 +28,12 @@ class FirebaseService : FirebaseMessagingService() {
             val contentList = content.split('|').toTypedArray()
 
             val dataManager = DataManager.getInstance(applicationContext)
-            if (dataManager.handledMessages.contains(messageId)) {
+//            val dataManager = DataManager(applicationContext)
+            if (dataManager.isMessageHandled(messageId)) {
+                println("Got firebase message but was already handled: $topic $messageId")
                 return
             }
+            println("Got firebase message: $topic $messageId")
 
             val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
                 .setInputData(workDataOf(
@@ -42,6 +45,15 @@ class FirebaseService : FirebaseMessagingService() {
 
             val workManager = WorkManager.getInstance(applicationContext)
             workManager.enqueue(worker)
+//
+//            applicationContext.run {
+//                workManager.getWorkInfoByIdLiveData(worker.id)
+//                    .observe() {
+//                        if (it != null && it.state.isFinished) {
+//
+//                        }
+//                    }
+//            }
 
             val notificationData = notificationBuilder.createNotificationData(applicationContext, topic, contentList) ?: return
             val notification = notificationBuilder.build(applicationContext, false, notificationData)
@@ -49,6 +61,7 @@ class FirebaseService : FirebaseMessagingService() {
 
             val summaryNotification = notificationBuilder.build(applicationContext, true, "Title??", "Message!", GROUP_CHANNEL_ID, null)
             notificationBuilder.notify(0, summaryNotification)
+
         } catch (e: Exception) {
             FileManager.write(applicationContext, "firebase_crash_log.txt", e.stackTraceToString())
         }

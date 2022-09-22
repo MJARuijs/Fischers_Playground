@@ -17,7 +17,7 @@ class NetworkManager {
 //        private const val PUBLIC_SERVER_IP = "217.101.191.23"
         private const val LOCAL_SERVER_IP = "192.168.178.103"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
-        private const val SERVER_PORT = 4500
+        private const val SERVER_PORT = 4501
 
         private var instance: NetworkManager? = null
 
@@ -33,21 +33,25 @@ class NetworkManager {
 
     private val clientConnecting = AtomicBoolean(false)
     private val clientConnected = AtomicBoolean(false)
+    private val sendingMessage = AtomicBoolean(false)
 
     private lateinit var manager: Manager
     private lateinit var client: EncodedClient
 
     private val messageQueue = ArrayList<NetworkMessage>()
 
-    fun stop(): Boolean {
+    fun stop() {
+        while (sendingMessage.get()) {
+            Thread.sleep(1)
+        }
         messageQueue.clear()
         if (clientConnected.get()) {
             client.close()
+            log("Stopping server connection!")
             clientConnected.set(false)
         }
         clientConnecting.set(false)
         manager.stop()
-        return true
     }
 
     fun isConnected(): Boolean {
@@ -59,7 +63,7 @@ class NetworkManager {
             return
         }
 
-//        log("Starting networker")
+        log("Starting networker")
 
         manager = Manager("Client")
         manager.context = context
@@ -73,7 +77,7 @@ class NetworkManager {
                 client = EncodedClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
             } catch (e: Exception) {
-//                log("Failed to connect to server..")
+                log("Failed to connect to server..")
                 clientConnected.set(false)
             } finally {
                 clientConnecting.set(false)
@@ -91,29 +95,37 @@ class NetworkManager {
         }.start()
     }
 
+    private fun log(message: String) {
+        println("Networker: $message")
+    }
+
     fun sendMessage(message: NetworkMessage) {
+        println("Trying to send message: ${message.topic}")
+        sendingMessage.set(true)
+
         Thread {
+
             while (clientConnecting.get()) {
                 Thread.sleep(1)
             }
 
             if (clientConnected.get()) {
                 try {
-//                    log("Sending message: $message")
+                    log("Sending message: $message")
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
 
                 }
             } else {
+                log("Added message to queue ${message.topic}")
                 messageQueue += message
             }
-
+            sendingMessage.set(false)
         }.start()
     }
 
     private fun onRead(message: NetworkMessage, context: Context) {
-//        log("Received message: $message")
 
         val messageData = message.content.split('|').toTypedArray()
 
@@ -124,10 +136,15 @@ class NetworkManager {
 
         sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
+        if (message.topic != Topic.CONFIRM_MESSAGE) {
+            log("Received message: $message")
+        }
+
+//        val dataManager = DataManager(context)
         val dataManager = DataManager.getInstance(context)
 
-        if (!dataManager.handledMessages.contains(message.id)) {
-            dataManager.handledMessages += message.id
+        if (!dataManager.isMessageHandled(message.id)) {
+            dataManager.handledMessage(message.id)
             dataManager.saveHandledMessages(context)
 
             val intent = Intent("mjaruijs.fischers_playground")
@@ -136,6 +153,8 @@ class NetworkManager {
                 .putExtra("messageId", message.id)
 
             context.sendBroadcast(intent)
+        } else {
+            println("Message already handled: ${message.id} ${message.topic}")
         }
     }
 

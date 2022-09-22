@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
+import android.widget.Toast
 import androidx.work.Data
 import androidx.work.Worker
 import androidx.work.WorkerParameters
@@ -39,13 +40,15 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         userId = preferences.getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
 
         dataManager = DataManager.getInstance(applicationContext)
+//        dataManager = DataManager(applicationContext)
 
         val topic = Topic.fromString(inputData.getString("topic")!!)
         val content = inputData.getStringArray("content")!!
         val messageId = inputData.getLong("messageId", -1L)
 
         if (messageId == -1L) {
-            throw IllegalArgumentException("NOPE")
+            Toast.makeText(applicationContext, "doWork failed: no messageId was given", Toast.LENGTH_SHORT).show()
+            return Result.failure()
         }
 
         val output: Any = when (topic) {
@@ -65,6 +68,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
 
+        dataManager.handledMessage(messageId)
         dataManager.saveData(applicationContext, "DataWorker doWork: $topic")
 
         return if (output is Parcelable) {
@@ -91,12 +95,12 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val moveNotation = data[1]
         val timeStamp = data[2].toLong()
         val move = Move.fromChessNotation(moveNotation)
-        val game = dataManager[gameId]
 
         try {
-            game.moveOpponent(move)
+            val game = dataManager.getGame(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+            game.moveOpponent(move, true)
             game.lastUpdated = timeStamp
-            dataManager[gameId] = game
+            dataManager.setGame(gameId, game)
         } catch (e: Exception) {
             FileManager.write(applicationContext, "crash_log.txt", e.stackTraceToString())
         }
@@ -110,7 +114,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val timeStamp = data[2].toLong()
 
         val inviteData = InviteData(inviteId, opponentName, timeStamp, InviteType.RECEIVED)
-        dataManager.savedInvites[inviteId] = inviteData
+        dataManager.saveInvite(inviteId, inviteData)
 
         return InviteData(inviteId, opponentName, timeStamp, InviteType.RECEIVED)
     }
@@ -128,8 +132,8 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val newGame = MultiPlayerGame(inviteId, opponentId, opponentName, gameStatus, opponentStatus, timeStamp, playingWhite)
         newGame.lastUpdated = timeStamp
 
-        dataManager[inviteId] = newGame
-        dataManager.savedInvites.remove(inviteId)
+        dataManager.setGame(inviteId, newGame)
+        dataManager.removeSavedInvite(inviteId)
 
         dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
 
@@ -141,9 +145,9 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     private fun onUndoRequested(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        val game = dataManager[gameId]
+        val game = dataManager.getGame(gameId)!!
         game.addNews(NewsType.OPPONENT_REQUESTED_UNDO)
-        dataManager[gameId] = game
+        dataManager.setGame(gameId, game)
 
         return ParcelableString(gameId)
     }
@@ -152,13 +156,11 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val gameId = data[0]
         val numberOfReversedMoves = data[1].toInt()
 
-//        dataManager[gameId].undoMoves(numberOfReversedMoves)
-        dataManager[gameId].addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfReversedMoves))
-        dataManager[gameId].status = GameStatus.PLAYER_MOVE
-//        val game = dataManager[gameId]
-//        game.addNews(NewsType.OPPONENT_ACCEPTED_UNDO)
-//        game.undoMoves(numberOfReversedMoves)
-//        dataManager[gameId] = game
+        val game = dataManager.getGame(gameId)!!
+
+        game.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfReversedMoves))
+        game.status = GameStatus.PLAYER_MOVE
+        dataManager.setGame(gameId, game)
 
         return ParcelablePair(ParcelableString(gameId), ParcelableInt(numberOfReversedMoves))
     }
@@ -166,7 +168,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     private fun onUndoRejected(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        dataManager[gameId].addNews(NewsType.OPPONENT_REJECTED_UNDO)
+        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_REJECTED_UNDO)
 
         return ParcelableString(gameId)
     }
@@ -174,7 +176,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     private fun onOpponentResigned(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        dataManager[gameId].addNews(NewsType.OPPONENT_RESIGNED)
+        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_RESIGNED)
 
         return ParcelableString(gameId)
     }
@@ -182,7 +184,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     private fun onDrawOffered(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        dataManager[gameId].addNews(NewsType.OPPONENT_OFFERED_DRAW)
+        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_OFFERED_DRAW)
 
         return ParcelableString(gameId)
     }
@@ -190,8 +192,10 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     private fun onDrawAccepted(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        dataManager[gameId].status = GameStatus.GAME_DRAW
-        dataManager[gameId].addNews(NewsType.OPPONENT_ACCEPTED_DRAW)
+        val game = dataManager.getGame(gameId)!!
+        game.status = GameStatus.GAME_DRAW
+        game.addNews(NewsType.OPPONENT_ACCEPTED_DRAW)
+        dataManager.setGame(gameId, game)
 
         return ParcelableString(gameId)
     }
@@ -199,7 +203,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     private fun onDrawRejected(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        dataManager[gameId].addNews(NewsType.OPPONENT_REJECTED_DRAW)
+        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_REJECTED_DRAW)
 
         return ParcelableString(gameId)
     }
@@ -209,7 +213,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val timeStamp = data[1]
         val messageContent = data[2]
 
-        dataManager[gameId].addMessage(ChatMessage(timeStamp, messageContent, MessageType.RECEIVED))
+        dataManager.getGame(gameId)!!.addMessage(ChatMessage(timeStamp, messageContent, MessageType.RECEIVED))
 
         return ChatMessage.Data(gameId, timeStamp, messageContent, MessageType.RECEIVED)
     }
@@ -223,7 +227,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             val game = gameEntry.value
 
             if (game.opponentId == opponentId) {
-                dataManager[gameId].opponentStatus = opponentStatus
+                dataManager.getGame(gameId)!!.opponentStatus = opponentStatus
 //                game.opponentStatus = opponentStatus
 //                dataManager[gameId] = game
             }

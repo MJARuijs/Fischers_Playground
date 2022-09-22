@@ -15,7 +15,6 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
-import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
 import com.mjaruijs.fischersplayground.networking.ConnectivityCallback
@@ -66,12 +65,16 @@ abstract class ClientActivity : AppCompatActivity() {
 
         networkManager = NetworkManager.getInstance()
         dataManager = DataManager.getInstance(this)
+//        dataManager = DataManager(applicationContext)
 
-        NotificationBuilder.getInstance(this).clearNotifications()
     }
 
     override fun onResume() {
         super.onResume()
+
+        NotificationBuilder.getInstance(applicationContext).clearNotifications()
+
+        dataManager.loadData(applicationContext)
 
         leftApp = false
 
@@ -92,6 +95,7 @@ abstract class ClientActivity : AppCompatActivity() {
             .build()
 
         if (!networkManager.isConnected()) {
+            println("LOADING DATA IN CLIENTACTIVITY ONRESUME")
 
             val connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
             connectivityManager.requestNetwork(networkRequest, ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost))
@@ -102,44 +106,49 @@ abstract class ClientActivity : AppCompatActivity() {
 //            }
         }
 
-        dataManager.loadData(applicationContext)
         registerReceiver(networkReceiver, intentFilter)
 
         if (isUserRegisteredAtServer()) {
-            sendResumeStatusToServer()
+//            sendResumeStatusToServer()
         }
     }
 
     override fun onPause() {
-
-        incomingInviteDialog.destroy()
-        unregisterReceiver(networkReceiver)
+//        println("ON PAUSE")
+        dataManager.saveData(applicationContext, "ClientActivity onPause")
 
         if (!stayingInApp) {
+//            sendAwayStatusToServer()
+
             leftApp = true
             networkManager.stop()
         }
 
+        incomingInviteDialog.destroy()
+        unregisterReceiver(networkReceiver)
         super.onPause()
     }
 
+    //TODO: Can this be removed?
     override fun onUserLeaveHint() {
-        if (!stayingInApp) {
-            leftApp = true
-            sendAwayStatusToServer()
-        }
+//        println("ON USER LEAVE HINT $stayingInApp")
+//        if (!stayingInApp) {
+//            leftApp = true
+//            sendAwayStatusToServer()
+//        }
 
         super.onUserLeaveHint()
     }
 
     override fun onBackPressed() {
+//        println("ON BACK PRESSED")
         stayingInApp = stayInAppOnBackPress
-        dataManager.saveData(applicationContext, "ClientActivity onBackPressed")
+//        dataManager.saveData(applicationContext, "ClientActivity onBackPressed")
 
         if (stayingInApp) {
             super.onBackPressed()
         } else {
-            sendAwayStatusToServer()
+//            sendAwayStatusToServer()
             moveTaskToBack(true)
         }
     }
@@ -160,16 +169,15 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun sendResumeStatusToServer() {
-        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
+//        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
     }
 
     private fun sendAwayStatusToServer() {
-        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
+//        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
     }
 
-    open fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {}
-
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
+        println("SENDING MESSAGE TO WORKER: $topic")
         sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite
             Topic.NEW_GAME -> ::onNewGameStarted
@@ -258,7 +266,6 @@ abstract class ClientActivity : AppCompatActivity() {
         workManager.getWorkInfoByIdLiveData(worker.id)
             .observe(this) {
                 if (it != null && it.state.isFinished) {
-
                     val result = it.outputData.getParcelable(topic.dataType, "output") ?: return@observe
                     onResult(result)
                 }
@@ -279,7 +286,7 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     fun showPopup(moveData: MoveData) {
-        val game = dataManager[moveData.gameId]
+        val game = dataManager.getGame(moveData.gameId)!!
         Toast.makeText(applicationContext, "${game.opponentName} played ${moveData.move.toChessNotation()}", Toast.LENGTH_SHORT).show()
     }
 

@@ -100,8 +100,8 @@ class MainActivity : ClientActivity() {
             }
             runOnUiThread {
                 restoreSavedGames(dataManager.getSavedGames())
-                restoreSavedInvites(dataManager.savedInvites)
-                updateRecentOpponents(dataManager.recentOpponents)
+                restoreSavedInvites(dataManager.getSavedInvites())
+                updateRecentOpponents(dataManager.getRecentOpponents())
             }
         }.start()
 
@@ -150,18 +150,18 @@ class MainActivity : ClientActivity() {
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
-        dataManager.savedInvites[inviteId] = InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING)
+        dataManager.saveInvite(inviteId, InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING))
         dataManager.saveData(applicationContext, "MainActivity onInvite")
         dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
     }
 
     private fun onGameClicked(gameCard: GameCardItem) {
-        stayingInApp = true
         gameAdapter.clearUpdate(gameCard)
 
         if (gameCard.gameStatus == GameStatus.INVITE_RECEIVED) {
             showNewInviteDialog(gameCard.id, gameCard.opponentName)
         } else if (gameCard.gameStatus != GameStatus.INVITE_PENDING) {
+            stayingInApp = true
             launchMultiplayerActivity(gameCard)
         }
     }
@@ -197,7 +197,7 @@ class MainActivity : ClientActivity() {
 
     private fun onGameDeleted(gameId: String) {
         dataManager.removeGame(gameId)
-        dataManager.savedInvites.remove(gameId)
+        dataManager.removeSavedInvite(gameId)
         dataManager.saveData(applicationContext, "MainActivity onGameDeleted")
     }
 
@@ -360,7 +360,7 @@ class MainActivity : ClientActivity() {
             }
     }
 
-    override fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
+    private fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
         for ((gameId, game) in games ?: return) {
             if (!showFinishedGames && game.isFinished()) {
                 continue
