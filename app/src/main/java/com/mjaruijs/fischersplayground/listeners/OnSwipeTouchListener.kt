@@ -22,11 +22,16 @@ class OnSwipeTouchListener(private val swipeDirection: SwipeDirection, private v
             return false
         }
 
-        processTouch(event)
+        val consumed = processTouch(event)
+
+        if (!consumed) {
+            v!!.onTouchEvent(event)
+        }
+
         return true
     }
 
-    private fun processTouch(event: MotionEvent) {
+    private fun processTouch(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_DOWN) {
             totalDX = 0f
             holdStartTime = System.currentTimeMillis()
@@ -48,19 +53,24 @@ class OnSwipeTouchListener(private val swipeDirection: SwipeDirection, private v
             holdStartTime = 0L
 
             if (swipeDirection == SwipeDirection.RIGHT) {
-                if (totalDX > 20f) {
+                if (totalDX > 200f) {
                     onSwipe()
+                    return true
                 } else if (totalHoldTime < 250L) {
                     onClick()
+                    return true
                 }
             } else if (swipeDirection == SwipeDirection.LEFT) {
-                if (totalDX < -20f) {
+                if (totalDX < -200f) {
                     onSwipe()
+                    return true
                 } else if (abs(totalDX) < 10f && totalHoldTime < 250L) {
                     onClick()
+                    return true
                 }
             }
         }
+        return false
     }
 
     override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}

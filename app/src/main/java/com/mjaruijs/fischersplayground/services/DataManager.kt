@@ -36,7 +36,7 @@ class DataManager(context: Context) {
         val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
         userId = preferences.getString(ClientActivity.USER_ID_KEY, "")!!
 
-        loadData(context)
+        loadData(context, "DataManager")
     }
 
     fun getSavedGames(): HashMap<String, MultiPlayerGame> {
@@ -67,6 +67,7 @@ class DataManager(context: Context) {
         obtainGameLock()
 
         savedGames[id] = game
+//        println("SETTING GAME: ${game.chatMessages.size} ${savedGames[id]!!.chatMessages.size}")
         unlockGames()
     }
 
@@ -184,14 +185,15 @@ class DataManager(context: Context) {
         return isHandled
     }
 
-    fun loadData(context: Context) {
+    fun loadData(context: Context, caller: String) {
         obtainGameLock()
         Thread {
             try {
                 savedGames.clear()
-                loadSavedGames(context)
+                loadSavedGames(context, caller)
             } catch (e: Exception) {
                 FileManager.write(context, "games_loading_crash.txt", e.stackTraceToString())
+
             } finally {
                 unlockGames()
             }
@@ -281,7 +283,7 @@ class DataManager(context: Context) {
         }.start()
     }
 
-    private fun loadSavedGames(context: Context) {
+    private fun loadSavedGames(context: Context, caller: String) {
         val lines = FileManager.read(context, MULTIPLAYER_GAME_FILE) ?: ArrayList()
 
         for (gameData in lines) {
@@ -289,7 +291,7 @@ class DataManager(context: Context) {
                 continue
             }
 
-            println("Loaded saved game: $gameData")
+            println("$caller loaded saved game: $gameData")
 
             val data = gameData.removePrefix("(").removeSuffix(")").split('|')
             val gameId = data[0]
@@ -317,7 +319,7 @@ class DataManager(context: Context) {
             val messages = ArrayList<ChatMessage>()
             for (message in chatMessages) {
                 if (message.isNotBlank()) {
-                    val messageData = message.split(',')
+                    val messageData = message.split('~')
                     val timeStamp = messageData[0]
                     val messageContent = messageData[1]
                     val type = MessageType.fromString(messageData[2])
@@ -500,7 +502,7 @@ class DataManager(context: Context) {
             if (instance == null) {
                 instance = DataManager(context)
             }
-            instance!!.loadData(context)
+            instance!!.loadData(context, "getInstance()")
 
             return instance!!
         }

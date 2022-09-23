@@ -113,7 +113,6 @@ class SettingsActivity : ClientActivity() {
 
         //TODO: Delete this button later
         findViewById<Button>(R.id.delete_server_button).setOnClickListener {
-            val path = "/data/data/com.mjaruijs.fischersplayground"
             val preferenceFiles = arrayListOf(
                 "fcm_token",
                 "user_data",
@@ -124,17 +123,18 @@ class SettingsActivity : ClientActivity() {
 
             for (file in preferenceFiles) {
                 getSharedPreferences(file, MODE_PRIVATE).edit().clear().commit()
-                FileManager.delete("$path/shared_prefs/$file.xml")
+                applicationContext.deleteSharedPreferences(file)
             }
 
             val dataFiles = arrayListOf(
                 "mp_games",
                 "received_invites",
-                "recent_opponents"
+                "recent_opponents",
+                "handled_messages"
             )
 
             for (file in dataFiles) {
-                FileManager.delete("$path/files/$file.txt")
+                FileManager.delete(applicationContext, "$file.txt")
             }
         }
     }

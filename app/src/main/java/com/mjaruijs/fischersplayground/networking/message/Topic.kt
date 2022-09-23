@@ -31,7 +31,8 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     HEART_BEAT,
     NEWS,
     CONFIRM_MESSAGE,
-    RECONNECT_TO_SERVER;
+    RECONNECT_TO_SERVER,
+    CRASH_REPORT;
 
     companion object {
         fun fromString(value: String): Topic {

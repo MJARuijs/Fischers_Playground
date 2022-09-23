@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.networking.client
 
 import android.content.Context
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
-import com.mjaruijs.fischersplayground.util.Logger
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets.UTF_8
 import java.security.KeyFactory

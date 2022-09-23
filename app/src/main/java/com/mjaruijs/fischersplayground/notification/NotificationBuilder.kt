@@ -9,7 +9,7 @@ import com.mjaruijs.fischersplayground.activities.MainActivity
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.services.DataManager
-import com.mjaruijs.fischersplayground.util.Logger
+import com.mjaruijs.fischersplayground.util.FileManager
 
 class NotificationBuilder(context: Context) {
 
@@ -49,7 +49,7 @@ class NotificationBuilder(context: Context) {
 
             return notificationBuilder.build()
         } catch (e: Exception){
-            Logger.log(context, e.stackTraceToString(), "notification_builder_crash_log.txt")
+            FileManager.write(context, "notification_builder_crash_log.txt", e.stackTraceToString())
             throw e
         }
     }
@@ -65,7 +65,7 @@ class NotificationBuilder(context: Context) {
     }
 
     fun createNotificationData(context: Context, topic: Topic, data: Array<String>): NotificationData? {
-        dataManager.loadData(context)
+        dataManager.loadData(context, "NotificationBuilder")
         return when (topic) {
             Topic.INVITE -> {
                 val opponentName = data[0]

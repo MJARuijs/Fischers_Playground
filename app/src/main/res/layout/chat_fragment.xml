@@ -25,7 +25,6 @@
         android:id="@+id/chat_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginBottom="8dp"
         android:clickable="true"
         app:layout_constraintBottom_toTopOf="@+id/chat_input_card"
         app:layout_constraintEnd_toEndOf="parent"
@@ -39,33 +38,48 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        app:cardBackgroundColor="@color/background_color"
         app:cardCornerRadius="45dp"
-        app:cardBackgroundColor="#EBBA91"
+        app:contentPadding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/send_card"
         app:layout_constraintStart_toStartOf="parent">
 
-        <EditText
-            android:id="@+id/chat_input_box"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_margin="8dp"
-            android:background="@null"
-            android:ems="10"
-            android:hint="Message"
-            android:inputType="textPersonName|textCapSentences|textCapWords|textCapCharacters"
-            android:textSize="24sp" />
+            android:layout_height="match_parent">
+
+            <EditText
+                android:id="@+id/chat_input_box"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="@null"
+                android:ems="10"
+                android:hint="Message"
+                android:inputType="textLongMessage|textMultiLine|textPersonName|textCapSentences|textCapWords|textCapCharacters"
+                android:textSize="20sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
     </androidx.cardview.widget.CardView>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/send_card"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="50dp"
         android:layout_marginEnd="8dp"
         app:cardBackgroundColor="#EBBA91"
         app:cardCornerRadius="90dp"
         app:layout_constraintBottom_toBottomOf="@+id/chat_input_card"
-        app:layout_constraintDimensionRatio="h,1:1"
+        app:layout_constraintDimensionRatio="w,1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/chat_input_card">
 

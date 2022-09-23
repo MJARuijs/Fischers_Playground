@@ -9,6 +9,7 @@ import android.widget.EditText
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,7 +23,7 @@ import com.mjaruijs.fischersplayground.util.Time
 
 class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val close: () -> Unit) : Fragment(R.layout.chat_fragment) {
 
-    private lateinit var constraintLayout: ConstraintLayout
+    private lateinit var chatLayout: ConstraintLayout
 
     private lateinit var chatRecycler: RecyclerView
     private lateinit var chatAdapter: ChatAdapter
@@ -36,7 +37,7 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        constraintLayout = view.findViewById(R.id.chat_layout)
+        chatLayout = view.findViewById(R.id.chat_layout)
 
         chatAdapter = ChatAdapter(resources)
 
@@ -46,10 +47,17 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
         chatRecycler.addItemDecoration(MarginItemDecoration(resources.getDimensionPixelSize(R.dimen.chat_padding)))
 
         inputCard = view.findViewById(R.id.chat_input_card)
+        val defaultCardRadius = inputCard.radius
+
         inputBox = view.findViewById(R.id.chat_input_box)
+        inputBox.doOnTextChanged { text, start, before, count ->
+            inputCard.radius = defaultCardRadius / inputBox.lineCount
+            chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
+//            chatLayout.invalidate()
+        }
+
         inputBox.setOnEditorActionListener { v, actionId, _ ->
             val content = (v as EditText).text.toString()
-
             if (content.isBlank()) {
                 return@setOnEditorActionListener false
             }
@@ -67,11 +75,10 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
             sendMessage(inputBox.text.toString())
         }
 
+        chatRecycler.setOnTouchListener(OnSwipeTouchListener(OnSwipeTouchListener.SwipeDirection.RIGHT, ::onSwipe, ::onClick))
         chatRecycler.setOnClickListener {
             close()
         }
-
-        chatRecycler.addOnItemTouchListener(OnSwipeTouchListener(OnSwipeTouchListener.SwipeDirection.RIGHT, ::onSwipe, ::onClick))
     }
 
     private fun onClick() {
@@ -91,10 +98,9 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
     private fun toggle() {
         val offset = if (keyboardHeight == 0) 32 else keyboardHeight + 32
         val constraints = ConstraintSet()
-        constraints.clone(constraintLayout)
+        constraints.clone(chatLayout)
         constraints.connect(R.id.chat_input_card, ConstraintSet.BOTTOM, R.id.chat_layout, ConstraintSet.BOTTOM, offset)
-        constraints.applyTo(constraintLayout)
-
+        constraints.applyTo(chatLayout)
         chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
     }
 
@@ -133,6 +139,8 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
             println("Restoring chat message: $message")
             chatAdapter += message
         }
+        chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
+
         chatAdapter.notifyDataSetChanged()
     }
 

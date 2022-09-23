@@ -1,8 +1,6 @@
 package com.mjaruijs.fischersplayground.networking.nio
 
 import android.content.Context
-import com.mjaruijs.fischersplayground.networking.client.ClientException
-import com.mjaruijs.fischersplayground.util.Logger
 import java.nio.channels.Selector
 import java.util.concurrent.atomic.AtomicBoolean
 

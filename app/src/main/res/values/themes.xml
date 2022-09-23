@@ -14,7 +14,7 @@
 
     <style name="Theme.FischersPlayground.NoActionBar">
         <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+        <item name="windowNoTitle">false</item>
     </style>
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <item name="android:textViewStyle">@style/RobotoTextViewStyle</item>

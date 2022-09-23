@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.util
 
 import android.content.Context
+import android.widget.Toast
 import java.io.*
 
 object FileManager {
@@ -18,6 +19,27 @@ object FileManager {
             e.printStackTrace()
             false
         }
+    }
+
+    fun listFilesInDirectory(context: Context): ArrayList<String> {
+        val file = File("${context.filesDir.absoluteFile}")
+        val files = file.listFiles()!!
+        val fileList = ArrayList<String>()
+        for (f in files) {
+            fileList += f.name
+        }
+        return fileList
+    }
+
+
+    fun doesFileExist(context: Context, fileName: String): Boolean {
+        val file = File("${context.filesDir.absoluteFile}/$fileName")
+        return file.exists()
+    }
+
+    fun isFileEmpty(context: Context, fileName: String): Boolean {
+        val file = File("${context.filesDir.absoluteFile}/$fileName")
+        return file.length() == 0L
     }
 
     fun write(context: Context, fileName: String, content: String): Boolean {
@@ -44,8 +66,8 @@ object FileManager {
         }
     }
 
-    fun delete(fileName: String) {
-        File(fileName).delete()
+    fun delete(context: Context, fileName: String) {
+        File("${context.filesDir.absoluteFile}/$fileName").delete()
     }
 
 }

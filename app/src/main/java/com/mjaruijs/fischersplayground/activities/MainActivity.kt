@@ -265,6 +265,11 @@ class MainActivity : ClientActivity() {
 
         findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
         networkManager.sendMessage(NetworkMessage(Topic.SET_USER_NAME, userName))
+
+        val fireBaseToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", null)
+        if (fireBaseToken != null) {
+            networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$userId|$fireBaseToken"))
+        }
     }
 
     private fun savePreference(key: String, value: String) {
@@ -358,6 +363,17 @@ class MainActivity : ClientActivity() {
             .setOnClick {
                 createGameDialog.show()
             }
+
+        findViewById<UIButton>(R.id.crash_menu_button)
+            .setColor(Color.TRANSPARENT)
+            .setColoredDrawable(R.drawable.bug_report_icon)
+            .setChangeIconColorOnHover(false)
+            .setChangeTextColorOnHover(true)
+            .setOnClick {
+                stayingInApp = true
+                startActivity(Intent(this, CrashReportActivity::class.java))
+            }
+
     }
 
     private fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {

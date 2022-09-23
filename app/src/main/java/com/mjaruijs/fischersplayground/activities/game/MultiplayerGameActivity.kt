@@ -59,7 +59,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         try {
             gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
-            setGameParameters(dataManager.getGame(gameId)!!)
+            game = dataManager.getGame(gameId)!!
+
+            setGameParameters()
 
             initChatBox()
 
@@ -83,6 +85,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun onResume() {
         println("ON RESUME")
         super.onResume()
+        if (!isGameInitialized()) {
+            game = dataManager.getGame(gameId)!!
+        }
 
         setGameCallbacks()
 
@@ -109,8 +114,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onPause() {
-//        dataManager.setGame(gameId, game as MultiPlayerGame)
-//        dataManager.saveData(applicationContext, "MPactivity onPause")
+        dataManager.setGame(gameId, game as MultiPlayerGame)
         println("ON PAUSE MP ACTIVITY: ${(game as MultiPlayerGame).chatMessages.size}")
         keyboardHeightProvider.observer = null
         super.onPause()
@@ -122,11 +126,10 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         super.onDestroy()
     }
 
-    private fun setGameParameters(game: MultiPlayerGame) {
-        this.game = game
+    private fun setGameParameters() {
         game.onMoveMade = ::onMoveMade
 
-        opponentName = game.opponentName
+        opponentName = (game as MultiPlayerGame).opponentName
         isPlayingWhite = game.isPlayingWhite
 
         if (loadFragments) {
@@ -139,7 +142,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             }
 
             runOnUiThread {
-                println("MESSAGES: ${game.chatMessages.size}")
                 getChatFragment()?.addMessages((game as MultiPlayerGame).chatMessages)
             }
         }.start()

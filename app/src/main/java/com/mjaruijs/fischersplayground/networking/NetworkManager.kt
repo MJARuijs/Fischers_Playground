@@ -7,6 +7,8 @@ import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.services.DataManager
+import com.mjaruijs.fischersplayground.util.FileManager
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 class NetworkManager {
@@ -17,7 +19,9 @@ class NetworkManager {
 //        private const val PUBLIC_SERVER_IP = "217.101.191.23"
         private const val LOCAL_SERVER_IP = "192.168.178.103"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
+
         private const val SERVER_PORT = 4501
+        private const val CRASH_REPORT_PORT = 4503
 
         private var instance: NetworkManager? = null
 
@@ -74,11 +78,14 @@ class NetworkManager {
         Thread {
             try {
                 clientConnecting.set(true)
-                client = EncodedClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
+                client = EncodedClient(LOCAL_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
+                println("CONNECTED")
             } catch (e: Exception) {
                 log("Failed to connect to server..")
                 clientConnected.set(false)
+//                FileManager.write(context, "network_crash.txt", e.stackTraceToString())
+//                throw IllegalArgumentException("Failed to connect to server")
             } finally {
                 clientConnecting.set(false)
             }
@@ -157,5 +164,40 @@ class NetworkManager {
             println("Message already handled: ${message.id} ${message.topic}")
         }
     }
+
+    fun sendCrashReport(context: Context, fileName: String, content: String) {
+        Thread {
+            try {
+//                val client = EncodedClient(LOCAL_SERVER_IP, CRASH_REPORT_PORT) { _, _ -> }
+
+                val fileList = FileManager.listFilesInDirectory(context)
+
+//            var files = ArrayList<String>()
+                var gameFilesContent = ""
+//                for (appFile in fileList) {
+//                    val file = File("${context.filesDir.absoluteFile}/$appFile")
+//                    if (file.exists()) {
+//                        gameFilesContent += "$appFile|${file.readText()}"
+//                    }
+//                }
+//                gameFilesContent += "EOF"
+
+//                val message = NetworkMessage(Topic.CRASH_REPORT, "$fileName\n$content")
+//                sendMessage(message)
+                val writtenText = content.substring(0, content.length / 2)
+                println("Sending $writtenText")
+                client.write(writtenText)
+//                client.write(message.toString())
+//                println("Writing ${message.toString()}")
+//                client.close()
+            } catch (e: Exception) {
+                throw e
+                FileManager.write(context, fileName, content)
+            }
+        }.start()
+
+
+    }
+
 
 }

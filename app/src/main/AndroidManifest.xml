@@ -2,15 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.mjaruijs.fischersplayground">
 
-    <uses-feature
-        android:glEsVersion="0x00030001"
-        android:required="true" />
-
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -18,12 +9,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FischersPlayground">
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-5541201046009046~4593561256" />
+        <activity
+            android:name=".CrashReportActivity"
+            android:exported="false" />
+
         <activity
             android:name=".activities.settings.SettingsActivity"
             android:exported="false" />
+
         <activity
             android:name=".activities.game.GameActivity"
             android:windowSoftInputMode="adjustNothing" />
@@ -49,6 +42,12 @@
             android:name=".activities.game.PractiseGameActivity"
             android:parentActivityName=".activities.MainActivity"
             android:windowSoftInputMode="adjustNothing" />
+        <activity android:name=".activities.CrashReportActivity" />
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-5541201046009046~4593561256" />
+
         <service
             android:name=".services.FirebaseService"
             android:directBootAware="true"
@@ -58,7 +57,16 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
     </application>
+
+    <uses-feature
+        android:glEsVersion="0x00030001"
+        android:required="true" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
 
 </manifest>

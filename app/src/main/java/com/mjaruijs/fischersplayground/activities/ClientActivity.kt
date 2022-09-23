@@ -14,6 +14,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
@@ -74,7 +75,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
         NotificationBuilder.getInstance(applicationContext).clearNotifications()
 
-        dataManager.loadData(applicationContext)
+        dataManager.loadData(applicationContext, "ClientActivity onResume")
 
         leftApp = false
 
@@ -115,11 +116,12 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onPause() {
 //        println("ON PAUSE")
+        if (this is MultiplayerGameActivity) {
+            println(dataManager.getGame(this.gameId)!!.chatMessages.size)
+        }
         dataManager.saveData(applicationContext, "ClientActivity onPause")
 
         if (!stayingInApp) {
-//            sendAwayStatusToServer()
-
             leftApp = true
             networkManager.stop()
         }

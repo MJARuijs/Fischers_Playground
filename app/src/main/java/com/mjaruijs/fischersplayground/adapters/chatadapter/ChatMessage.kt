@@ -47,11 +47,10 @@ class ChatMessage(val timeStamp: String, val message: String, val type: MessageT
                 return arrayOfNulls(size)
             }
         }
-
     }
 
     override fun toString(): String {
-        return "$timeStamp,$message,$type"
+        return "$timeStamp~$message~$type"
     }
 
 }

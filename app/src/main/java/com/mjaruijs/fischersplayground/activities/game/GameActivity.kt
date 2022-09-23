@@ -19,9 +19,9 @@ import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragmen
 import com.mjaruijs.fischersplayground.fragments.actionbars.MultiplayerActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
 
 abstract class GameActivity : ClientActivity() {
 
@@ -100,6 +100,10 @@ abstract class GameActivity : ClientActivity() {
         glView.destroy()
 
         super.onDestroy()
+    }
+
+    protected fun isGameInitialized(): Boolean {
+        return this::game.isInitialized
     }
 
     private fun runOnUIThread(runnable: () -> Unit) {
@@ -198,8 +202,9 @@ abstract class GameActivity : ClientActivity() {
                 vibrate()
             }
             game.onClick(x, y, displayWidth, displayHeight)
+            throw IllegalArgumentException("WTF")
         } catch (e: Exception) {
-            Logger.log(applicationContext, e.stackTraceToString(), "onclick_crash_log.txt")
+            networkManager.sendCrashReport(applicationContext, "onclick_crash_log.txt", e.stackTraceToString())
         }
     }
 
