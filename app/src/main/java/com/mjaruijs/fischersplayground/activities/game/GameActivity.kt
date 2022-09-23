@@ -19,7 +19,6 @@ import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragmen
 import com.mjaruijs.fischersplayground.fragments.actionbars.MultiplayerActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.util.FileManager
 
@@ -202,7 +201,6 @@ abstract class GameActivity : ClientActivity() {
                 vibrate()
             }
             game.onClick(x, y, displayWidth, displayHeight)
-            throw IllegalArgumentException("WTF")
         } catch (e: Exception) {
             networkManager.sendCrashReport(applicationContext, "onclick_crash_log.txt", e.stackTraceToString())
         }

@@ -102,7 +102,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             game.lastUpdated = timeStamp
             dataManager.setGame(gameId, game)
         } catch (e: Exception) {
-            FileManager.write(applicationContext, "store_data_crash_log.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport(applicationContext, "store_data_crash.txt", e.stackTraceToString())
         }
 
         return MoveData(gameId, GameStatus.PLAYER_MOVE, timeStamp, move)

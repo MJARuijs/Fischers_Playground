@@ -5,6 +5,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder.Companion.GROUP_CHANNEL_ID
@@ -63,7 +64,7 @@ class FirebaseService : FirebaseMessagingService() {
             notificationBuilder.notify(0, summaryNotification)
 
         } catch (e: Exception) {
-            FileManager.write(applicationContext, "firebase_crash_log.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport(applicationContext, "firebase_crash.txt", e.stackTraceToString())
         }
     }
 

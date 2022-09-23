@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.networking
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
@@ -17,11 +18,10 @@ class NetworkManager {
 
         private const val PUBLIC_SERVER_IP = "94.208.124.161"
 //        private const val PUBLIC_SERVER_IP = "217.101.191.23"
-        private const val LOCAL_SERVER_IP = "192.168.178.103"
+        private const val LOCAL_SERVER_IP = "192.168.178.18"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
-        private const val SERVER_PORT = 4501
-        private const val CRASH_REPORT_PORT = 4503
+        private const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
 
@@ -78,7 +78,7 @@ class NetworkManager {
         Thread {
             try {
                 clientConnecting.set(true)
-                client = EncodedClient(LOCAL_SERVER_IP, SERVER_PORT, ::onRead)
+                client = EncodedClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
                 println("CONNECTED")
             } catch (e: Exception) {
@@ -107,11 +107,9 @@ class NetworkManager {
     }
 
     fun sendMessage(message: NetworkMessage) {
-        println("Trying to send message: ${message.topic}")
         sendingMessage.set(true)
 
         Thread {
-
             while (clientConnecting.get()) {
                 Thread.sleep(1)
             }
@@ -125,7 +123,7 @@ class NetworkManager {
 
                 }
             } else {
-                log("Added message to queue ${message.topic}")
+//                log("Added message to queue ${message.topic}")
                 messageQueue += message
             }
             sendingMessage.set(false)
@@ -161,42 +159,52 @@ class NetworkManager {
 
             context.sendBroadcast(intent)
         } else {
-            println("Message already handled: ${message.id} ${message.topic}")
+//            println("Message already handled: ${message.id} ${message.topic}")
         }
     }
 
-    fun sendCrashReport(context: Context, fileName: String, content: String) {
+    fun sendCrashReport(context: Context, fileName: String, crashLog: String) {
+        Toast.makeText(context, "Crash occurred..", Toast.LENGTH_SHORT).show()
+
         Thread {
             try {
-//                val client = EncodedClient(LOCAL_SERVER_IP, CRASH_REPORT_PORT) { _, _ -> }
+                val gameFiles = FileManager.listFilesInDirectory(context)
+                var allData = ""
+                val crashContent = trimCrashReport(crashLog)
 
-                val fileList = FileManager.listFilesInDirectory(context)
+                allData += "$fileName|$crashContent\\\n"
 
-//            var files = ArrayList<String>()
-                var gameFilesContent = ""
-//                for (appFile in fileList) {
-//                    val file = File("${context.filesDir.absoluteFile}/$appFile")
-//                    if (file.exists()) {
-//                        gameFilesContent += "$appFile|${file.readText()}"
-//                    }
-//                }
-//                gameFilesContent += "EOF"
+                for (gameFile in gameFiles) {
+                    val file = File("${context.filesDir.absolutePath}/$gameFile")
+                    if (file.exists()) {
+                        val fileContent = file.readText()
+                        allData += if (gameFile.endsWith("_crash.txt")) {
+                            val compressedContent = trimCrashReport(fileContent)
+                            "$gameFile|$compressedContent\\\n"
+                        } else {
+                            "$gameFile|$fileContent\\\n"
+                        }
+                    }
+                }
 
-//                val message = NetworkMessage(Topic.CRASH_REPORT, "$fileName\n$content")
-//                sendMessage(message)
-                val writtenText = content.substring(0, content.length / 2)
-                println("Sending $writtenText")
-                client.write(writtenText)
-//                client.write(message.toString())
-//                println("Writing ${message.toString()}")
-//                client.close()
+                sendMessage(NetworkMessage(Topic.CRASH_REPORT, allData))
             } catch (e: Exception) {
-                throw e
-                FileManager.write(context, fileName, content)
+                FileManager.write(context, fileName, crashLog)
             }
         }.start()
+    }
 
+    private fun trimCrashReport(crashLog: String): String {
+        var crashContent = ""
 
+        for ((i, line) in crashLog.split('\n').withIndex()) {
+            if (!line.trim().startsWith("at com.mjaruijs") && i != 0) {
+                break
+            } else {
+                crashContent += "$line\n"
+            }
+        }
+        return crashContent
     }
 
 

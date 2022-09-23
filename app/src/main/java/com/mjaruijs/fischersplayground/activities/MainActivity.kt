@@ -127,11 +127,20 @@ class MainActivity : ClientActivity() {
 
         savePreference(USER_ID_KEY, id)
 
-        if (hasNewToken) {
+//        if (hasNewToken) {
             val token = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
             networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
-        }
+//        }
         createGameDialog.updateId(id)
+    }
+
+    private fun saveUserName(userName: String) {
+        this.userName = userName
+
+        savePreference(USER_NAME_KEY, userName)
+
+        findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
+        networkManager.sendMessage(NetworkMessage(Topic.SET_USER_NAME, userName))
     }
 
     private fun onPlayersReceived(content: Array<String>) {
@@ -256,20 +265,6 @@ class MainActivity : ClientActivity() {
         val messageData = output as ChatMessage.Data
         val gameId = messageData.gameId
         gameAdapter.hasUpdate(gameId)
-    }
-
-    private fun saveUserName(userName: String) {
-        this.userName = userName
-
-        savePreference(USER_NAME_KEY, userName)
-
-        findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
-        networkManager.sendMessage(NetworkMessage(Topic.SET_USER_NAME, userName))
-
-        val fireBaseToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", null)
-        if (fireBaseToken != null) {
-            networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$userId|$fireBaseToken"))
-        }
     }
 
     private fun savePreference(key: String, value: String) {

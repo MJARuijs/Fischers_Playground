@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -192,8 +193,7 @@ class DataManager(context: Context) {
                 savedGames.clear()
                 loadSavedGames(context, caller)
             } catch (e: Exception) {
-                FileManager.write(context, "games_loading_crash.txt", e.stackTraceToString())
-
+                NetworkManager.getInstance().sendCrashReport(context, "games_loading_crash.txt", e.stackTraceToString())
             } finally {
                 unlockGames()
             }
@@ -205,7 +205,7 @@ class DataManager(context: Context) {
                 savedInvites.clear()
                 loadInvites(context)
             } catch (e: Exception) {
-                FileManager.write(context, "invites_loading_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport(context, "invites_loading_crash.txt", e.stackTraceToString())
             } finally {
                 unlockInvites()
             }
@@ -217,7 +217,7 @@ class DataManager(context: Context) {
                 recentOpponents.clear()
                 loadRecentOpponents(context)
             } catch (e: Exception) {
-                FileManager.write(context, "opponents_loading_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport(context, "opponents_loading_crash.txt", e.stackTraceToString())
             } finally {
                 unlockOpponents()
             }
@@ -229,7 +229,7 @@ class DataManager(context: Context) {
                 handledMessages.clear()
                 loadHandledMessages(context)
             } catch (e: Exception) {
-                FileManager.write(context, "messages_loading_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport(context, "messages_loading_crash.txt", e.stackTraceToString())
             } finally {
                 unlockMessages()
             }
@@ -243,7 +243,7 @@ class DataManager(context: Context) {
                 obtainGameLock()
                 saveGames(context, caller)
             } catch (e: Exception) {
-                FileManager.write(context, "games_saving_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport(context, "games_saving_crash.txt", e.stackTraceToString())
             } finally {
                 unlockGames()
             }
@@ -254,7 +254,7 @@ class DataManager(context: Context) {
             try {
                 saveInvites(context)
             } catch (e: Exception) {
-                FileManager.write(context, "invites_saving_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport(context, "invites_saving_crash.txt", e.stackTraceToString())
             } finally {
                 unlockInvites()
             }
@@ -265,7 +265,7 @@ class DataManager(context: Context) {
             try {
                 saveRecentOpponents(context)
             } catch (e: Exception) {
-                FileManager.write(context, "opponents_saving_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport(context, "opponents_saving_crash.txt", e.stackTraceToString())
             } finally {
                 unlockOpponents()
             }
@@ -276,7 +276,7 @@ class DataManager(context: Context) {
             try {
                 saveHandledMessages(context)
             } catch (e: Exception) {
-                FileManager.write(context, "messages_saving_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport(context, "messages_saving_crash.txt", e.stackTraceToString())
             } finally {
                 unlockMessages()
             }
