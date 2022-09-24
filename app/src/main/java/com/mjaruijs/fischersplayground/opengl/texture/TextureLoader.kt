@@ -14,9 +14,9 @@ object TextureLoader {
     private val bitmapCache = ConcurrentHashMap<Int, Texture>()
 
     fun load(resources: Resources, resourceId: Int, name: String? = null): Texture {
-//        if (regularCache.contains(resourceId)) {
-//            return regularCache[resourceId]!!
-//        }
+        if (regularCache.contains(resourceId)) {
+            return regularCache[resourceId]!!
+        }
 
         val bitmapOptions = BitmapFactory.Options()
         bitmapOptions.inScaled = false
@@ -34,9 +34,9 @@ object TextureLoader {
     }
 
     fun loadFromBitmap(resources: Resources, resourceId: Int): Texture {
-//        if (bitmapCache.contains(resourceId)) {
-//            return bitmapCache[resourceId]!!
-//        }
+        if (bitmapCache.contains(resourceId)) {
+            return bitmapCache[resourceId]!!
+        }
 
         val bitmapOptions = BitmapFactory.Options()
         bitmapOptions.inScaled = false

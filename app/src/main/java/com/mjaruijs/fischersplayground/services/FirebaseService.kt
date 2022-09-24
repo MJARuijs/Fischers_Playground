@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.services
 
+import android.widget.Toast
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -19,6 +20,8 @@ class FirebaseService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         try {
+            Toast.makeText(applicationContext, "GOTTEM", Toast.LENGTH_SHORT).show()
+
             val notificationBuilder = NotificationBuilder.getInstance(this)
 
             val topic = Topic.fromString(message.data["topic"] ?: throw IllegalArgumentException("No data was found with name: topic.."))
@@ -26,6 +29,7 @@ class FirebaseService : FirebaseMessagingService() {
             val messageId = message.data["id"]?.toLong() ?: throw IllegalArgumentException("No data was found with name: id..")
 
             val contentList = content.split('|').toTypedArray()
+
 
             val dataManager = DataManager.getInstance(applicationContext)
 //            val dataManager = DataManager(applicationContext)

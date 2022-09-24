@@ -8,5 +8,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="background_color">#FF424242</color>
     <color name="accent_color">#EBBA91</color>
+    <color name="dialog_background">#312D2A</color>
 
 </resources>

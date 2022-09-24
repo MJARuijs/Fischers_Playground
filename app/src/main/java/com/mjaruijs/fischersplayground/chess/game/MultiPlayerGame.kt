@@ -29,7 +29,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
-//        println("RESTORING MOVES")
+        println("RESTORING MOVES")
         restoreMoves()
     }
 

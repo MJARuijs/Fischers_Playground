@@ -7,13 +7,14 @@ import android.view.View
 import android.widget.LinearLayout
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
+import com.mjaruijs.fischersplayground.dialogs.SingleButtonDialog
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.ScaleType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class MultiplayerActionButtonsFragment(private val gameId: String, private val userId: String, private val isChatOpened: () -> Boolean, private val onOfferDraw: () -> Unit, private val onResign: () -> Unit, private val onCancelMove: () -> Unit, private val onConfirmMove: (String) -> Unit, requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar) {
+class MultiplayerActionButtonsFragment(private val gameId: String, private val userId: String, private val opponentName: String, private val isChatOpened: () -> Boolean, private val onOfferDraw: () -> Unit, private val onResign: () -> Unit, private val onCancelMove: () -> Unit, private val onConfirmMove: (String) -> Unit, requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar) {
 
     private lateinit var resignButton: UIButton
     private lateinit var offerDrawButton: UIButton
@@ -27,6 +28,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
 
     private lateinit var confirmResignationDialog: DoubleButtonDialog
     private lateinit var offerDrawDialog: DoubleButtonDialog
+    private lateinit var undoRequestConfirmationDialog: SingleButtonDialog
 
     private var moveNotation: String? = null
 
@@ -42,9 +44,9 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         confirmResignationDialog = DoubleButtonDialog(requireActivity(), "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", onResign)
         offerDrawDialog = DoubleButtonDialog(requireActivity(), "Offer Draw", "Are you sure you want to offer a draw?", "Cancel", "Yes", onOfferDraw)
+        undoRequestConfirmationDialog = SingleButtonDialog(requireActivity(), "Undo Requested", "You will be notified when $opponentName responds", R.drawable.check_mark_icon)
 
         val textColor = Color.WHITE
         val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
@@ -102,6 +104,7 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
                     return@setOnClick
                 }
 
+                undoRequestConfirmationDialog.show()
                 networkManager.sendMessage(NetworkMessage(Topic.UNDO_REQUESTED, "$gameId|$userId"))
             }
 

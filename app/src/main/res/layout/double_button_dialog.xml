@@ -4,15 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_margin="8dp"
     android:background="@drawable/dialog_background">
 
     <TextView
         android:id="@+id/dialog_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="24dp"
         android:text="Joey invited you to play!"
         android:textAlignment="center"
         android:textColor="#B1B1B1"

@@ -59,6 +59,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         try {
             gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
+            game = dataManager.getGame(gameId)!!
+            opponentName = (game as MultiPlayerGame).opponentName
+            isPlayingWhite = game.isPlayingWhite
 
             initChatBox()
 
@@ -69,7 +72,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             supportFragmentManager.commit {
                 setReorderingAllowed(true)
                 replace(R.id.chat_container, chatFragment)
-                replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, ::isChatOpened, ::onOfferDraw, ::onResign, ::cancelMove, ::confirmMove, ::requestRender, networkManager))
+                replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, opponentName, ::isChatOpened, ::onOfferDraw, ::onResign, ::cancelMove, ::confirmMove, ::requestRender, networkManager))
             }
 
             keyboardHeightProvider = KeyboardHeightProvider(this)
