@@ -481,12 +481,14 @@ class DataManager(context: Context) {
     }
 
     fun saveHandledMessages(context: Context) {
+        obtainMessageLock()
         var data = ""
 
         for (messageId in handledMessages) {
             data += "$messageId\n"
         }
         FileManager.write(context, HANDLED_MESSAGES_FILE, data)
+        unlockMessages()
     }
 
     companion object {

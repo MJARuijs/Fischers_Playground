@@ -8,7 +8,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.practice_actionbar, requestRender, networkManager) {
+class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.practice_actionbar) {
 
     private lateinit var startRecordingButton: UIButton
     private lateinit var stopRecordingButton: UIButton
@@ -18,6 +18,11 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
     private var isRecording = false
 
     override var numberOfButtons = 4
+
+    init {
+        this.requestRender = requestRender
+        this.networkManager = networkManager
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

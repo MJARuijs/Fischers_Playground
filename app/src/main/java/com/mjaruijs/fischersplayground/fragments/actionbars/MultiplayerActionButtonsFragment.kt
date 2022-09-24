@@ -13,7 +13,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.ScaleType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class MultiplayerActionButtonsFragment(private val gameId: String, private val userId: String, private val isChatOpened: () -> Boolean, private val onOfferDraw: () -> Unit, private val onResign: () -> Unit, private val onCancelMove: () -> Unit, private val onConfirmMove: (String) -> Unit, requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar, requestRender, networkManager) {
+class MultiplayerActionButtonsFragment(private val gameId: String, private val userId: String, private val isChatOpened: () -> Boolean, private val onOfferDraw: () -> Unit, private val onResign: () -> Unit, private val onCancelMove: () -> Unit, private val onConfirmMove: (String) -> Unit, requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar) {
 
     private lateinit var resignButton: UIButton
     private lateinit var offerDrawButton: UIButton
@@ -34,8 +34,14 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
 
     override var numberOfButtons = 5
 
+    init {
+        this.requestRender = requestRender
+        this.networkManager = networkManager
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
 
         confirmResignationDialog = DoubleButtonDialog(requireActivity(), "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", onResign)
         offerDrawDialog = DoubleButtonDialog(requireActivity(), "Offer Draw", "Are you sure you want to offer a draw?", "Cancel", "Yes", onOfferDraw)

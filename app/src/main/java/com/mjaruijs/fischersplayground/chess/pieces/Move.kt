@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.chess.pieces
 import android.os.Parcel
 import android.os.Parcelable
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 
 class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, private val takenPiecePosition: Vector2?, val promotedPiece: PieceType?) : Parcelable {
 
@@ -159,6 +160,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
 
                 Move(team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, takenPiecePosition, promotedPiece)
             } catch (e: Exception) {
+                NetworkManager.getInstance().sendCrashReport("move_from_chess_notation_crash.txt", e.stackTraceToString())
                 throw IllegalArgumentException("Failed to parse move from: $moveContent")
             }
         }

@@ -138,10 +138,11 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             }
 
             if (lastMove != null) {
-
                 val isPawnAcrossCenter = if (isSinglePlayer) {
                     (piece.team == Team.WHITE && y == 4) || (piece.team == Team.BLACK && y == 3)
-                } else y == 4
+                } else {
+                    y == 4
+                }
 
                 if (isPawnAcrossCenter) {
                     if (x != 7) {
@@ -156,7 +157,6 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
 //                                        possibleMoves += Vector2(x + 1, y + direction)
 //                                    }
                                 } else {
-
                                     if (lastMove.getFromPosition(piece.team).y.roundToInt() == 6) {
                                         possibleMoves += Vector2(x + 1, y + direction)
                                     }

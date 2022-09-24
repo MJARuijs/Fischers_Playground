@@ -65,9 +65,13 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
             initChatBox()
 
+            val chatFragment = ChatFragment()
+            chatFragment.onMessageSent = ::onChatMessageSent
+            chatFragment.close = ::closeChat
+
             supportFragmentManager.commit {
                 setReorderingAllowed(true)
-                replace(R.id.chat_container, ChatFragment(::onChatMessageSent, ::closeChat))
+                replace(R.id.chat_container, chatFragment)
                 replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, ::isChatOpened, ::onOfferDraw, ::onResign, ::cancelMove, ::confirmMove, ::requestRender, networkManager))
             }
 
@@ -78,38 +82,43 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 }.run()
             }
         } catch (e: Exception) {
-            FileManager.append(this,  "mp_game_activity_crash_report.txt", e.stackTraceToString())
+            FileManager.append(this,  "mp_game_activity_on_create_crash.txt", e.stackTraceToString())
         }
     }
 
     override fun onResume() {
         println("ON RESUME")
         super.onResume()
-        if (!isGameInitialized()) {
-            game = dataManager.getGame(gameId)!!
-        }
+        try {
+//            if (!isGameInitialized()) {
+                game = dataManager.getGame(gameId)!!
+//            }
 
-        setGameCallbacks()
+            setGameCallbacks()
 
-        undoRequestedDialog = DoubleButtonDialog(this, "Undo Requested", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest, 0.5f)
-        undoAcceptedDialog = SingleButtonDialog(this, "Move Reversed", "Your undo request has been accepted!", "Continue")
-        undoRejectedDialog = SingleButtonDialog(this, "Undo Rejected", "Your undo request was rejected!", "Continue")
+            undoRequestedDialog = DoubleButtonDialog(this, "Undo Requested", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest, 0.5f)
+            undoAcceptedDialog = SingleButtonDialog(this, "Move Reversed", "Your undo request has been accepted!", "Continue")
+            undoRejectedDialog = SingleButtonDialog(this, "Undo Rejected", "Your undo request was rejected!", "Continue")
 
-        opponentAcceptedDrawDialog = SingleButtonDialog(this, "It's A Draw!", "$opponentName has accepted your draw offer", "Exit", ::closeAndSaveGameAsDraw)
-        opponentRejectedDrawDialog = SingleButtonDialog(this, "Game Must Go On", "$opponentName has rejected your draw offer", "Play on")
-        opponentOfferedDrawDialog = DoubleButtonDialog(this, "Draw Offered", "$opponentName has offered a draw!", "Decline", ::rejectDrawOffer, "Accept", ::acceptDrawOffer)
-        opponentResignedDialog = SingleButtonDialog(this, "You Won", "$opponentName has resigned!", "Exit", ::closeAndSaveGameAsWin)
+            opponentAcceptedDrawDialog = SingleButtonDialog(this, "It's A Draw!", "$opponentName has accepted your draw offer", "Exit", ::closeAndSaveGameAsDraw)
+            opponentRejectedDrawDialog = SingleButtonDialog(this, "Game Must Go On", "$opponentName has rejected your draw offer", "Play on")
+            opponentOfferedDrawDialog = DoubleButtonDialog(this, "Draw Offered", "$opponentName has offered a draw!", "Decline", ::rejectDrawOffer, "Accept", ::acceptDrawOffer)
+            opponentResignedDialog = SingleButtonDialog(this, "You Won", "$opponentName has resigned!", "Exit", ::closeAndSaveGameAsWin)
 
-        keyboardHeightProvider.observer = this
+            keyboardHeightProvider.observer = this
 
-        if (contextCreated) {
-            game.showPreviousMove(true)
-            game.showNextMove()
-            getActionBarFragment()?.disableForwardButton()
-        }
+            if (contextCreated) {
+                game.showPreviousMove(true)
+                game.showNextMove()
+                getActionBarFragment()?.disableForwardButton()
+            }
 
-        runOnUiThread {
-            processNews()
+            runOnUiThread {
+                processNews()
+            }
+        } catch (e: Exception) {
+//            FileManager.append(this,  "mp_game_activity_on_resume_crash.txt", e.stackTraceToString())
+            throw e
         }
     }
 

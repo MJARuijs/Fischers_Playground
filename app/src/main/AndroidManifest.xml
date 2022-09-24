@@ -3,15 +3,14 @@
     package="com.mjaruijs.fischersplayground">
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FischersPlayground">
-        <activity
-            android:name=".CrashReportActivity"
-            android:exported="false" />
 
         <activity
             android:name=".activities.settings.SettingsActivity"

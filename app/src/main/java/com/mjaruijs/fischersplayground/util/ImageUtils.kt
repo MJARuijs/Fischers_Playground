@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.util
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Environment
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.texture.Texture
 import java.io.File
 import java.io.FileOutputStream
@@ -25,6 +26,7 @@ object ImageUtils {
             out.flush()
             out.close()
         } catch (e: Exception) {
+            NetworkManager.getInstance().sendCrashReport(context, "image_utils_save_crash.txt", e.stackTraceToString())
             e.printStackTrace()
         }
     }

@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.networking
 
 import android.content.Context
 import android.content.Intent
+import android.os.Looper
 import android.widget.Toast
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
@@ -41,6 +42,7 @@ class NetworkManager {
 
     private lateinit var manager: Manager
     private lateinit var client: EncodedClient
+    private lateinit var context: Context
 
     private val messageQueue = ArrayList<NetworkMessage>()
 
@@ -67,6 +69,8 @@ class NetworkManager {
             return
         }
 
+        this.context = context
+
         log("Starting networker")
 
         manager = Manager("Client")
@@ -83,9 +87,9 @@ class NetworkManager {
                 println("CONNECTED")
             } catch (e: Exception) {
                 log("Failed to connect to server..")
+                Looper.prepare()
+                Toast.makeText(context, "Failed to connect to server..", Toast.LENGTH_SHORT).show()
                 clientConnected.set(false)
-//                FileManager.write(context, "network_crash.txt", e.stackTraceToString())
-//                throw IllegalArgumentException("Failed to connect to server")
             } finally {
                 clientConnecting.set(false)
             }
@@ -120,7 +124,7 @@ class NetworkManager {
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
-
+                    sendCrashReport("network_send_crash.txt", e.stackTraceToString())
                 }
             } else {
 //                log("Added message to queue ${message.topic}")
@@ -163,7 +167,10 @@ class NetworkManager {
         }
     }
 
+    fun sendCrashReport(fileName: String, crashLog: String) = sendCrashReport(context, fileName, crashLog)
+
     fun sendCrashReport(context: Context, fileName: String, crashLog: String) {
+        Looper.prepare()
         Toast.makeText(context, "Crash occurred..", Toast.LENGTH_SHORT).show()
 
         Thread {
@@ -189,6 +196,8 @@ class NetworkManager {
 
                 sendMessage(NetworkMessage(Topic.CRASH_REPORT, allData))
             } catch (e: Exception) {
+
+            } finally {
                 FileManager.write(context, fileName, crashLog)
             }
         }.start()

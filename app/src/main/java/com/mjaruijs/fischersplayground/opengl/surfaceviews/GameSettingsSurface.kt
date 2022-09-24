@@ -9,6 +9,7 @@ import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Comp
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
 import kotlin.math.abs
 
@@ -105,7 +106,7 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
                 requestRender()
             } catch (e: IllegalArgumentException) {
-
+                NetworkManager.getInstance().sendCrashReport(context, "game_setting_surface_on_touch_crash.txt", e.stackTraceToString())
             }
             return true
         }

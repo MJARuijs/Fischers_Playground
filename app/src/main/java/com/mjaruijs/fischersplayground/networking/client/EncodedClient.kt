@@ -27,7 +27,6 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
         } catch (e: ClosedChannelException) {
 
         } catch (e: Exception) {
-            e.printStackTrace()
             throw ClientException("Invalid write!")
         }
     }

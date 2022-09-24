@@ -6,10 +6,18 @@ import android.graphics.BitmapFactory
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
 import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentHashMap
 
 object TextureLoader {
 
+    private val regularCache = ConcurrentHashMap<Int, Texture>()
+    private val bitmapCache = ConcurrentHashMap<Int, Texture>()
+
     fun load(resources: Resources, resourceId: Int, name: String? = null): Texture {
+//        if (regularCache.contains(resourceId)) {
+//            return regularCache[resourceId]!!
+//        }
+
         val bitmapOptions = BitmapFactory.Options()
         bitmapOptions.inScaled = false
         bitmapOptions.outConfig = Bitmap.Config.ARGB_8888
@@ -20,10 +28,16 @@ object TextureLoader {
         pixelData.rewind()
         bitmap.recycle()
 
-        return Texture(bitmap, pixelData, name)
+        val texture = Texture(bitmap, pixelData, name)
+        regularCache[resourceId] = texture
+        return texture
     }
 
     fun loadFromBitmap(resources: Resources, resourceId: Int): Texture {
+//        if (bitmapCache.contains(resourceId)) {
+//            return bitmapCache[resourceId]!!
+//        }
+
         val bitmapOptions = BitmapFactory.Options()
         bitmapOptions.inScaled = false
         bitmapOptions.outConfig = Bitmap.Config.ARGB_8888
@@ -33,9 +47,11 @@ object TextureLoader {
         val pixelData = ByteBuffer.allocateDirect(bitmap.byteCount)
         bitmap.copyPixelsToBuffer(pixelData)
         pixelData.rewind()
-
         bitmap.recycle()
-        return Texture(bitmap, pixelData)
+
+        val texture = Texture(bitmap, pixelData)
+        bitmapCache[resourceId] = texture
+        return texture
     }
 
 }

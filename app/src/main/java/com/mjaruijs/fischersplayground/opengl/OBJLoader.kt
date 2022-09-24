@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.opengl
 
 import android.content.res.Resources
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.model.MeshData
 import java.io.BufferedInputStream
 import java.nio.ByteBuffer
@@ -22,7 +23,7 @@ object OBJLoader {
                     Thread.sleep(1)
                 }
             } catch (e: NullPointerException) {
-
+                throw e
             }
 
             currentlyLoading.remove(location)

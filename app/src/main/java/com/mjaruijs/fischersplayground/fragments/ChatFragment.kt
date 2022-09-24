@@ -21,7 +21,10 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.listeners.OnSwipeTouchListener
 import com.mjaruijs.fischersplayground.util.Time
 
-class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val close: () -> Unit) : Fragment(R.layout.chat_fragment) {
+class ChatFragment : Fragment(R.layout.chat_fragment) {
+
+    lateinit var onMessageSent: (ChatMessage) -> Unit
+    lateinit var close: () -> Unit
 
     private lateinit var chatLayout: ConstraintLayout
 
@@ -50,7 +53,7 @@ class ChatFragment(private val onMessageSent: (ChatMessage) -> Unit, private val
         val defaultCardRadius = inputCard.radius
 
         inputBox = view.findViewById(R.id.chat_input_box)
-        inputBox.doOnTextChanged { text, start, before, count ->
+        inputBox.doOnTextChanged { _, _, _, _ ->
             inputCard.radius = defaultCardRadius / inputBox.lineCount
             chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
 //            chatLayout.invalidate()

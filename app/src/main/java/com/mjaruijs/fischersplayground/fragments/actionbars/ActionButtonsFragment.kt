@@ -9,7 +9,10 @@ import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-open class ActionButtonsFragment(layoutResource: Int, val requestRender: () -> Unit, val networkManager: NetworkManager) : Fragment(layoutResource) {
+open class ActionButtonsFragment(layoutResource: Int) : Fragment(layoutResource) {
+
+    lateinit var requestRender: () -> Unit
+    lateinit var networkManager: NetworkManager
 
     private var maxTextSize = Float.MAX_VALUE
     private var numberOfButtonsInitialized = 0

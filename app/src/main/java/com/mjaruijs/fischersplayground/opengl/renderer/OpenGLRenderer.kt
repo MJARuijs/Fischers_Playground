@@ -12,9 +12,11 @@ import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Camera.Companion.DEFAULT_ZOOM
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
+import com.mjaruijs.fischersplayground.util.FileManager
 import java.nio.ByteBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -61,7 +63,13 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
         pieceTextures = PieceTextures(resources)
 
 //        backgroundRenderer = BackgroundRenderer(context)
-        pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame)
+        try {
+            pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame)
+        } catch (e: Exception) {
+            NetworkManager.getInstance().sendCrashReport("opengl_on_surface_created_crash.txt", e.stackTraceToString())
+            throw e
+        }
+
         boardRenderer = BoardRenderer(resources)
         highlightRenderer = HighlightRenderer(resources)
 
@@ -160,6 +168,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            NetworkManager.getInstance().sendCrashReport("opengl_render_crash.txt", e.stackTraceToString())
         }
 
     }

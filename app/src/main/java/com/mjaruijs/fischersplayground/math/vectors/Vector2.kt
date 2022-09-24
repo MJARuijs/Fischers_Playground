@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.math.vectors
 
+import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import kotlin.math.abs
 
@@ -80,6 +81,7 @@ data class Vector2(var x: Float = 0.0f, var y: Float = 0.0f): Vector<Vector2> {
                 val y = content.substring(separatorIndex + 2, endIndex).toFloat()
                 return Vector2(x, y)
             } catch (e: Exception) {
+                NetworkManager.getInstance().sendCrashReport("vec_from_string_crash.txt", e.stackTraceToString())
                 throw IllegalArgumentException("Failed to parse the following string into a Vector2: $content")
             }
 
