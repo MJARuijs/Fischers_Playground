@@ -59,9 +59,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         try {
             gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
-            game = dataManager.getGame(gameId)!!
-
-            setGameParameters()
 
             initChatBox()
 
@@ -90,11 +87,18 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         println("ON RESUME")
         super.onResume()
         try {
-//            if (!isGameInitialized()) {
-                game = dataManager.getGame(gameId)!!
-//            }
+            game = dataManager.getGame(gameId)!!
 
+            opponentName = (game as MultiPlayerGame).opponentName
+            isPlayingWhite = game.isPlayingWhite
+
+            initializeFragments()
             setGameCallbacks()
+            setGameForRenderer()
+
+            if (contextCreated) {
+                redoLastMove()
+            }
 
             undoRequestedDialog = DoubleButtonDialog(this, "Undo Requested", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest, 0.5f)
             undoAcceptedDialog = SingleButtonDialog(this, "Move Reversed", "Your undo request has been accepted!", "Continue")
@@ -107,12 +111,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
             keyboardHeightProvider.observer = this
 
-            if (contextCreated) {
-                game.showPreviousMove(true)
-                game.showNextMove()
-                getActionBarFragment()?.disableForwardButton()
-            }
-
             runOnUiThread {
                 processNews()
             }
@@ -124,7 +122,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onPause() {
         dataManager.setGame(gameId, game as MultiPlayerGame)
-        println("ON PAUSE MP ACTIVITY: ${(game as MultiPlayerGame).chatMessages.size}")
         keyboardHeightProvider.observer = null
         super.onPause()
     }
@@ -135,28 +132,38 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         super.onDestroy()
     }
 
-    private fun setGameParameters() {
-        game.onMoveMade = ::onMoveMade
+    override fun onContextCreated() {
+        super.onContextCreated()
 
-        opponentName = (game as MultiPlayerGame).opponentName
-        isPlayingWhite = game.isPlayingWhite
+        redoLastMove()
 
+        contextCreated = true
+    }
+
+    private fun redoLastMove() {
+        game.showPreviousMove(true)
+        game.showNextMove(false)
+        getActionBarFragment()?.disableForwardButton()
+    }
+
+    private fun initializeFragments() {
         if (loadFragments) {
             loadFragments()
         }
 
         Thread {
-            while (getChatFragment() == null || getChatFragment()!!.isResumed) {
+            while (getChatFragment() == null) {
                 Thread.sleep(1)
             }
 
             runOnUiThread {
+                getChatFragment()?.clearMessages()
                 getChatFragment()?.addMessages((game as MultiPlayerGame).chatMessages)
             }
         }.start()
 
         Thread {
-            while (getActionBarFragment() == null || getActionBarFragment()!!.isResumed) {
+            while (getActionBarFragment() == null) {
                 Thread.sleep(1)
             }
 
@@ -165,6 +172,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 setOpponentStatusIcon((game as MultiPlayerGame).opponentStatus)
 
                 evaluateActionButtons()
+
+                getPlayerFragment()!!.removeAllPieces()
+                getOpponentFragment()!!.removeAllPieces()
 
                 for (takenPiece in game.takenPieces) {
                     onPieceTaken(takenPiece)
@@ -194,7 +204,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }
     }
 
-    private fun onMoveMade(move: Move) {
+    override fun onMoveMade(move: Move) {
         if (move.team == game.getCurrentTeam()) {
             val positionUpdateMessage = move.toChessNotation()
             (game as MultiPlayerGame).moveToBeConfirmed = positionUpdateMessage
@@ -202,16 +212,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }
         dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext, "MPactivity onMoveMade")
-    }
-
-    override fun onContextCreated() {
-        println("CONTEXT CREATED")
-        super.onContextCreated()
-        game.showPreviousMove(true)
-        game.showNextMove()
-        getActionBarFragment()?.disableForwardButton()
-
-        contextCreated = true
     }
 
     private fun confirmMove(moveNotation: String) {

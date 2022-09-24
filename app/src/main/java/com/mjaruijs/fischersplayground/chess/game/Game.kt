@@ -39,7 +39,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     var queueAnimation: (AnimationData) -> Unit = {}
 
-    var onMoveMade: (Move) -> Unit = {}
+    var onMoveMade: (Move) -> Unit = {
+        println("Tried to make a move, but function is not set yet")
+    }
 
     init {
         board.requestPossibleMoves = { square ->
@@ -98,7 +100,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return Pair(shouldDisableBackButton, shouldEnableForwardButton)
     }
 
-    open fun showNextMove(animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
+    open fun showNextMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
         if (currentMoveIndex >= moves.size - 1) {
             return Pair(first = true, second = false)
         }

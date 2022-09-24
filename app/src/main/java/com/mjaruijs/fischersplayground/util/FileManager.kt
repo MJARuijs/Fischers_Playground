@@ -1,11 +1,16 @@
 package com.mjaruijs.fischersplayground.util
 
 import android.content.Context
-import android.widget.Toast
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import java.io.*
 
 object FileManager {
+
+    private var filesPath = ""
+
+    fun init(context: Context) {
+        filesPath = context.filesDir.absolutePath
+    }
 
     fun append(context: Context, fileName: String, content: String): Boolean {
         return try {
@@ -17,14 +22,14 @@ object FileManager {
             val newContent = "$currentContent\n$content"
             return write(context, fileName, newContent)
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport(context, "file_manager_append_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("file_manager_append_crash.txt", e.stackTraceToString())
             e.printStackTrace()
             false
         }
     }
 
-    fun listFilesInDirectory(context: Context): ArrayList<String> {
-        val file = File("${context.filesDir.absoluteFile}")
+    fun listFilesInDirectory(): ArrayList<String> {
+        val file = File(filesPath)
         val files = file.listFiles()!!
         val fileList = ArrayList<String>()
         for (f in files) {
@@ -34,13 +39,13 @@ object FileManager {
     }
 
 
-    fun doesFileExist(context: Context, fileName: String): Boolean {
-        val file = File("${context.filesDir.absoluteFile}/$fileName")
+    fun doesFileExist(fileName: String): Boolean {
+        val file = File("$filesPath/$fileName")
         return file.exists()
     }
 
-    fun isFileEmpty(context: Context, fileName: String): Boolean {
-        val file = File("${context.filesDir.absoluteFile}/$fileName")
+    fun isFileEmpty(fileName: String): Boolean {
+        val file = File("$filesPath/$fileName")
         return file.length() == 0L
     }
 
@@ -51,14 +56,14 @@ object FileManager {
             writer.close()
             true
         } catch (e: IOException) {
-            NetworkManager.getInstance().sendCrashReport(context, "file_manager_write_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("file_manager_write_crash.txt", e.stackTraceToString())
             return false
         }
     }
 
     fun read(context: Context, fileName: String): List<String>? {
         return try {
-            val file = File("${context.filesDir.absolutePath}/$fileName")
+            val file = File("$filesPath/$fileName")
             if (file.exists()) {
                 val inputStream = context.openFileInput(fileName)
 
@@ -71,14 +76,18 @@ object FileManager {
                 arrayListOf()
             }
         } catch (e: FileNotFoundException) {
-            NetworkManager.getInstance().sendCrashReport(context, "file_manager_read_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("file_manager_read_crash.txt", e.stackTraceToString())
             e.printStackTrace()
             null
         }
     }
 
-    fun delete(context: Context, fileName: String) {
-        File("${context.filesDir.absoluteFile}/$fileName").delete()
+    fun getFile(fileName: String): File {
+        return File("$filesPath/$fileName")
+    }
+
+    fun delete(fileName: String) {
+        File("$filesPath/$fileName").delete()
     }
 
 }

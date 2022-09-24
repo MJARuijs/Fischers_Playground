@@ -133,12 +133,15 @@ class DataManager(context: Context) {
         lockOpponents()
     }
 
-    private fun obtainMessageLock() {
+    private fun obtainMessageLock(caller: String) {
         while (areMessagesLocked()) {
+//            println("Waiting for messageLock to be released: $caller")
             Thread.sleep(1)
         }
 
-        lockMessages()
+//        println("MESSAGE LOCK RELEASED: $caller")
+
+        lockMessages(caller)
     }
 
     private fun lockGames() {
@@ -165,24 +168,26 @@ class DataManager(context: Context) {
         recentOpponentsLock.set(false)
     }
 
-    private fun lockMessages() {
+    private fun lockMessages(caller: String) {
+//        println("LOCKING MESSAGES: $caller")
         messageLock.set(true)
     }
 
-    private fun unlockMessages() {
+    private fun unlockMessages(caller: String) {
+//        println("UNLOCKING MESSAGES: $caller")
         messageLock.set(false)
     }
 
-    fun handledMessage(id: Long) {
-        obtainMessageLock()
+    fun handledMessage(id: Long, caller: String) {
+        obtainMessageLock(caller)
         handledMessages += id
-        unlockMessages()
+        unlockMessages(caller)
     }
 
-    fun isMessageHandled(id: Long): Boolean {
-        obtainMessageLock()
+    fun isMessageHandled(id: Long, caller: String): Boolean {
+        obtainMessageLock(caller)
         val isHandled = handledMessages.contains(id)
-        unlockMessages()
+        unlockMessages(caller)
         return isHandled
     }
 
@@ -193,7 +198,7 @@ class DataManager(context: Context) {
                 savedGames.clear()
                 loadSavedGames(context, caller)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport(context, "games_loading_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("games_loading_crash.txt", e.stackTraceToString())
             } finally {
                 unlockGames()
             }
@@ -205,7 +210,7 @@ class DataManager(context: Context) {
                 savedInvites.clear()
                 loadInvites(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport(context, "invites_loading_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("invites_loading_crash.txt", e.stackTraceToString())
             } finally {
                 unlockInvites()
             }
@@ -217,33 +222,32 @@ class DataManager(context: Context) {
                 recentOpponents.clear()
                 loadRecentOpponents(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport(context, "opponents_loading_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("opponents_loading_crash.txt", e.stackTraceToString())
             } finally {
                 unlockOpponents()
             }
         }.start()
 
-        obtainMessageLock()
+        obtainMessageLock(caller)
         Thread {
             try {
                 handledMessages.clear()
                 loadHandledMessages(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport(context, "messages_loading_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("messages_loading_crash.txt", e.stackTraceToString())
             } finally {
-                unlockMessages()
+                unlockMessages(caller)
             }
         }.start()
     }
 
     fun saveData(context: Context, caller: String) {
-
+        obtainGameLock()
         Thread {
             try {
-                obtainGameLock()
                 saveGames(context, caller)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport(context, "games_saving_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("games_saving_crash.txt", e.stackTraceToString())
             } finally {
                 unlockGames()
             }
@@ -254,7 +258,7 @@ class DataManager(context: Context) {
             try {
                 saveInvites(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport(context, "invites_saving_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("invites_saving_crash.txt", e.stackTraceToString())
             } finally {
                 unlockInvites()
             }
@@ -265,20 +269,20 @@ class DataManager(context: Context) {
             try {
                 saveRecentOpponents(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport(context, "opponents_saving_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("opponents_saving_crash.txt", e.stackTraceToString())
             } finally {
                 unlockOpponents()
             }
         }.start()
 
-        obtainMessageLock()
+        obtainMessageLock(caller)
         Thread {
             try {
-                saveHandledMessages(context)
+                saveHandledMessages(context, caller)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport(context, "messages_saving_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("messages_saving_crash.txt", e.stackTraceToString())
             } finally {
-                unlockMessages()
+                unlockMessages(caller)
             }
         }.start()
     }
@@ -291,7 +295,7 @@ class DataManager(context: Context) {
                 continue
             }
 
-            println("$caller loaded saved game: $gameData")
+//            println("$caller loaded saved game: $gameData")
 
             val data = gameData.removePrefix("(").removeSuffix(")").split('|')
             val gameId = data[0]
@@ -457,7 +461,7 @@ class DataManager(context: Context) {
             content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
         }
 
-        println("$caller Saving games: $content")
+//        println("$caller Saving games: $content")
 
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
     }
@@ -480,15 +484,27 @@ class DataManager(context: Context) {
         FileManager.write(context, RECENT_OPPONENTS_FILE, data)
     }
 
-    fun saveHandledMessages(context: Context) {
-        obtainMessageLock()
+    private fun saveHandledMessages(context: Context, caller: String) {
         var data = ""
 
         for (messageId in handledMessages) {
             data += "$messageId\n"
         }
         FileManager.write(context, HANDLED_MESSAGES_FILE, data)
-        unlockMessages()
+    }
+
+    fun lockAndSaveHandledMessages(context: Context, caller: String) {
+        obtainMessageLock(caller)
+        var data = ""
+
+        for (messageId in handledMessages) {
+            data += "$messageId\n"
+        }
+        try {
+            FileManager.write(context, HANDLED_MESSAGES_FILE, data)
+        } finally {
+            unlockMessages(caller)
+        }
     }
 
     companion object {

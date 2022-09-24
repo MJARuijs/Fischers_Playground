@@ -10,7 +10,6 @@ import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.services.DataManager
-import com.mjaruijs.fischersplayground.util.FileManager
 
 class NotificationBuilder(context: Context) {
 
@@ -50,7 +49,7 @@ class NotificationBuilder(context: Context) {
 
             return notificationBuilder.build()
         } catch (e: Exception){
-            NetworkManager.getInstance().sendCrashReport(context, "notification_builder_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("notification_builder_crash.txt", e.stackTraceToString())
             throw e
         }
     }

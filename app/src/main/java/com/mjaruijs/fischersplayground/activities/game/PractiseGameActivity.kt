@@ -40,6 +40,7 @@ class PractiseGameActivity : GameActivity() {
     override fun onContextCreated() {
         super.onContextCreated()
         setGameCallbacks()
+        setGameForRenderer()
     }
 
     override fun onResume() {

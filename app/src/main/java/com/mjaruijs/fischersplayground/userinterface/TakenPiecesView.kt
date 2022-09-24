@@ -78,19 +78,17 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
         invalidate()
     }
 
+    fun removeAllPieces() {
+        takenPieces.clear()
+        invalidate()
+    }
+
     private fun sort() {
         takenPieces.sortWith { piece1, piece2 ->
             if (piece1.type.sortingValue > piece2.type.sortingValue) 1 else -1
         }
         recalculateWhiteBorders()
     }
-
-//    private fun sortBlackPieces() {
-//        takenBlackPieces.sortWith { piece1, piece2 ->
-//            if (piece1.type.sortingValue > piece2.type.sortingValue) 1 else -1
-//        }
-//        recalculateBlackBorders()
-//    }
 
     private fun recalculateWhiteBorders() {
         for ((i, _) in takenPieces.withIndex()) {

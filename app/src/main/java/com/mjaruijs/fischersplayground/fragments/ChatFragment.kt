@@ -147,4 +147,8 @@ class ChatFragment : Fragment(R.layout.chat_fragment) {
         chatAdapter.notifyDataSetChanged()
     }
 
+    fun clearMessages() {
+        chatAdapter.clear()
+    }
+
 }

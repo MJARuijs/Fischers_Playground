@@ -10,7 +10,6 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.util.FileManager
-import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 class NetworkManager {
@@ -42,7 +41,6 @@ class NetworkManager {
 
     private lateinit var manager: Manager
     private lateinit var client: EncodedClient
-    private lateinit var context: Context
 
     private val messageQueue = ArrayList<NetworkMessage>()
 
@@ -64,12 +62,10 @@ class NetworkManager {
         return clientConnected.get()
     }
 
-    fun run(context: Context, address: String = PUBLIC_SERVER_IP, port: Int = SERVER_PORT) {
+    fun run(context: Context) {
         if (clientConnected.get()) {
             return
         }
-
-        this.context = context
 
         log("Starting networker")
 
@@ -152,9 +148,9 @@ class NetworkManager {
 //        val dataManager = DataManager(context)
         val dataManager = DataManager.getInstance(context)
 
-        if (!dataManager.isMessageHandled(message.id)) {
-            dataManager.handledMessage(message.id)
-            dataManager.saveHandledMessages(context)
+        if (!dataManager.isMessageHandled(message.id, "NetworkManager isHandled")) {
+            dataManager.handledMessage(message.id, "NetworkManager Handled")
+            dataManager.lockAndSaveHandledMessages(context, "NetworkManager Save")
 
             val intent = Intent("mjaruijs.fischers_playground")
                 .putExtra("topic", message.topic.toString())
@@ -167,22 +163,21 @@ class NetworkManager {
         }
     }
 
-    fun sendCrashReport(fileName: String, crashLog: String) = sendCrashReport(context, fileName, crashLog)
-
-    fun sendCrashReport(context: Context, fileName: String, crashLog: String) {
-        Looper.prepare()
-        Toast.makeText(context, "Crash occurred..", Toast.LENGTH_SHORT).show()
+    fun sendCrashReport(fileName: String, crashLog: String) {
+//        Looper.prepare()
+//        Toast.makeText(context, "Crash occurred..", Toast.LENGTH_SHORT).show()
 
         Thread {
             try {
-                val gameFiles = FileManager.listFilesInDirectory(context)
+                val gameFiles = FileManager.listFilesInDirectory()
                 var allData = ""
                 val crashContent = trimCrashReport(crashLog)
 
                 allData += "$fileName|$crashContent\\\n"
 
                 for (gameFile in gameFiles) {
-                    val file = File("${context.filesDir.absolutePath}/$gameFile")
+//                    val file = File("${context.filesDir.absolutePath}/$gameFile")
+                    val file = FileManager.getFile(gameFile)
                     if (file.exists()) {
                         val fileContent = file.readText()
                         allData += if (gameFile.endsWith("_crash.txt")) {
@@ -198,7 +193,9 @@ class NetworkManager {
             } catch (e: Exception) {
 
             } finally {
-                FileManager.write(context, fileName, crashLog)
+                val crashFile = FileManager.getFile(fileName)
+                crashFile.writeText(crashLog)
+//                FileManager.write(context, fileName, crashLog)
             }
         }.start()
     }

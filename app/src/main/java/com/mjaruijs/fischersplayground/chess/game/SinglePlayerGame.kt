@@ -23,11 +23,11 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
         return super.showPreviousMove(runInBackground, animationSpeed)
     }
 
-    override fun showNextMove(animationSpeed: Long): Pair<Boolean, Boolean> {
+    override fun showNextMove(runInBackground: Boolean, animationSpeed: Long): Pair<Boolean, Boolean> {
         if (!isShowingCurrentMove()) {
             teamToMove = !teamToMove
         }
-        return super.showNextMove(animationSpeed)
+        return super.showNextMove(runInBackground, animationSpeed)
     }
 
     fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {

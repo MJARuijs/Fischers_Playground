@@ -134,7 +134,7 @@ class SettingsActivity : ClientActivity() {
             )
 
             for (file in dataFiles) {
-                FileManager.delete(applicationContext, "$file.txt")
+                FileManager.delete("$file.txt")
             }
         }
     }

@@ -9,7 +9,6 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder.Companion.GROUP_CHANNEL_ID
-import com.mjaruijs.fischersplayground.util.FileManager
 
 class FirebaseService : FirebaseMessagingService() {
 
@@ -30,7 +29,7 @@ class FirebaseService : FirebaseMessagingService() {
 
             val dataManager = DataManager.getInstance(applicationContext)
 //            val dataManager = DataManager(applicationContext)
-            if (dataManager.isMessageHandled(messageId)) {
+            if (dataManager.isMessageHandled(messageId, "Firebase")) {
                 println("Got firebase message but was already handled: $topic $messageId")
                 return
             }
@@ -64,7 +63,7 @@ class FirebaseService : FirebaseMessagingService() {
             notificationBuilder.notify(0, summaryNotification)
 
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport(applicationContext, "firebase_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("firebase_crash.txt", e.stackTraceToString())
         }
     }
 

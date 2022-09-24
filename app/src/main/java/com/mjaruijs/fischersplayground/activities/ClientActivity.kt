@@ -14,7 +14,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
@@ -26,6 +25,7 @@ import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.services.StoreDataWorker
+import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
 
 abstract class ClientActivity : AppCompatActivity() {
@@ -60,6 +60,8 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FileManager.init(applicationContext)
+
         val preferences = getPreference(USER_PREFERENCE_FILE)
         userId = preferences.getString(USER_ID_KEY, DEFAULT_USER_ID)!!
         userName = preferences.getString(USER_NAME_KEY, DEFAULT_USER_NAME)!!
@@ -72,6 +74,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        registerReceiver(networkReceiver, intentFilter)
 
         NotificationBuilder.getInstance(applicationContext).clearNotifications()
 
@@ -107,7 +110,6 @@ abstract class ClientActivity : AppCompatActivity() {
 //            }
         }
 
-        registerReceiver(networkReceiver, intentFilter)
 
         if (isUserRegisteredAtServer()) {
 //            sendResumeStatusToServer()
@@ -116,9 +118,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onPause() {
 //        println("ON PAUSE")
-        if (this is MultiplayerGameActivity) {
-            println(dataManager.getGame(this.gameId)!!.chatMessages.size)
-        }
         dataManager.saveData(applicationContext, "ClientActivity onPause")
 
         if (!stayingInApp) {
@@ -179,7 +178,7 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
-        println("SENDING MESSAGE TO WORKER: $topic")
+//        println("SENDING MESSAGE TO WORKER: $topic")
         sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite
             Topic.NEW_GAME -> ::onNewGameStarted

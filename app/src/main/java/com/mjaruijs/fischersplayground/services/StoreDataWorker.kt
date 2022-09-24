@@ -26,7 +26,6 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
-import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 
@@ -68,7 +67,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
 
-        dataManager.handledMessage(messageId)
+        dataManager.handledMessage(messageId, "StoreDataWorker")
         dataManager.saveData(applicationContext, "DataWorker doWork: $topic")
 
         return if (output is Parcelable) {
@@ -85,7 +84,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             parcelable.writeToParcel(parcel, 0)
             putByteArray(key, parcel.marshall())
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport(applicationContext, "data_worker_parcelable_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("data_worker_parcelable_crash.txt", e.stackTraceToString())
         } finally {
             parcel.recycle()
         }
@@ -104,7 +103,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             game.lastUpdated = timeStamp
             dataManager.setGame(gameId, game)
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport(applicationContext, "data_worker_on_opponent_moved_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("data_worker_on_opponent_moved_crash.txt", e.stackTraceToString())
         }
 
         return MoveData(gameId, GameStatus.PLAYER_MOVE, timeStamp, move)
@@ -243,7 +242,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val port = data[1].toInt()
 
         val networkManager = NetworkManager.getInstance()
-        networkManager.run(applicationContext, address, port)
+        networkManager.run(applicationContext)
 
         val userId = applicationContext.getSharedPreferences(ClientActivity.USER_PREFERENCE_FILE, FirebaseMessagingService.MODE_PRIVATE).getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
         if (userId != DEFAULT_USER_ID) {

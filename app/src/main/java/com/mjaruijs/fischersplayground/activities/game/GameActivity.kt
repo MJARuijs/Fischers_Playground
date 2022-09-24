@@ -10,6 +10,7 @@ import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
@@ -101,10 +102,6 @@ abstract class GameActivity : ClientActivity() {
         super.onDestroy()
     }
 
-    protected fun isGameInitialized(): Boolean {
-        return this::game.isInitialized
-    }
-
     private fun runOnUIThread(runnable: () -> Unit) {
         runOnUiThread {
             runnable()
@@ -161,7 +158,12 @@ abstract class GameActivity : ClientActivity() {
         game.onPieceTaken = ::onPieceTaken
         game.onPieceRegained = ::onPieceRegained
         game.onCheckMate = ::onCheckMate
+        game.onMoveMade = ::onMoveMade
+    }
 
+    open fun onMoveMade(move: Move) {}
+
+    fun setGameForRenderer() {
         glView.setGame(game)
     }
 
@@ -202,7 +204,7 @@ abstract class GameActivity : ClientActivity() {
             }
             game.onClick(x, y, displayWidth, displayHeight)
         } catch (e: Exception) {
-            networkManager.sendCrashReport(applicationContext, "onclick_crash_log.txt", e.stackTraceToString())
+            networkManager.sendCrashReport("onclick_crash_log.txt", e.stackTraceToString())
         }
     }
 
@@ -228,15 +230,21 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
+    protected fun getPlayerFragment(): PlayerCardFragment? {
+        return (supportFragmentManager.fragments.find { fragment -> fragment is PlayerCardFragment && fragment.tag == "player" } as PlayerCardFragment?)
+    }
+
+    protected fun getOpponentFragment(): PlayerCardFragment? {
+        return (supportFragmentManager.fragments.find { fragment -> fragment is PlayerCardFragment && fragment.tag == "opponent" } as PlayerCardFragment?)
+    }
+
     protected fun onPieceTaken(piece: Piece) = onPieceTaken(piece.type, piece.team)
 
     private fun onPieceTaken(pieceType: PieceType, team: Team) {
         if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
-            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for player was found..")
-            (opponentFragment as PlayerCardFragment).addTakenPiece(pieceType)
+            getOpponentFragment()?.addTakenPiece(pieceType)
         } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
-            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
-            (playerFragment as PlayerCardFragment).addTakenPiece(pieceType)
+            getPlayerFragment()?.addTakenPiece(pieceType)
         }
     }
 
@@ -244,9 +252,11 @@ abstract class GameActivity : ClientActivity() {
         if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
             val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
             (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType)
+//            getOpponentFragment()?.removeTakenPiece(pieceType)
         } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
             val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
             (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType)
+//            getPlayerFragment()?.removeTakenPiece(pieceType)
         }
     }
 

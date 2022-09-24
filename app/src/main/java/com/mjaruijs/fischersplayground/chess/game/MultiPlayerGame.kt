@@ -29,6 +29,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
+//        println("RESTORING MOVES")
         restoreMoves()
     }
 
@@ -113,7 +114,10 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val takenPiecePosition = takenPieceData?.second
 
         if (takenPiece != null) {
+//            println("Restoring move: ${move.toChessNotation()} ${takenPiece?.team} ${takenPiece?.type}")
             takenPieces += takenPiece
+        } else {
+//            println("Restoring move: ${move.toChessNotation()}")
         }
 
         val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {

@@ -107,9 +107,9 @@ open class ActionButtonsFragment(layoutResource: Int) : Fragment(layoutResource)
                 }
 
                 val buttonStates = if (it.isHeld()) {
-                    game.showNextMove(100L)
+                    game.showNextMove(false, 100L)
                 } else {
-                    game.showNextMove()
+                    game.showNextMove(false)
                 }
 
                 if (buttonStates.first) {

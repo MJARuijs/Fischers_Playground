@@ -27,7 +27,7 @@ class CrashReportActivity : ClientActivity() {
         crashDialog.create(this)
         crashDialog.setLayout()
 
-        val fileList = FileManager.listFilesInDirectory(applicationContext)
+        val fileList = FileManager.listFilesInDirectory()
 
         val crashReports = ArrayList<CrashReport>()
         for (path in fileList) {
@@ -40,11 +40,11 @@ class CrashReportActivity : ClientActivity() {
         crashReportRecycler.adapter = crashReportAdapter
 
         for (filePath in fileList) {
-            if (!FileManager.doesFileExist(applicationContext, filePath)) {
+            if (!FileManager.doesFileExist(filePath)) {
                 println("$filePath doesn't exist")
                 crashReportAdapter.remove(filePath)
             } else {
-                if (FileManager.isFileEmpty(applicationContext, filePath)) {
+                if (FileManager.isFileEmpty(filePath)) {
                     crashReportAdapter.remove(filePath)
                     println("$filePath exists")
                 } else {
@@ -58,7 +58,7 @@ class CrashReportActivity : ClientActivity() {
         val deleteReportsButton = findViewById<Button>(R.id.delete_reports_button)
         deleteReportsButton.setOnClickListener {
             for (filePath in crashReportAdapter.fileNames) {
-                FileManager.delete(applicationContext, filePath.fileName)
+                FileManager.delete(filePath.fileName)
             }
             crashReportAdapter.clear()
         }

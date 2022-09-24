@@ -15,9 +15,10 @@ class PlayerCardFragment : Fragment(R.layout.player_card) {
 
     private lateinit var statusIcon: ImageView
     private lateinit var takenPieceView: TakenPiecesView
+    private lateinit var name: String
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val name = requireArguments().getString("player_name")
+        name = requireArguments().getString("player_name") ?: "default_name"
         val hideStatusIcon = requireArguments().getBoolean("hide_status_icon")
         val teamValue = requireArguments().getString("team") ?: throw IllegalArgumentException("Missing essential data in PlayerFragment: team")
 
@@ -44,6 +45,10 @@ class PlayerCardFragment : Fragment(R.layout.player_card) {
 
     fun removeTakenPiece(pieceType: PieceType) {
         takenPieceView.removeTakenPiece(pieceType)
+    }
+
+    fun removeAllPieces() {
+        takenPieceView.removeAllPieces()
     }
 
     fun setStatusIcon(status: PlayerStatus) {

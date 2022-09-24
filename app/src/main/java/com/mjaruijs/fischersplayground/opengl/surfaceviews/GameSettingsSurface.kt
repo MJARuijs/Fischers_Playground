@@ -106,7 +106,7 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
                 requestRender()
             } catch (e: IllegalArgumentException) {
-                NetworkManager.getInstance().sendCrashReport(context, "game_setting_surface_on_touch_crash.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("game_setting_surface_on_touch_crash.txt", e.stackTraceToString())
             }
             return true
         }
