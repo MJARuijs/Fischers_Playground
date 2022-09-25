@@ -4,7 +4,6 @@ import android.app.Service
 import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
-import android.widget.Toast
 import androidx.work.Data
 import androidx.work.Worker
 import androidx.work.WorkerParameters
@@ -39,14 +38,13 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         userId = preferences.getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
 
         dataManager = DataManager.getInstance(applicationContext)
-//        dataManager = DataManager(applicationContext)
 
         val topic = Topic.fromString(inputData.getString("topic")!!)
         val content = inputData.getStringArray("content")!!
+//        val runInBackground = inputData.getBoolean("run_in_background", true)
         val messageId = inputData.getLong("messageId", -1L)
 
         if (messageId == -1L) {
-            Toast.makeText(applicationContext, "doWork failed: no messageId was given", Toast.LENGTH_SHORT).show()
             return Result.failure()
         }
 

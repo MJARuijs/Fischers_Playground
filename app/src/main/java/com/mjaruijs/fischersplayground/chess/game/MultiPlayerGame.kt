@@ -212,14 +212,16 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
-        if (runInBackground) {
-            animation.invokeOnStartCalls()
-            animation.invokeOnFinishCalls()
-
-            animation.nextAnimation?.invokeOnStartCalls()
-            animation.nextAnimation?.invokeOnFinishCalls()
-        } else {
+        if (!runInBackground) {
             queueAnimation(animation)
+
+//            println("RUNNING IN BACKGROUND")
+//            animation.invokeOnStartCalls()
+//            animation.invokeOnFinishCalls()
+//
+//            animation.nextAnimation?.invokeOnStartCalls()
+//            animation.nextAnimation?.invokeOnFinishCalls()
+        } else {
         }
     }
 

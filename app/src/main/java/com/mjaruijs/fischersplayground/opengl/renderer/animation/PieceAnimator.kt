@@ -56,6 +56,7 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val tran
     private fun onStart() {
         if (!onStartExecuted.get()) {
             onStartExecuted.set(true)
+            println("Starting Animation")
             piece.translation = translation
             for (onStartCall in onStartCalls) {
                 onStartCall()

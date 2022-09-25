@@ -44,6 +44,7 @@ class FirebaseService : FirebaseMessagingService() {
                 .setInputData(workDataOf(
                     Pair("topic", topic.toString()),
                     Pair("content", contentList),
+                    Pair("run_in_background", true),
                     Pair("messageId", messageId)
                 ))
                 .build()

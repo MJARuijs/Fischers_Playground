@@ -294,6 +294,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun onOpponentMoved(output: Parcelable) {
         val moveData = output as MoveData
         if (moveData.gameId == gameId) {
+            println("ON OPPONENT MOVED ${(game as MultiPlayerGame).moves.size}")
+//            (game as MultiPlayerGame).showPreviousMove(true)
+//            (game as MultiPlayerGame).showNextMove(false)
             (game as MultiPlayerGame).moveOpponent(moveData.move, false)
             requestRender()
         } else {
