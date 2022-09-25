@@ -13,7 +13,6 @@ import com.mjaruijs.fischersplayground.services.DataManager
 
 class NotificationBuilder(context: Context) {
 
-//    private val dataManager = DataManager(context)
     private val dataManager = DataManager.getInstance(context)
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 

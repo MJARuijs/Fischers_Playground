@@ -75,8 +75,9 @@ object FileManager {
                 file.createNewFile()
                 arrayListOf()
             }
-        } catch (e: FileNotFoundException) {
-            NetworkManager.getInstance().sendCrashReport("file_manager_read_crash.txt", e.stackTraceToString())
+        } catch (e: Exception) {
+            FileManager.write(context, "file_manager_read_crash.txt", e.stackTraceToString())
+//            NetworkManager.getInstance().sendCrashReport("file_manager_read_crash.txt", e.stackTraceToString())
             e.printStackTrace()
             null
         }

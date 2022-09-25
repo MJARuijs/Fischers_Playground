@@ -166,7 +166,8 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
                 onPixelsRead = {}
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+//            e.printStackTrace()
+            throw e
             NetworkManager.getInstance().sendCrashReport("opengl_render_crash.txt", e.stackTraceToString())
         }
 

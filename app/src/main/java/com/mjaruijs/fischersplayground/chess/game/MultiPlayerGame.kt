@@ -212,7 +212,15 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
-        queueAnimation(animation)
+        if (runInBackground) {
+            animation.invokeOnStartCalls()
+            animation.invokeOnFinishCalls()
+
+            animation.nextAnimation?.invokeOnStartCalls()
+            animation.nextAnimation?.invokeOnFinishCalls()
+        } else {
+            queueAnimation(animation)
+        }
     }
 
     private fun movePlayer(fromPosition: Vector2, toPosition: Vector2) {

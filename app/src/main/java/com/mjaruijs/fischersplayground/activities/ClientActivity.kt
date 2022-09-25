@@ -68,8 +68,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
         networkManager = NetworkManager.getInstance()
         dataManager = DataManager.getInstance(this)
-//        dataManager = DataManager(applicationContext)
-
     }
 
     override fun onResume() {

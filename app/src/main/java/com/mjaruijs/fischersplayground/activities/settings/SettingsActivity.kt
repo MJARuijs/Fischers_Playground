@@ -21,7 +21,6 @@ import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
-import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
 import kotlin.math.roundToInt
 
@@ -110,33 +109,6 @@ class SettingsActivity : ClientActivity() {
         restore3DPreference()
 
         initSettings()
-
-        //TODO: Delete this button later
-        findViewById<Button>(R.id.delete_server_button).setOnClickListener {
-            val preferenceFiles = arrayListOf(
-                "fcm_token",
-                "user_data",
-                "fire_base",
-                "FirebaseAppHeartBeat",
-                "com.google.android.gms.appid"
-            )
-
-            for (file in preferenceFiles) {
-                getSharedPreferences(file, MODE_PRIVATE).edit().clear().commit()
-                applicationContext.deleteSharedPreferences(file)
-            }
-
-            val dataFiles = arrayListOf(
-                "mp_games",
-                "received_invites",
-                "recent_opponents",
-                "handled_messages"
-            )
-
-            for (file in dataFiles) {
-                FileManager.delete("$file.txt")
-            }
-        }
     }
 
     private fun initSettings() {

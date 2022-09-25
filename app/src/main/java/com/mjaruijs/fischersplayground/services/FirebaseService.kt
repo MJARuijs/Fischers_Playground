@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.services
 
+import android.os.Looper
 import android.widget.Toast
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -10,6 +11,7 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder.Companion.GROUP_CHANNEL_ID
+import com.mjaruijs.fischersplayground.util.FileManager
 
 class FirebaseService : FirebaseMessagingService() {
 
@@ -20,7 +22,7 @@ class FirebaseService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         try {
-            Toast.makeText(applicationContext, "GOTTEM", Toast.LENGTH_SHORT).show()
+            FileManager.init(applicationContext)
 
             val notificationBuilder = NotificationBuilder.getInstance(this)
 
@@ -30,13 +32,12 @@ class FirebaseService : FirebaseMessagingService() {
 
             val contentList = content.split('|').toTypedArray()
 
-
             val dataManager = DataManager.getInstance(applicationContext)
-//            val dataManager = DataManager(applicationContext)
             if (dataManager.isMessageHandled(messageId, "Firebase")) {
                 println("Got firebase message but was already handled: $topic $messageId")
                 return
             }
+
             println("Got firebase message: $topic $messageId")
 
             val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()

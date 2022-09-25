@@ -116,8 +116,10 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         animator.addOnFinishCall(
             { animationRunning.set(false) },
             {
+                requestRender()
                 takenPieces.remove(Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition))
                 requestRender()
+
             }
         )
 

@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.services
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import com.mjaruijs.fischersplayground.activities.ClientActivity
+import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
@@ -26,7 +27,7 @@ class DataManager(context: Context) {
     private val recentOpponents = Stack<Pair<String, String>>()
     private val handledMessages = HashSet<Long>()
 
-    private val userId: String
+    private var userId = DEFAULT_USER_ID
 
     private val gamesLock = AtomicBoolean(false)
     private val invitesLock = AtomicBoolean(false)
@@ -34,10 +35,15 @@ class DataManager(context: Context) {
     private val messageLock = AtomicBoolean(false)
 
     init {
-        val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
-        userId = preferences.getString(ClientActivity.USER_ID_KEY, "")!!
+        try {
+            val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
+            userId = preferences.getString(ClientActivity.USER_ID_KEY, "") ?: DEFAULT_USER_ID
 
-        loadData(context, "DataManager")
+            loadData(context, "DataManager")
+        } catch (e: Exception) {
+            NetworkManager.getInstance().sendCrashReport("data_manager_init.txt", e.stackTraceToString())
+        }
+
     }
 
     fun getSavedGames(): HashMap<String, MultiPlayerGame> {
@@ -520,7 +526,7 @@ class DataManager(context: Context) {
             if (instance == null) {
                 instance = DataManager(context)
             }
-            instance!!.loadData(context, "getInstance()")
+//            instance!!.loadData(context, "getInstance()")
 
             return instance!!
         }

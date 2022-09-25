@@ -3,10 +3,12 @@ package com.mjaruijs.fischersplayground.adapters.crashreportadapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.util.FileManager
 
 class CrashReportAdapter(private val onClick: (String) -> Unit, val fileNames: ArrayList<CrashReport>) : RecyclerView.Adapter<CrashReportAdapter.CrashReportViewHolder>() {
 
@@ -47,6 +49,11 @@ class CrashReportAdapter(private val onClick: (String) -> Unit, val fileNames: A
         holder.crashReportCard.setOnClickListener {
             onClick(holder.fileNameField.text.toString())
         }
+        holder.deleteButton.setOnClickListener {
+            FileManager.delete(crashReport.fileName)
+            fileNames.removeAt(position)
+            notifyItemRemoved(position)
+        }
     }
 
     override fun getItemCount() = fileNames.size
@@ -54,6 +61,7 @@ class CrashReportAdapter(private val onClick: (String) -> Unit, val fileNames: A
     inner class CrashReportViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val crashReportCard: CardView = view.findViewById(R.id.crash_report_card)
         val fileNameField: TextView = view.findViewById(R.id.file_name_field)
+        val deleteButton: Button = view.findViewById(R.id.delete_crash_button)
     }
 
 }

@@ -164,9 +164,6 @@ class NetworkManager {
     }
 
     fun sendCrashReport(fileName: String, crashLog: String) {
-//        Looper.prepare()
-//        Toast.makeText(context, "Crash occurred..", Toast.LENGTH_SHORT).show()
-
         Thread {
             try {
                 val gameFiles = FileManager.listFilesInDirectory()
@@ -176,7 +173,6 @@ class NetworkManager {
                 allData += "$fileName|$crashContent\\\n"
 
                 for (gameFile in gameFiles) {
-//                    val file = File("${context.filesDir.absolutePath}/$gameFile")
                     val file = FileManager.getFile(gameFile)
                     if (file.exists()) {
                         val fileContent = file.readText()
@@ -195,7 +191,6 @@ class NetworkManager {
             } finally {
                 val crashFile = FileManager.getFile(fileName)
                 crashFile.writeText(crashLog)
-//                FileManager.write(context, fileName, crashLog)
             }
         }.start()
     }

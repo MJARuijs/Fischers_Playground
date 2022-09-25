@@ -8,14 +8,6 @@
     android:forceDarkAllowed="true"
     tools:context=".activities.settings.SettingsActivity">
 
-    <Button
-        android:id="@+id/delete_server_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Delete User Data"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
     <ImageView
         android:id="@+id/settings_background"
         android:layout_width="wrap_content"

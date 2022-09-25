@@ -40,7 +40,7 @@ class ChatFragment : Fragment(R.layout.chat_fragment) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        chatLayout = view.findViewById(R.id.chat_layout)
+        chatLayout = view.findViewById(R.id.chat_item_layout)
 
         chatAdapter = ChatAdapter(resources)
 
@@ -102,7 +102,7 @@ class ChatFragment : Fragment(R.layout.chat_fragment) {
         val offset = if (keyboardHeight == 0) 32 else keyboardHeight + 32
         val constraints = ConstraintSet()
         constraints.clone(chatLayout)
-        constraints.connect(R.id.chat_input_card, ConstraintSet.BOTTOM, R.id.chat_layout, ConstraintSet.BOTTOM, offset)
+        constraints.connect(R.id.chat_input_card, ConstraintSet.BOTTOM, R.id.chat_item_layout, ConstraintSet.BOTTOM, offset)
         constraints.applyTo(chatLayout)
         chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
     }
