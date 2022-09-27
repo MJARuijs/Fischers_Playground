@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.fragments
 
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -40,14 +41,19 @@ class PlayerCardFragment : Fragment(R.layout.player_card) {
     }
 
     fun addTakenPiece(pieceType: PieceType) {
+        Log.i(TAG, "Adding $pieceType to $name")
         takenPieceView.add(pieceType)
     }
 
     fun removeTakenPiece(pieceType: PieceType) {
+        Log.i(TAG, "Removing $pieceType from $name")
+
         takenPieceView.removeTakenPiece(pieceType)
     }
 
     fun removeAllPieces() {
+        Log.i(TAG, "Removing everything from $name")
+
         takenPieceView.removeAllPieces()
     }
 
@@ -55,6 +61,10 @@ class PlayerCardFragment : Fragment(R.layout.player_card) {
         if (this::statusIcon.isInitialized) {
             statusIcon.foregroundTintList = ColorStateList(arrayOf(intArrayOf(0)), intArrayOf(status.color))
         }
+    }
+
+    companion object {
+        private const val TAG = "PlayerCardFragment"
     }
 
 }

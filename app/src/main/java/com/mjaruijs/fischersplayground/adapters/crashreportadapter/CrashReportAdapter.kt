@@ -15,18 +15,6 @@ class CrashReportAdapter(private val onClick: (String) -> Unit, val fileNames: A
     fun remove(fileName: String) {
         val index = fileNames.indexOfFirst { crashReport -> crashReport.fileName == fileName }
         if (index == -1) {
-            println("Can't remove $fileName because it doesn't exist..")
-            return
-        }
-
-        fileNames.removeAt(index)
-        notifyItemRemoved(index)
-    }
-
-    fun remove(crashReport: CrashReport) {
-        val index = fileNames.indexOf(crashReport)
-        if (index == -1) {
-            println("Can't remove ${crashReport.fileName} because it doesn't exist..")
             return
         }
 

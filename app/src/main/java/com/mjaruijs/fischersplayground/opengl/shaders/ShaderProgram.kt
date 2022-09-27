@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.opengl.shaders
 
 import android.opengl.GLES20.*
+import android.util.Log
 import com.mjaruijs.fischersplayground.math.Color
 import com.mjaruijs.fischersplayground.math.matrices.Matrix4
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
@@ -24,20 +25,20 @@ class ShaderProgram(vararg shaders: Shader) {
         val linkStatus = IntBuffer.allocate(1)
         glGetProgramiv(handle, GL_LINK_STATUS, linkStatus)
 
-//        if (linkStatus[0] != GL_TRUE) {
-//            println("SHADERPROGRAM LINKING FAILED")
-//            println(glGetProgramInfoLog(handle))
-//        }
+        if (linkStatus[0] != GL_TRUE) {
+            Log.e("ShaderProgram", "SHADERPROGRAM LINKING FAILED")
+            Log.e("ShaderProgram", glGetProgramInfoLog(handle))
+        }
 
         glValidateProgram(handle)
 
         val validateStatus = IntBuffer.allocate(1)
         glGetProgramiv(handle, GL_VALIDATE_STATUS, validateStatus)
 
-//        if (validateStatus[0] != GL_TRUE) {
-//            println("SHADERPROGRAM VALIDATION FAILED")
-//            println(glGetProgramInfoLog(handle))
-//        }
+        if (validateStatus[0] != GL_TRUE) {
+            Log.e("ShaderProgram", "SHADERPROGRAM VALIDATION FAILED")
+            Log.e("ShaderProgram", glGetProgramInfoLog(handle))
+        }
     }
 
     fun start() {

@@ -23,6 +23,10 @@ class MoveData(val gameId: String, val status: GameStatus, val time: Long, val m
         return 0
     }
 
+    override fun toString(): String {
+        return "$gameId,$status,$time,${move.toChessNotation()}"
+    }
+
     companion object CREATOR : Parcelable.Creator<MoveData> {
         override fun createFromParcel(parcel: Parcel): MoveData {
             return MoveData(parcel)
@@ -30,6 +34,15 @@ class MoveData(val gameId: String, val status: GameStatus, val time: Long, val m
 
         override fun newArray(size: Int): Array<MoveData?> {
             return arrayOfNulls(size)
+        }
+
+        fun fromString(content: String): MoveData {
+            val data = content.split(',')
+            val gameId = data[0]
+            val status = GameStatus.fromString(data[1])
+            val time = data[2].toLong()
+            val move = Move.fromChessNotation(data[3])
+            return MoveData(gameId, status, time, move)
         }
     }
 }

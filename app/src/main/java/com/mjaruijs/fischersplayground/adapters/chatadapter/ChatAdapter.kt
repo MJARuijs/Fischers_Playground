@@ -19,14 +19,12 @@ class ChatAdapter(private val resources: Resources, private val messages: ArrayL
     private var recyclerWidth = 0
 
     fun clear() {
-        println("CLEARING MESSAGES")
         messages.clear()
         notifyDataSetChanged()
     }
 
     operator fun plusAssign(message: ChatMessage) {
         messages += message
-        println("ADDING MESSAGES")
         notifyItemChanged(messages.size - 1)
     }
 

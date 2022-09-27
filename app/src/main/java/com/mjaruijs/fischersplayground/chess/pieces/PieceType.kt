@@ -518,16 +518,6 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                     }
 
                     if (piece.type == KING) {
-//                        for (kingX in -1 until 1) {
-//                            for (kingY in -1 until 1) {
-//                                val possibleKingSquare = Vector2(kingX + x, kingY + y)
-//                                println("KING ATTACKING: $possibleKingSquare. Testing for $square")
-//                                if (possibleKingSquare == square) {
-//                                    return true
-//                                }
-//                            }
-//                        }
-//                        println("Attacked square: $square. Attacking from: <$x, $y>")
                         if (abs(x - square.x) == 1f && abs(y - square.y) == 1f) {
                             return true
                         }

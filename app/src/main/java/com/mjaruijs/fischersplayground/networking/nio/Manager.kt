@@ -58,7 +58,6 @@ class Manager(private val name: String) : Runnable {
 //                                    val address = clientInfo.substring(startIndex + 1, endIndex)
 //                                    onClientDisconnect()
 //                                }
-//                                println("${name}_Manager: CLIENT DISCONNECTED! ${client.channel.remoteAddress}")
                                 client.close()
                                 key.cancel()
                                 onClientDisconnect()

@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.userinterface
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
@@ -128,6 +129,7 @@ class TakenPiecesView(context: Context, attributes: AttributeSet?) : View(contex
     }
 
     companion object {
+        private const val TAG = "TakenPiecesView"
         private const val MAX_PIECES = 15
     }
 

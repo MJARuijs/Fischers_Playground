@@ -26,9 +26,9 @@ object TextureLoader {
         val pixelData = ByteBuffer.allocateDirect(bitmap.byteCount)
         bitmap.copyPixelsToBuffer(pixelData)
         pixelData.rewind()
-        bitmap.recycle()
+//        bitmap.recycle()
 
-        val texture = Texture(bitmap, pixelData, name)
+        val texture = Texture(bitmap, pixelData)
         regularCache[resourceId] = texture
         return texture
     }
@@ -47,7 +47,7 @@ object TextureLoader {
         val pixelData = ByteBuffer.allocateDirect(bitmap.byteCount)
         bitmap.copyPixelsToBuffer(pixelData)
         pixelData.rewind()
-        bitmap.recycle()
+//        bitmap.recycle()
 
         val texture = Texture(bitmap, pixelData)
         bitmapCache[resourceId] = texture

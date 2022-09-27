@@ -29,7 +29,6 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
-        println("RESTORING MOVES")
         restoreMoves()
     }
 
@@ -47,6 +46,10 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
     fun addNews(news: News) {
         newsUpdates += news
+    }
+
+    fun hasNews(topic: NewsType): Boolean {
+        return newsUpdates.any { news -> news.newsType == topic }
     }
 
     fun clearNews(newsType: NewsType) {
@@ -100,6 +103,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     }
 
     private fun restoreMove(move: Move) {
+        println("Restoring move: ${move.toChessNotation()}")
         moves += move
         status = if (move.team == team) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
 
@@ -113,11 +117,8 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val takenPiece = takenPieceData?.first
         val takenPiecePosition = takenPieceData?.second
 
-        if (takenPiece != null) {
-//            println("Restoring move: ${move.toChessNotation()} ${takenPiece?.team} ${takenPiece?.type}")
+        if (takenPiece != null && move != savedMoves.last()) {
             takenPieces += takenPiece
-        } else {
-//            println("Restoring move: ${move.toChessNotation()}")
         }
 
         val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
@@ -157,7 +158,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         animation.nextAnimation?.invokeOnFinishCalls()
     }
 
-    fun moveOpponent(move: Move, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    fun moveOpponent(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         if (status != GameStatus.OPPONENT_MOVE) {
             return
         }
@@ -193,6 +194,13 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
                 if (move.promotedPiece != null) {
                     state[toPosition] = Piece(move.promotedPiece, move.team)
                 }
+                if (takenPiecePosition != null) {
+                    onPieceTaken(move.pieceTaken!!, !move.team)
+
+                    if (takenPiecePosition != toPosition) {
+                        state[takenPiecePosition] = null
+                    }
+                }
             })
         }
 
@@ -212,17 +220,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         }
 
-        if (!runInBackground) {
-            queueAnimation(animation)
-
-//            println("RUNNING IN BACKGROUND")
-//            animation.invokeOnStartCalls()
-//            animation.invokeOnFinishCalls()
-//
-//            animation.nextAnimation?.invokeOnStartCalls()
-//            animation.nextAnimation?.invokeOnFinishCalls()
-        } else {
-        }
+        queueAnimation(animation)
     }
 
     private fun movePlayer(fromPosition: Vector2, toPosition: Vector2) {
@@ -231,7 +229,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         }
 
         status = GameStatus.OPPONENT_MOVE
-        move(team, fromPosition, toPosition, false)
+        move(team, fromPosition, toPosition)
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {

@@ -4,20 +4,24 @@ import android.animation.ValueAnimator
 import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
 import com.mjaruijs.fischersplayground.chess.game.ArrayBasedGameState
+import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import java.util.concurrent.atomic.AtomicBoolean
 
 class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val translation: Vector2, requestRender: () -> Unit, private val onStartCalls: ArrayList<() -> Unit>, private val onFinishCalls: ArrayList<() -> Unit>, animationDuration: Long) {
 
+    private var piece: Piece
+
     private val xFinished = AtomicBoolean(false)
     private val yFinished = AtomicBoolean(false)
     private val onStartExecuted = AtomicBoolean(false)
 
-    private val piece = state[piecePosition] ?: throw IllegalArgumentException("No piece was found at square: $piecePosition.. Failed to animate..")
     private val xAnimator = ValueAnimator.ofFloat(translation.x, 0.0f)
     private val yAnimator = ValueAnimator.ofFloat(translation.y, 0.0f)
 
     init {
+        piece = state[piecePosition] ?: throw IllegalArgumentException("No piece was found at square: $piecePosition.. Failed to animate..")
+
         xAnimator.duration = animationDuration
         xAnimator.addUpdateListener {
             piece.translation.x = it.animatedValue as Float
@@ -56,7 +60,6 @@ class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val tran
     private fun onStart() {
         if (!onStartExecuted.get()) {
             onStartExecuted.set(true)
-            println("Starting Animation")
             piece.translation = translation
             for (onStartCall in onStartCalls) {
                 onStartCall()

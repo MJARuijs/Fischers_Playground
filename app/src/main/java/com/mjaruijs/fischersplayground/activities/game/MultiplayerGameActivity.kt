@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.activities.game
 import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.os.Parcelable
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import androidx.fragment.app.FragmentContainerView
@@ -15,6 +16,8 @@ import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvide
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
+import com.mjaruijs.fischersplayground.chess.news.IntNews
+import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
@@ -87,7 +90,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onResume() {
-        println("ON RESUME")
         super.onResume()
         try {
             game = dataManager.getGame(gameId)!!
@@ -130,7 +132,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onDestroy() {
-        println("ON DESTROY")
         keyboardHeightProvider.close()
         super.onDestroy()
     }
@@ -144,8 +145,11 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun redoLastMove() {
-        game.showPreviousMove(true)
-        game.showNextMove(false)
+        if (!(game as MultiPlayerGame).hasNews(NewsType.OPPONENT_MOVED)) {
+            game.showPreviousMove(true)
+            game.showNextMove()
+        }
+
         getActionBarFragment()?.disableForwardButton()
     }
 
@@ -182,6 +186,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 for (takenPiece in game.takenPieces) {
                     onPieceTaken(takenPiece)
                 }
+                Log.i("MP", game.takenPieces.size.toString())
             }
         }.start()
     }
@@ -214,20 +219,20 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             sendMoveData(positionUpdateMessage)
         }
         dataManager.setGame(gameId, game as MultiPlayerGame)
-        dataManager.saveData(applicationContext, "MPactivity onMoveMade")
+        dataManager.saveData(applicationContext)
     }
 
     private fun confirmMove(moveNotation: String) {
         networkManager.sendMessage(NetworkMessage(Topic.MOVE, "$gameId|$userId|$moveNotation|${game.lastUpdated}"))
         (game as MultiPlayerGame).confirmMove()
         dataManager.setGame(gameId, game as MultiPlayerGame)
-        dataManager.saveData(applicationContext, "MPactivity confirmMove")
+        dataManager.saveData(applicationContext)
     }
 
     private fun cancelMove() {
         (game as MultiPlayerGame).cancelMove()
         dataManager.setGame(gameId, game as MultiPlayerGame)
-        dataManager.saveData(applicationContext, "MPactivity cancelMove")
+        dataManager.saveData(applicationContext)
     }
 
     override fun onClick(x: Float, y: Float) {
@@ -240,6 +245,13 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun processNews() {
         for (news in (game as MultiPlayerGame).newsUpdates) {
             when (news.newsType) {
+                NewsType.OPPONENT_MOVED -> {
+                    if ((news as MoveNews).moveData.gameId == gameId) {
+                        val move = news.moveData.move
+                        (game as MultiPlayerGame).moveOpponent(move)
+                        dataManager.setGame(gameId, game as MultiPlayerGame)
+                    }
+                }
                 NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show()
                 NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show()
                 NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show()
@@ -250,7 +262,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 }
                 NewsType.OPPONENT_ACCEPTED_UNDO -> {
                     undoAcceptedDialog.show {
-                        (game as MultiPlayerGame).undoMoves(news.data)
+                        (game as MultiPlayerGame).undoMoves((news as IntNews).data)
                         (game as MultiPlayerGame).status = GameStatus.PLAYER_MOVE
                         requestRender()
                     }
@@ -294,10 +306,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     override fun onOpponentMoved(output: Parcelable) {
         val moveData = output as MoveData
         if (moveData.gameId == gameId) {
-            println("ON OPPONENT MOVED ${(game as MultiPlayerGame).moves.size}")
-//            (game as MultiPlayerGame).showPreviousMove(true)
-//            (game as MultiPlayerGame).showNextMove(false)
-            (game as MultiPlayerGame).moveOpponent(moveData.move, false)
+            (game as MultiPlayerGame).moveOpponent(moveData.move)
+            (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_MOVED)
             requestRender()
         } else {
             super.onOpponentMoved(output)
@@ -306,8 +316,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onUndoRequested(output: Parcelable) {
         val gameId = (output as ParcelableString).value
-        (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_REQUESTED_UNDO)
         if (gameId == this.gameId) {
+            (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_REQUESTED_UNDO)
             undoRequestedDialog.setMessage("$opponentName is requesting to undo their last move!")
             undoRequestedDialog.show()
         } else {
@@ -402,7 +412,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun rejectUndoRequest() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_REQUESTED_UNDO)
         dataManager.setGame(gameId, game as MultiPlayerGame)
-        dataManager.saveData(applicationContext, "MPactivity rejectUndoRequest")
+        dataManager.saveData(applicationContext)
         networkManager.sendMessage(NetworkMessage(Topic.UNDO_REJECTED, "$gameId|$userId"))
     }
 
@@ -421,21 +431,21 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         requestRender()
 
         dataManager.setGame(gameId, game as MultiPlayerGame)
-        dataManager.saveData(applicationContext, "MPactivity acceptUndoRequest")
+        dataManager.saveData(applicationContext)
         networkManager.sendMessage(NetworkMessage(Topic.UNDO_ACCEPTED, "$gameId|$userId"))
     }
 
     private fun rejectDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
         dataManager.setGame(gameId, game as MultiPlayerGame)
-        dataManager.saveData(applicationContext, "MPactivity rejectDrawOffer")
+        dataManager.saveData(applicationContext)
         networkManager.sendMessage(NetworkMessage(Topic.DRAW_REJECTED, "$gameId|$userId"))
     }
 
     private fun acceptDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
         dataManager.setGame(gameId, game as MultiPlayerGame)
-        dataManager.saveData(applicationContext, "MPactivity acceptDrawOffer")
+        dataManager.saveData(applicationContext)
         networkManager.sendMessage(NetworkMessage(Topic.DRAW_ACCEPTED, "$gameId|$userId"))
         closeAndSaveGameAsDraw()
     }

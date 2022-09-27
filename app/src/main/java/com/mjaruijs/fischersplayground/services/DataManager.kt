@@ -10,6 +10,8 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
+import com.mjaruijs.fischersplayground.chess.news.IntNews
+import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.networking.NetworkManager
@@ -39,7 +41,7 @@ class DataManager(context: Context) {
             val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
             userId = preferences.getString(ClientActivity.USER_ID_KEY, "") ?: DEFAULT_USER_ID
 
-            loadData(context, "DataManager")
+            loadData(context)
         } catch (e: Exception) {
             NetworkManager.getInstance().sendCrashReport("data_manager_init.txt", e.stackTraceToString())
         }
@@ -74,7 +76,6 @@ class DataManager(context: Context) {
         obtainGameLock()
 
         savedGames[id] = game
-//        println("SETTING GAME: ${game.chatMessages.size} ${savedGames[id]!!.chatMessages.size}")
         unlockGames()
     }
 
@@ -139,15 +140,12 @@ class DataManager(context: Context) {
         lockOpponents()
     }
 
-    private fun obtainMessageLock(caller: String) {
+    private fun obtainMessageLock() {
         while (areMessagesLocked()) {
-//            println("Waiting for messageLock to be released: $caller")
             Thread.sleep(1)
         }
 
-//        println("MESSAGE LOCK RELEASED: $caller")
-
-        lockMessages(caller)
+        lockMessages()
     }
 
     private fun lockGames() {
@@ -174,35 +172,33 @@ class DataManager(context: Context) {
         recentOpponentsLock.set(false)
     }
 
-    private fun lockMessages(caller: String) {
-//        println("LOCKING MESSAGES: $caller")
+    private fun lockMessages() {
         messageLock.set(true)
     }
 
-    private fun unlockMessages(caller: String) {
-//        println("UNLOCKING MESSAGES: $caller")
+    private fun unlockMessages() {
         messageLock.set(false)
     }
 
-    fun handledMessage(id: Long, caller: String) {
-        obtainMessageLock(caller)
+    fun handledMessage(id: Long) {
+        obtainMessageLock()
         handledMessages += id
-        unlockMessages(caller)
+        unlockMessages()
     }
 
-    fun isMessageHandled(id: Long, caller: String): Boolean {
-        obtainMessageLock(caller)
+    fun isMessageHandled(id: Long): Boolean {
+        obtainMessageLock()
         val isHandled = handledMessages.contains(id)
-        unlockMessages(caller)
+        unlockMessages()
         return isHandled
     }
 
-    fun loadData(context: Context, caller: String) {
+    fun loadData(context: Context) {
         obtainGameLock()
         Thread {
             try {
                 savedGames.clear()
-                loadSavedGames(context, caller)
+                loadSavedGames(context)
             } catch (e: Exception) {
                 NetworkManager.getInstance().sendCrashReport("games_loading_crash.txt", e.stackTraceToString())
             } finally {
@@ -234,7 +230,7 @@ class DataManager(context: Context) {
             }
         }.start()
 
-        obtainMessageLock(caller)
+        obtainMessageLock()
         Thread {
             try {
                 handledMessages.clear()
@@ -242,16 +238,16 @@ class DataManager(context: Context) {
             } catch (e: Exception) {
                 NetworkManager.getInstance().sendCrashReport("messages_loading_crash.txt", e.stackTraceToString())
             } finally {
-                unlockMessages(caller)
+                unlockMessages()
             }
         }.start()
     }
 
-    fun saveData(context: Context, caller: String) {
+    fun saveData(context: Context) {
         obtainGameLock()
         Thread {
             try {
-                saveGames(context, caller)
+                saveGames(context)
             } catch (e: Exception) {
                 NetworkManager.getInstance().sendCrashReport("games_saving_crash.txt", e.stackTraceToString())
             } finally {
@@ -281,27 +277,25 @@ class DataManager(context: Context) {
             }
         }.start()
 
-        obtainMessageLock(caller)
+        obtainMessageLock()
         Thread {
             try {
-                saveHandledMessages(context, caller)
+                saveHandledMessages(context)
             } catch (e: Exception) {
                 NetworkManager.getInstance().sendCrashReport("messages_saving_crash.txt", e.stackTraceToString())
             } finally {
-                unlockMessages(caller)
+                unlockMessages()
             }
         }.start()
     }
 
-    private fun loadSavedGames(context: Context, caller: String) {
+    private fun loadSavedGames(context: Context) {
         val lines = FileManager.read(context, MULTIPLAYER_GAME_FILE) ?: ArrayList()
 
         for (gameData in lines) {
             if (gameData.isBlank()) {
                 continue
             }
-
-//            println("$caller loaded saved game: $gameData")
 
             val data = gameData.removePrefix("(").removeSuffix(")").split('|')
             val gameId = data[0]
@@ -315,8 +309,6 @@ class DataManager(context: Context) {
             val moveList = data[8].removePrefix("[").removeSuffix("]").split('\\')
             val chatMessages = data[9].removePrefix("[").removeSuffix("]").split('\\')
             val newsData = data[10].removePrefix("[").removeSuffix("]").split("\\")
-
-//            val winner = data[7]
 
             val moves = ArrayList<Move>()
 
@@ -344,7 +336,11 @@ class DataManager(context: Context) {
                     continue
                 }
 
-                newsUpdates += News.fromString(news)
+                when (news.count { char -> char == ',' }) {
+                    0 -> newsUpdates += News.fromString(news)
+                    1 -> newsUpdates += IntNews.fromString(news)
+                    else -> newsUpdates += MoveNews.fromString(news)
+                }
             }
 
             val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
@@ -430,7 +426,7 @@ class DataManager(context: Context) {
         saveRecentOpponents(context)
     }
 
-    private fun saveGames(context: Context, caller: String) {
+    private fun saveGames(context: Context) {
         var content = ""
 
         for ((gameId, game) in savedGames) {
@@ -467,8 +463,6 @@ class DataManager(context: Context) {
             content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
         }
 
-//        println("$caller Saving games: $content")
-
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
     }
 
@@ -490,7 +484,7 @@ class DataManager(context: Context) {
         FileManager.write(context, RECENT_OPPONENTS_FILE, data)
     }
 
-    private fun saveHandledMessages(context: Context, caller: String) {
+    private fun saveHandledMessages(context: Context) {
         var data = ""
 
         for (messageId in handledMessages) {
@@ -499,8 +493,8 @@ class DataManager(context: Context) {
         FileManager.write(context, HANDLED_MESSAGES_FILE, data)
     }
 
-    fun lockAndSaveHandledMessages(context: Context, caller: String) {
-        obtainMessageLock(caller)
+    fun lockAndSaveHandledMessages(context: Context) {
+        obtainMessageLock()
         var data = ""
 
         for (messageId in handledMessages) {
@@ -509,7 +503,7 @@ class DataManager(context: Context) {
         try {
             FileManager.write(context, HANDLED_MESSAGES_FILE, data)
         } finally {
-            unlockMessages(caller)
+            unlockMessages()
         }
     }
 
@@ -526,7 +520,6 @@ class DataManager(context: Context) {
             if (instance == null) {
                 instance = DataManager(context)
             }
-//            instance!!.loadData(context, "getInstance()")
 
             return instance!!
         }

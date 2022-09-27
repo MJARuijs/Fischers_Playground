@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.networking
 import android.content.Context
 import android.content.Intent
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
@@ -15,6 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 class NetworkManager {
 
     companion object {
+
+        private const val TAG = "NetworkManager"
 
         private const val PUBLIC_SERVER_IP = "94.208.124.161"
 //        private const val PUBLIC_SERVER_IP = "217.101.191.23"
@@ -51,7 +54,7 @@ class NetworkManager {
         messageQueue.clear()
         if (clientConnected.get()) {
             client.close()
-            log("Stopping server connection!")
+            Log.i(TAG, "Stopping server connection!")
             clientConnected.set(false)
         }
         clientConnecting.set(false)
@@ -67,7 +70,7 @@ class NetworkManager {
             return
         }
 
-        log("Starting networker")
+        Log.i(TAG, "Starting networker")
 
         manager = Manager("Client")
         manager.context = context
@@ -80,9 +83,8 @@ class NetworkManager {
                 clientConnecting.set(true)
                 client = EncodedClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
-                println("CONNECTED")
             } catch (e: Exception) {
-                log("Failed to connect to server..")
+                Log.w("Networker", "Failed to connect to server..")
                 Looper.prepare()
                 Toast.makeText(context, "Failed to connect to server..", Toast.LENGTH_SHORT).show()
                 clientConnected.set(false)
@@ -102,10 +104,6 @@ class NetworkManager {
         }.start()
     }
 
-    private fun log(message: String) {
-        println("Networker: $message")
-    }
-
     fun sendMessage(message: NetworkMessage) {
         sendingMessage.set(true)
 
@@ -116,14 +114,13 @@ class NetworkManager {
 
             if (clientConnected.get()) {
                 try {
-                    log("Sending message: $message")
+                    Log.i(TAG, "Sending message: $message")
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
                     sendCrashReport("network_send_crash.txt", e.stackTraceToString())
                 }
             } else {
-//                log("Added message to queue ${message.topic}")
                 messageQueue += message
             }
             sendingMessage.set(false)
@@ -142,15 +139,14 @@ class NetworkManager {
         sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
         if (message.topic != Topic.CONFIRM_MESSAGE) {
-            log("Received message: $message")
+            Log.i(TAG, "Received message: $message")
         }
 
-//        val dataManager = DataManager(context)
         val dataManager = DataManager.getInstance(context)
 
-        if (!dataManager.isMessageHandled(message.id, "NetworkManager isHandled")) {
-            dataManager.handledMessage(message.id, "NetworkManager Handled")
-            dataManager.lockAndSaveHandledMessages(context, "NetworkManager Save")
+        if (!dataManager.isMessageHandled(message.id)) {
+            dataManager.handledMessage(message.id)
+            dataManager.lockAndSaveHandledMessages(context)
 
             val intent = Intent("mjaruijs.fischers_playground")
                 .putExtra("topic", message.topic.toString())

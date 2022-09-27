@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.chess.Action
-import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
@@ -23,14 +22,14 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
         return super.showPreviousMove(runInBackground, animationSpeed)
     }
 
-    override fun showNextMove(runInBackground: Boolean, animationSpeed: Long): Pair<Boolean, Boolean> {
+    override fun showNextMove(animationSpeed: Long): Pair<Boolean, Boolean> {
         if (!isShowingCurrentMove()) {
             teamToMove = !teamToMove
         }
-        return super.showNextMove(runInBackground, animationSpeed)
+        return super.showNextMove(animationSpeed)
     }
 
-    fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long) {
         if (!isShowingCurrentMove()) {
             val moveCount = moves.size
             for (i in currentMoveIndex + 1 until moveCount) {
@@ -54,7 +53,7 @@ class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
             actualToPosition = toPosition
         }
 
-        move(team, actualFromPosition, actualToPosition, false, animationSpeed)
+        super.move(team, actualFromPosition, actualToPosition, animationSpeed)
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {

@@ -41,14 +41,10 @@ class CrashReportActivity : ClientActivity() {
 
         for (filePath in fileList) {
             if (!FileManager.doesFileExist(filePath)) {
-                println("$filePath doesn't exist")
                 crashReportAdapter.remove(filePath)
             } else {
                 if (FileManager.isFileEmpty(filePath)) {
                     crashReportAdapter.remove(filePath)
-                    println("$filePath exists")
-                } else {
-                    println("$filePath exists but is empty")
                 }
             }
         }

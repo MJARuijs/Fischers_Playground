@@ -17,7 +17,8 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.chess.news.News
+import com.mjaruijs.fischersplayground.chess.news.IntNews
+import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
@@ -65,8 +66,8 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
 
-        dataManager.handledMessage(messageId, "StoreDataWorker")
-        dataManager.saveData(applicationContext, "DataWorker doWork: $topic")
+        dataManager.handledMessage(messageId)
+        dataManager.saveData(applicationContext)
 
         return if (output is Parcelable) {
             val dataBuilder = Data.Builder().putParcelable("output", output)
@@ -95,16 +96,19 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val timeStamp = data[2].toLong()
         val move = Move.fromChessNotation(moveNotation)
 
+        val moveData = MoveData(gameId, GameStatus.PLAYER_MOVE, timeStamp, move)
+
         try {
             val game = dataManager.getGame(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-            game.moveOpponent(move, true)
+//            game.moveOpponent(move, true)
+            game.addNews(MoveNews(NewsType.OPPONENT_MOVED, moveData))
             game.lastUpdated = timeStamp
             dataManager.setGame(gameId, game)
         } catch (e: Exception) {
             NetworkManager.getInstance().sendCrashReport("data_worker_on_opponent_moved_crash.txt", e.stackTraceToString())
         }
 
-        return MoveData(gameId, GameStatus.PLAYER_MOVE, timeStamp, move)
+        return moveData
     }
 
     private fun onIncomingInvite(data: Array<String>): Parcelable {
@@ -157,7 +161,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
 
         val game = dataManager.getGame(gameId)!!
 
-        game.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfReversedMoves))
+        game.addNews(IntNews(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfReversedMoves))
         game.status = GameStatus.PLAYER_MOVE
         dataManager.setGame(gameId, game)
 

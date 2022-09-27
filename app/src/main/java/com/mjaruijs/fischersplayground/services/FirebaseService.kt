@@ -1,7 +1,5 @@
 package com.mjaruijs.fischersplayground.services
 
-import android.os.Looper
-import android.widget.Toast
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -33,12 +31,9 @@ class FirebaseService : FirebaseMessagingService() {
             val contentList = content.split('|').toTypedArray()
 
             val dataManager = DataManager.getInstance(applicationContext)
-            if (dataManager.isMessageHandled(messageId, "Firebase")) {
-                println("Got firebase message but was already handled: $topic $messageId")
+            if (dataManager.isMessageHandled(messageId)) {
                 return
             }
-
-            println("Got firebase message: $topic $messageId")
 
             val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
                 .setInputData(workDataOf(

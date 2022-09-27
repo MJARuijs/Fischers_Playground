@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.chess.game
 
+import android.util.Log
 import com.mjaruijs.fischersplayground.chess.Action
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.*
@@ -37,10 +38,12 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     var onPieceRegained: (PieceType, Team) -> Unit = { _, _ -> }
     var onCheckMate: (Team) -> Unit = {}
 
-    var queueAnimation: (AnimationData) -> Unit = {}
+    var queueAnimation: (AnimationData) -> Unit = {
+        Log.w(TAG,"Tried to animate move, but function is not set yet")
+    }
 
     var onMoveMade: (Move) -> Unit = {
-        println("Tried to make a move, but function is not set yet")
+        Log.w(TAG, "Tried to make a move, but function is not set yet")
     }
 
     init {
@@ -71,7 +74,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     protected fun incrementMoveCounter(): Int {
         currentMoveIndex++
-//        println("CURRENT MOVE INDEX: $currentMoveIndex")
         if (currentMoveIndex == 0) {
             enableBackButton()
         }
@@ -100,7 +102,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return Pair(shouldDisableBackButton, shouldEnableForwardButton)
     }
 
-    open fun showNextMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
+    open fun showNextMove(animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
         if (currentMoveIndex >= moves.size - 1) {
             return Pair(first = true, second = false)
         }
@@ -146,19 +148,17 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }, null)
     }
 
-    private fun onStartRedoMove(move: Move, toPosition: Vector2, takenPiecePosition: Vector2?) {
+    private fun onFinishRedoMove(move: Move, toPosition: Vector2, takenPiecePosition: Vector2?) {
+        if (move.promotedPiece != null) {
+            state[toPosition] = Piece(move.promotedPiece, move.team)
+        }
+
         if (takenPiecePosition != null) {
             onPieceTaken(move.pieceTaken!!, !move.team)
 
             if (takenPiecePosition != toPosition) {
                 state[takenPiecePosition] = null
             }
-        }
-    }
-
-    private fun onFinishRedoMove(move: Move, toPosition: Vector2) {
-        if (move.promotedPiece != null) {
-            state[toPosition] = Piece(move.promotedPiece, move.team)
         }
     }
 
@@ -177,18 +177,13 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
             val takenPiecePosition = move.getTakenPosition(team)
 
-            createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition, {
-                onStartRedoMove(move, toPosition, takenPiecePosition)
-            }, {
-                onFinishRedoMove(move, toPosition)
+            createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
+                onFinishRedoMove(move, toPosition, takenPiecePosition)
+                val isCheck = isPlayerChecked(state, !move.team)
+                val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
+
+                updateCheckData(move.team, isCheck, isCheckMate)
             })
-        }
-
-        animation.onFinishCalls += {
-            val isCheck = isPlayerChecked(state, !move.team)
-            val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
-
-            updateCheckData(move.team, isCheck, isCheckMate)
         }
 
         queueAnimation(animation)
@@ -257,7 +252,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         possibleMoves.clear()
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
@@ -280,6 +275,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             animationStarted.set(true)
         }
         animation.onFinishCalls += {
+            if (takenPiece != null) {
+                onPieceTaken(takenPiece.type, takenPiece.team)
+            }
+
             if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
                 promotedPiece = promotePawn(toPosition)
             }
@@ -308,24 +307,17 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             }
 
             val move = Move(team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, takenPiece?.type, actualTakenPosition, promotedPiece)
-            if (!runInBackground) {
-                lastUpdated = Time.getFullTimeStamp()
+            lastUpdated = Time.getFullTimeStamp()
 
-                if (isShowingCurrentMove()) {
-                    incrementMoveCounter()
-                }
-                moves += move
+            if (isShowingCurrentMove()) {
+                incrementMoveCounter()
             }
 
+            moves += move
             onMoveMade(move)
         }
 
-        if (runInBackground) {
-            animation.invokeOnStartCalls()
-            animation.invokeOnFinishCalls()
-        } else {
-            queueAnimation(animation)
-        }
+        queueAnimation(animation)
     }
 
     private fun finishMove(move: Move) {
@@ -359,7 +351,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         if (takenPiece != null) {
-            onPieceTaken(takenPiece.type, takenPiece.team)
             return Pair(takenPiece, takenPiecePosition)
         }
 
@@ -490,12 +481,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             isCheck -> {
                 isChecked = true
                 board.checkedKingSquare = findKingPosition(state, !team)
-//                onCheck(findKingPosition(state, team))
             }
             isChecked -> {
                 isChecked = false
                 board.checkedKingSquare = Vector2(-1f, -1f)
-//                onCheckCleared()
             }
         }
     }
@@ -514,6 +503,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     }
 
     companion object {
+        const val TAG = "Game"
         const val DEFAULT_ANIMATION_SPEED = 500L
     }
 

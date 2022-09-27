@@ -28,7 +28,6 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.userinterface.UIButton
-import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
 
 class MainActivity : ClientActivity() {
@@ -161,7 +160,7 @@ class MainActivity : ClientActivity() {
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
         dataManager.saveInvite(inviteId, InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING))
-        dataManager.saveData(applicationContext, "MainActivity onInvite")
+        dataManager.saveData(applicationContext)
         dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
     }
 
@@ -208,7 +207,7 @@ class MainActivity : ClientActivity() {
     private fun onGameDeleted(gameId: String) {
         dataManager.removeGame(gameId)
         dataManager.removeSavedInvite(gameId)
-        dataManager.saveData(applicationContext, "MainActivity onGameDeleted")
+        dataManager.saveData(applicationContext)
     }
 
     override fun onIncomingInvite(output: Parcelable) {

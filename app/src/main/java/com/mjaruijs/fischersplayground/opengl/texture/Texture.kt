@@ -1,18 +1,15 @@
 package com.mjaruijs.fischersplayground.opengl.texture
 
 import android.graphics.Bitmap
-import android.opengl.GLES11Ext.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
 import android.opengl.GLES20.*
 import android.opengl.GLES30.GL_RGBA8
 import android.opengl.GLES30.glTexStorage2D
-import android.opengl.GLUtils
 import java.nio.ByteBuffer
-import java.nio.FloatBuffer
 import kotlin.math.log2
 import kotlin.math.max
 import kotlin.math.min
 
-class Texture(private val bitmap: Bitmap, val pixelData: ByteBuffer, private val name: String? = null) {
+class Texture(private val bitmap: Bitmap, val pixelData: ByteBuffer) {
 
     var handle = -1
         private set
@@ -24,10 +21,6 @@ class Texture(private val bitmap: Bitmap, val pixelData: ByteBuffer, private val
         val textureHandle = IntArray(1)
         glGenTextures(1, textureHandle, 0)
         handle = textureHandle[0]
-
-//        if (name != null) {
-//            println("LOADING $name: $handle")
-//        }
 
         val size = min(width, height).toFloat()
         val levels = max(1, log2(size).toInt())
@@ -50,6 +43,8 @@ class Texture(private val bitmap: Bitmap, val pixelData: ByteBuffer, private val
 //        if (loadResource) {
 //            GLUtils.texImage2D(GL_TEXTURE_2D, 0, bitmap, 0)
 //        }
+
+        bitmap.recycle()
         glBindTexture(GL_TEXTURE_2D, 0)
     }
 

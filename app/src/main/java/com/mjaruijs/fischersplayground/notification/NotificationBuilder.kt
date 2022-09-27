@@ -64,7 +64,7 @@ class NotificationBuilder(context: Context) {
     }
 
     fun createNotificationData(context: Context, topic: Topic, data: Array<String>): NotificationData? {
-        dataManager.loadData(context, "NotificationBuilder")
+        dataManager.loadData(context)
         return when (topic) {
             Topic.INVITE -> {
                 val opponentName = data[0]

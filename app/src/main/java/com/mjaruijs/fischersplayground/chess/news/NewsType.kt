@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.chess.news
 
 enum class NewsType {
 
+    OPPONENT_MOVED,
     OPPONENT_RESIGNED,
     OPPONENT_OFFERED_DRAW,
     OPPONENT_ACCEPTED_DRAW,

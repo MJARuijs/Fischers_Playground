@@ -7,18 +7,6 @@ class ChatMessage(val timeStamp: String, val message: String, val type: MessageT
 
     constructor(data: Data) : this(data.timeStamp, data.message, data.type)
 
-//    fun convertTimeNotation(): String {
-//        val stringNotation = timeStamp.toString()
-//        println(timeStamp.toString())
-//        var convertedTimeNotation = ""
-//        convertedTimeNotation += stringNotation[0]
-//        convertedTimeNotation += stringNotation[1]
-//        convertedTimeNotation += ":"
-//        convertedTimeNotation += stringNotation[2]
-//        convertedTimeNotation += stringNotation[3]
-//        return convertedTimeNotation
-//    }
-
     class Data(val gameId: String, val timeStamp: String, val message: String, val type: MessageType) : Parcelable {
         constructor(parcel: Parcel) : this(
             parcel.readString()!!,

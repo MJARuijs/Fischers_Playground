@@ -30,6 +30,8 @@ import java.util.*
 
 abstract class ClientActivity : AppCompatActivity() {
 
+    private val tag = "ClientActivity"
+
     private val networkReceiver = MessageReceiver(::onMessageReceived)
     private val intentFilter = IntentFilter("mjaruijs.fischers_playground")
 
@@ -76,7 +78,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
         NotificationBuilder.getInstance(applicationContext).clearNotifications()
 
-        dataManager.loadData(applicationContext, "ClientActivity onResume")
+        dataManager.loadData(applicationContext)
 
         leftApp = false
 
@@ -97,8 +99,6 @@ abstract class ClientActivity : AppCompatActivity() {
             .build()
 
         if (!networkManager.isConnected()) {
-            println("LOADING DATA IN CLIENTACTIVITY ONRESUME")
-
             val connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
             connectivityManager.requestNetwork(networkRequest, ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost))
 
@@ -107,16 +107,10 @@ abstract class ClientActivity : AppCompatActivity() {
 //                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
 //            }
         }
-
-
-        if (isUserRegisteredAtServer()) {
-//            sendResumeStatusToServer()
-        }
     }
 
     override fun onPause() {
-//        println("ON PAUSE")
-        dataManager.saveData(applicationContext, "ClientActivity onPause")
+        dataManager.saveData(applicationContext)
 
         if (!stayingInApp) {
             leftApp = true
@@ -128,26 +122,12 @@ abstract class ClientActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    //TODO: Can this be removed?
-    override fun onUserLeaveHint() {
-//        println("ON USER LEAVE HINT $stayingInApp")
-//        if (!stayingInApp) {
-//            leftApp = true
-//            sendAwayStatusToServer()
-//        }
-
-        super.onUserLeaveHint()
-    }
-
     override fun onBackPressed() {
-//        println("ON BACK PRESSED")
         stayingInApp = stayInAppOnBackPress
-//        dataManager.saveData(applicationContext, "ClientActivity onBackPressed")
 
         if (stayingInApp) {
             super.onBackPressed()
         } else {
-//            sendAwayStatusToServer()
             moveTaskToBack(true)
         }
     }
@@ -176,7 +156,6 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
-//        println("SENDING MESSAGE TO WORKER: $topic")
         sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite
             Topic.NEW_GAME -> ::onNewGameStarted

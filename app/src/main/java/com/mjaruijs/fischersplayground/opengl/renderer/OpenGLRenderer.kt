@@ -17,6 +17,7 @@ import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Camera.Companion.DEFAULT_ZOOM
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
 import java.nio.ByteBuffer
+import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.PI
@@ -32,6 +33,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     private lateinit var boardRenderer: BoardRenderer
     private lateinit var pieceRenderer: PieceRenderer
     private lateinit var highlightRenderer: HighlightRenderer
+    private val animationQueue = PriorityQueue<AnimationData>()
 
     private val camera = Camera()
 
@@ -64,6 +66,10 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 //        backgroundRenderer = BackgroundRenderer(context)
         try {
             pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame)
+            while (animationQueue.isNotEmpty()) {
+                val animation = animationQueue.poll() ?: break
+                pieceRenderer.queueAnimation(animation)
+            }
         } catch (e: Exception) {
             NetworkManager.getInstance().sendCrashReport("opengl_on_surface_created_crash.txt", e.stackTraceToString())
             throw e
@@ -118,6 +124,8 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     private fun queueAnimation(animationData: AnimationData) {
         if (this::pieceRenderer.isInitialized) {
             pieceRenderer.queueAnimation(animationData)
+        } else {
+            animationQueue += animationData
         }
     }
 

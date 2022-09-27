@@ -139,7 +139,6 @@ class ChatFragment : Fragment(R.layout.chat_fragment) {
 
     fun addMessages(messages: ArrayList<ChatMessage>) {
         for (message in messages) {
-            println("Restoring chat message: $message")
             chatAdapter += message
         }
         chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
