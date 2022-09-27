@@ -20,6 +20,7 @@ import com.mjaruijs.fischersplayground.opengl.model.Material
 import com.mjaruijs.fischersplayground.opengl.model.MeshLoader
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.PieceAnimator
+import com.mjaruijs.fischersplayground.opengl.renderer.animation.TakenPieceData
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
@@ -46,19 +47,19 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     private val pieceTextures2D = HashMap<Piece, Int>()
     private val pieceTextures3D = HashMap<Piece, Int>()
 
-//    private val pawnMesh = MeshLoader.preload(resources, R.raw.pawn_bytes)
-//    private val bishopMesh = MeshLoader.preload(resources, R.raw.bishop_bytes)
-//    private val knightMesh = MeshLoader.preload(resources, R.raw.knight_bytes)
-//    private val rookMesh = MeshLoader.preload(resources, R.raw.rook_bytes)
-//    private val queenMesh = MeshLoader.preload(resources, R.raw.queen_bytes)
-//    private val kingMesh = MeshLoader.preload(resources, R.raw.king_bytes)
-//
-//    private val pawn = Entity(pawnMesh)
-//    private val bishop = Entity(bishopMesh)
-//    private val knight = Entity(knightMesh)
-//    private val rook = Entity(rookMesh)
-//    private val queen = Entity(queenMesh)
-//    private val king = Entity(kingMesh)
+    private val pawnMesh = MeshLoader.preload(resources, R.raw.pawn_bytes)
+    private val bishopMesh = MeshLoader.preload(resources, R.raw.bishop_bytes)
+    private val knightMesh = MeshLoader.preload(resources, R.raw.knight_bytes)
+    private val rookMesh = MeshLoader.preload(resources, R.raw.rook_bytes)
+    private val queenMesh = MeshLoader.preload(resources, R.raw.queen_bytes)
+    private val kingMesh = MeshLoader.preload(resources, R.raw.king_bytes)
+
+    private val pawn = Entity(pawnMesh)
+    private val bishop = Entity(bishopMesh)
+    private val knight = Entity(knightMesh)
+    private val rook = Entity(rookMesh)
+    private val queen = Entity(queenMesh)
+    private val king = Entity(kingMesh)
 
     private val ambientLight = AmbientLight(Color.DARK)
     private val directionalLight = DirectionalLight(Color.WHITE, Vector3(0.0f, -0.5f, 1f))
@@ -71,12 +72,11 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     private val animationQueue = PriorityQueue<AnimationData>()
     private val animationRunning = AtomicBoolean(false)
+    private val runAnimationThread = AtomicBoolean(true)
 
-    private val takenPieces = ArrayList<Pair<Piece, Vector2>>()
+    private var takenPieceData: TakenPieceData? = null
 
     private val animationThread: Thread
-
-    private val runAnimationThread = AtomicBoolean(true)
 
     var pieceScale = Vector3(1f, 1f, 1f)
 
@@ -109,14 +109,15 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
         animationRunning.set(true)
         if (currentAnimation.takenPiece != null) {
-            takenPieces += Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition!!)
+            val alpha = if (currentAnimation.isReversed) 0.0f else 1.0f
+            takenPieceData = TakenPieceData(currentAnimation.takenPiece, currentAnimation.takenPiecePosition!!, alpha)
         }
 
         val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
         animator.addOnFinishCall(
             { animationRunning.set(false) },
             {
-                takenPieces.remove(Pair(currentAnimation.takenPiece, currentAnimation.takenPiecePosition))
+                takenPieceData = null
                 requestRender()
             }
         )
@@ -157,9 +158,9 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
         sampler.bind(pieceTextures.get2DTextureArray())
 
-        for (pieceData in takenPieces) {
-            val piece = pieceData.first
-            val piecePosition = pieceData.second
+        if (takenPieceData != null) run {
+            val piece = takenPieceData?.piece ?: return@run
+            val piecePosition = takenPieceData?.position ?: return@run
 
             val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f)
             piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
@@ -218,19 +219,19 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
                 piece3DProgram.set("isWhite", if (piece.team == Team.WHITE) 1f else 0f)
                 piece3DProgram.set("textureId", getPieceTexture3d(piece, pieceTextures).toFloat())
-//                piece3DProgram.set("translation", translation)
+                piece3DProgram.set("translation", translation)
 
-//                when (piece.type) {
-//                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.KNIGHT -> {
-//                        val rotation = if (piece.team == Team.WHITE) whiteKnightRotation else blackKnightRotation
-//                        knight.render(piece3DProgram, translation, rotation, pieceScale)
-//                    }
-//                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
-//                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
-//                }
+                when (piece.type) {
+                    PieceType.PAWN -> pawn.render(piece3DProgram, translation, pieceScale)
+                    PieceType.BISHOP -> bishop.render(piece3DProgram, translation, pieceScale)
+                    PieceType.KNIGHT -> {
+                        val rotation = if (piece.team == Team.WHITE) whiteKnightRotation else blackKnightRotation
+                        knight.render(piece3DProgram, translation, rotation, pieceScale)
+                    }
+                    PieceType.ROOK -> rook.render(piece3DProgram, translation, pieceScale)
+                    PieceType.QUEEN -> queen.render(piece3DProgram, translation, pieceScale)
+                    PieceType.KING -> king.render(piece3DProgram, translation, pieceScale)
+                }
             }
         }
 
@@ -239,12 +240,12 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     fun destroy() {
         quad.destroy()
-//        pawnMesh.destroy()
-//        knightMesh.destroy()
-//        bishopMesh.destroy()
-//        rookMesh.destroy()
-//        queenMesh.destroy()
-//        kingMesh.destroy()
+        pawnMesh.destroy()
+        knightMesh.destroy()
+        bishopMesh.destroy()
+        rookMesh.destroy()
+        queenMesh.destroy()
+        kingMesh.destroy()
         piece2DProgram.destroy()
         piece3DProgram.destroy()
         runAnimationThread.set(false)
@@ -252,13 +253,5 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     companion object {
         private val ROTATION_MATRIX = Matrix4().rotateZ(PI.toFloat())
-//        private var instance: PieceRenderer? = null
-//
-//        fun getInstance(resources: Resources, isPlayerWhite: Boolean): PieceRenderer {
-//            if (instance == null) {
-//                instance = PieceRenderer(resources, isPlayerWhite)
-//            }
-//            return instance!!
-//        }
     }
 }

@@ -137,9 +137,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         promotionLock.set(false)
     }
 
-    protected fun createAnimation(animationSpeed: Long, fromPosition: Vector2, toPosition: Vector2, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null, onStart: () -> Unit = {}, onFinish: () -> Unit = {}): AnimationData {
+    protected fun createAnimation(animationSpeed: Long, fromPosition: Vector2, toPosition: Vector2, isReversed: Boolean, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null, onStart: () -> Unit = {}, onFinish: () -> Unit = {}): AnimationData {
         val translation = toPosition - fromPosition
-        return AnimationData(animationSpeed, System.nanoTime(), fromPosition, translation, takenPiece, takenPiecePosition, {
+        return AnimationData(animationSpeed, System.nanoTime(), fromPosition, translation, takenPiece, takenPiecePosition, isReversed, {
             state[toPosition] = state[fromPosition]
             state[fromPosition] = null
             onStart()
@@ -177,7 +177,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
             val takenPiecePosition = move.getTakenPosition(team)
 
-            createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
+            createAnimation(animationSpeed, fromPosition, toPosition, false, takenPiece, takenPiecePosition, {}, {
                 onFinishRedoMove(move, toPosition, takenPiecePosition)
                 val isCheck = isPlayerChecked(state, !move.team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
@@ -222,7 +222,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
             val takenPiecePosition = move.getTakenPosition(team)
 
-            createAnimation(animationSpeed, toPosition, fromPosition, takenPiece, takenPiecePosition, {
+            createAnimation(animationSpeed, toPosition, fromPosition, true, takenPiece, takenPiecePosition, {
                 onStartUndoMove(move, toPosition, takenPiecePosition)
             }, {
                 onFinishUndoMove(move, fromPosition)
@@ -267,7 +267,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(team, fromPosition, toPosition, animationSpeed)
         } else {
-            createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition)
+            createAnimation(animationSpeed, fromPosition, toPosition, false, takenPiece, takenPiecePosition)
         }
 
         val animationStarted = AtomicBoolean(false)
@@ -450,8 +450,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val oldRookPosition = Vector2(toPosition.x.roundToInt() + direction, y)
         val newRookPosition = Vector2(newX, y)
 
-        val kingAnimation = createAnimation(animationSpeed, toPosition, fromPosition)
-        val rookAnimation = createAnimation(animationSpeed, oldRookPosition, newRookPosition)
+        val kingAnimation = createAnimation(animationSpeed, toPosition, fromPosition, true)
+        val rookAnimation = createAnimation(animationSpeed, oldRookPosition, newRookPosition, true)
         kingAnimation.nextAnimation = rookAnimation
         return kingAnimation
     }
@@ -467,8 +467,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         val newRookPosition = toPosition + Vector2(rookDirection, 0)
 
-        val kingAnimation = createAnimation(animationSpeed, fromPosition, toPosition)
-        val rookAnimation = createAnimation(animationSpeed, oldRookPosition, newRookPosition)
+        val kingAnimation = createAnimation(animationSpeed, fromPosition, toPosition, false)
+        val rookAnimation = createAnimation(animationSpeed, oldRookPosition, newRookPosition, false)
         kingAnimation.nextAnimation = rookAnimation
         return kingAnimation
     }

@@ -124,7 +124,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(move.team, fromPosition, toPosition, 0L)
         } else {
-            createAnimation(0L, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
+            createAnimation(0L, fromPosition, toPosition, false, takenPiece, takenPiecePosition, {}, {
                 if (move.promotedPiece != null) {
                     state[toPosition] = Piece(move.promotedPiece, move.team)
                 }
@@ -190,7 +190,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(move.team, fromPosition, toPosition, animationSpeed)
         } else {
-            createAnimation(animationSpeed, fromPosition, toPosition, takenPiece, takenPiecePosition, {}, {
+            createAnimation(animationSpeed, fromPosition, toPosition, false, takenPiece, takenPiecePosition, {}, {
                 if (move.promotedPiece != null) {
                     state[toPosition] = Piece(move.promotedPiece, move.team)
                 }
