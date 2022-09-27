@@ -21,7 +21,7 @@ class BoardRenderer(resources: Resources) {
 
     private val model2D = BoardModel(false)
     private val model3D = BoardModel(true)
-    private val diffuseTexture = TextureLoader.load(resources, R.drawable.wood_diffuse_texture)
+    private val diffuseTexture = TextureLoader.load(resources, R.drawable.wood_test)
 //    private val normalTexture = TextureLoader.load(resources, R.drawable.wood_normal_texture)
 //    private val specularTexture = TextureLoader.load(resources, R.drawable.wood_specular_texture)
 

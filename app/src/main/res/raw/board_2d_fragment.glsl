@@ -14,8 +14,8 @@ out vec4 outColor;
 void main() {
     vec2 position = (textureCoordinates + vec2(1, 1)) / 2.0;
 
-    vec4 textureColor = texture(textureMap, position * vec2(1, -1));
-    float strength = (textureColor.r + textureColor.g + textureColor.b) / 2.0;
+    vec4 textureColor = texture(textureMap, position * vec2(1, 1));
+    float strength = (textureColor.r + textureColor.g + textureColor.b) / 3.0;
 
     float scale = 1.0 / 8.0;
 
@@ -37,6 +37,16 @@ void main() {
 
     int remainderX = squareX % 2;
     int remainderY = squareY % 2;
+    float min = 0.50;
+    float max = 0.60;
+
+//    if (strength > max) {
+//        strength = max;
+//    } else if (strength < 0.45) {
+//        strength = min;
+//    }
+
+    strength = strength / 3.0 + 0.67;
 
     outColor.a = 1.0;
     if (remainderY == 0) {
@@ -52,4 +62,8 @@ void main() {
             outColor.rgb = whiteTile * strength;
         }
     }
+
+
+
+//    outColor = vec4(strength, strength, strength, 1.0);
 }
