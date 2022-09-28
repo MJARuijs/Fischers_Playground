@@ -2,14 +2,16 @@ package com.mjaruijs.fischersplayground.fragments.actionbars
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-open class ActionButtonsFragment(layoutResource: Int) : Fragment(layoutResource) {
+open class ActionButtonsFragment(private val layoutResource: Int) : Fragment() {
 
     lateinit var requestRender: () -> Unit
     lateinit var networkManager: NetworkManager
@@ -50,6 +52,10 @@ open class ActionButtonsFragment(layoutResource: Int) : Fragment(layoutResource)
 
     fun disableBackButton() {
         backButton.disable()
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(layoutResource, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

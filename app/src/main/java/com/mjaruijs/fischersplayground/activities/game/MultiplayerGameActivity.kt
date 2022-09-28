@@ -165,6 +165,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
             runOnUiThread {
                 getChatFragment()?.clearMessages()
+                for (message in (game as MultiPlayerGame).chatMessages) {
+                    Log.i("MPactivity", "Got message: ${message.message}")
+                }
                 getChatFragment()?.addMessages((game as MultiPlayerGame).chatMessages)
             }
         }.start()
@@ -186,7 +189,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 for (takenPiece in game.takenPieces) {
                     onPieceTaken(takenPiece)
                 }
-                Log.i("MP", game.takenPieces.size.toString())
             }
         }.start()
     }
@@ -384,7 +386,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
         if (messageData.gameId == this.gameId) {
             val message = ChatMessage(messageData)
-            (game as MultiPlayerGame).addMessage(message)
             getChatFragment()!!.addReceivedMessage(message)
             if (!chatOpened) {
                 findViewById<ImageView>(R.id.chat_update_icon).visibility = View.VISIBLE

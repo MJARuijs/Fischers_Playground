@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.fragments
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -140,9 +141,10 @@ class ChatFragment : Fragment(R.layout.chat_fragment) {
     fun addMessages(messages: ArrayList<ChatMessage>) {
         for (message in messages) {
             chatAdapter += message
+            Log.i("ChatFragment", "Adding ${message.message}: ${message.type}")
         }
-        chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
 
+        chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
         chatAdapter.notifyDataSetChanged()
     }
 

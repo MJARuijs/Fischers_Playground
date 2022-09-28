@@ -2,8 +2,11 @@
 
 precision highp float;
 
-const vec3 whiteTile = vec3(196.0 / 255.0, 178.0 / 255.0, 158.0 / 255.0);
-const vec3 darkTile = vec3(109.0 / 255.0, 86.0 / 255.0, 68.0 / 255.0);
+//const vec3 whiteTile = vec3(196.0 / 255.0, 178.0 / 255.0, 158.0 / 255.0);
+//const vec3 darkTile = vec3(109.0 / 255.0, 86.0 / 255.0, 68.0 / 255.0);
+
+const vec3 whiteTile = vec3(207.0 / 255.0, 189.0 / 255.0, 175.0 / 255.0);
+const vec3 darkTile = vec3(91.0 / 255.0, 70.0 / 255.0, 53.0 / 255.0);
 
 in vec2 textureCoordinates;
 
