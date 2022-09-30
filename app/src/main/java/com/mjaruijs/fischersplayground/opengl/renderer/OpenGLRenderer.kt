@@ -163,6 +163,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 //            backgroundRenderer.render2D(aspectRatio)
                 boardRenderer.render2D(aspectRatio)
                 highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
+                highlightRenderer.renderLastMoveHighlights(game, displayWidth, displayHeight)
 
                 pieceRenderer.render2D(game, pieceTextures, aspectRatio)
                 highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)

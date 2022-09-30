@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.networking.client
 
 import android.content.Context
+import android.util.Log
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.nio.NonBlockingClient
 import java.net.InetSocketAddress

@@ -1,7 +1,9 @@
 package com.mjaruijs.fischersplayground.networking.client
 
 import android.content.Context
+import android.util.Log
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import java.net.InetSocketAddress
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets.UTF_8
 import java.security.KeyFactory
@@ -12,7 +14,9 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
-class SecureClient(channel: SocketChannel, address: String, callback: (NetworkMessage, Context) -> Unit) : EncodedClient(channel, callback) {
+class SecureClient(channel: SocketChannel, callback: (NetworkMessage, Context) -> Unit) : EncodedClient(channel, callback) {
+
+    constructor(address: String, port: Int, callback: (NetworkMessage, Context) -> Unit) : this(SocketChannel.open(InetSocketAddress(address, port)), callback)
 
     private companion object {
         val symmetricGenerator: KeyGenerator = KeyGenerator.getInstance("AES")
@@ -72,8 +76,8 @@ class SecureClient(channel: SocketChannel, address: String, callback: (NetworkMe
     override fun write(message: String) {
         val cipher = Cipher.getInstance("AES")
         cipher.init(Cipher.ENCRYPT_MODE, symmetricKey)
-        val messageBytes = cipher.doFinal(message.toByteArray(UTF_8))
 
+        val messageBytes = cipher.doFinal(message.toByteArray(UTF_8))
         val keyBytes = encryptor.doFinal(symmetricKey.encoded)
 
         write(messageBytes)

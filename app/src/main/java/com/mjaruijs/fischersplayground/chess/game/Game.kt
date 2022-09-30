@@ -23,7 +23,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     protected var possibleMoves = ArrayList<Vector2>()
     var currentMoveIndex = if (moves.isEmpty()) -1 else moves.size - 1
 
-    protected val team = if (isPlayingWhite) Team.WHITE else Team.BLACK
+    val team = if (isPlayingWhite) Team.WHITE else Team.BLACK
 
     private var isChecked = false
 
@@ -71,6 +71,18 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     }
 
     fun getMoveIndex() = currentMoveIndex
+
+    fun getCurrentMove(): Move? {
+        if (moves.isEmpty()) {
+            return null
+        }
+
+        if (currentMoveIndex == -1) {
+            return null
+        }
+
+        return moves[currentMoveIndex]
+    }
 
     protected fun incrementMoveCounter(): Int {
         currentMoveIndex++

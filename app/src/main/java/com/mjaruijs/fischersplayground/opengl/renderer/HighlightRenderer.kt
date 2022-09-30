@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.opengl.renderer
 import android.content.res.Resources
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.Board
+import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.math.Color
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.Camera
@@ -68,12 +69,13 @@ class HighlightRenderer(resources: Resources) {
         selectedSquare2DProgram.start()
         selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
         selectedSquare2DProgram.set("aspectRatio", aspectRatio)
+        selectedSquare2DProgram.set("hasGradient", true)
 
         var i = 0
 
         if (board.selectedSquare != Vector2(-1, -1)) {
-            selectedSquare2DProgram.set("translations[$i]", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
-            selectedSquare2DProgram.set("colors[$i]", Color(0.0f, 0.0f, 1.0f))
+            selectedSquare2DProgram.set("translations[0]", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
+            selectedSquare2DProgram.set("colors[0]", Color(0.0f, 0.0f, 1.0f))
             i++
         }
 
@@ -84,6 +86,26 @@ class HighlightRenderer(resources: Resources) {
         }
 
         quad.drawInstanced(i)
+
+        selectedSquare2DProgram.stop()
+    }
+
+    fun renderLastMoveHighlights(game: Game, displayWidth: Int, displayHeight: Int) {
+        val lastMove = game.getCurrentMove() ?: return
+        val fromPosition = lastMove.getFromPosition(game.team)
+        val toPosition = lastMove.getToPosition(game.team)
+
+        selectedSquare2DProgram.start()
+        selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
+        selectedSquare2DProgram.set("hasGradient", false)
+
+        selectedSquare2DProgram.set("translations[0]", (fromPosition / 8.0f) * 2.0f - 1.0f)
+        selectedSquare2DProgram.set("colors[0]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+
+        selectedSquare2DProgram.set("translations[1]", (toPosition / 8.0f) * 2.0f - 1.0f)
+        selectedSquare2DProgram.set("colors[1]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+
+        quad.drawInstanced(2)
 
         selectedSquare2DProgram.stop()
     }
@@ -113,8 +135,8 @@ class HighlightRenderer(resources: Resources) {
         var i = 0
 
         if (board.selectedSquare != Vector2(-1, -1)) {
-            selectedSquare3DProgram.set("translations[$i]", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
-            selectedSquare3DProgram.set("effects[$i]", 0f)
+            selectedSquare3DProgram.set("translations[0]", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
+            selectedSquare3DProgram.set("effects[0]", 0f)
             i++
         }
 

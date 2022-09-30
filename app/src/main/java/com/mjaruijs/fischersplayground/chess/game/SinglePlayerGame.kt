@@ -7,7 +7,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
 
-class SinglePlayerGame(lastUpdated: Long) : Game(true, lastUpdated) {
+class SinglePlayerGame(lastUpdated: Long) : Game(false, lastUpdated) {
 
     private var teamToMove = Team.WHITE
 

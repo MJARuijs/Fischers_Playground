@@ -6,6 +6,7 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import com.mjaruijs.fischersplayground.networking.client.EncodedClient
+import com.mjaruijs.fischersplayground.networking.client.SecureClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
@@ -21,7 +22,7 @@ class NetworkManager {
 
         private const val PUBLIC_SERVER_IP = "94.208.124.161"
 //        private const val PUBLIC_SERVER_IP = "217.101.191.23"
-        private const val LOCAL_SERVER_IP = "192.168.178.18"
+        private const val LOCAL_SERVER_IP = "192.168.178.103"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
         private const val SERVER_PORT = 4500
@@ -43,7 +44,7 @@ class NetworkManager {
     private val sendingMessage = AtomicBoolean(false)
 
     private lateinit var manager: Manager
-    private lateinit var client: EncodedClient
+    private lateinit var client: SecureClient
 
     private val messageQueue = ArrayList<NetworkMessage>()
 
@@ -81,7 +82,7 @@ class NetworkManager {
         Thread {
             try {
                 clientConnecting.set(true)
-                client = EncodedClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
+                client = SecureClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
             } catch (e: Exception) {
                 Log.w("Networker", "Failed to connect to server..")
