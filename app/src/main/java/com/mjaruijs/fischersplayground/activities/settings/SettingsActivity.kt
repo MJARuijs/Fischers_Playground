@@ -21,6 +21,7 @@ import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
+import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Time
 import kotlin.math.roundToInt
 
@@ -109,6 +110,32 @@ class SettingsActivity : ClientActivity() {
         restore3DPreference()
 
         initSettings()
+
+        findViewById<Button>(R.id.delete_user_data_button).setOnClickListener {
+            val preferenceFiles = arrayListOf(
+                "fcm_token",
+                "user_data",
+                "fire_base",
+                "FirebaseAppHeartBeat",
+                "com.google.android.gms.appid"
+            )
+
+            for (file in preferenceFiles) {
+                getSharedPreferences(file, MODE_PRIVATE).edit().clear().commit()
+                FileManager.delete("../shared_prefs/$file.xml")
+            }
+
+            val dataFiles = arrayListOf(
+                "mp_games",
+                "received_invites",
+                "recent_opponents"
+            )
+
+            for (file in dataFiles) {
+                FileManager.delete("$file.txt")
+            }
+
+        }
     }
 
     private fun initSettings() {
@@ -214,7 +241,7 @@ class SettingsActivity : ClientActivity() {
     private fun onContextCreated() {
         runOnUiThread {
             glView3D.holder.setFixedSize(getDisplayWidth(), getDisplayWidth())
-            game = SinglePlayerGame(Time.getFullTimeStamp())
+            game = SinglePlayerGame(true, Time.getFullTimeStamp())
             glView3D.setGame(game)
             restorePreferences()
         }

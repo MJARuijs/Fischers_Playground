@@ -1,6 +1,6 @@
 package com.mjaruijs.fischersplayground.chess.pieces
 
-import com.mjaruijs.fischersplayground.chess.game.ArrayBasedGameState
+import com.mjaruijs.fischersplayground.chess.game.GameState
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -32,7 +32,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
 
 //        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, gameState: GameState, moves: ArrayList<Move>) = getPossibleMoves(team, piece, square, gameState, moves)
 
-        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, isSinglePlayer: Boolean, gameState: ArrayBasedGameState, moves: ArrayList<Move>, lookingForCheck: Boolean): ArrayList<Vector2> {
+        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, isSinglePlayer: Boolean, gameState: GameState, moves: ArrayList<Move>, lookingForCheck: Boolean): ArrayList<Vector2> {
             return when (piece.type) {
                 KING -> getPossibleMovesForKing(piece, square, moves, isSinglePlayer, gameState, lookingForCheck)
                 QUEEN -> getPossibleMovesForQueen(piece, square, gameState)
@@ -43,7 +43,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             }
         }
 
-        private fun getPossibleMovesForQueen(piece: Piece, square: Vector2, gameState: ArrayBasedGameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForQueen(piece: Piece, square: Vector2, gameState: GameState): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             possibleMoves += getStraightMoves(piece, square, gameState)
@@ -52,15 +52,15 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun getPossibleMovesForRook(piece: Piece, square: Vector2, gameState: ArrayBasedGameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForRook(piece: Piece, square: Vector2, gameState: GameState): ArrayList<Vector2> {
             return getStraightMoves(piece, square, gameState)
         }
 
-        private fun getPossibleMovesForBishop(piece: Piece, square: Vector2, gameState: ArrayBasedGameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForBishop(piece: Piece, square: Vector2, gameState: GameState): ArrayList<Vector2> {
             return getDiagonalMoves(piece, square, gameState)
         }
 
-        private fun getPossibleMovesForKnight(piece: Piece, square: Vector2,  gameState: ArrayBasedGameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForKnight(piece: Piece, square: Vector2,  gameState: GameState): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             val x = square.x.roundToInt()
@@ -91,7 +91,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun getPossibleMovesForPawn(team: Team, piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: ArrayBasedGameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForPawn(team: Team, piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: GameState): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             val x = square.x.roundToInt()
@@ -190,7 +190,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun getPossibleMovesForKing(piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: ArrayBasedGameState, lookingForCheck: Boolean): ArrayList<Vector2> {
+        private fun getPossibleMovesForKing(piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: GameState, lookingForCheck: Boolean): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             for (i in -1 .. 1) {
@@ -229,7 +229,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun getDiagonalMoves(piece: Piece, square: Vector2, gameState: ArrayBasedGameState): ArrayList<Vector2> {
+        private fun getDiagonalMoves(piece: Piece, square: Vector2, gameState: GameState): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             for (i in 1 until 8) {
@@ -315,7 +315,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun getStraightMoves(piece: Piece, square: Vector2, gameState: ArrayBasedGameState): ArrayList<Vector2> {
+        private fun getStraightMoves(piece: Piece, square: Vector2, gameState: GameState): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             val x = square.x.roundToInt()
@@ -371,23 +371,17 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun canShortCastle(team: Team, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: ArrayBasedGameState): Boolean {
+        private fun canShortCastle(team: Team, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             val kingX = if (isSinglePlayer) {
-                4
+                if (team == Team.WHITE) 4 else 3
             } else {
                 if (team == Team.WHITE) 4 else 3
             }
 
             val kingY = if (isSinglePlayer) {
-                if (team == Team.WHITE) 0 else 7
+                if (team == Team.WHITE) 0 else 0
             } else {
                 0
-            }
-
-            val direction = if (isSinglePlayer) {
-                1
-            } else {
-                if (team == Team.WHITE) 1 else -1
             }
 
             var kingMoved = false
@@ -417,6 +411,14 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
 //                return false
             }
 
+            val direction = if (isSinglePlayer) {
+                if (team == Team.WHITE) 1 else -1
+            } else {
+                if (team == Team.WHITE) 1 else -1
+            }
+
+            println("Short castle: $kingX $kingY, $direction")
+
             for (i in 1 until 3) {
                 val square = Vector2(kingX + i * direction, kingY)
 
@@ -437,9 +439,9 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return true
         }
 
-        private fun canLongCastle(team: Team, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: ArrayBasedGameState): Boolean {
+        private fun canLongCastle(team: Team, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             val kingX = if (isSinglePlayer) {
-                4
+                if (team == Team.WHITE) 4 else 3
             } else {
                 if (team == Team.WHITE) 4 else 3
             }
@@ -508,7 +510,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return true
         }
 
-        private fun isSquareAttacked(team: Team, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: ArrayBasedGameState): Boolean {
+        private fun isSquareAttacked(team: Team, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             for (x in 0 until 8) {
                 for (y in 0 until 8) {
                     val piece = state[x, y] ?: continue

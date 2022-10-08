@@ -12,6 +12,7 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
 
     SET_USER_ID,
     SET_USER_NAME,
+    CHANGE_USER_NAME,
     FIRE_BASE_TOKEN,
     SEARCH_PLAYERS,
     NEW_GAME(GameCardItem),

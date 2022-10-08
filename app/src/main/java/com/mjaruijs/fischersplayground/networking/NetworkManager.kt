@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import com.mjaruijs.fischersplayground.networking.client.EncodedClient
 import com.mjaruijs.fischersplayground.networking.client.SecureClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic

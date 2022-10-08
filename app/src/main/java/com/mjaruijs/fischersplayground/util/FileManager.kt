@@ -88,6 +88,7 @@ object FileManager {
     }
 
     fun delete(fileName: String) {
+        println("Trying to delete: ${filesPath}/$fileName")
         File("$filesPath/$fileName").delete()
     }
 

@@ -64,7 +64,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
     override fun getCurrentTeam() = team
 
-    override fun getPieceMoves(piece: Piece, square: Vector2, state: ArrayBasedGameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(team, piece, square, false, state, moves, lookingForCheck)
+    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(team, piece, square, false, state, moves, lookingForCheck)
 
     fun undoMoves(numberOfMoves: Int) {
         for (i in 0 until numberOfMoves) {
@@ -228,8 +228,8 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             return
         }
 
-        status = GameStatus.OPPONENT_MOVE
         move(team, fromPosition, toPosition)
+        status = GameStatus.OPPONENT_MOVE
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {

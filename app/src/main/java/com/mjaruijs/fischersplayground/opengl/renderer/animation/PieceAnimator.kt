@@ -3,12 +3,12 @@ package com.mjaruijs.fischersplayground.opengl.renderer.animation
 import android.animation.ValueAnimator
 import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
-import com.mjaruijs.fischersplayground.chess.game.ArrayBasedGameState
+import com.mjaruijs.fischersplayground.chess.game.GameState
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PieceAnimator(state: ArrayBasedGameState, piecePosition: Vector2, val translation: Vector2, requestRender: () -> Unit, private val onStartCalls: ArrayList<() -> Unit>, private val onFinishCalls: ArrayList<() -> Unit>, animationDuration: Long) {
+class PieceAnimator(state: GameState, piecePosition: Vector2, val translation: Vector2, requestRender: () -> Unit, private val onStartCalls: ArrayList<() -> Unit>, private val onFinishCalls: ArrayList<() -> Unit>, animationDuration: Long) {
 
     private var piece: Piece
 

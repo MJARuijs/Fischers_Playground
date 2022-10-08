@@ -14,7 +14,7 @@ import kotlin.math.roundToInt
 
 abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var moves: ArrayList<Move> = ArrayList()) {
 
-    val state = ArrayBasedGameState(isPlayingWhite)
+    val state = GameState(isPlayingWhite)
 
     val board: Board = Board()
 
@@ -55,7 +55,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     abstract fun getCurrentTeam(): Team
 
-    abstract fun getPieceMoves(piece: Piece, square: Vector2, state: ArrayBasedGameState, lookingForCheck: Boolean): ArrayList<Vector2>
+    abstract fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean): ArrayList<Vector2>
 
     abstract fun processOnClick(clickedSquare: Vector2): Action
 
@@ -410,7 +410,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return !isPlayerChecked(copiedState, team)
     }
 
-    protected fun isPlayerChecked(state: ArrayBasedGameState, team: Team): Boolean {
+    protected fun isPlayerChecked(state: GameState, team: Team): Boolean {
         val kingsPosition = findKingPosition(state, team)
         val possibleMovesForOpponent = ArrayList<Vector2>()
 
@@ -426,7 +426,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return possibleMovesForOpponent.contains(kingsPosition)
     }
 
-    protected fun isPlayerCheckMate(state: ArrayBasedGameState, team: Team): Boolean {
+    protected fun isPlayerCheckMate(state: GameState, team: Team): Boolean {
         val possibleMoves = ArrayList<Vector2>()
 
         for (x in 0 until 8) {
@@ -501,7 +501,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    private fun findKingPosition(state: ArrayBasedGameState, team: Team): Vector2 {
+    private fun findKingPosition(state: GameState, team: Team): Vector2 {
         for (x in 0 until 8) {
             for (y in 0 until 8) {
                 val piece = state[x, y] ?: continue

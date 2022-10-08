@@ -22,7 +22,9 @@ abstract class NonBlockingClient(internal val channel: SocketChannel) : Client, 
     abstract fun onRead(context: Context)
 
     override fun close() {
-        key.cancel()
+        if (this::key.isInitialized) {
+            key.cancel()
+        }
     }
 
 }

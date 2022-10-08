@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.dialogs
 import android.app.Activity
 import android.app.Dialog
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import com.mjaruijs.fischersplayground.R
@@ -22,8 +23,11 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
     fun create(context: Activity) {
         dialog = Dialog(context)
         dialog.setContentView(R.layout.piece_picker_dialog)
+        dialog.show()
+        dialog.dismiss()
         dialog.setCancelable(false)
         dialog.setCanceledOnTouchOutside(false)
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
     }
 
     fun setLayout() {

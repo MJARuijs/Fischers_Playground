@@ -16,4 +16,7 @@
 
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <string name="opening_name">Opening Name</string>
+    <string name="which_side_is_the_opening_played">Which side is the opening played?</string>
+    <string name="what_is_the_name_of_the_opening">What is the name of the opening?</string>
 </resources>

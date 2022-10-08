@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.activities.game
 
-import android.os.*
+import android.os.Bundle
+import android.os.VibrationEffect
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -11,13 +12,12 @@ import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Move
-import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
-import com.mjaruijs.fischersplayground.dialogs.*
+import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
+import com.mjaruijs.fischersplayground.dialogs.PieceChooserDialog
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
-import com.mjaruijs.fischersplayground.fragments.actionbars.MultiplayerActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
@@ -33,13 +33,12 @@ abstract class GameActivity : ClientActivity() {
     private var displayWidth = 0
     private var displayHeight = 0
 
-    private var isSinglePlayer = true
+    abstract var isSinglePlayer: Boolean
+
     protected var isPlayingWhite = true
 
     lateinit var gameId: String
     lateinit var opponentName: String
-
-    protected var loadFragments = false
 
     open lateinit var game: Game
 
@@ -57,23 +56,9 @@ abstract class GameActivity : ClientActivity() {
 
             userId = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, "")!!
             userName = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_NAME_KEY, "")!!
-            isSinglePlayer = (this is SinglePlayerGameActivity)
-
-            if (this is SinglePlayerGameActivity) {
-                opponentName = intent.getStringExtra("opponent_name") ?: throw IllegalArgumentException("Missing essential information: opponent_name")
-                isPlayingWhite = intent.getBooleanExtra("is_playing_white", true)
-            }
 
             glView = findViewById(R.id.opengl_view)
             glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
-
-            if (savedInstanceState == null) {
-                if (isSinglePlayer) {
-                    loadFragments()
-                } else {
-                    loadFragments = true
-                }
-            }
         } catch (e: Exception) {
             FileManager.append(this, "game_activity_crash_report.txt", e.stackTraceToString())
         }
@@ -148,15 +133,12 @@ abstract class GameActivity : ClientActivity() {
         restorePreferences()
     }
 
-    fun setGameCallbacks() {
+    open fun setGameCallbacks() {
         game.onPawnPromoted = ::onPawnPromoted
         game.enableBackButton = ::enableBackButton
         game.enableForwardButton = ::enableForwardButton
         game.disableBackButton = ::disableBackButton
         game.disableForwardButton = ::disableForwardButton
-        game.onPieceTaken = ::onPieceTaken
-        game.onPieceRegained = ::onPieceRegained
-        game.onCheckMate = ::onCheckMate
         game.onMoveMade = ::onMoveMade
     }
 
@@ -237,28 +219,6 @@ abstract class GameActivity : ClientActivity() {
         return (supportFragmentManager.fragments.find { fragment -> fragment is PlayerCardFragment && fragment.tag == "opponent" } as PlayerCardFragment?)
     }
 
-    protected fun onPieceTaken(piece: Piece) = onPieceTaken(piece.type, piece.team)
-
-    private fun onPieceTaken(pieceType: PieceType, team: Team) {
-        if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
-            getOpponentFragment()?.addTakenPiece(pieceType)
-        } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
-            getPlayerFragment()?.addTakenPiece(pieceType)
-        }
-    }
-
-    private fun onPieceRegained(pieceType: PieceType, team: Team) {
-        if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
-            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
-            (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType)
-//            getOpponentFragment()?.removeTakenPiece(pieceType)
-        } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
-            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
-            (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType)
-//            getPlayerFragment()?.removeTakenPiece(pieceType)
-        }
-    }
-
     open fun finishActivity(status: GameStatus) {
         stayingInApp = true
         finish()
@@ -266,9 +226,7 @@ abstract class GameActivity : ClientActivity() {
 
     open fun viewBoardAfterFinish() {
         checkMateDialog.dismiss()
-        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableResignButton()
-        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableDrawButton()
-        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableUndoButton()
+
     }
 
     open fun closeAndSaveGameAsWin() {

@@ -1,11 +1,12 @@
 package com.mjaruijs.fischersplayground.chess.pieces
 
+import android.graphics.Color
 import java.lang.IllegalArgumentException
 
-enum class Team {
+enum class Team(val color: Int) {
 
-    BLACK,
-    WHITE;
+    BLACK(Color.BLACK),
+    WHITE(Color.WHITE);
 
     operator fun not(): Team {
         return if (this == BLACK) {

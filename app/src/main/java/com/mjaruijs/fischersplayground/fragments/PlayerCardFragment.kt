@@ -3,7 +3,9 @@ package com.mjaruijs.fischersplayground.fragments
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -12,11 +14,15 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.TakenPiecesView
 
-class PlayerCardFragment : Fragment(R.layout.player_card) {
+class PlayerCardFragment : Fragment() {
 
     private lateinit var statusIcon: ImageView
     private lateinit var takenPieceView: TakenPiecesView
     private lateinit var name: String
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.player_card, container, false)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         name = requireArguments().getString("player_name") ?: "default_name"

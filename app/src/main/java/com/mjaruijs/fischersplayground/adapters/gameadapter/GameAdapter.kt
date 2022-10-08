@@ -129,7 +129,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
 
     inner class GameViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val gameCard: CardView = view.findViewById(R.id.game_card)
-        val opponentNameView: TextView = view.findViewById(R.id.opponent_name)
+        val opponentNameView: TextView = view.findViewById(R.id.opening_name)
         val gameStatusView: View = view.findViewById(R.id.game_status_view)
         val updateIndicator: ImageView = view.findViewById(R.id.update_indicator)
         val layout: ConstraintLayout = view.findViewById(R.id.game_layout)

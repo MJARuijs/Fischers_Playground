@@ -3,7 +3,9 @@ package com.mjaruijs.fischersplayground.fragments
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -22,7 +24,7 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.listeners.OnSwipeTouchListener
 import com.mjaruijs.fischersplayground.util.Time
 
-class ChatFragment : Fragment(R.layout.chat_fragment) {
+class ChatFragment : Fragment() {
 
     lateinit var onMessageSent: (ChatMessage) -> Unit
     lateinit var close: () -> Unit
@@ -37,6 +39,10 @@ class ChatFragment : Fragment(R.layout.chat_fragment) {
 
     private lateinit var sendButton: CardView
     private var keyboardHeight = -1
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.chat_fragment, container, false)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

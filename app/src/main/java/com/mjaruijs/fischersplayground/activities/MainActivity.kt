@@ -7,15 +7,14 @@ import android.os.Parcelable
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
-import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.iid.FirebaseInstanceId
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
-import com.mjaruijs.fischersplayground.activities.game.PractiseGameActivity
+import com.mjaruijs.fischersplayground.activities.game.PractiseSetupActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
@@ -62,7 +61,7 @@ class MainActivity : ClientActivity() {
         if (userName == DEFAULT_USER_NAME) {
             createUsernameDialog.show(::saveUserName)
         } else {
-            findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
+            findViewById<TextView>(R.id.welcome_text_view).append(", $userName")
         }
 
         if (!initialized) {
@@ -73,20 +72,20 @@ class MainActivity : ClientActivity() {
 
         initUIComponents()
 
-        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
-            val token = result.token
-            val currentToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
-
-            if (token != currentToken) {
-                getPreference(FIRE_BASE_PREFERENCE_FILE).edit().putString("token", token).apply()
-
-                if (userName == DEFAULT_USER_NAME) {
-                    hasNewToken = true
-                } else {
-                    networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$userId|$token"))
-                }
-            }
-        }
+//        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
+//            val token = result.token
+//            val currentToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
+//
+//            if (token != currentToken) {
+//                getPreference(FIRE_BASE_PREFERENCE_FILE).edit().putString("token", token).apply()
+//
+//                if (userName == DEFAULT_USER_NAME) {
+//                    hasNewToken = true
+//                } else {
+//                    networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$userId|$token"))
+//                }
+//            }
+//        }
     }
 
     override fun onResume() {
@@ -139,7 +138,7 @@ class MainActivity : ClientActivity() {
 
         savePreference(USER_NAME_KEY, userName)
 
-        findViewById<TextView>(R.id.weclome_text_view).append(", $userName")
+        findViewById<TextView>(R.id.welcome_text_view).append(", $userName")
         networkManager.sendMessage(NetworkMessage(Topic.SET_USER_NAME, userName))
     }
 
@@ -292,11 +291,11 @@ class MainActivity : ClientActivity() {
         supportActionBar?.hide()
 
         if (isFullscreen) {
-            val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
+            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
             windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
         } else {
-            val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
+            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
@@ -305,7 +304,7 @@ class MainActivity : ClientActivity() {
         if (textSize < maxTextSize) {
             maxTextSize = textSize
             findViewById<UIButton>(R.id.start_new_game_button).setButtonTextSize(maxTextSize)
-            findViewById<UIButton>(R.id.single_player_button).setButtonTextSize(maxTextSize)
+            findViewById<UIButton>(R.id.practice_button).setButtonTextSize(maxTextSize)
         }
     }
 
@@ -318,6 +317,15 @@ class MainActivity : ClientActivity() {
 
         createGameDialog.create(userId, this, networkManager)
 
+        findViewById<TextView>(R.id.welcome_text_view)
+            .setOnClickListener { textView ->
+                createUsernameDialog.show {
+                    (textView as TextView).text = "Welcome, $it"
+                    getPreference(USER_PREFERENCE_FILE).edit().putString(USER_NAME_KEY, it).apply()
+                    networkManager.sendMessage(NetworkMessage(Topic.CHANGE_USER_NAME, "$userId|$it"))
+                }
+            }
+
         findViewById<UIButton>(R.id.settings_button)
             .setColoredDrawable(R.drawable.settings_solid_icon)
             .setColor(Color.TRANSPARENT)
@@ -329,7 +337,7 @@ class MainActivity : ClientActivity() {
                 startActivity(intent)
             }
 
-        findViewById<UIButton>(R.id.single_player_button)
+        findViewById<UIButton>(R.id.practice_button)
             .setText("Practice Mode")
             .setButtonTextSize(70.0f)
             .setColor(235, 186, 145)
@@ -338,14 +346,15 @@ class MainActivity : ClientActivity() {
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
                 stayingInApp = true
-                val intent = Intent(this, PractiseGameActivity::class.java)
-                    .putExtra("id", userId)
-                    .putExtra("user_name", userName)
-                    .putExtra("is_single_player", true)
-                    .putExtra("is_playing_white", true)
-                    .putExtra("game_id", "test_game")
-                    .putExtra("opponent_name", "Opponent")
-                startActivity(intent)
+//                val intent = Intent(this, PractiseGameActivity::class.java)
+//                    .putExtra("id", userId)
+//                    .putExtra("user_name", userName)
+//                    .putExtra("is_single_player", true)
+//                    .putExtra("is_playing_white", true)
+//                    .putExtra("game_id", "test_game")
+//                    .putExtra("opponent_name", "Opponent")
+//                startActivity(intent)
+                startActivity(Intent(this, PractiseSetupActivity::class.java))
             }
 
         findViewById<UIButton>(R.id.start_new_game_button)

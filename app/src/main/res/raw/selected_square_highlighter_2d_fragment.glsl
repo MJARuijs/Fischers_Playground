@@ -26,6 +26,7 @@ void main() {
         outColor = mix(vec4(1,1,1,1), color, maxDistance);
     } else {
         outColor = color;
+        outColor.a = 0.5;
     }
 
 }

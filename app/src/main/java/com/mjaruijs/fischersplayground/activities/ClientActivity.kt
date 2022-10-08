@@ -42,15 +42,17 @@ abstract class ClientActivity : AppCompatActivity() {
     protected lateinit var dataManager: DataManager
     protected lateinit var vibrator: Vibrator
 
-    open val stayInAppOnBackPress = true
-
     protected lateinit var incomingInviteDialog: DoubleButtonDialog
 
     protected var stayingInApp = false
 
     private var leftApp = false
 
+    open val stayInAppOnBackPress = true
+
     open var activityName: String = ""
+
+    open val saveGamesOnPause = true
 
     private fun isUserRegisteredAtServer(): Boolean {
         return getPreference(USER_PREFERENCE_FILE).contains(USER_ID_KEY)
@@ -110,7 +112,9 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        dataManager.saveData(applicationContext)
+        if (saveGamesOnPause) {
+            dataManager.saveData(applicationContext)
+        }
 
         if (!stayingInApp) {
             leftApp = true

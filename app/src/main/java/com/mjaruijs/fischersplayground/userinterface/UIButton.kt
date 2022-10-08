@@ -4,10 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.graphics.*
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -22,6 +18,8 @@ import kotlin.math.roundToInt
 
 @SuppressLint("ClickableViewAccessibility")
 class UIButton(context: Context, attributes: AttributeSet?) : View(context, attributes) {
+
+    constructor(context: Context) : this(context, null)
 
     private var backgroundHoverColor = Color.argb(0.0f, 0.1f, 0.1f, 0.1f)
     private var textHoverColor = Color.argb(0.5f, 0.3f, 0.3f, 0.3f)
@@ -66,13 +64,13 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     private val buttonDown = AtomicBoolean(false)
     private val holding = AtomicBoolean(false)
 
-    private val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-        vibratorManager.defaultVibrator
-    } else {
-        @Suppress("DEPRECATION")
-        context.getSystemService(Context.VIBRATOR_SERVICE)
-    }
+//    private val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+//        vibratorManager.defaultVibrator
+//    } else {
+//        @Suppress("DEPRECATION")
+//        context.getSystemService(Context.VIBRATOR_SERVICE)
+//    }
 
     private var vibrateOnTrigger = false
 
@@ -158,7 +156,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     }
 
     private fun vibrate() {
-        (vibrator as Vibrator).vibrate(VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE))
+//        (vibrator as Vibrator).vibrate(VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
     private fun addHoverColors() {

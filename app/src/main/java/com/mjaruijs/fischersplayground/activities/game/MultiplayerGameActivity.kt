@@ -19,9 +19,7 @@ import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.IntNews
 import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.NewsType
-import com.mjaruijs.fischersplayground.chess.pieces.Move
-import com.mjaruijs.fischersplayground.chess.pieces.MoveData
-import com.mjaruijs.fischersplayground.chess.pieces.Team
+import com.mjaruijs.fischersplayground.chess.pieces.*
 import com.mjaruijs.fischersplayground.dialogs.*
 import com.mjaruijs.fischersplayground.fragments.ChatFragment
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
@@ -34,9 +32,11 @@ import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 
-class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
+open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override var activityName = "multiplayer_activity"
+
+    override var isSinglePlayer = true
 
     private var chatInitialized = false
     private var chatOpened = false
@@ -46,14 +46,17 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private var chatButtonWidth = 0
     private var chatBoxWidth = 0
 
+    private lateinit var resignDialog: DoubleButtonDialog
+    private lateinit var drawAcceptedDialog: DoubleButtonDialog
+
     private lateinit var undoRequestedDialog: DoubleButtonDialog
     private lateinit var undoAcceptedDialog: SingleButtonDialog
     private lateinit var undoRejectedDialog: SingleButtonDialog
 
     private lateinit var opponentOfferedDrawDialog: DoubleButtonDialog
-    private lateinit var opponentAcceptedDrawDialog: SingleButtonDialog
+    private lateinit var opponentAcceptedDrawDialog: DoubleButtonDialog
     private lateinit var opponentRejectedDrawDialog: SingleButtonDialog
-    private lateinit var opponentResignedDialog: SingleButtonDialog
+    private lateinit var opponentResignedDialog: DoubleButtonDialog
 
     private lateinit var keyboardHeightProvider: KeyboardHeightProvider
 
@@ -105,14 +108,16 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 redoLastMove()
             }
 
+            resignDialog = DoubleButtonDialog(this, "$opponentName won!", "You lost by resignation", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsLoss)
+            drawAcceptedDialog = DoubleButtonDialog(this, "It's A Draw!", "You accepted $opponentName's draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
             undoRequestedDialog = DoubleButtonDialog(this, "Undo Requested", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest, 0.5f)
             undoAcceptedDialog = SingleButtonDialog(this, "Move Reversed", "Your undo request has been accepted!", "Continue")
             undoRejectedDialog = SingleButtonDialog(this, "Undo Rejected", "Your undo request was rejected!", "Continue")
 
-            opponentAcceptedDrawDialog = SingleButtonDialog(this, "It's A Draw!", "$opponentName has accepted your draw offer", "Exit", ::closeAndSaveGameAsDraw)
+            opponentAcceptedDrawDialog = DoubleButtonDialog(this, "It's A Draw!", "$opponentName has accepted your draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
             opponentRejectedDrawDialog = SingleButtonDialog(this, "Game Must Go On", "$opponentName has rejected your draw offer", "Play on")
             opponentOfferedDrawDialog = DoubleButtonDialog(this, "Draw Offered", "$opponentName has offered a draw!", "Decline", ::rejectDrawOffer, "Accept", ::acceptDrawOffer)
-            opponentResignedDialog = SingleButtonDialog(this, "You Won", "$opponentName has resigned!", "Exit", ::closeAndSaveGameAsWin)
+            opponentResignedDialog = DoubleButtonDialog(this, "You Won!", "$opponentName has resigned!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin)
 
             keyboardHeightProvider.observer = this
 
@@ -144,6 +149,13 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         contextCreated = true
     }
 
+    override fun setGameCallbacks() {
+        super.setGameCallbacks()
+        game.onCheckMate = ::onCheckMate
+        game.onPieceTaken = ::onPieceTaken
+        game.onPieceRegained = ::onPieceRegained
+    }
+
     private fun redoLastMove() {
         if (!(game as MultiPlayerGame).hasNews(NewsType.OPPONENT_MOVED)) {
             game.showPreviousMove(true)
@@ -154,9 +166,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun initializeFragments() {
-        if (loadFragments) {
+//        if (loadFragments) {
             loadFragments()
-        }
+//        }
 
         Thread {
             while (getChatFragment() == null) {
@@ -203,6 +215,27 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }
     }
 
+    private fun onPieceTaken(piece: Piece) = onPieceTaken(piece.type, piece.team)
+
+    private fun onPieceTaken(pieceType: PieceType, team: Team) {
+        if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
+            getOpponentFragment()?.addTakenPiece(pieceType)
+        } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
+            getPlayerFragment()?.addTakenPiece(pieceType)
+        }
+    }
+
+    private fun onPieceRegained(pieceType: PieceType, team: Team) {
+        if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
+            val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
+            (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType)
+//            getOpponentFragment()?.removeTakenPiece(pieceType)
+        } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
+            val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
+            (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType)
+//            getPlayerFragment()?.removeTakenPiece(pieceType)
+        }
+    }
     private fun sendMoveData(moveNotation: String) {
         val showPopup = getPreference(GAME_PREFERENCES_KEY).getBoolean(SettingsActivity.CONFIRM_MOVES_KEY, false)
         if (showPopup) {
@@ -254,9 +287,15 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                         dataManager.setGame(gameId, game as MultiPlayerGame)
                     }
                 }
-                NewsType.OPPONENT_RESIGNED -> opponentResignedDialog.show()
+                NewsType.OPPONENT_RESIGNED -> {
+                    (game as MultiPlayerGame).status = GameStatus.GAME_WON
+                    opponentResignedDialog.show()
+                }
                 NewsType.OPPONENT_OFFERED_DRAW -> opponentOfferedDrawDialog.show()
-                NewsType.OPPONENT_ACCEPTED_DRAW -> opponentAcceptedDrawDialog.show()
+                NewsType.OPPONENT_ACCEPTED_DRAW -> {
+                    (game as MultiPlayerGame).status = GameStatus.GAME_DRAW
+                    opponentAcceptedDrawDialog.show()
+                }
                 NewsType.OPPONENT_REJECTED_DRAW -> opponentRejectedDrawDialog.show()
                 NewsType.OPPONENT_REQUESTED_UNDO -> {
                     undoRequestedDialog.setMessage("$opponentName is requesting to undo their last move!")
@@ -292,6 +331,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun viewBoardAfterFinish() {
+        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableResignButton()
+        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableDrawButton()
+        (getActionBarFragment() as MultiplayerActionButtonsFragment).disableUndoButton()
         reviewingFinishedGame = true
         super.viewBoardAfterFinish()
     }
@@ -301,8 +343,9 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun onResign() {
+        (game as MultiPlayerGame).status = GameStatus.GAME_LOST
         networkManager.sendMessage(NetworkMessage(Topic.RESIGN, "$gameId|$userId"))
-        closeAndSaveGameAsLoss()
+        resignDialog.show()
     }
 
     override fun onOpponentMoved(output: Parcelable) {
@@ -361,6 +404,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         val gameId = (output as ParcelableString).value
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_ACCEPTED_DRAW)
         if (gameId == this.gameId) {
+            (game as MultiPlayerGame).status = GameStatus.GAME_DRAW
             opponentAcceptedDrawDialog.show()
         }
     }
@@ -377,6 +421,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         val gameId = (output as ParcelableString).value
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_RESIGNED)
         if (gameId == this.gameId) {
+            (game as MultiPlayerGame).status = GameStatus.GAME_WON
             opponentResignedDialog.show()
         }
     }
@@ -445,10 +490,11 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private fun acceptDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
+        (game as MultiPlayerGame).status = GameStatus.GAME_DRAW
         dataManager.setGame(gameId, game as MultiPlayerGame)
         dataManager.saveData(applicationContext)
         networkManager.sendMessage(NetworkMessage(Topic.DRAW_ACCEPTED, "$gameId|$userId"))
-        closeAndSaveGameAsDraw()
+        drawAcceptedDialog.show()
     }
 
     override fun onBackPressed() {

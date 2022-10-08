@@ -9,6 +9,7 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
+import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.IntNews
 import com.mjaruijs.fischersplayground.chess.news.MoveNews
@@ -24,6 +25,7 @@ import kotlin.collections.HashSet
 
 class DataManager(context: Context) {
 
+    private val savedOpenings = ArrayList<Opening>()
     private val savedGames = HashMap<String, MultiPlayerGame>()
     private val savedInvites = HashMap<String, InviteData>()
     private val recentOpponents = Stack<Pair<String, String>>()
@@ -31,6 +33,7 @@ class DataManager(context: Context) {
 
     private var userId = DEFAULT_USER_ID
 
+    private val openingLock = AtomicBoolean(false)
     private val gamesLock = AtomicBoolean(false)
     private val invitesLock = AtomicBoolean(false)
     private val recentOpponentsLock = AtomicBoolean(false)
@@ -46,6 +49,38 @@ class DataManager(context: Context) {
             NetworkManager.getInstance().sendCrashReport("data_manager_init.txt", e.stackTraceToString())
         }
 
+    }
+
+    fun getSavedOpenings(): ArrayList<Opening> {
+        obtainOpeningLock()
+
+        val openings = savedOpenings
+        unlockOpenings()
+
+        return openings
+    }
+
+    fun removeOpening(name: String) {
+        obtainOpeningLock()
+
+        savedOpenings.removeIf { opening -> opening.name == name }
+
+        unlockOpenings()
+    }
+
+    fun getOpening(name: String): Opening? {
+        obtainOpeningLock()
+
+        val opening = savedOpenings.find { opening -> opening.name == name }
+        unlockOpenings()
+
+        return opening
+    }
+
+    fun addOpening(opening: Opening) {
+        obtainOpeningLock()
+        savedOpenings += opening
+        unlockOpenings()
     }
 
     fun getSavedGames(): HashMap<String, MultiPlayerGame> {
@@ -106,7 +141,9 @@ class DataManager(context: Context) {
         return opponents
     }
 
-    fun isLocked() = areGamesLocked() || areInvitesLocked() || areOpponentsLocked()
+    fun isLocked() = areGamesLocked() || areInvitesLocked() || areOpponentsLocked() || areOpeningsLocked()
+
+    private fun areOpeningsLocked() = openingLock.get()
 
     private fun areGamesLocked() = gamesLock.get()
 
@@ -115,6 +152,14 @@ class DataManager(context: Context) {
     private fun areOpponentsLocked() = recentOpponentsLock.get()
 
     private fun areMessagesLocked() = messageLock.get()
+
+    private fun obtainOpeningLock() {
+        while (areOpeningsLocked()) {
+            Thread.sleep(1)
+        }
+
+        lockOpenings()
+    }
 
     private fun obtainGameLock() {
         while (areGamesLocked()) {
@@ -146,6 +191,14 @@ class DataManager(context: Context) {
         }
 
         lockMessages()
+    }
+
+    private fun lockOpenings() {
+        openingLock.set(true)
+    }
+
+    private fun unlockOpenings() {
+        openingLock.set(false)
     }
 
     private fun lockGames() {
@@ -194,6 +247,18 @@ class DataManager(context: Context) {
     }
 
     fun loadData(context: Context) {
+        obtainOpeningLock()
+        Thread {
+            try {
+                savedOpenings.clear()
+                loadSavedOpenings(context)
+            } catch (e: Exception) {
+                NetworkManager.getInstance().sendCrashReport("opening_loading_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockOpenings()
+            }
+        }.start()
+
         obtainGameLock()
         Thread {
             try {
@@ -244,6 +309,17 @@ class DataManager(context: Context) {
     }
 
     fun saveData(context: Context) {
+        obtainOpeningLock()
+        Thread {
+            try {
+                saveOpenings(context)
+            } catch (e: Exception) {
+                NetworkManager.getInstance().sendCrashReport("openings_saving_crash.txt", e.stackTraceToString())
+            } finally {
+                unlockOpenings()
+            }
+        }.start()
+
         obtainGameLock()
         Thread {
             try {
@@ -287,6 +363,18 @@ class DataManager(context: Context) {
                 unlockMessages()
             }
         }.start()
+    }
+
+    private fun loadSavedOpenings(context: Context) {
+        val lines = FileManager.read(context, OPENINGS_FILE) ?: ArrayList()
+
+        for (openingData in lines) {
+            if (openingData.isBlank()) {
+                continue
+            }
+
+
+        }
     }
 
     private fun loadSavedGames(context: Context) {
@@ -426,6 +514,16 @@ class DataManager(context: Context) {
         saveRecentOpponents(context)
     }
 
+    private fun saveOpenings(context: Context) {
+        var content = ""
+
+        for (opening in savedOpenings) {
+
+        }
+
+        FileManager.write(context, OPENINGS_FILE, content)
+    }
+
     private fun saveGames(context: Context) {
         var content = ""
 
@@ -509,6 +607,7 @@ class DataManager(context: Context) {
 
     companion object {
 
+        const val OPENINGS_FILE = "openings.txt"
         const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
         const val INVITES_FILE = "received_invites.txt"
         const val RECENT_OPPONENTS_FILE = "recent_opponents.txt"
