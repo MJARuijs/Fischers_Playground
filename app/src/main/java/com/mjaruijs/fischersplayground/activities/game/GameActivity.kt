@@ -2,10 +2,11 @@ package com.mjaruijs.fischersplayground.activities.game
 
 import android.os.Bundle
 import android.os.VibrationEffect
+import android.util.Log
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
@@ -28,6 +29,8 @@ abstract class GameActivity : ClientActivity() {
     private lateinit var checkMateDialog: DoubleButtonDialog
     private lateinit var glView: SurfaceView
 
+    protected lateinit var gameLayout: ConstraintLayout
+
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
     private var displayWidth = 0
@@ -47,6 +50,8 @@ abstract class GameActivity : ClientActivity() {
         setContentView(R.layout.activity_game)
 
         try {
+            gameLayout = findViewById(R.id.game_layout)
+
             val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
             val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
 
@@ -92,31 +97,20 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    fun loadFragments() {
-        val playerBundle = Bundle()
-        playerBundle.putString("player_name", userName)
-        playerBundle.putString("team", if (isPlayingWhite) "WHITE" else "BLACK")
-        playerBundle.putBoolean("hide_status_icon", true)
-
-        val opponentBundle = Bundle()
-        opponentBundle.putString("player_name", opponentName)
-        opponentBundle.putString("team", if (isPlayingWhite) "BLACK" else "WHITE")
-        opponentBundle.putBoolean("hide_status_icon", isSinglePlayer)
-
-        supportFragmentManager.commit {
-            setReorderingAllowed(true)
-            replace(R.id.player_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
-            replace(R.id.opponent_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
+    inline fun <reified T>findFragment(tag: String): T {
+        val fragment = supportFragmentManager.findFragmentByTag(tag) ?: throw IllegalArgumentException("Could not find fragment with tag: $tag")
+        if (fragment is T) {
+            return fragment
         }
+        throw IllegalArgumentException("Found fragment with tag $tag, but was not of type ${T::class.java}. Instead was ${fragment::class.java}")
     }
 
-    fun getActionBarFragment(): ActionButtonsFragment? {
-        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is ActionButtonsFragment }
-        if (fragment != null) {
-            return fragment as ActionButtonsFragment
-        }
-        return null
+    inline fun <reified T>findFragment(): T? {
+        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: return null
+        return fragment as T
     }
+
+    fun getActionBarFragment() = findFragment<ActionButtonsFragment>()
 
     open fun evaluateActionButtons() {
         if (game.moves.isNotEmpty()) {

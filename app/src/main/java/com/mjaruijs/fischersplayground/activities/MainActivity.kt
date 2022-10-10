@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.activities.game.PractiseSetupActivity
+import com.mjaruijs.fischersplayground.activities.game.SinglePlayerGameActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
@@ -365,7 +366,9 @@ class MainActivity : ClientActivity() {
             .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
-                createGameDialog.show()
+//                createGameDialog.show()
+                stayingInApp = true
+                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
             }
 
         findViewById<UIButton>(R.id.crash_menu_button)

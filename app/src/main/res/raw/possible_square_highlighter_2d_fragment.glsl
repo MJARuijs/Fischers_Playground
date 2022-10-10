@@ -28,6 +28,7 @@ void main() {
 //    } else if (distance > radius) {
 //        outColor = vec4(1, 1, 1, 1);
     } else {
+//        outColor = vec4(235.0 / 255.0, 186.0 / 255.0, 145.0 / 255.0, 1);
         outColor = vec4(0, 0.75, 0, 1);
     }
 

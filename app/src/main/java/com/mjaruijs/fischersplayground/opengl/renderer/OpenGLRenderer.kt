@@ -239,9 +239,20 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 
     fun destroy() {
 //        backgroundRenderer.destroy()
-        pieceRenderer.destroy()
-        pieceTextures.destroy()
-        highlightRenderer.destroy()
-        boardRenderer.destroy()
+        if (this::pieceRenderer.isInitialized) {
+            pieceRenderer.destroy()
+        }
+
+        if (this::pieceTextures.isInitialized) {
+            pieceTextures.destroy()
+        }
+
+        if (this::highlightRenderer.isInitialized) {
+            highlightRenderer.destroy()
+        }
+
+        if (this::boardRenderer.isInitialized) {
+            boardRenderer.destroy()
+        }
     }
 }

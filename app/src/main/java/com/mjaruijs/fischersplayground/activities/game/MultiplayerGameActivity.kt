@@ -205,6 +205,24 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }.start()
     }
 
+    fun loadFragments() {
+        val playerBundle = Bundle()
+        playerBundle.putString("player_name", userName)
+        playerBundle.putString("team", if (isPlayingWhite) "WHITE" else "BLACK")
+        playerBundle.putBoolean("hide_status_icon", true)
+
+        val opponentBundle = Bundle()
+        opponentBundle.putString("player_name", opponentName)
+        opponentBundle.putString("team", if (isPlayingWhite) "BLACK" else "WHITE")
+        opponentBundle.putBoolean("hide_status_icon", isSinglePlayer)
+
+        supportFragmentManager.commit {
+            setReorderingAllowed(true)
+            replace(R.id.lower_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
+            replace(R.id.upper_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
+        }
+    }
+
     override fun evaluateActionButtons() {
         super.evaluateActionButtons()
         if ((game as MultiPlayerGame).isFinished()) {

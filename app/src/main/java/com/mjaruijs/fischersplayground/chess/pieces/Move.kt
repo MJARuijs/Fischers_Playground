@@ -5,7 +5,7 @@ import android.os.Parcelable
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 
-class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, private val isCheckMate: Boolean, private val isCheck: Boolean, val pieceTaken: PieceType? = null, private val takenPiecePosition: Vector2?, val promotedPiece: PieceType?) : Parcelable {
+class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, val isCheckMate: Boolean, val isCheck: Boolean, val pieceTaken: PieceType? = null, private val takenPiecePosition: Vector2?, val promotedPiece: PieceType?) : Parcelable {
 
     constructor(parcel: Parcel) : this(
         Team.fromString(parcel.readString()!!),
@@ -46,6 +46,27 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
     fun getTakenPosition(perspectiveOf: Team): Vector2? {
         if (takenPiecePosition == null) return null
         return if (perspectiveOf == Team.WHITE) takenPiecePosition else Vector2(7, 7) - takenPiecePosition
+    }
+
+    fun getSimpleChessNotation(): String {
+        var notation = ""
+        val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
+        notation += movedPieceSign
+
+        if (pieceTaken != null) {
+            notation += "x"
+        }
+
+        notation += getColSign(toPosition)
+        notation += getRowSign(toPosition)
+
+        if (isCheckMate) {
+            notation += "#"
+        } else if (isCheck) {
+            notation += "+"
+        }
+
+        return notation
     }
 
     fun toChessNotation(): String {
