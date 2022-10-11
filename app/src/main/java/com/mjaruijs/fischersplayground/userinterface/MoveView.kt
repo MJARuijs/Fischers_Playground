@@ -19,7 +19,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 class MoveView(context: Context, move: Move, var onLayoutChanged: (Int, String) -> Unit = { _, _ -> }) {
 //class MoveView(context: Context): View(context) {
 
-    val view = LayoutInflater.from(context).inflate(R.layout.opening_move_layout, null, false)
+    val view: View = LayoutInflater.from(context).inflate(R.layout.opening_move_layout, null, false)
 
     init {
         view.addOnLayoutChangeListener { view, i, i2, i3, i4, i5, i6, i7, i8 ->

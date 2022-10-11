@@ -95,7 +95,7 @@ class OpeningMovesFragment : Fragment() {
         val textView = TextView(requireContext())
 
 //        if (currentRow == 1) {
-            textView.setBackgroundColor(Color.GREEN)
+//        textView.setBackgroundColor(Color.GREEN)
 //        } else if (currentRow == 2) {
 //            textView.setBackgroundColor(Color.BLUE)
 //        } else {
