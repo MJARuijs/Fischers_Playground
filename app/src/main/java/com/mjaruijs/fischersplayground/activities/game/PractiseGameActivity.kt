@@ -29,7 +29,7 @@ class PractiseGameActivity : GameActivity() {
 
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, networkManager, ::onBackClicked, ::onForwardClicked))
+            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, networkManager, ::onBackClicked, ::onForwardClicked, ::onAddVariationClicked))
             replace(R.id.lower_fragment_container, OpeningMovesFragment(), "opening_moves")
         }
     }
@@ -52,15 +52,20 @@ class PractiseGameActivity : GameActivity() {
 
     override fun onResume() {
         getActionBarFragment().game = game
-        findFragment<OpeningMovesFragment>().setGame(game as SinglePlayerGame)
+        val movesFragment = findFragment<OpeningMovesFragment>()
+        movesFragment.setGame(game as SinglePlayerGame)
+        movesFragment.setOnLastMoveClicked(::onLastMoveClicked)
 
         super.onResume()
     }
 
     override fun onMoveMade(move: Move) {
         runOnUiThread {
-            val fragment = findFragment<OpeningMovesFragment>()
-            fragment.addMove(move)
+            val movesFragment = findFragment<OpeningMovesFragment>()
+            movesFragment.addMove(move)
+
+            val buttonsFragment = findFragment<PracticeActionButtonsFragment>()
+            buttonsFragment.enableVariationsButton()
             gameLayout.invalidate()
         }
     }
@@ -73,6 +78,16 @@ class PractiseGameActivity : GameActivity() {
     private fun onForwardClicked() {
         val fragment = findFragment<OpeningMovesFragment>()
         fragment.onForwardClicked()
+    }
+
+    private fun onAddVariationClicked() {
+        val moveFragment = findFragment<OpeningMovesFragment>()
+        moveFragment.addVariation()
+    }
+
+    private fun onLastMoveClicked() {
+        val buttonFragment = findFragment<PracticeActionButtonsFragment>()
+        buttonFragment.disableForwardButton()
     }
 
 }

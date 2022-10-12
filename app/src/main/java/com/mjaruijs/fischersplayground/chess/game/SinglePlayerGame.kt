@@ -57,10 +57,6 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
     }
 
     override fun processOnClick(clickedSquare: Vector2): Action {
-        if (!isShowingCurrentMove()) {
-            return Action.NO_OP
-        }
-
         if (board.isASquareSelected()) {
             val previouslySelectedSquare = board.selectedSquare
 

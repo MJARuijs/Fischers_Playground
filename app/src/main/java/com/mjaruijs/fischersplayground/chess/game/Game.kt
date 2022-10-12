@@ -106,7 +106,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         val moveIndex = moves.indexOf(move)
-        Log.d("MyTag", "Current move index: $currentMoveIndex. Selected move index: $moveIndex")
 
         if (moveIndex < currentMoveIndex) {
             while (currentMoveIndex != moveIndex) {

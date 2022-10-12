@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.userinterface
 
 import android.content.Context
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
@@ -12,6 +13,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
@@ -47,7 +49,7 @@ class MoveView(context: Context, move: Move, onClick: (Move) -> Unit, onLayoutCh
     }
 
     fun select() {
-        Log.d("MyTag","Select")
+//        Log.d("MyTag","Select")
 //        openingMoveCard.setBackgroundColor(Color.argb(0.25f, 1.0f, 1.0f, 1.0f))
         textView.setTypeface(null, Typeface.BOLD)
         openingMoveCard.invalidate()
@@ -79,6 +81,10 @@ class MoveView(context: Context, move: Move, onClick: (Move) -> Unit, onLayoutCh
         }
 
         val drawable = ResourcesCompat.getDrawable(resources, resourceId, null) ?: throw IllegalArgumentException("Could not find resource with id: $resourceId")
+//        val bitmap = drawable.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ALPHA_8)
+//        val outlineBitmap = drawable.toBitmap(drawable.intrinsicWidth + pieceOffset * 2, drawable.intrinsicHeight + pieceOffset * 2, Bitmap.Config.ALPHA_8)
+
+
 
         return drawable
     }

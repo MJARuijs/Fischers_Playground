@@ -4,18 +4,13 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: NetworkManager, private val onBackClicked: () -> Unit, private val onForwardClicked: () -> Unit) : ActionButtonsFragment(R.layout.practice_actionbar) {
+class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: NetworkManager, private val onBackClicked: () -> Unit, private val onForwardClicked: () -> Unit, private val onVariationClicked: () -> Unit) : ActionButtonsFragment(R.layout.practice_actionbar) {
 
-    private lateinit var startRecordingButton: UIButton
-    private lateinit var stopRecordingButton: UIButton
-
-    private val recordedMoves = ArrayList<Move>()
-
-    private var isRecording = false
+    private lateinit var saveButton: UIButton
+    private lateinit var addVariationButton: UIButton
 
     override var numberOfButtons = 4
 
@@ -28,14 +23,14 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
         super.onViewCreated(view, savedInstanceState)
 
         val textColor = Color.WHITE
-        val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
+        val buttonBackgroundColor = Color.argb(0.0f, 0.25f, 0.25f, 0.25f)
 
-        startRecordingButton = view.findViewById(R.id.start_recording_button)
-        stopRecordingButton = view.findViewById(R.id.stop_recording_button)
+        saveButton = view.findViewById(R.id.start_recording_button)
+        addVariationButton = view.findViewById(R.id.stop_recording_button)
 
-        startRecordingButton
-            .setText("Record")
-            .setTexturedDrawable(R.drawable.record_icon)
+        saveButton
+            .setText("Save")
+            .setTexturedDrawable(R.drawable.save_icon)
             .setButtonTextSize(50.0f)
             .setColor(buttonBackgroundColor)
             .setButtonTextColor(textColor)
@@ -43,14 +38,12 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClickListener {
-                isRecording = true
-                stopRecordingButton.enable()
-//                (it as UIButton).setColor(255, 0, 0)
+
             }
 
-        stopRecordingButton
-            .setText("Stop")
-            .setColoredDrawable(R.drawable.stop_icon)
+        addVariationButton
+            .setText("Add Variation")
+            .setColoredDrawable(R.drawable.variation_icon)
             .setButtonTextSize(50.0f)
             .setColor(buttonBackgroundColor)
             .setButtonTextColor(textColor)
@@ -59,27 +52,17 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
             .setOnButtonInitialized(::onButtonInitialized)
             .disable()
             .setOnClickListener {
-                isRecording = false
-                stopRecordingButton.disable()
+                onVariationClicked()
             }
 
-        buttons += startRecordingButton
-        buttons += stopRecordingButton
-    }
-
-    override fun onResume() {
-        game.onMoveMade = { move ->
-            if (isRecording) {
-                recordedMoves += move
-            }
-        }
-        super.onResume()
+        buttons += saveButton
+        buttons += addVariationButton
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        startRecordingButton.destroy()
-        stopRecordingButton.destroy()
+        saveButton.destroy()
+        addVariationButton.destroy()
     }
 
     override fun setOnBackClick(button: UIButton) {
@@ -90,5 +73,9 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
     override fun setOnForwardClick(button: UIButton) {
         super.setOnForwardClick(button)
         onForwardClicked()
+    }
+
+    fun enableVariationsButton() {
+        addVariationButton.enable()
     }
 }
