@@ -1,8 +1,8 @@
 package com.mjaruijs.fischersplayground.activities.game
 
+import android.content.res.Resources
 import android.os.Bundle
 import android.os.VibrationEffect
-import android.util.Log
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -23,6 +23,7 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.util.FileManager
+import kotlin.math.roundToInt
 
 abstract class GameActivity : ClientActivity() {
 
@@ -105,8 +106,8 @@ abstract class GameActivity : ClientActivity() {
         throw IllegalArgumentException("Found fragment with tag $tag, but was not of type ${T::class.java}. Instead was ${fragment::class.java}")
     }
 
-    inline fun <reified T>findFragment(): T? {
-        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: return null
+    inline fun <reified T>findFragment(): T {
+        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: throw IllegalArgumentException("Could not find fragment with tag of type: ${T::class.java}")
         return fragment as T
     }
 
@@ -115,10 +116,10 @@ abstract class GameActivity : ClientActivity() {
     open fun evaluateActionButtons() {
         if (game.moves.isNotEmpty()) {
             if (game.getMoveIndex() != -1) {
-                getActionBarFragment()?.enableBackButton()
+                getActionBarFragment().enableBackButton()
             }
             if (!game.isShowingCurrentMove()) {
-                getActionBarFragment()?.enableForwardButton()
+                getActionBarFragment().enableForwardButton()
             }
         }
     }
@@ -256,23 +257,26 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun enableBackButton() {
-        getActionBarFragment()?.enableBackButton()
+        getActionBarFragment().enableBackButton()
         requestRender()
     }
 
     private fun enableForwardButton() {
-        getActionBarFragment()?.enableForwardButton()
+        getActionBarFragment().enableForwardButton()
         requestRender()
     }
 
     private fun disableBackButton() {
-        getActionBarFragment()?.disableBackButton()
+        getActionBarFragment().disableBackButton()
         requestRender()
     }
 
     private fun disableForwardButton() {
-        getActionBarFragment()?.disableForwardButton()
+        getActionBarFragment().disableForwardButton()
         requestRender()
     }
 
+    protected fun dpToPx(resources: Resources, dp: Int): Int {
+        return (dp * resources.displayMetrics.density).roundToInt()
+    }
 }

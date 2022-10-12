@@ -100,6 +100,25 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return currentMoveIndex
     }
 
+    fun goToMove(move: Move) {
+        if (!moves.contains(move)) {
+            return
+        }
+
+        val moveIndex = moves.indexOf(move)
+        Log.d("MyTag", "Current move index: $currentMoveIndex. Selected move index: $moveIndex")
+
+        if (moveIndex < currentMoveIndex) {
+            while (currentMoveIndex != moveIndex) {
+                showPreviousMove(false, FAST_ANIMATION_SPEED)
+            }
+        } else if (moveIndex > currentMoveIndex) {
+            while (currentMoveIndex != moveIndex) {
+                showNextMove(FAST_ANIMATION_SPEED)
+            }
+        }
+    }
+
     open fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
         if (currentMoveIndex == -1) {
             return Pair(first = true, second = false)
@@ -517,6 +536,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     companion object {
         const val TAG = "Game"
         const val DEFAULT_ANIMATION_SPEED = 500L
+        const val FAST_ANIMATION_SPEED = 100L
     }
 
 }

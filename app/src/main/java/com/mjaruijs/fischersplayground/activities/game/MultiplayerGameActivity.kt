@@ -6,6 +6,8 @@ import android.os.Parcelable
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.constraintlayout.widget.Constraints
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
@@ -81,6 +83,21 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, opponentName, ::isChatOpened, ::onOfferDraw, ::onResign, ::cancelMove, ::confirmMove, ::requestRender, networkManager))
             }
 
+            val lowerFragment = findViewById<FragmentContainerView>(R.id.lower_fragment_container)
+
+            val layoutParams = Constraints.LayoutParams(Constraints.LayoutParams.MATCH_CONSTRAINT, Constraints.LayoutParams.WRAP_CONTENT)
+            lowerFragment.layoutParams = layoutParams
+
+            val margin = dpToPx(resources, 8)
+
+            val constraints = ConstraintSet()
+            constraints.clone(gameLayout)
+            constraints.connect(R.id.lower_fragment_container, ConstraintSet.TOP, R.id.opengl_view, ConstraintSet.BOTTOM, margin)
+            constraints.connect(R.id.lower_fragment_container, ConstraintSet.BOTTOM, R.id.action_buttons_fragment, ConstraintSet.TOP, margin)
+            constraints.connect(R.id.lower_fragment_container, ConstraintSet.LEFT, gameLayout.id, ConstraintSet.LEFT, margin)
+            constraints.connect(R.id.lower_fragment_container, ConstraintSet.RIGHT, gameLayout.id, ConstraintSet.RIGHT, margin)
+
+            constraints.applyTo(gameLayout)
             keyboardHeightProvider = KeyboardHeightProvider(this)
             findViewById<View>(R.id.game_layout).post {
                 Runnable {

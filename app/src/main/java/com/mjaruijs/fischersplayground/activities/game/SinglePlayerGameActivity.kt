@@ -1,11 +1,9 @@
 package com.mjaruijs.fischersplayground.activities.game
 
-import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
-import androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.constraintlayout.widget.Constraints
 import androidx.fragment.app.FragmentContainerView
@@ -13,10 +11,8 @@ import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
-import com.mjaruijs.fischersplayground.fragments.actionbars.MultiplayerActionButtonsFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeActionButtonsFragment
 import com.mjaruijs.fischersplayground.util.Time
-import kotlin.math.roundToInt
 
 class SinglePlayerGameActivity : GameActivity() {
 
@@ -43,7 +39,7 @@ class SinglePlayerGameActivity : GameActivity() {
             setReorderingAllowed(true)
             replace(R.id.lower_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
             replace(R.id.upper_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
-            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, networkManager))
+//            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, networkManager))
         }
 
         val lowerFragment = findViewById<FragmentContainerView>(R.id.lower_fragment_container)
@@ -66,25 +62,17 @@ class SinglePlayerGameActivity : GameActivity() {
         Log.d("MyTag", "${lowerFragment.layoutParams.width}, ${lowerFragment.layoutParams.height}")
 
         gameLayout.invalidate()
-
     }
 
     override fun onResume() {
         getActionBarFragment()?.game = game
-
         super.onResume()
     }
 
     override fun onContextCreated() {
         super.onContextCreated()
 
-
         setGameCallbacks()
         setGameForRenderer()
-
-    }
-
-    private fun dpToPx(resources: Resources, dp: Int): Int {
-        return (dp * resources.displayMetrics.density).roundToInt()
     }
 }

@@ -2,37 +2,59 @@ package com.mjaruijs.fischersplayground.userinterface
 
 import android.content.Context
 import android.content.res.Resources
-import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.content.res.AppCompatResources
+import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 
-class MoveView(context: Context, move: Move, var onLayoutChanged: (Int, String) -> Unit = { _, _ -> }) {
-//class MoveView(context: Context): View(context) {
+class MoveView(context: Context, move: Move, onClick: (Move) -> Unit, onLayoutChanged: (Int, String) -> Unit = { _, _ -> }) {
 
     val view: View = LayoutInflater.from(context).inflate(R.layout.opening_move_layout, null, false)
+    val textView: TextView = view.findViewById(R.id.opening_move_notation)
+
+    private val openingMoveCard: CardView = view.findViewById(R.id.opening_move_card)
 
     init {
-        view.addOnLayoutChangeListener { view, i, i2, i3, i4, i5, i6, i7, i8 ->
-            onLayoutChanged(view.height, move.getSimpleChessNotation())
+        if (move.team == Team.WHITE) {
+            view.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+                onLayoutChanged(view.height, move.getSimpleChessNotation())
+            }
         }
 
-        val textView = view.findViewById<TextView>(R.id.opening_move_notation)
         textView.text = move.getSimpleChessNotation().substring(1)
 
         val pieceIcon = getPieceIcon(context.resources, move.movedPiece, move.team)
 
         val pieceImage = view.findViewById<ImageView>(R.id.opening_piece_icon)
         pieceImage.setImageDrawable(pieceIcon)
+
+        openingMoveCard.setOnClickListener {
+            onClick(move)
+            select()
+        }
+
+        select()
+    }
+
+    fun select() {
+        Log.d("MyTag","Select")
+//        openingMoveCard.setBackgroundColor(Color.argb(0.25f, 1.0f, 1.0f, 1.0f))
+        textView.setTypeface(null, Typeface.BOLD)
+        openingMoveCard.invalidate()
+    }
+
+    fun deselect() {
+        openingMoveCard.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private fun getPieceIcon(resources: Resources, pieceType: PieceType, team: Team): Drawable {

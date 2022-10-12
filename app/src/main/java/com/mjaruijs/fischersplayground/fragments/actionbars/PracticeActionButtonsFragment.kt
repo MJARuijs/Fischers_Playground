@@ -8,7 +8,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.practice_actionbar) {
+class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: NetworkManager, private val onBackClicked: () -> Unit, private val onForwardClicked: () -> Unit) : ActionButtonsFragment(R.layout.practice_actionbar) {
 
     private lateinit var startRecordingButton: UIButton
     private lateinit var stopRecordingButton: UIButton
@@ -82,4 +82,13 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
         stopRecordingButton.destroy()
     }
 
+    override fun setOnBackClick(button: UIButton) {
+        super.setOnBackClick(button)
+        onBackClicked()
+    }
+
+    override fun setOnForwardClick(button: UIButton) {
+        super.setOnForwardClick(button)
+        onForwardClicked()
+    }
 }

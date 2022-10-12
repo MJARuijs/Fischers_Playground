@@ -293,11 +293,11 @@ class MainActivity : ClientActivity() {
 
         if (isFullscreen) {
             val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+            windowInsetsController?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            windowInsetsController?.hide(WindowInsetsCompat.Type.systemBars())
         } else {
             val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+            windowInsetsController?.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
@@ -366,9 +366,9 @@ class MainActivity : ClientActivity() {
             .setChangeTextColorOnHover(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
-//                createGameDialog.show()
-                stayingInApp = true
-                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
+                createGameDialog.show()
+//                stayingInApp = true
+//                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
             }
 
         findViewById<UIButton>(R.id.crash_menu_button)

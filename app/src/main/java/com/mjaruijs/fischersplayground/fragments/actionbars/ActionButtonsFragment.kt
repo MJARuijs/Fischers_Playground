@@ -2,12 +2,14 @@ package com.mjaruijs.fischersplayground.fragments.actionbars
 
 import android.graphics.Color
 import android.os.Bundle
+import android.provider.Contacts.Intents.UI
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.chess.game.Game.Companion.FAST_ANIMATION_SPEED
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
@@ -19,8 +21,8 @@ open class ActionButtonsFragment(private val layoutResource: Int) : Fragment() {
     private var maxTextSize = Float.MAX_VALUE
     private var numberOfButtonsInitialized = 0
 
-    private lateinit var backButton: UIButton
-    private lateinit var forwardButton: UIButton
+    protected lateinit var backButton: UIButton
+    protected lateinit var forwardButton: UIButton
 
     lateinit var game: Game
 
@@ -77,22 +79,7 @@ open class ActionButtonsFragment(private val layoutResource: Int) : Fragment() {
             .disable()
             .setRepeatOnHold(100L, ::runOnUiThread)
             .setOnClick {
-                if (it.disabled) {
-                    return@setOnClick
-                }
-
-                val buttonStates = if (it.isHeld()) {
-                    game.showPreviousMove(false, 100L)
-                } else {
-                    game.showPreviousMove(false)
-                }
-                if (buttonStates.first) {
-                    it.disable()
-                }
-                if (buttonStates.second) {
-                    game.clearBoardData()
-                    enableForwardButton()
-                }
+                setOnBackClick(it)
             }
 
         forwardButton = view.findViewById(R.id.forward_button)
@@ -108,27 +95,50 @@ open class ActionButtonsFragment(private val layoutResource: Int) : Fragment() {
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .setOnClick {
-                if (it.disabled) {
-                    return@setOnClick
-                }
-
-                val buttonStates = if (it.isHeld()) {
-                    game.showNextMove(100L)
-                } else {
-                    game.showNextMove()
-                }
-
-                if (buttonStates.first) {
-                    it.disable()
-                }
-                if (buttonStates.second) {
-                    game.clearBoardData()
-                    enableBackButton()
-                }
+                setOnForwardClick(it)
             }
 
         buttons += backButton
         buttons += forwardButton
+    }
+
+    open fun setOnBackClick(button: UIButton) {
+        if (button.disabled) {
+            return
+        }
+
+        val buttonStates = if (button.isHeld()) {
+            game.showPreviousMove(false, FAST_ANIMATION_SPEED)
+        } else {
+            game.showPreviousMove(false)
+        }
+        if (buttonStates.first) {
+            button.disable()
+        }
+        if (buttonStates.second) {
+            game.clearBoardData()
+            enableForwardButton()
+        }
+    }
+
+    open fun setOnForwardClick(button: UIButton) {
+        if (button.disabled) {
+            return
+        }
+
+        val buttonStates = if (button.isHeld()) {
+            game.showNextMove(FAST_ANIMATION_SPEED)
+        } else {
+            game.showNextMove()
+        }
+
+        if (buttonStates.first) {
+            button.disable()
+        }
+        if (buttonStates.second) {
+            game.clearBoardData()
+            enableBackButton()
+        }
     }
 
     fun onButtonInitialized(textSize: Float) {
