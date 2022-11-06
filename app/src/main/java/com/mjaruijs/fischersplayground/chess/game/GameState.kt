@@ -104,22 +104,63 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
     }
 
     override fun toString(): String {
-        var string = ""
+        var string = "$isPlayingWhite|"
 
-        for (y in 0 until 8) {
-            string += "["
-            for (x in 0 until 8) {
+        for (x in 0 until 8) {
+            for (y in 0 until 8) {
+                string += if (state[x][y] == null) {
+                    "null"
+                } else {
+                    val type = state[x][y]!!.type
+                    val team = state[x][y]!!.team
+                    "$type;$team"
+                }
 
-                string += state[x][y]?.type
-
-                if (x != 7) {
-                    string += "\t"
+                if (x != 7 || y != 7) {
+                    string += ","
                 }
             }
-
-            string += "]\n"
         }
 
         return string
+    }
+
+    companion object {
+
+        fun fromString(content: String): GameState {
+            val data = content.split("|")
+            val isPlayingWhite = data[0].toBoolean()
+
+            val movesData = data[1].split(",")
+
+            val moves = ArrayList<ArrayList<Piece?>>()
+
+            for (row in 0 until 8) {
+                moves += ArrayList<Piece?>()
+
+                for (col in 0 until 8) {
+                    moves[row] += null
+                }
+            }
+
+            var moveIndex = 0
+            movesData.forEach {
+                val rowIndex = moveIndex % 8
+                val colIndex = moveIndex / 8
+
+                moves[colIndex][rowIndex] = if (it == "null") {
+                    null
+                } else {
+                    val moveData = it.split(";")
+                    val pieceType = PieceType.fromString(moveData[0])
+                    val team = Team.fromString(moveData[1])
+                    Piece(pieceType, team)
+                }
+
+                moveIndex++
+            }
+
+            return GameState(isPlayingWhite, moves)
+        }
     }
 }

@@ -1,67 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".activities.TableTestActivity">
+    tools:context=".activities.TableTestActivity"
+    tools:ignore="SpeakableTextPresentCheck">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        tools:ignore="SpeakableTextPresentCheck">
-
-        <TableLayout
-            android:id="@+id/content_table"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:isScrollContainer="true"
-            android:orientation="horizontal">
-
+    <TableLayout
+        android:id="@+id/content_table"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:isScrollContainer="true"
+        android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/move_numbers_layout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="horizontal">
+                android:orientation="vertical"></LinearLayout>
 
-                <TableRow
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+    </TableLayout>
 
-                    <LinearLayout
-                        android:id="@+id/move_numbers_layout"
-                        android:orientation="vertical" />
-                </TableRow>
-
-                <TableRow
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:orientation="vertical">
-
-                            <TableLayout
-                                android:id="@+id/moves_table"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent" />
-                        </LinearLayout>
-                    </HorizontalScrollView>
-
-                </TableRow>
-            </LinearLayout>
-
-        </TableLayout>
-
-    </ScrollView>
-
-</LinearLayout>
+</ScrollView>

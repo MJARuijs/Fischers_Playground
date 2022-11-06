@@ -7,6 +7,7 @@
     tools:context=".activities.TableTestActivity">
 
     <ScrollView
+        android:id="@+id/vertical_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -15,7 +16,7 @@
         <TableLayout
             android:id="@+id/content_table"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:isScrollContainer="true"
             android:orientation="horizontal">
 
@@ -46,12 +47,13 @@
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
-                            android:orientation="vertical">
+                            android:orientation="horizontal">
 
-                            <TableLayout
-                                android:id="@+id/moves_table"
+                            <LinearLayout
+                                android:id="@+id/variations_table"
                                 android:layout_width="match_parent"
-                                android:layout_height="match_parent" />
+                                android:layout_height="match_parent"
+                                android:orientation="horizontal" />
                         </LinearLayout>
                     </HorizontalScrollView>
                 </TableRow>

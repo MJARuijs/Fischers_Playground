@@ -176,7 +176,7 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun redoLastMove() {
         if (!(game as MultiPlayerGame).hasNews(NewsType.OPPONENT_MOVED)) {
             game.showPreviousMove(true)
-            game.showNextMove()
+            game.showNextMove(false)
         }
 
         getActionBarFragment()?.disableForwardButton()

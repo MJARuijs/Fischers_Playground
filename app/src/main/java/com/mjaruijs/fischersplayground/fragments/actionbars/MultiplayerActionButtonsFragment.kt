@@ -30,6 +30,8 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
     private lateinit var offerDrawDialog: DoubleButtonDialog
     private lateinit var undoRequestConfirmationDialog: SingleButtonDialog
 
+    var networkManager: NetworkManager
+
     private var moveNotation: String? = null
 
     private var showingExtraButtons = false

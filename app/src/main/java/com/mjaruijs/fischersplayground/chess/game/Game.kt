@@ -6,6 +6,7 @@ import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.*
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
@@ -14,7 +15,7 @@ import kotlin.math.roundToInt
 
 abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var moves: ArrayList<Move> = ArrayList()) {
 
-    val state = GameState(isPlayingWhite)
+    var state = GameState(isPlayingWhite)
 
     val board: Board = Board()
 
@@ -81,6 +82,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             return null
         }
 
+        if (currentMoveIndex >= moves.size) {
+            return null
+        }
+
         return moves[currentMoveIndex]
     }
 
@@ -100,6 +105,29 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return currentMoveIndex
     }
 
+    fun swapMoves(newMoves: ArrayList<Move>, currentMove: Move) {
+        while (currentMoveIndex >= 0) {
+            showPreviousMove(true, 0L)
+        }
+
+        moves.clear()
+        for (move in newMoves) {
+            Logger.debug("fix", "Adding move to game: ${move.getSimpleChessNotation()}")
+            moves.add(move)
+        }
+
+        currentMoveIndex = -1
+
+        val moveIndex = moves.indexOf(currentMove)
+        while (currentMoveIndex != moveIndex) {
+            showNextMove(true, 0L)
+        }
+
+        if (moveIndex == moves.size - 1) {
+            disableForwardButton()
+        }
+    }
+
     fun goToMove(move: Move) {
         if (!moves.contains(move)) {
             return
@@ -107,13 +135,15 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         val moveIndex = moves.indexOf(move)
 
+        Logger.debug("fix", "Going to move: ${move.getSimpleChessNotation()}, moveIndex=$moveIndex, moves.size=${moves.size}, currentMoveIndex=${currentMoveIndex}")
+
         if (moveIndex < currentMoveIndex) {
             while (currentMoveIndex != moveIndex) {
                 showPreviousMove(false, FAST_ANIMATION_SPEED)
             }
         } else if (moveIndex > currentMoveIndex) {
             while (currentMoveIndex != moveIndex) {
-                showNextMove(FAST_ANIMATION_SPEED)
+                showNextMove(false, FAST_ANIMATION_SPEED)
             }
         }
     }
@@ -132,13 +162,13 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return Pair(shouldDisableBackButton, shouldEnableForwardButton)
     }
 
-    open fun showNextMove(animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
+    open fun showNextMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
         if (currentMoveIndex >= moves.size - 1) {
             return Pair(first = true, second = false)
         }
 
         val nextMove = moves[incrementMoveCounter()]
-        redoMove(nextMove, animationSpeed)
+        redoMove(nextMove, runInBackground, animationSpeed)
 
         val shouldDisableForwardButton = currentMoveIndex == moves.size - 1
         val shouldEnableBackButton = currentMoveIndex == 0
@@ -192,7 +222,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    private fun redoMove(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    private fun redoMove(move: Move, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         val fromPosition = move.getFromPosition(team)
         val toPosition = move.getToPosition(team)
 
@@ -209,14 +239,34 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
             createAnimation(animationSpeed, fromPosition, toPosition, false, takenPiece, takenPiecePosition, {}, {
                 onFinishRedoMove(move, toPosition, takenPiecePosition)
+            })
+        }
+
+        if (animation.nextAnimation == null) {
+            animation.onFinishCalls += {
                 val isCheck = isPlayerChecked(state, !move.team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
                 updateCheckData(move.team, isCheck, isCheckMate)
-            })
+            }
+        } else {
+            animation.nextAnimation!!.onFinishCalls += {
+                val isCheck = isPlayerChecked(state, !move.team)
+                val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
+
+                updateCheckData(move.team, isCheck, isCheckMate)
+            }
         }
 
-        queueAnimation(animation)
+        if (runInBackground) {
+            animation.invokeOnStartCalls()
+            animation.invokeOnFinishCalls()
+
+            animation.nextAnimation?.invokeOnStartCalls()
+            animation.nextAnimation?.invokeOnFinishCalls()
+        } else {
+            queueAnimation(animation)
+        }
     }
 
     private fun onStartUndoMove(move: Move, toPosition: Vector2, takenPiecePosition: Vector2?) {

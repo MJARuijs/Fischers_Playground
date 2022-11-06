@@ -2,24 +2,21 @@ package com.mjaruijs.fischersplayground.userinterface
 
 import android.content.Context
 import android.content.res.Resources
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.drawable.toBitmap
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 
-class MoveView(context: Context, move: Move, onClick: (Move) -> Unit, onLayoutChanged: (Int, String) -> Unit = { _, _ -> }) {
+class MoveView(private val lineId: Int, private val context: Context, moveViewData: MoveViewData? = null) {
 
     val view: View = LayoutInflater.from(context).inflate(R.layout.opening_move_layout, null, false)
     val textView: TextView = view.findViewById(R.id.opening_move_notation)
@@ -27,13 +24,18 @@ class MoveView(context: Context, move: Move, onClick: (Move) -> Unit, onLayoutCh
     private val openingMoveCard: CardView = view.findViewById(R.id.opening_move_card)
 
     init {
-        if (move.team == Team.WHITE) {
-            view.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-                onLayoutChanged(view.height, move.getSimpleChessNotation())
-            }
+        if (moveViewData != null) {
+            init(moveViewData)
         }
+    }
 
-        textView.text = move.getSimpleChessNotation().substring(1)
+    fun init(moveViewData: MoveViewData) {
+        val move = moveViewData.move
+        val onClick = moveViewData.onClick
+        val onLayoutChanged = moveViewData.onLayoutChanged
+
+        val layoutChangeListener = MoveViewChangeListener(onLayoutChanged)
+        view.addOnLayoutChangeListener(layoutChangeListener)
 
         val pieceIcon = getPieceIcon(context.resources, move.movedPiece, move.team)
 
@@ -41,22 +43,29 @@ class MoveView(context: Context, move: Move, onClick: (Move) -> Unit, onLayoutCh
         pieceImage.setImageDrawable(pieceIcon)
 
         openingMoveCard.setOnClickListener {
-            onClick(move)
-            select()
+            onClick(lineId, move)
+//            select()
         }
 
-        select()
+
+        textView.text = move.getSimpleChessNotation().substring(1)
+
+        //TODO: Remove this:
+        openingMoveCard.setBackgroundColor(Color.TRANSPARENT)
     }
 
-    fun select() {
-//        Log.d("MyTag","Select")
-//        openingMoveCard.setBackgroundColor(Color.argb(0.25f, 1.0f, 1.0f, 1.0f))
+    private fun select() {
+        openingMoveCard.setBackgroundColor(Color.argb(0.25f, 1.0f, 1.0f, 1.0f))
         textView.setTypeface(null, Typeface.BOLD)
         openingMoveCard.invalidate()
     }
 
     fun deselect() {
         openingMoveCard.setBackgroundColor(Color.TRANSPARENT)
+    }
+
+    fun hide() {
+        openingMoveCard.visibility = View.INVISIBLE
     }
 
     private fun getPieceIcon(resources: Resources, pieceType: PieceType, team: Team): Drawable {
@@ -84,8 +93,22 @@ class MoveView(context: Context, move: Move, onClick: (Move) -> Unit, onLayoutCh
 //        val bitmap = drawable.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ALPHA_8)
 //        val outlineBitmap = drawable.toBitmap(drawable.intrinsicWidth + pieceOffset * 2, drawable.intrinsicHeight + pieceOffset * 2, Bitmap.Config.ALPHA_8)
 
-
-
         return drawable
     }
+
+    inner class MoveViewChangeListener(private val onLayoutChanged: (Int) -> Unit) : View.OnLayoutChangeListener {
+
+        override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+            openingMoveCard.minimumWidth = openingMoveCard.width
+            textView.text = "xZ3#"
+//            textView.text = move.getSimpleChessNotation().substring(1)
+//            if (move.team == Team.WHITE) {
+            onLayoutChanged(view.height)
+//            }
+            v!!.removeOnLayoutChangeListener(this)
+        }
+
+    }
+
+    class MoveViewData(var move: Move, var onClick: (Int, Move) -> Unit = { _, _ -> }, var onLayoutChanged: (Int) -> Unit = {})
 }

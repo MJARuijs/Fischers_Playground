@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.fragments.actionbars
 
 import android.graphics.Color
 import android.os.Bundle
-import android.provider.Contacts.Intents.UI
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,10 +12,9 @@ import com.mjaruijs.fischersplayground.chess.game.Game.Companion.FAST_ANIMATION_
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-open class ActionButtonsFragment(private val layoutResource: Int) : Fragment() {
+open class ActionButtonsFragment(private val layoutResource: Int, private val onBackClicked: () -> Unit = {}, private val onForwardClicked: () -> Unit = {}) : Fragment() {
 
     lateinit var requestRender: () -> Unit
-    lateinit var networkManager: NetworkManager
 
     private var maxTextSize = Float.MAX_VALUE
     private var numberOfButtonsInitialized = 0
@@ -119,6 +117,7 @@ open class ActionButtonsFragment(private val layoutResource: Int) : Fragment() {
             game.clearBoardData()
             enableForwardButton()
         }
+        onBackClicked()
     }
 
     open fun setOnForwardClick(button: UIButton) {
@@ -127,9 +126,9 @@ open class ActionButtonsFragment(private val layoutResource: Int) : Fragment() {
         }
 
         val buttonStates = if (button.isHeld()) {
-            game.showNextMove(FAST_ANIMATION_SPEED)
+            game.showNextMove(false, FAST_ANIMATION_SPEED)
         } else {
-            game.showNextMove()
+            game.showNextMove(false)
         }
 
         if (buttonStates.first) {
@@ -139,6 +138,7 @@ open class ActionButtonsFragment(private val layoutResource: Int) : Fragment() {
             game.clearBoardData()
             enableBackButton()
         }
+        onForwardClicked()
     }
 
     fun onButtonInitialized(textSize: Float) {

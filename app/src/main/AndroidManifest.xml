@@ -9,6 +9,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FischersPlayground">
         <activity
+            android:name=".PractiseGameActivity2"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
             android:name=".TableTestActivity"
             android:exported="false">
             <meta-data
@@ -48,9 +55,9 @@
             android:windowSoftInputMode="adjustNothing" />
         <activity
             android:name=".activities.game.PractiseGameActivity"
+            android:exported="true"
             android:parentActivityName=".activities.MainActivity"
-            android:windowSoftInputMode="adjustNothing"
-            android:exported="true">
+            android:windowSoftInputMode="adjustNothing">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -58,7 +65,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".activities.CrashReportActivity" />
-        <activity android:name=".activities.game.PractiseSetupActivity" />
+        <activity android:name=".activities.game.OpeningMenuActivity" />
         <activity
             android:name="com.mjaruijs.fischersplayground.activities.TableTestActivity"
             android:exported="true">
@@ -68,6 +75,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="com.mjaruijs.fischersplayground.activities.game.CreateOpeningActivity" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
@@ -87,11 +95,11 @@
     <uses-feature
         android:glEsVersion="0x00030001"
         android:required="true" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
 </manifest>

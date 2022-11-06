@@ -16,6 +16,15 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
 
     companion object {
 
+        fun fromString(content: String): PieceType {
+            for (value in values()) {
+                if (value.toString().uppercase() == content.uppercase()) {
+                    return value
+                }
+            }
+            throw IllegalArgumentException("Couldn't parse string into PieceType: $content")
+        }
+
         fun getBySign(sign: String): PieceType {
             return getBySign(sign[0])
         }

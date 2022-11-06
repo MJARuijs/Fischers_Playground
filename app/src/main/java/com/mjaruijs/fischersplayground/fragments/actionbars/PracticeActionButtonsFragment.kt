@@ -4,10 +4,9 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: NetworkManager, private val onBackClicked: () -> Unit, private val onForwardClicked: () -> Unit, private val onVariationClicked: () -> Unit) : ActionButtonsFragment(R.layout.practice_actionbar) {
+class PracticeActionButtonsFragment(requestRender: () -> Unit, onBackClicked: () -> Unit, onForwardClicked: () -> Unit, private val onVariationClicked: () -> Unit) : ActionButtonsFragment(R.layout.practice_actionbar, onBackClicked, onForwardClicked) {
 
     private lateinit var saveButton: UIButton
     private lateinit var addVariationButton: UIButton
@@ -16,7 +15,6 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
 
     init {
         this.requestRender = requestRender
-        this.networkManager = networkManager
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -37,7 +35,7 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
             .setChangeIconColorOnHover(false)
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClickListener {
+            .setOnClick {
 
             }
 
@@ -51,7 +49,7 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
             .setCenterVertically(false)
             .setOnButtonInitialized(::onButtonInitialized)
             .disable()
-            .setOnClickListener {
+            .setOnClick {
                 onVariationClicked()
             }
 
@@ -63,16 +61,6 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, networkManager: N
         super.onDestroy()
         saveButton.destroy()
         addVariationButton.destroy()
-    }
-
-    override fun setOnBackClick(button: UIButton) {
-        super.setOnBackClick(button)
-        onBackClicked()
-    }
-
-    override fun setOnForwardClick(button: UIButton) {
-        super.setOnForwardClick(button)
-        onForwardClicked()
     }
 
     fun enableVariationsButton() {

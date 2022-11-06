@@ -120,6 +120,71 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         }
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (other == null) {
+            return false
+        }
+
+        if (this === other) {
+            return true
+        }
+
+        if (other !is Move) {
+            return false
+        }
+
+        if (team != other.team) {
+            return false
+        }
+
+        if (fromPosition != other.fromPosition) {
+            return false
+        }
+
+        if (toPosition != other.toPosition) {
+            return false
+        }
+
+        if (movedPiece != other.movedPiece) {
+            return false
+        }
+
+        if (isCheck != other.isCheck) {
+            return false
+        }
+
+        if (isCheckMate != other.isCheckMate) {
+            return false
+        }
+
+        if (pieceTaken != other.pieceTaken) {
+            return false
+        }
+
+        if (takenPiecePosition != other.takenPiecePosition) {
+            return false
+        }
+
+        if (promotedPiece != other.promotedPiece) {
+            return false
+        }
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = team.hashCode()
+        result = 31 * result + fromPosition.hashCode()
+        result = 31 * result + toPosition.hashCode()
+        result = 31 * result + movedPiece.hashCode()
+        result = 31 * result + isCheckMate.hashCode()
+        result = 31 * result + isCheck.hashCode()
+        result = 31 * result + (pieceTaken?.hashCode() ?: 0)
+        result = 31 * result + (takenPiecePosition?.hashCode() ?: 0)
+        result = 31 * result + (promotedPiece?.hashCode() ?: 0)
+        return result
+    }
+
     companion object CREATOR : Parcelable.Creator<Move> {
 
         fun fromChessNotation(moveContent: String): Move {
@@ -162,21 +227,18 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
                 var promotedPiece: PieceType? = null
 
                 if (movedPiece == PieceType.PAWN && ((team == Team.WHITE && toY == 7) || (team == Team.BLACK && toY == 0))) {
-                    val promotedPieceSign = moveContent[i++]
+                    val promotedPieceSign = moveContent[i]
                     promotedPiece = PieceType.getBySign(promotedPieceSign)
                 }
 
                 var isCheckMate = false
                 var isCheck = false
 
-                if (moveContent.length == i - 1) {
-                    val kingSituation = moveContent[i]
-                    if (kingSituation == '+') {
-                        isCheck = true
-                    }
-                    if (kingSituation == '#') {
-                        isCheckMate = true
-                    }
+                val lastCharacter = moveContent.last()
+                if (lastCharacter == '+') {
+                    isCheck = true
+                } else if (lastCharacter == '#') {
+                    isCheckMate = true
                 }
 
                 Move(team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, takenPiecePosition, promotedPiece)

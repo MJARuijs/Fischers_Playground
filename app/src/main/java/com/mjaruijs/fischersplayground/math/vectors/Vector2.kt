@@ -69,6 +69,36 @@ data class Vector2(var x: Float = 0.0f, var y: Float = 0.0f): Vector<Vector2> {
 
     override fun toArray() = floatArrayOf(x, y)
 
+    override fun equals(other: Any?): Boolean {
+        if (other == null) {
+            return false
+        }
+
+        if (this === other) {
+            return true
+        }
+
+        if (other !is Vector2) {
+            return false
+        }
+
+        if (!FloatUtils.compare(x, other.x)) {
+            return false
+        }
+
+        if (!FloatUtils.compare(y, other.y)) {
+            return false
+        }
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = x.hashCode()
+        result = 31 * result + y.hashCode()
+        return result
+    }
+
     companion object {
 
         fun fromString(content: String): Vector2 {

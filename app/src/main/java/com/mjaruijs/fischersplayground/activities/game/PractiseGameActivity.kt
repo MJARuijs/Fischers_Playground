@@ -29,7 +29,7 @@ class PractiseGameActivity : GameActivity() {
 
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, networkManager, ::onBackClicked, ::onForwardClicked, ::onAddVariationClicked))
+            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, ::onBackClicked, ::onForwardClicked, ::onAddVariationClicked))
             replace(R.id.lower_fragment_container, OpeningMovesFragment(), "opening_moves")
         }
     }

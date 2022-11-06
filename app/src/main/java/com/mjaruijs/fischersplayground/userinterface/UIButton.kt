@@ -24,6 +24,8 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     private var backgroundHoverColor = Color.argb(0.0f, 0.1f, 0.1f, 0.1f)
     private var textHoverColor = Color.argb(0.5f, 0.3f, 0.3f, 0.3f)
 
+    private var drawablePaintColor = Color.WHITE
+    private val drawablePaint = Paint()
     private val textPaint = Paint()
     private val paint = Paint()
 
@@ -77,11 +79,15 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     init {
         paint.isAntiAlias = true
         paint.color = Color.rgb(0.25f, 0.25f, 0.25f)
+
         textPaint.isAntiAlias = true
         textPaint.color = Color.WHITE
         textPaint.textSize = 200.0f
         textPaint.textAlign = Paint.Align.CENTER
         textPaint.isFakeBoldText = true
+
+        drawablePaint.isAntiAlias = true
+        drawablePaint.color = Color.WHITE
 
         debugPaint.color = Color.GREEN
 
@@ -235,6 +241,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
     fun enable(): UIButton {
         disabled = false
         textPaint.color = Color.WHITE
+        drawablePaint.color = drawablePaintColor
         invalidate()
         return this
     }
@@ -244,6 +251,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         buttonDown.set(false)
         disabled = true
         textPaint.color = Color.GRAY
+        drawablePaint.color = Color.GRAY
         invalidate()
         return this
     }
@@ -253,6 +261,11 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         bitmap = drawable!!.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ALPHA_8)
         textAlignment = TextAlignment.BOTTOM
         return this
+    }
+
+    fun setColoredDrawable(resourceId: Int, color: Int): UIButton {
+        drawablePaint.color = color
+        return setColoredDrawable(resourceId)
     }
 
     fun setTexturedDrawable(resourceId: Int): UIButton {
@@ -400,7 +413,7 @@ class UIButton(context: Context, attributes: AttributeSet?) : View(context, attr
         }
 
         if (bitmap != null) {
-            canvas.drawBitmap(bitmap!!, null, bitmapBounds, textPaint)
+            canvas.drawBitmap(bitmap!!, null, bitmapBounds, drawablePaint)
         }
 
         if (textAlignment == TextAlignment.CENTER) {

@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.chess.Action
+import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
@@ -22,11 +23,15 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
         return super.showPreviousMove(runInBackground, animationSpeed)
     }
 
-    override fun showNextMove(animationSpeed: Long): Pair<Boolean, Boolean> {
+    override fun showNextMove(runInBackground: Boolean, animationSpeed: Long): Pair<Boolean, Boolean> {
         if (!isShowingCurrentMove()) {
             teamToMove = !teamToMove
         }
-        return super.showNextMove(animationSpeed)
+        return super.showNextMove(runInBackground, animationSpeed)
+    }
+
+    fun move(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+        move(move.team, move.getFromPosition(team), move.getToPosition(team), animationSpeed)
     }
 
     override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long) {
@@ -40,7 +45,7 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
             }
             currentMoveIndex = moves.size - 1
         }
-        teamToMove = !teamToMove
+        teamToMove = !team
 
         val actualFromPosition: Vector2
         val actualToPosition: Vector2

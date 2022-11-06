@@ -12,7 +12,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.ScaleType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class CreateOpeningDialog(private val onTeamSelected: (Team) -> Unit) {
+class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
 
     private val accentColor = Color.rgb(235, 186, 145)
     private val grayColor = Color.GRAY
@@ -78,7 +78,7 @@ class CreateOpeningDialog(private val onTeamSelected: (Team) -> Unit) {
             .setCornerRadius(45.0f)
             .setOnClick {
                 if (selectedTeam != null) {
-                    onTeamSelected(selectedTeam!!)
+                    onTeamSelected(openingNameInput.text.toString(), selectedTeam!!)
                 }
             }
 

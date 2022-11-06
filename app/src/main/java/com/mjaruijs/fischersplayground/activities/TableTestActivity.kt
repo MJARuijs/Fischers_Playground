@@ -9,7 +9,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.userinterface.MoveView
 
 class TableTestActivity : AppCompatActivity() {
 
@@ -20,7 +19,8 @@ class TableTestActivity : AppCompatActivity() {
         setContentView(R.layout.activity_table_test)
 
         val moveNumbersLayout = findViewById<LinearLayout>(R.id.move_numbers_layout)
-        val movesLayout = findViewById<TableLayout>(R.id.moves_table)
+
+//        val movesLayout = findViewById<TableLayout>(R.id.variations_table)
 
         for (i in 0 until 50) {
             val textView = TextView(applicationContext)

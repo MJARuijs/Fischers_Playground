@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
-import com.mjaruijs.fischersplayground.activities.game.PractiseSetupActivity
+import com.mjaruijs.fischersplayground.activities.game.OpeningMenuActivity
 import com.mjaruijs.fischersplayground.activities.game.SinglePlayerGameActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
@@ -28,6 +28,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import java.util.*
 
 class MainActivity : ClientActivity() {
@@ -304,7 +305,7 @@ class MainActivity : ClientActivity() {
     private fun onButtonInitialized(textSize: Float) {
         if (textSize < maxTextSize) {
             maxTextSize = textSize
-            findViewById<UIButton>(R.id.start_new_game_button).setButtonTextSize(maxTextSize)
+//            findViewById<UIButton>(R.id.start_new_game_button).setButtonTextSize(maxTextSize)
             findViewById<UIButton>(R.id.practice_button).setButtonTextSize(maxTextSize)
         }
     }
@@ -327,16 +328,28 @@ class MainActivity : ClientActivity() {
                 }
             }
 
-        findViewById<UIButton>(R.id.settings_button)
-            .setColoredDrawable(R.drawable.settings_solid_icon)
-            .setColor(Color.TRANSPARENT)
-            .setChangeIconColorOnHover(false)
-            .setChangeTextColorOnHover(true)
-            .setOnClick {
-                stayingInApp = true
-                val intent = Intent(this, SettingsActivity::class.java)
-                startActivity(intent)
-            }
+//        findViewById<UIButton>(R.id.settings_button)
+//            .setColoredDrawable(R.drawable.settings_solid_icon)
+//            .setColor(Color.TRANSPARENT)
+//            .setChangeIconColorOnHover(false)
+//            .setChangeTextColorOnHover(true)
+//            .setOnClick {
+//                stayingInApp = true
+//                val intent = Intent(this, SettingsActivity::class.java)
+//                startActivity(intent)
+//            }
+
+        val settingsButton = findViewById<UIButton2>(R.id.settings_button)
+        settingsButton.setIconScale(0.65f)
+//        settingsButton.setText("Settings")
+        settingsButton.setIcon(R.drawable.settings_solid_icon)
+
+        settingsButton.setOnClickListener {
+            stayingInApp = true
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
+
 
         findViewById<UIButton>(R.id.practice_button)
             .setText("Practice Mode")
@@ -355,21 +368,32 @@ class MainActivity : ClientActivity() {
 //                    .putExtra("game_id", "test_game")
 //                    .putExtra("opponent_name", "Opponent")
 //                startActivity(intent)
-                startActivity(Intent(this, PractiseSetupActivity::class.java))
+                startActivity(Intent(this, OpeningMenuActivity::class.java))
             }
 
-        findViewById<UIButton>(R.id.start_new_game_button)
-            .setText("Start new game")
-            .setButtonTextSize(70.0f)
-            .setColor(235, 186, 145)
-            .setCornerRadius(45.0f)
-            .setChangeTextColorOnHover(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
-                createGameDialog.show()
+        val startNewGameButton = findViewById<UIButton2>(R.id.start_new_game_button)
+        startNewGameButton.setText("Start new game")
+            .setColor(Color.rgb(235, 186, 145))
+            .setCornerRadius(45f)
+            .setTextSize(28f)
+            .setOnClickListener {
+                stayingInApp = true
+                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
+            }
+
+
+//        findViewById<UIButton>(R.id.start_new_game_button)
+//            .setText("Start new game")
+//            .setButtonTextSize(70.0f)
+//            .setColor(235, 186, 145)
+//            .setCornerRadius(45.0f)
+//            .setChangeTextColorOnHover(false)
+//            .setOnButtonInitialized(::onButtonInitialized)
+//            .setOnClick {
+////                createGameDialog.show()
 //                stayingInApp = true
 //                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
-            }
+//            }
 
         findViewById<UIButton>(R.id.crash_menu_button)
             .setColor(Color.TRANSPARENT)

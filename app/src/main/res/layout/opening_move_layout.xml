@@ -27,8 +27,8 @@
             android:id="@+id/opening_move_notation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TextView"
-            android:textSize="20sp"
+            android:text="0-0-0@"
+            android:textSize="24sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/opening_piece_icon"
             app:layout_constraintTop_toTopOf="parent" />

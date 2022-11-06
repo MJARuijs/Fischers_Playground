@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activities.game.PractiseSetupActivity">
+    tools:context=".activities.game.OpeningMenuActivity">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/opening_list"
