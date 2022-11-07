@@ -6,16 +6,12 @@ import android.view.View
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class PracticeActionButtonsFragment(requestRender: () -> Unit, onBackClicked: () -> Unit, onForwardClicked: () -> Unit, private val onVariationClicked: () -> Unit) : ActionButtonsFragment(R.layout.practice_actionbar, onBackClicked, onForwardClicked) {
+class PracticeActionButtonsFragment(onBackClicked: () -> Unit, onForwardClicked: () -> Unit, private val onVariationClicked: () -> Unit) : ActionButtonsFragment(R.layout.practice_actionbar, onBackClicked, onForwardClicked) {
 
     private lateinit var saveButton: UIButton
     private lateinit var addVariationButton: UIButton
 
     override var numberOfButtons = 4
-
-    init {
-        this.requestRender = requestRender
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -53,8 +49,8 @@ class PracticeActionButtonsFragment(requestRender: () -> Unit, onBackClicked: ()
                 onVariationClicked()
             }
 
-        buttons += saveButton
-        buttons += addVariationButton
+//        buttons += saveButton
+//        buttons += addVariationButton
     }
 
     override fun onDestroy() {

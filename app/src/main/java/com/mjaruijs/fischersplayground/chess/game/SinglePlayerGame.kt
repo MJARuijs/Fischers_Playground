@@ -34,6 +34,11 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
         move(move.team, move.getFromPosition(team), move.getToPosition(team), animationSpeed)
     }
 
+    fun undoLastMove() {
+        teamToMove = moves.last().team
+        undoMove(moves.removeLast(), false)
+    }
+
     override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long) {
         if (!isShowingCurrentMove()) {
             val moveCount = moves.size

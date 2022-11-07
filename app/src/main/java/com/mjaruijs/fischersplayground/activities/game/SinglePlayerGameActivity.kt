@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.activities.game
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintSet
@@ -11,7 +10,7 @@ import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
-import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeActionButtonsFragment
+import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
 import com.mjaruijs.fischersplayground.util.Time
 
 class SinglePlayerGameActivity : GameActivity() {
@@ -39,12 +38,11 @@ class SinglePlayerGameActivity : GameActivity() {
             setReorderingAllowed(true)
             replace(R.id.lower_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
             replace(R.id.upper_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
+            replace(R.id.action_buttons_fragment, GameBarFragment(game))
 //            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, networkManager))
         }
 
         val lowerFragment = findViewById<FragmentContainerView>(R.id.lower_fragment_container)
-
-        Log.d("MyTag", "${lowerFragment.layoutParams.width}, ${lowerFragment.layoutParams.height}")
 
         val layoutParams = Constraints.LayoutParams(Constraints.LayoutParams.MATCH_CONSTRAINT, Constraints.LayoutParams.WRAP_CONTENT)
         lowerFragment.layoutParams = layoutParams
@@ -59,14 +57,8 @@ class SinglePlayerGameActivity : GameActivity() {
         constraints.connect(R.id.lower_fragment_container, ConstraintSet.RIGHT, gameLayout.id, ConstraintSet.RIGHT, margin)
 
         constraints.applyTo(gameLayout)
-        Log.d("MyTag", "${lowerFragment.layoutParams.width}, ${lowerFragment.layoutParams.height}")
 
         gameLayout.invalidate()
-    }
-
-    override fun onResume() {
-//        getActionBarFragment()?.game = game
-        super.onResume()
     }
 
     override fun onContextCreated() {

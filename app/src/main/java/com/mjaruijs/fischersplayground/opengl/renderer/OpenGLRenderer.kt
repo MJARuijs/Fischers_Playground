@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Comp
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.Camera
@@ -164,6 +165,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
                 boardRenderer.render2D(aspectRatio)
                 highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
                 highlightRenderer.renderLastMoveHighlights(game, displayWidth, displayHeight)
+                highlightRenderer.renderHighlightedSquares(displayWidth, displayHeight)
 
                 pieceRenderer.render2D(game, pieceTextures, aspectRatio)
                 highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
@@ -180,6 +182,18 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
             NetworkManager.getInstance().sendCrashReport("opengl_render_crash.txt", e.stackTraceToString())
         }
 
+    }
+
+    fun addHighlightedSquare(square: Vector2) {
+        highlightRenderer.addHighlightedSquare(square)
+    }
+
+    fun removeHighlightedSquare(square: Vector2) {
+        highlightRenderer.removeHighlightedSquare(square)
+    }
+
+    fun clearHighlightedSquares() {
+        highlightRenderer.clearHighlightedSquares()
     }
 
     private fun updateBoardCamera() {

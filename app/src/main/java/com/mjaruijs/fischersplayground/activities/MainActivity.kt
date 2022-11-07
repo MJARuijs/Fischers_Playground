@@ -350,7 +350,6 @@ class MainActivity : ClientActivity() {
             startActivity(intent)
         }
 
-
         findViewById<UIButton>(R.id.practice_button)
             .setText("Practice Mode")
             .setButtonTextSize(70.0f)

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/start_recording_button"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -15,7 +15,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/record_icon" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/stop_recording_button"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -26,7 +26,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/stop_icon" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/start_practice_button"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -36,7 +36,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/back_button"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -47,7 +47,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/arrow_back" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/forward_button"
         android:layout_width="0dp"
         android:layout_height="0dp"

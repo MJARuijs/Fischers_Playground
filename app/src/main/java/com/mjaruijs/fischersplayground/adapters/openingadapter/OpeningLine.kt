@@ -38,8 +38,6 @@ class OpeningLine(val startingState: String, val moves: ArrayList<Move>) {
                 }
             }
 
-            Logger.debug("MyTag", "Trying to parse into GameState: $gameStateString")
-//            val state = GameState.fromString(gameStateString)
             return OpeningLine(gameStateString, moves)
         }
 

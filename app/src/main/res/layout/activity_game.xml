@@ -5,7 +5,7 @@
     android:id="@+id/game_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#3F3F3F"
+    android:background="#333333"
     tools:context=".activities.game.GameActivity">
 
     <ImageView
@@ -84,5 +84,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/upper_fragment_container" />
+
+    <com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
+        android:id="@+id/move_feedback_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

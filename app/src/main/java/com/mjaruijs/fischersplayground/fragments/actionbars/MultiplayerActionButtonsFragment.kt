@@ -14,7 +14,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.ScaleType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 
-class MultiplayerActionButtonsFragment(private val gameId: String, private val userId: String, private val opponentName: String, private val isChatOpened: () -> Boolean, private val onOfferDraw: () -> Unit, private val onResign: () -> Unit, private val onCancelMove: () -> Unit, private val onConfirmMove: (String) -> Unit, requestRender: () -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar) {
+class MultiplayerActionButtonsFragment(private val gameId: String, private val userId: String, private val opponentName: String, private val isChatOpened: () -> Boolean, private val onOfferDraw: () -> Unit, private val onResign: () -> Unit, private val onCancelMove: () -> Unit, private val onConfirmMove: (String) -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar) {
 
     private lateinit var resignButton: UIButton
     private lateinit var offerDrawButton: UIButton
@@ -39,7 +39,6 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
     override var numberOfButtons = 5
 
     init {
-        this.requestRender = requestRender
         this.networkManager = networkManager
     }
 
@@ -110,9 +109,9 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
                 networkManager.sendMessage(NetworkMessage(Topic.UNDO_REQUESTED, "$gameId|$userId"))
             }
 
-        buttons += resignButton
-        buttons += offerDrawButton
-        buttons += redoButton
+//        buttons += resignButton
+//        buttons += offerDrawButton
+//        buttons += redoButton
 
         extraButtonsLayout = view.findViewById(R.id.extra_buttons_layout)
 

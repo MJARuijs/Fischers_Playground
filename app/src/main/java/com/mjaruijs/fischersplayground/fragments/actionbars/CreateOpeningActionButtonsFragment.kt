@@ -4,40 +4,29 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
-class CreateOpeningActionButtonsFragment(requestRender: () -> Unit, private val onStartRecording: () -> Unit, private val onStopRecording: () -> Unit, private val onStartPracticing: () -> Unit) : ActionButtonsFragment(R.layout.create_opening_actionbar) {
+class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecording: () -> Unit, private val onStopRecording: () -> Unit, private val onStartPracticing: () -> Unit, onBackClicked: () -> Unit, onForwardClicked: () -> Unit) : GameBarFragment(game, onBackClicked, onForwardClicked) {
 
-    private lateinit var startRecordingButton: UIButton
-    private lateinit var stopRecordingButton: UIButton
-    private lateinit var startPracticeButton: UIButton
-
-    override var numberOfButtons = 5
-
-    init {
-        this.requestRender = requestRender
-    }
+    private lateinit var startRecordingButton: UIButton2
+    private lateinit var stopRecordingButton: UIButton2
+    private lateinit var startPracticeButton: UIButton2
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val textColor = Color.WHITE
-        val buttonBackgroundColor = Color.argb(0.0f, 1.25f, 0.25f, 0.25f)
-
-        startRecordingButton = view.findViewById(R.id.start_recording_button)
-        stopRecordingButton = view.findViewById(R.id.stop_recording_button)
-        startPracticeButton = view.findViewById(R.id.start_practice_button)
+        startRecordingButton = UIButton2(requireContext())
+        stopRecordingButton = UIButton2(requireContext())
+        startPracticeButton = UIButton2(requireContext())
 
         startRecordingButton
             .setText("Record")
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColoredDrawable(R.drawable.record_icon, Color.RED)
-            .setColor(buttonBackgroundColor)
-            .setCenterVertically(false)
-            .setChangeIconColorOnHover(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
+            .setTextSize(TEXT_SIZE)
+            .setIcon(R.drawable.record_icon)
+            .setIconColor(Color.RED)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
                 onStartRecording()
                 startRecordingButton.disable()
                 stopRecordingButton.enable()
@@ -45,15 +34,11 @@ class CreateOpeningActionButtonsFragment(requestRender: () -> Unit, private val 
 
         stopRecordingButton
             .setText("Stop")
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColoredDrawable(R.drawable.stop_icon)
-            .setColor(buttonBackgroundColor)
-            .setCenterVertically(false)
-            .setChangeIconColorOnHover(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .disable()
-            .setOnClick {
+            .setTextSize(TEXT_SIZE)
+            .setIcon(R.drawable.stop_icon)
+            .setIconColor(Color.WHITE)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
                 onStopRecording()
                 startRecordingButton.enable()
                 stopRecordingButton.disable()
@@ -61,26 +46,16 @@ class CreateOpeningActionButtonsFragment(requestRender: () -> Unit, private val 
 
         startPracticeButton
             .setText("Practice")
-            .setButtonTextSize(50.0f)
-            .setColoredDrawable(R.drawable.student_icon, Color.WHITE)
-            .setButtonTextColor(textColor)
-            .setColor(235, 186, 145)
-            .setCenterVertically(false)
-            .setChangeIconColorOnHover(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
+            .setTextSize(TEXT_SIZE)
+            .setIcon(R.drawable.student_icon)
+            .setIconColor(Color.WHITE)
+            .setColor(Color.rgb(235, 186, 145))
+            .setOnClickListener {
                 onStartPracticing()
             }
 
-        buttons += startRecordingButton
-        buttons += stopRecordingButton
-        buttons += startPracticeButton
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        startRecordingButton.destroy()
-        stopRecordingButton.destroy()
-        startPracticeButton.destroy()
+        addButtonsToLeft(startPracticeButton)
+        addButtonsToLeft(stopRecordingButton)
+        addButtonsToLeft(startRecordingButton)
     }
 }

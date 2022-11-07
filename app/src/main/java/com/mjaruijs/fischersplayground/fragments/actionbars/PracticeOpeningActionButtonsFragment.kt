@@ -4,51 +4,107 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.userinterface.ScaleType
-import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.Logger
 
-class PracticeOpeningActionButtonsFragment(requestRender: () -> Unit, private val onHintClicked: () -> Unit) : ActionButtonsFragment(R.layout.practice_opening_actionbar) {
+class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked: () -> Unit, private val onSolutionClicked: () -> Unit, private val onRetryClicked: () -> Unit, private val onNextClicked: () -> Unit) : GameBarFragment(game) {
 
-    private lateinit var hintButton: UIButton
-
-    override var numberOfButtons = 3
-
-    init {
-        this.requestRender = requestRender
-    }
+    private lateinit var hintButton: UIButton2
+    private lateinit var solutionButton: UIButton2
+    private lateinit var retryButton: UIButton2
+    private lateinit var nextButton: UIButton2
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val textColor = Color.WHITE
-        val buttonBackgroundColor = Color.argb(1.0f, 0.95f, 0.35f, 0.35f)
-
-        hintButton = view.findViewById(R.id.hint_button)
+        hintButton = UIButton2(requireContext())
         hintButton
             .setText("Hint")
-//            .setIconScaleType(ScaleType.SQUARE)
-
-            .setColor(buttonBackgroundColor)
-            .setColoredDrawable(R.drawable.solution_icon)
-            .setButtonTextSize(50.0f)
-            .setButtonTextColor(textColor)
-            .setCenterVertically(false)
-            .setChangeIconColorOnHover(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
+            .setIcon(R.drawable.hint_icon)
+            .setIconColor(Color.WHITE)
+            .setColor(BACKGROUND_COLOR)
+            .setTextSize(TEXT_SIZE)
+            .setOnClickListener {
+                Logger.debug("MyTag", "Click!")
+                showSolutionButton()
                 onHintClicked()
             }
 
-//        view.findViewById<UIButton>(R.id.place_holder_button).visibility = View.GONE
-        backButton.visibility = View.GONE
-//        forwardButton.visibility = View.GONE
+        solutionButton = UIButton2(requireContext())
+        solutionButton
+            .setText("Solution")
+            .setIcon(R.drawable.solution_icon)
+            .setIconColor(Color.WHITE)
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
+                showHintButton()
+                onSolutionClicked()
+            }
 
-        buttons += hintButton
+        retryButton = UIButton2(requireContext())
+        retryButton
+            .setText("Retry")
+            .setIcon(R.drawable.retry_icon, true)
+            .setIconColor(Color.WHITE)
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
+                onRetryClicked()
+            }
+
+        nextButton = UIButton2(requireContext())
+        nextButton
+            .setText("Next Line")
+            .setIcon(R.drawable.next_arrow_icon)
+            .setIconColor(Color.rgb(235, 186, 145))
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
+                onNextClicked()
+            }
+
+        addButtons(hintButton)
+        addButtons(solutionButton)
+        addButtons(retryButton)
+        addButtons(nextButton)
+
+        hintButton.show()
+        solutionButton.hide()
+        retryButton.hide()
+        nextButton.hide()
+
+        backButton.hide()
+        forwardButton.hide()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        hintButton.destroy()
+    fun showHintButton() {
+        solutionButton.hide()
+        retryButton.hide()
+        nextButton.hide()
+        hintButton.show()
+    }
+
+    fun showSolutionButton() {
+        solutionButton.show()
+        retryButton.hide()
+        nextButton.hide()
+        hintButton.hide()
+    }
+
+    fun showRetryButton() {
+        retryButton.show()
+        solutionButton.hide()
+        hintButton.hide()
+        nextButton.hide()
+    }
+
+    fun showNextButton() {
+        retryButton.hide()
+        solutionButton.hide()
+        hintButton.hide()
+        nextButton.show()
     }
 
 }

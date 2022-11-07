@@ -10,6 +10,7 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.fragments.OpeningMovesFragment
+import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeActionButtonsFragment
 import com.mjaruijs.fischersplayground.util.Time
 
@@ -29,7 +30,7 @@ class PractiseGameActivity : GameActivity() {
 
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, ::onBackClicked, ::onForwardClicked, ::onAddVariationClicked))
+            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::onBackClicked, ::onForwardClicked, ::onAddVariationClicked))
             replace(R.id.lower_fragment_container, OpeningMovesFragment(), "opening_moves")
         }
     }
@@ -51,43 +52,44 @@ class PractiseGameActivity : GameActivity() {
     }
 
     override fun onResume() {
-        getActionBarFragment().game = game
+        (getActionBarFragment() as GameBarFragment).game = game
         val movesFragment = findFragment<OpeningMovesFragment>()
-        movesFragment.setGame(game as SinglePlayerGame)
-        movesFragment.setOnLastMoveClicked(::onLastMoveClicked)
+        movesFragment?.setGame(game as SinglePlayerGame)
+        movesFragment?.setOnLastMoveClicked(::onLastMoveClicked)
 
         super.onResume()
     }
 
     override fun onMoveMade(move: Move) {
+        super.onMoveMade(move)
         runOnUiThread {
             val movesFragment = findFragment<OpeningMovesFragment>()
-            movesFragment.addMove(move)
+            movesFragment?.addMove(move)
 
             val buttonsFragment = findFragment<PracticeActionButtonsFragment>()
-            buttonsFragment.enableVariationsButton()
+            buttonsFragment?.enableVariationsButton()
             gameLayout.invalidate()
         }
     }
 
     private fun onBackClicked() {
         val fragment = findFragment<OpeningMovesFragment>()
-        fragment.onBackClicked()
+        fragment?.onBackClicked()
     }
 
     private fun onForwardClicked() {
         val fragment = findFragment<OpeningMovesFragment>()
-        fragment.onForwardClicked()
+        fragment?.onForwardClicked()
     }
 
     private fun onAddVariationClicked() {
         val moveFragment = findFragment<OpeningMovesFragment>()
-        moveFragment.addVariation()
+        moveFragment?.addVariation()
     }
 
     private fun onLastMoveClicked() {
         val buttonFragment = findFragment<PracticeActionButtonsFragment>()
-        buttonFragment.disableForwardButton()
+        buttonFragment?.disableForwardButton()
     }
 
 }

@@ -14,6 +14,7 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
 import com.mjaruijs.fischersplayground.opengl.texture.TextureArray
 import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
+import com.mjaruijs.fischersplayground.util.Logger
 
 class HighlightRenderer(resources: Resources) {
 
@@ -46,10 +47,24 @@ class HighlightRenderer(resources: Resources) {
     private val kingCheckedTexture = TextureLoader.load(resources, R.drawable.king_checked, "King Checked")
     private val textureEffects = TextureArray(listOf(squareSelectedTexture, kingCheckedTexture))
 
+    private val highlightedSquares = ArrayList<Vector2>()
+
     init {
         circleTexture.init()
         kingCheckedTexture.init()
         squareSelectedTexture.init()
+    }
+
+    fun addHighlightedSquare(square: Vector2) {
+        highlightedSquares += square
+    }
+
+    fun removeHighlightedSquare(square: Vector2) {
+        highlightedSquares.remove(square)
+    }
+
+    fun clearHighlightedSquares() {
+        highlightedSquares.clear()
     }
 
     fun renderPossibleSquares2D(board: Board, displayWidth: Int, displayHeight: Int, aspectRatio: Float) {
@@ -106,6 +121,21 @@ class HighlightRenderer(resources: Resources) {
         selectedSquare2DProgram.set("colors[1]", Color(235f / 255f, 186f / 255f, 145f / 255f))
 
         quad.drawInstanced(2)
+
+        selectedSquare2DProgram.stop()
+    }
+
+    fun renderHighlightedSquares(displayWidth: Int, displayHeight: Int) {
+        selectedSquare2DProgram.start()
+        selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
+        selectedSquare2DProgram.set("hasGradient", false)
+
+        for ((i, square) in highlightedSquares.withIndex()) {
+            selectedSquare2DProgram.set("translations[$i]", (square / 8.0f) * 2.0f - 1.0f)
+            selectedSquare2DProgram.set("colors[$i]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+        }
+
+        quad.drawInstanced(highlightedSquares.size)
 
         selectedSquare2DProgram.stop()
     }

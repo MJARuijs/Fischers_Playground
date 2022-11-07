@@ -18,7 +18,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
 import com.mjaruijs.fischersplayground.dialogs.PieceChooserDialog
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
-import com.mjaruijs.fischersplayground.fragments.actionbars.ActionButtonsFragment
+import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
@@ -28,7 +28,7 @@ import kotlin.math.roundToInt
 abstract class GameActivity : ClientActivity() {
 
     private lateinit var checkMateDialog: DoubleButtonDialog
-    private lateinit var glView: SurfaceView
+    lateinit var glView: SurfaceView
 
     protected lateinit var gameLayout: ConstraintLayout
 
@@ -98,28 +98,20 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    inline fun <reified T>findFragment(tag: String): T {
-        val fragment = supportFragmentManager.findFragmentByTag(tag) ?: throw IllegalArgumentException("Could not find fragment with tag: $tag")
-        if (fragment is T) {
-            return fragment
-        }
-        throw IllegalArgumentException("Found fragment with tag $tag, but was not of type ${T::class.java}. Instead was ${fragment::class.java}")
-    }
-
-    inline fun <reified T>findFragment(): T {
-        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: throw IllegalArgumentException("Could not find fragment with tag of type: ${T::class.java}")
+    inline fun <reified T>findFragment(): T? {
+        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: return null
         return fragment as T
     }
 
-    fun getActionBarFragment() = findFragment<ActionButtonsFragment>()
+    fun getActionBarFragment() = findFragment<GameBarFragment>()
 
     open fun evaluateActionButtons() {
         if (game.moves.isNotEmpty()) {
             if (game.getMoveIndex() != -1) {
-                getActionBarFragment().enableBackButton()
+                (getActionBarFragment() as GameBarFragment).enableBackButton()
             }
             if (!game.isShowingCurrentMove()) {
-                getActionBarFragment().enableForwardButton()
+                (getActionBarFragment() as GameBarFragment).enableForwardButton()
             }
         }
     }
@@ -130,14 +122,19 @@ abstract class GameActivity : ClientActivity() {
 
     open fun setGameCallbacks() {
         game.onPawnPromoted = ::onPawnPromoted
-        game.enableBackButton = ::enableBackButton
-        game.enableForwardButton = ::enableForwardButton
-        game.disableBackButton = ::disableBackButton
-        game.disableForwardButton = ::disableForwardButton
+//        game.enableBackButton = ::enableBackButton
+//        game.enableForwardButton = ::enableForwardButton
+//        game.disableBackButton = ::disableBackButton
+//        game.disableForwardButton = ::disableForwardButton
         game.onMoveMade = ::onMoveMade
     }
 
-    open fun onMoveMade(move: Move) {}
+    open fun onMoveMade(move: Move) {
+        val actionBar = getActionBarFragment()
+        if (actionBar is GameBarFragment) {
+            actionBar.evaluateNavigationButtons()
+        }
+    }
 
     fun setGameForRenderer() {
         glView.setGame(game)
@@ -255,26 +252,29 @@ abstract class GameActivity : ClientActivity() {
         }
         return PieceType.QUEEN
     }
-
-    private fun enableBackButton() {
-        getActionBarFragment().enableBackButton()
-        requestRender()
-    }
-
-    private fun enableForwardButton() {
-        getActionBarFragment().enableForwardButton()
-        requestRender()
-    }
-
-    private fun disableBackButton() {
-        getActionBarFragment().disableBackButton()
-        requestRender()
-    }
-
-    private fun disableForwardButton() {
-        getActionBarFragment().disableForwardButton()
-        requestRender()
-    }
+//
+//    private fun enableBackButton() {
+//
+//        (getActionBarFragment() as GameBarFragment).enableBackButton()
+//        requestRender()
+//    }
+//
+//    private fun enableForwardButton() {
+//
+//        (getActionBarFragment() as GameBarFragment).enableForwardButton()
+//        requestRender()
+//    }
+//
+//    private fun disableBackButton() {
+//        (getActionBarFragment() as GameBarFragment).disableBackButton()
+//        requestRender()
+//    }
+//
+//    private fun disableForwardButton() {
+//
+//        (getActionBarFragment() as GameBarFragment).disableForwardButton()
+//        requestRender()
+//    }
 
     protected fun dpToPx(resources: Resources, dp: Int): Int {
         return (dp * resources.displayMetrics.density).roundToInt()

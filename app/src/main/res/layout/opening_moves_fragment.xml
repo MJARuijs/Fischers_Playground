@@ -14,7 +14,7 @@
         tools:ignore="SpeakableTextPresentCheck">
 
         <TableLayout
-            android:id="@+id/content_table"
+            android:id="@+id/move_table"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:isScrollContainer="true"

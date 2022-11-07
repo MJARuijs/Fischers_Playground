@@ -80,7 +80,7 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             supportFragmentManager.commit {
                 setReorderingAllowed(true)
                 replace(R.id.chat_container, chatFragment)
-                replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, opponentName, ::isChatOpened, ::onOfferDraw, ::onResign, ::cancelMove, ::confirmMove, ::requestRender, networkManager))
+                replace(R.id.action_buttons_fragment, MultiplayerActionButtonsFragment(gameId, userId, opponentName, ::isChatOpened, ::onOfferDraw, ::onResign, ::cancelMove, ::confirmMove, networkManager))
             }
 
             val lowerFragment = findViewById<FragmentContainerView>(R.id.lower_fragment_container)
@@ -207,7 +207,6 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             }
 
             runOnUiThread {
-                getActionBarFragment()?.game = game
                 setOpponentStatusIcon((game as MultiPlayerGame).opponentStatus)
 
                 evaluateActionButtons()
@@ -222,7 +221,7 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }.start()
     }
 
-    fun loadFragments() {
+    private fun loadFragments() {
         val playerBundle = Bundle()
         playerBundle.putString("player_name", userName)
         playerBundle.putString("team", if (isPlayingWhite) "WHITE" else "BLACK")
@@ -264,11 +263,9 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         if ((isPlayingWhite && team == Team.WHITE) || (!isPlayingWhite && team == Team.BLACK)) {
             val opponentFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "player" } ?: throw IllegalArgumentException("No fragment for player was found..")
             (opponentFragment as PlayerCardFragment).removeTakenPiece(pieceType)
-//            getOpponentFragment()?.removeTakenPiece(pieceType)
         } else if ((isPlayingWhite && team == Team.BLACK) || (!isPlayingWhite && team == Team.WHITE)) {
             val playerFragment = supportFragmentManager.fragments.find { fragment -> fragment.tag == "opponent" } ?: throw IllegalArgumentException("No fragment for opponent was found..")
             (playerFragment as PlayerCardFragment).removeTakenPiece(pieceType)
-//            getPlayerFragment()?.removeTakenPiece(pieceType)
         }
     }
     private fun sendMoveData(moveNotation: String) {
@@ -283,6 +280,7 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onMoveMade(move: Move) {
+        super.onMoveMade(move)
         if (move.team == game.getCurrentTeam()) {
             val positionUpdateMessage = move.toChessNotation()
             (game as MultiPlayerGame).moveToBeConfirmed = positionUpdateMessage
@@ -532,6 +530,7 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         drawAcceptedDialog.show()
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (isChatOpened()) {
             closeChat()

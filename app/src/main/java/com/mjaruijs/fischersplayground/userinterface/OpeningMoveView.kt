@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.userinterface
 
 import android.content.Context
 import android.content.res.Resources
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -34,9 +35,9 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
         moveView = findViewById(R.id.opening_move_notation)
         cardView = findViewById(R.id.opening_move_card)
         cardView.doOnLayout {
-            Logger.debug("fix", "Width: ${cardView.width} ${cardView.height}")
             cardView.minimumWidth = it.width
         }
+        cardView.setCardBackgroundColor(Color.TRANSPARENT)
     }
 
     fun setLineId(lineId: Int): OpeningMoveView {

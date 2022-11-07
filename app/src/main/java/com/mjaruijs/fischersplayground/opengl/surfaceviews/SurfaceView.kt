@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Companion.GRAPHICS_3D_KEY
 import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
 
 class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView(context, attributeSet) {
@@ -48,6 +49,18 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
     fun setGame(game: Game) {
         renderer.setGame(game)
+    }
+
+    fun highlightSquare(square: Vector2) {
+        renderer.addHighlightedSquare(square)
+    }
+
+    fun removeHighlightedSquare(square: Vector2) {
+        renderer.removeHighlightedSquare(square)
+    }
+
+    fun clearHighlightedSquares() {
+        renderer.clearHighlightedSquares()
     }
 
     @SuppressLint("ClickableViewAccessibility")

@@ -549,7 +549,6 @@ class DataManager(context: Context) {
             try {
                 Logger.debug("MyTag", "Saving openings")
                 for (opening in savedOpenings) {
-                    Logger.debug("MyTag", opening.toString())
                     FileManager.write(context, "opening_${opening.name}_${opening.team}.txt", opening.toString())
                 }
             } catch (e: Exception) {

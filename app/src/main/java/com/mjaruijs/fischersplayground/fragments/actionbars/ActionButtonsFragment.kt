@@ -8,25 +8,21 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
-import com.mjaruijs.fischersplayground.chess.game.Game.Companion.FAST_ANIMATION_SPEED
-import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
 open class ActionButtonsFragment(private val layoutResource: Int, private val onBackClicked: () -> Unit = {}, private val onForwardClicked: () -> Unit = {}) : Fragment() {
-
-    lateinit var requestRender: () -> Unit
 
     private var maxTextSize = Float.MAX_VALUE
     private var numberOfButtonsInitialized = 0
 
-    protected lateinit var backButton: UIButton
-    protected lateinit var forwardButton: UIButton
+    protected lateinit var backButton: UIButton2
+    protected lateinit var forwardButton: UIButton2
 
     lateinit var game: Game
 
     open var numberOfButtons: Int = 2
 
-    val buttons = ArrayList<UIButton>()
+    val buttons = ArrayList<UIButton2>()
 
     fun enableBackButton() {
         backButton.enable()
@@ -67,77 +63,97 @@ open class ActionButtonsFragment(private val layoutResource: Int, private val on
         backButton = view.findViewById(R.id.back_button)
         backButton
             .setText("Back")
-            .setColoredDrawable(R.drawable.arrow_back)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColor(buttonBackgroundColor)
-            .setChangeIconColorOnHover(false)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
+            .setIcon(R.drawable.arrow_back)
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+
             .disable()
-            .setRepeatOnHold(100L, ::runOnUiThread)
-            .setOnClick {
-                setOnBackClick(it)
+            .setOnClickListener {
+                onBackClicked(backButton)
             }
+//        backButton
+//            .setText("Back")
+//            .setColoredDrawable(R.drawable.arrow_back)
+//            .setButtonTextSize(50f)
+//            .setButtonTextColor(textColor)
+//            .setColor(buttonBackgroundColor)
+//            .setChangeIconColorOnHover(false)
+//            .setCenterVertically(false)
+//            .setOnButtonInitialized(::onButtonInitialized)
+//            .disable()
+//            .setRepeatOnHold(100L, ::runOnUiThread)
+//            .setOnClick {
+//                onBackClicked(it)
+//            }
 
         forwardButton = view.findViewById(R.id.forward_button)
         forwardButton
             .setText("Forward")
-            .setColoredDrawable(R.drawable.arrow_forward)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColor(buttonBackgroundColor)
-            .setChangeIconColorOnHover(false)
+            .setIcon(R.drawable.arrow_forward)
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+
             .disable()
-            .setRepeatOnHold(100L, ::runOnUiThread)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
-                setOnForwardClick(it)
+            .setOnClickListener {
+                onForwardClicked(forwardButton)
             }
+//        forwardButton
+//            .setText("Forward")
+//            .setColoredDrawable(R.drawable.arrow_forward)
+//            .setButtonTextSize(50f)
+//            .setButtonTextColor(textColor)
+//            .setColor(buttonBackgroundColor)
+//            .setChangeIconColorOnHover(false)
+//            .disable()
+//            .setRepeatOnHold(100L, ::runOnUiThread)
+//            .setCenterVertically(false)
+//            .setOnButtonInitialized(::onButtonInitialized)
+//            .setOnClick {
+//                onForwardClicked(it)
+//            }
 
         buttons += backButton
         buttons += forwardButton
     }
 
-    open fun setOnBackClick(button: UIButton) {
-        if (button.disabled) {
+    private fun onBackClicked(button: UIButton2) {
+        if (!button.isButtonEnabled()) {
             return
         }
 
-        val buttonStates = if (button.isHeld()) {
-            game.showPreviousMove(false, FAST_ANIMATION_SPEED)
-        } else {
+//        val buttonStates = if (button.isHeld()) {
+//            game.showPreviousMove(false, FAST_ANIMATION_SPEED)
+//        } else {
             game.showPreviousMove(false)
-        }
-        if (buttonStates.first) {
-            button.disable()
-        }
-        if (buttonStates.second) {
-            game.clearBoardData()
-            enableForwardButton()
-        }
+//        }
+//        if (buttonStates.first) {
+//            button.disable()
+//        }
+//        if (buttonStates.second) {
+//            game.clearBoardData()
+//            enableForwardButton()
+//        }
         onBackClicked()
     }
 
-    open fun setOnForwardClick(button: UIButton) {
-        if (button.disabled) {
+    private fun onForwardClicked(button: UIButton2) {
+        if (!button.isButtonEnabled()) {
             return
         }
 
-        val buttonStates = if (button.isHeld()) {
-            game.showNextMove(false, FAST_ANIMATION_SPEED)
-        } else {
+//        val buttonStates = if (button.isHeld()) {
+//            game.showNextMove(false, FAST_ANIMATION_SPEED)
+//        } else {
             game.showNextMove(false)
-        }
+//        }
 
-        if (buttonStates.first) {
-            button.disable()
-        }
-        if (buttonStates.second) {
-            game.clearBoardData()
-            enableBackButton()
-        }
+//        if (buttonStates.first) {
+//            button.disable()
+//        }
+//        if (buttonStates.second) {
+//            game.clearBoardData()
+//            enableBackButton()
+//        }
         onForwardClicked()
     }
 
@@ -150,7 +166,7 @@ open class ActionButtonsFragment(private val layoutResource: Int, private val on
 
         if (numberOfButtonsInitialized == numberOfButtons) {
             for (button in buttons) {
-                button.setFinalTextSize(maxTextSize)
+//                button.setFinalTextSize(maxTextSize)
             }
         }
     }
@@ -163,8 +179,14 @@ open class ActionButtonsFragment(private val layoutResource: Int, private val on
 
     override fun onDestroy() {
         super.onDestroy()
-        backButton.destroy()
-        forwardButton.destroy()
+//        backButton.destroy()
+//        forwardButton.destroy()
+    }
+
+    companion object {
+        val BACKGROUND_COLOR = Color.rgb(0.15f, 0.15f, 0.15f)
+
+        const val TEXT_SIZE = 16f
     }
 
 }
