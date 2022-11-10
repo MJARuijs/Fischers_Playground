@@ -7,41 +7,38 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
-class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecording: () -> Unit, private val onStopRecording: () -> Unit, private val onStartPracticing: () -> Unit, onBackClicked: () -> Unit, onForwardClicked: () -> Unit) : GameBarFragment(game, onBackClicked, onForwardClicked) {
+class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecording: () -> Unit, private val onAddLine: () -> Unit, private val onStopRecording: () -> Unit, private val onStartPracticing: () -> Unit, onBackClicked: () -> Unit, onForwardClicked: () -> Unit) : GameBarFragment(game, onBackClicked, onForwardClicked) {
 
-    private lateinit var startRecordingButton: UIButton2
-    private lateinit var stopRecordingButton: UIButton2
+    private lateinit var addLineButton: UIButton2
+    private lateinit var recordButton: UIButton2
     private lateinit var startPracticeButton: UIButton2
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        startRecordingButton = UIButton2(requireContext())
-        stopRecordingButton = UIButton2(requireContext())
+        addLineButton = UIButton2(requireContext())
+        recordButton = UIButton2(requireContext())
         startPracticeButton = UIButton2(requireContext())
 
-        startRecordingButton
+        addLineButton
+            .setIconColor(Color.WHITE)
+            .setText("Add Line")
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+            .setIcon(R.drawable.add_icon)
+            .setOnClickListener {
+                onAddLine()
+            }
+
+        recordButton
             .setText("Record")
             .setTextSize(TEXT_SIZE)
             .setIcon(R.drawable.record_icon)
             .setIconColor(Color.RED)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
+                showStopRecordingButton()
                 onStartRecording()
-                startRecordingButton.disable()
-                stopRecordingButton.enable()
-            }
-
-        stopRecordingButton
-            .setText("Stop")
-            .setTextSize(TEXT_SIZE)
-            .setIcon(R.drawable.stop_icon)
-            .setIconColor(Color.WHITE)
-            .setColor(BACKGROUND_COLOR)
-            .setOnClickListener {
-                onStopRecording()
-                startRecordingButton.enable()
-                stopRecordingButton.disable()
             }
 
         startPracticeButton
@@ -55,7 +52,44 @@ class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecordin
             }
 
         addButtonsToLeft(startPracticeButton)
-        addButtonsToLeft(stopRecordingButton)
-        addButtonsToLeft(startRecordingButton)
+        addButtonsToLeft(recordButton)
+        addButtonsToLeft(addLineButton)
+    }
+
+    fun enableAddLineButton() {
+        addLineButton.enable()
+    }
+
+    fun disableAddLineButton() {
+        addLineButton.disable()
+    }
+
+    fun enableStopRecordingButton() {
+        recordButton.enable()
+    }
+
+    fun disableStopRecordingButton() {
+        recordButton.disable()
+    }
+
+    fun showStopRecordingButton() {
+        recordButton.setText("Stop")
+            .setIcon(R.drawable.stop_icon)
+            .setIconColor(Color.WHITE)
+            .setOnClickListener {
+                showStartRecordingButton()
+                onStopRecording()
+            }
+    }
+
+    fun showStartRecordingButton() {
+        recordButton
+            .setIconColor(Color.RED)
+            .setIcon(R.drawable.record_icon)
+            .setText("Record")
+            .setOnClickListener {
+                showStopRecordingButton()
+                onStartRecording()
+            }
     }
 }

@@ -1,18 +1,42 @@
 package com.mjaruijs.fischersplayground.adapters.openingadapter
 
-import com.mjaruijs.fischersplayground.chess.game.GameState
 import com.mjaruijs.fischersplayground.chess.pieces.Move
-import com.mjaruijs.fischersplayground.util.Logger
 
-class OpeningLine(val startingState: String, val moves: ArrayList<Move>) {
+class OpeningLine(val startingState: String, val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>) {
+
+    fun getAllMoves(): ArrayList<Move> {
+        val moves = ArrayList<Move>()
+
+        for (move in setupMoves) {
+            moves += move
+        }
+
+        for (move in lineMoves) {
+            moves += move
+        }
+
+        return moves
+    }
 
     override fun toString(): String {
-        var content = "${startingState.toString()}|"
+//        var content = "$startingState|"
 
-        for ((i, move) in moves.withIndex()) {
+        var content = ""
+
+        for ((i, move) in setupMoves.withIndex()) {
             content += move.toChessNotation()
 
-            if (i != moves.size - 1) {
+            if (i != setupMoves.size - 1) {
+                content += ","
+            }
+        }
+
+        content += "|"
+
+        for ((i, move) in lineMoves.withIndex()) {
+            content += move.toChessNotation()
+
+            if (i != lineMoves.size - 1) {
                 content += ","
             }
         }
@@ -24,10 +48,25 @@ class OpeningLine(val startingState: String, val moves: ArrayList<Move>) {
 
         fun fromString(content: String): OpeningLine {
             val firstSeparatorIndex = content.indexOf("|")
-            val secondSeparatorIndex = content.indexOf("|", firstSeparatorIndex + 1)
+//            val secondSeparatorIndex = content.indexOf("|", firstSeparatorIndex + 1)
+//            val thirdSeparatorIndex = content.indexOf("|", secondSeparatorIndex + 1)
 
-            val gameStateString = content.substring(0, secondSeparatorIndex)
-            val movesString = content.substring(secondSeparatorIndex + 1)
+//            val gameStateString = content.substring(0, secondSeparatorIndex)
+            val gameStateString = ""
+//            val startingMovesString = content.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
+//            val movesString = content.substring(thirdSeparatorIndex + 1)
+
+            val startingMovesString = content.substring(0, firstSeparatorIndex)
+            val movesString = content.substring(firstSeparatorIndex + 1)
+
+            val startingMovesData = startingMovesString.split(",")
+            val startingMoves = ArrayList<Move>()
+
+            startingMovesData.forEach {
+                if (it.isNotBlank()) {
+                    startingMoves += Move.fromChessNotation(it)
+                }
+            }
 
             val movesData = movesString.split(",")
             val moves = ArrayList<Move>()
@@ -38,7 +77,7 @@ class OpeningLine(val startingState: String, val moves: ArrayList<Move>) {
                 }
             }
 
-            return OpeningLine(gameStateString, moves)
+            return OpeningLine(gameStateString, startingMoves, moves)
         }
 
     }

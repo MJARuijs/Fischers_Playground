@@ -120,13 +120,13 @@ class OpeningMovesFragment : Fragment() {
             (lastEmptyRow[0] as OpeningMoveView)
                 .setLineId(line.id)
                 .setMove(move)
-                .setOnClick(::onMoveClicked)
+//                .setOnClick(::onMoveClicked)
                 .show()
         } else {
             (lastEmptyRow[1] as OpeningMoveView)
                 .setLineId(line.id)
                 .setMove(move)
-                .setOnClick(::onMoveClicked)
+//                .setOnClick(::onMoveClicked)
                 .show()
         }
 

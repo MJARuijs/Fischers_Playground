@@ -25,7 +25,7 @@ object ImageUtils {
             out.flush()
             out.close()
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("image_utils_save_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_image_utils_save.txt", e.stackTraceToString())
             e.printStackTrace()
         }
     }

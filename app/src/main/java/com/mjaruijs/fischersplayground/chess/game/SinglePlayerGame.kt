@@ -7,6 +7,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
+import com.mjaruijs.fischersplayground.util.Logger
 
 class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlayingWhite, lastUpdated) {
 
@@ -34,6 +35,16 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
         move(move.team, move.getFromPosition(team), move.getToPosition(team), animationSpeed)
     }
 
+    override fun swapMoves(newMoves: ArrayList<Move>, selectedMoveIndex: Int) {
+        super.swapMoves(newMoves, selectedMoveIndex)
+        val currentMove = getCurrentMove()
+        teamToMove = if (currentMove == null) {
+            Team.WHITE
+        } else {
+            !currentMove.team
+        }
+    }
+
     fun undoLastMove() {
         teamToMove = moves.last().team
         undoMove(moves.removeLast(), false)
@@ -41,6 +52,7 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
 
     override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long) {
         if (!isShowingCurrentMove()) {
+            Logger.debug("MyTag", "NOT SHOWING CURRENT MOVE ${moves.size}")
             val moveCount = moves.size
             for (i in currentMoveIndex + 1 until moveCount) {
                 if (i == -1) {

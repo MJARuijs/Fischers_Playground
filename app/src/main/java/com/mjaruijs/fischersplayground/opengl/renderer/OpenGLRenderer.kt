@@ -72,7 +72,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
                 pieceRenderer.queueAnimation(animation)
             }
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("opengl_on_surface_created_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_opengl_on_surface_created.txt", e.stackTraceToString())
             throw e
         }
 
@@ -179,7 +179,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
         } catch (e: Exception) {
 //            e.printStackTrace()
             throw e
-            NetworkManager.getInstance().sendCrashReport("opengl_render_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_opengl_render.txt", e.stackTraceToString())
         }
 
     }

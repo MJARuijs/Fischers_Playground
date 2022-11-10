@@ -118,7 +118,7 @@ class NetworkManager {
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
-                    sendCrashReport("network_send_crash.txt", e.stackTraceToString())
+                    sendCrashReport("crash_network_send.txt", e.stackTraceToString())
                 }
             } else {
                 messageQueue += message
@@ -172,7 +172,7 @@ class NetworkManager {
                     val file = FileManager.getFile(gameFile)
                     if (file.exists()) {
                         val fileContent = file.readText()
-                        allData += if (gameFile.endsWith("_crash.txt")) {
+                        allData += if (gameFile.startsWith("crash_")) {
                             val compressedContent = trimCrashReport(fileContent)
                             "$gameFile|$compressedContent\\\n"
                         } else {

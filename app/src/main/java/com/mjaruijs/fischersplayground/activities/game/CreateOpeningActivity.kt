@@ -2,27 +2,33 @@ package com.mjaruijs.fischersplayground.activities.game
 
 import android.graphics.Color
 import android.graphics.Point
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.game.OpeningMovesFragment2.Companion.LINE_MOVES_TEXT
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
-import com.mjaruijs.fischersplayground.chess.game.GameState
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
+import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment.Companion.BACKGROUND_COLOR
 import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
-import java.util.LinkedList
+import java.util.*
 import kotlin.math.roundToInt
 
 class CreateOpeningActivity : GameActivity() {
@@ -31,8 +37,10 @@ class CreateOpeningActivity : GameActivity() {
 
     override var isSinglePlayer = true
 
-    private val startingMoves = ArrayList<Move>()
-    private val lineMoves = ArrayList<Move>()
+//    private val setupMoves = ArrayList<Move>()
+//    private val lineMoves = ArrayList<Move>()
+
+    private var selectedLine: OpeningLine? = null
 
     private lateinit var openingName: String
     private lateinit var openingTeam: Team
@@ -52,6 +60,7 @@ class CreateOpeningActivity : GameActivity() {
     private var nextLine: OpeningLine? = null
     private var currentMoveIndex = 0
 
+    private lateinit var openingMovesFragment: OpeningMovePagerFragment
     private lateinit var moveFeedbackIcon: MoveFeedbackIcon
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +73,17 @@ class CreateOpeningActivity : GameActivity() {
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create CreateOpeningActivity. Missing essential information: opening_team.."))
         opening = dataManager.getOpening(openingName, openingTeam)
 
+        if (opening.lines.isNotEmpty()) {
+            selectedLine = opening.lines[0]
+            for (move in opening.lines[0].setupMoves) {
+//                setupMoves += move
+            }
+
+            for (move in opening.lines[0].lineMoves) {
+//                lineMoves += move
+            }
+        }
+
         isPlayingWhite = openingTeam == Team.WHITE
 
         game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp())
@@ -75,7 +95,30 @@ class CreateOpeningActivity : GameActivity() {
             moveFeedbackIcon.hide()
         }
 
+        openingMovesFragment = OpeningMovePagerFragment(::onLineSelected, ::onMoveClicked, opening.lines)
+
         loadCreatingActionButtons()
+
+        supportActionBar?.show()
+        supportActionBar?.setDisplayShowCustomEnabled(true)
+        supportActionBar?.setCustomView(R.layout.action_bar_view)
+        supportActionBar?.customView?.findViewById<TextView>(R.id.title_view)?.text = openingName
+        supportActionBar?.setBackgroundDrawable(ColorDrawable(BACKGROUND_COLOR))
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.create_opening_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.delete_line_button -> {
+                openingMovesFragment.deleteCurrentLine()
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onContextCreated() {
@@ -104,38 +147,113 @@ class CreateOpeningActivity : GameActivity() {
 
         glView.clearHighlightedSquares()
 
-        if (recording) {
-            lineMoves += move
-        } else {
-            startingMoves += move
-        }
-
         if (practicing) {
             if (move.team == openingTeam) {
                 runOnUiThread {
                     checkMoveCorrectness(move)
                 }
             }
+        } else {
+            if (recording) {
+//                lineMoves += move
+                runOnUiThread {
+                    openingMovesFragment.getCurrentOpeningFragment().addLineMove(move)
+                }
+            } else {
+//                setupMoves += move
+                runOnUiThread {
+                    openingMovesFragment.getCurrentOpeningFragment().addSetupMove(move)
+                }
+            }
+        }
+    }
+
+    private fun onLineSelected(line: OpeningLine, selectedMoveIndex: Int) {
+//        val openingMoves = ArrayList<Move>()
+
+//        for (move in line.setupMoves) {
+//            openingMoves += move
+//            setupMoves += move
+//        }
+//
+//        for (move in line.lineMoves) {
+//            openingMoves += move
+//            lineMoves += move
+//        }
+
+        selectedLine = line
+        game.swapMoves(line.getAllMoves(), selectedMoveIndex)
+        evaluateActionButtons()
+        requestRender()
+    }
+
+    // TODO: Maybe add a dialog that allows copying options based on current line
+    // Don't copy
+    // Copy as is: setup moves -> setup moves & line moves -> line moves
+    // Copy setup moves only: setup moves -> setup moves & no line moves
+    // Copy line moves: setup moves -> setup moves & line moves -> setup moves. This is the current implementation
+    // Maybe allow copying a selection of moves?
+    private fun onLineAdded() {
+//        val lineSetupMoves = ArrayList<Move>()
+
+//        for (move in setupMoves) {
+//            lineSetupMoves += move
+//        }
+//
+//        for (move in lineMoves) {
+//            lineSetupMoves += move
+//        }
+
+        findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine?.getAllMoves() ?: arrayListOf())
+        (getActionBarFragment() as CreateOpeningActionButtonsFragment).showStartRecordingButton()
+        requestRender()
+    }
+
+    private fun onMoveClicked(move: Move, deleteModeActive: Boolean) {
+        Logger.debug("MyTag", "Click! ${game.currentMoveIndex}")
+        if (deleteModeActive) {
+            game.clearBoardData()
+        } else {
+            game.goToMove(move)
+            openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex)
+            evaluateActionButtons()
         }
     }
 
     private fun onStartRecording() {
+        (getActionBarFragment() as CreateOpeningActionButtonsFragment).disableAddLineButton()
+//        (getActionBarFragment() as CreateOpeningActionButtonsFragment).enableStopRecordingButton()
+
         recording = true
-        lineMoves.clear()
+//        lineMoves.clear()
         gameState = game.state.toString()
+        runOnUiThread {
+            if (!openingMovesFragment.getCurrentOpeningFragment().hasHeader(LINE_MOVES_TEXT)) {
+                openingMovesFragment.getCurrentOpeningFragment().addHeaderRow(LINE_MOVES_TEXT, true)
+            }
+        }
     }
 
     private fun onStopRecording() {
+        (getActionBarFragment() as CreateOpeningActionButtonsFragment).showStartRecordingButton()
+        (getActionBarFragment() as CreateOpeningActionButtonsFragment).enableAddLineButton()
+
         recording = false
 
-        val openingMoves = ArrayList<Move>()
+//        val openingMoves = ArrayList<Move>()
 
-        for (move in lineMoves) {
-            openingMoves += move
-        }
+//        for (move in lineMoves) {
+//            openingMoves += move
+//        }
 
-        val newLine = OpeningLine(gameState, openingMoves)
-        opening.addLine(newLine)
+//        val startMoves = ArrayList<Move>()
+
+//        for (move in setupMoves) {
+//            startMoves += move
+//        }
+
+//        val newLine = OpeningLine(gameState, startMoves, openingMoves)
+//        opening.addLine(newLine)
 
         hasUnsavedChanges = true
     }
@@ -147,7 +265,7 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onSolutionClicked() {
         glView.clearHighlightedSquares()
-        (game as SinglePlayerGame).move(currentLine!!.moves[currentMoveIndex])
+        (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex])
         hintRequested = false
     }
 
@@ -172,13 +290,13 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun checkMoveCorrectness(move: Move) {
-        if (move == currentLine!!.moves[currentMoveIndex]) {
+        if (move == currentLine!!.lineMoves[currentMoveIndex]) {
             currentMoveIndex++
-            if (currentMoveIndex >= currentLine!!.moves.size) {
+            if (currentMoveIndex >= currentLine!!.lineMoves.size) {
                 showMoveFeedback(move.getToPosition(openingTeam), true)
                 (getActionBarFragment() as PracticeOpeningActionButtonsFragment).showNextButton()
             } else {
-                (game as SinglePlayerGame).move(currentLine!!.moves[currentMoveIndex++])
+                (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
                 (getActionBarFragment() as PracticeOpeningActionButtonsFragment).showHintButton()
             }
             hintRequested = false
@@ -193,7 +311,7 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun giveHint() {
-        val currentMove = currentLine!!.moves[currentMoveIndex]
+        val currentMove = currentLine!!.lineMoves[currentMoveIndex]
         val startSquare = currentMove.getFromPosition(openingTeam)
 
         glView.highlightSquare(startSquare)
@@ -233,15 +351,21 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onStartPracticing() {
+//        (openingMovesFragment.getCurrentOpeningFragment().deleteMovesAfter(openingMovesFragment.getCurrentOpeningFragment().currentMoveIndex))
+
         if (hasUnsavedChanges) {
             saveOpening()
+        }
+
+        supportFragmentManager.commit {
+            hide(openingMovesFragment)
         }
 
         practicing = true
 
         loadPracticeActionButtons()
 
-        for (line in opening.lines.shuffled()) {
+        for (line in opening.lines) {
             lines += line
         }
 
@@ -258,9 +382,15 @@ class CreateOpeningActivity : GameActivity() {
         currentMoveIndex = 0
         hintRequested = false
         madeMistakes = false
-        game.state = GameState.fromString(currentLine!!.startingState)
+//        game.state = GameState.fromString(currentLine!!.startingState)
 
-        val firstMove = currentLine!!.moves[currentMoveIndex++]
+        game.resetMoves()
+
+        for (move in currentLine!!.setupMoves) {
+            (game as SinglePlayerGame).setMove(move)
+        }
+
+        val firstMove = currentLine!!.lineMoves[currentMoveIndex++]
         (game as SinglePlayerGame).move(firstMove)
 
         moveFeedbackIcon.hide()
@@ -297,15 +427,11 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onBackClicked() {
-        if (recording) {
-            lineMoves.removeLast()
-        }
+        openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex)
     }
 
     private fun onForwardClicked() {
-        if (recording) {
-            lineMoves += game.getCurrentMove()!!
-        }
+        openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex)
     }
 
     private fun finishedPracticingOpening() {
@@ -315,8 +441,8 @@ class CreateOpeningActivity : GameActivity() {
     private fun loadCreatingActionButtons() {
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, CreateOpeningActionButtonsFragment(game, ::onStartRecording, ::onStopRecording, ::onStartPracticing, ::onBackClicked, ::onForwardClicked))
-            replace(R.id.lower_fragment_container, OpeningMovePagerFragment(opening.lines))
+            replace(R.id.action_buttons_fragment, CreateOpeningActionButtonsFragment(game, ::onStartRecording, ::onLineAdded, ::onStopRecording, ::onStartPracticing, ::onBackClicked, ::onForwardClicked))
+            replace(R.id.lower_fragment_container, openingMovesFragment)
         }
     }
 
@@ -328,6 +454,15 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun saveOpening() {
+        opening.clear()
+
+        val openingFragments = openingMovesFragment.getFragments()
+
+        for (fragment in openingFragments) {
+            val line = (fragment as OpeningMovesFragment2).getOpeningLine()
+            opening.addLine(line)
+        }
+
         dataManager.setOpening(openingName, openingTeam, opening)
         dataManager.saveOpenings(applicationContext)
         hasUnsavedChanges = false

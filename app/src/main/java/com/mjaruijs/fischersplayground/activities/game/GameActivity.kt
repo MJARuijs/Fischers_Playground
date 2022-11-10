@@ -109,9 +109,13 @@ abstract class GameActivity : ClientActivity() {
         if (game.moves.isNotEmpty()) {
             if (game.getMoveIndex() != -1) {
                 (getActionBarFragment() as GameBarFragment).enableBackButton()
+            } else {
+                (getActionBarFragment() as GameBarFragment).disableBackButton()
             }
             if (!game.isShowingCurrentMove()) {
                 (getActionBarFragment() as GameBarFragment).enableForwardButton()
+            } else {
+                (getActionBarFragment() as GameBarFragment).disableForwardButton()
             }
         }
     }
@@ -177,7 +181,7 @@ abstract class GameActivity : ClientActivity() {
             }
             game.onClick(x, y, displayWidth, displayHeight)
         } catch (e: Exception) {
-            networkManager.sendCrashReport("onclick_crash_log.txt", e.stackTraceToString())
+            networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString())
         }
     }
 

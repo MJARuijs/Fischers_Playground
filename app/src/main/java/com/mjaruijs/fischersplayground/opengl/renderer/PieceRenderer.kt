@@ -127,7 +127,10 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         }
     }
 
-    fun queueAnimation(animationData: AnimationData) {
+    fun queueAnimation(animationData: AnimationData?) {
+        if (animationData == null) {
+            return
+        }
         animationQueue.add(animationData)
     }
 

@@ -12,7 +12,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.doOnLayout
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
@@ -26,6 +25,9 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
     private var cardView: CardView
 
     private var lineId = 0
+    private var deleteModeActive = false
+
+    private var pieceDrawable: Drawable? = null
     private lateinit var move: Move
 
     init {
@@ -34,10 +36,23 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
         iconView = findViewById(R.id.opening_piece_icon)
         moveView = findViewById(R.id.opening_move_notation)
         cardView = findViewById(R.id.opening_move_card)
-        cardView.doOnLayout {
-            cardView.minimumWidth = it.width
-        }
         cardView.setCardBackgroundColor(Color.TRANSPARENT)
+        cardView.setOnLongClickListener {
+//            if (deleteModeActive) {
+//                deleteModeActive = false
+//                iconView.setImageDrawable(pieceDrawable!!)
+//                select()
+//            } else {
+//                deleteModeActive = true
+//                iconView.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.delete_icon, null))
+//                cardView.setCardBackgroundColor(Color.RED)
+//            }
+            true
+        }
+    }
+
+    override fun setBackgroundColor(color: Int) {
+        cardView.setCardBackgroundColor(color)
     }
 
     fun setLineId(lineId: Int): OpeningMoveView {
@@ -48,15 +63,17 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
     fun setMove(move: Move): OpeningMoveView {
         this.move = move
         moveView.text = move.getSimpleChessNotation().substring(1)
-        iconView.setImageDrawable(getPieceIcon(resources, move.movedPiece, move.team))
+        pieceDrawable = getPieceIcon(resources, move.movedPiece, move.team)
+        iconView.setImageDrawable(pieceDrawable)
         return this
     }
 
-    fun setOnClick(onClick: (Int, Move) -> Unit): OpeningMoveView {
+    fun setOnClick(move: Move, onClick: (Move, Boolean) -> Unit): OpeningMoveView {
+        setMove(move)
         cardView.setOnClickListener {
-            if (this::move.isInitialized) {
-                onClick(lineId, move)
-            }
+//            if (this::move.isInitialized) {
+                onClick(move, deleteModeActive)
+//            }
         }
         return this
     }
@@ -71,6 +88,14 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
 
     fun hide() {
         visibility = View.INVISIBLE
+    }
+
+    fun select() {
+        cardView.setCardBackgroundColor(Color.argb(0.5f, 0.75f, 0.75f, 0.75f))
+    }
+
+    fun deselect() {
+        cardView.setCardBackgroundColor(Color.TRANSPARENT)
     }
 
     private fun getPieceIcon(resources: Resources, pieceType: PieceType, team: Team): Drawable {

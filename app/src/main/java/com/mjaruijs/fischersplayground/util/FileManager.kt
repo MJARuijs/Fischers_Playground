@@ -22,7 +22,7 @@ object FileManager {
             val newContent = "$currentContent\n$content"
             return write(context, fileName, newContent)
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("file_manager_append_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_file_manager_append.txt", e.stackTraceToString())
             e.printStackTrace()
             false
         }
@@ -64,7 +64,7 @@ object FileManager {
             writer.close()
             true
         } catch (e: IOException) {
-            NetworkManager.getInstance().sendCrashReport("file_manager_write_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_file_manager_write.txt", e.stackTraceToString())
             return false
         }
     }

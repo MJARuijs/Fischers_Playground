@@ -73,6 +73,16 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     fun getMoveIndex() = currentMoveIndex
 
+    fun resetMoves() {
+        for (i in currentMoveIndex  downTo 0) {
+            val move = moves[i]
+            undoMove(move, true)
+        }
+
+        moves.clear()
+        clearBoardData()
+    }
+
     fun getCurrentMove(): Move? {
         if (moves.isEmpty()) {
             return null
@@ -105,14 +115,32 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return currentMoveIndex
     }
 
-    fun swapMoves(newMoves: ArrayList<Move>, currentMove: Move) {
-        while (currentMoveIndex >= 0) {
-            showPreviousMove(true, 0L)
+    open fun swapMoves(newMoves: ArrayList<Move>, selectedMoveIndex: Int) {
+        resetMoves()
+
+        for (move in newMoves) {
+            moves.add(move)
         }
 
-        moves.clear()
+//        currentMoveIndex = selectedMoveIndex
+
+        while (currentMoveIndex != selectedMoveIndex) {
+            showNextMove(true, 0L)
+        }
+
+
+    }
+
+    fun swapMoves(newMoves: ArrayList<Move>, currentMove: Move) {
+//        while (currentMoveIndex >= 0) {
+//            showPreviousMove(true, 0L)
+//        }
+//
+//        moves.clear()
+
+        resetMoves()
+
         for (move in newMoves) {
-            Logger.debug("fix", "Adding move to game: ${move.getSimpleChessNotation()}")
             moves.add(move)
         }
 
@@ -122,10 +150,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         while (currentMoveIndex != moveIndex) {
             showNextMove(true, 0L)
         }
-
-        if (moveIndex == moves.size - 1) {
-            disableForwardButton()
-        }
+//
+//        if (moveIndex == moves.size - 1) {
+//            disableForwardButton()
+//        }
     }
 
     fun goToMove(move: Move) {
@@ -135,7 +163,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         val moveIndex = moves.indexOf(move)
 
-        Logger.debug("fix", "Going to move: ${move.getSimpleChessNotation()}, moveIndex=$moveIndex, moves.size=${moves.size}, currentMoveIndex=${currentMoveIndex}")
+        Logger.debug("MyTag", "Going to move: ${move.getSimpleChessNotation()}, moveIndex=$moveIndex, moves.size=${moves.size}, currentMoveIndex=${currentMoveIndex}")
 
         if (moveIndex < currentMoveIndex) {
             while (currentMoveIndex != moveIndex) {
@@ -146,6 +174,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 showNextMove(false, FAST_ANIMATION_SPEED)
             }
         }
+
+        clearBoardData()
     }
 
     open fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
@@ -330,6 +360,33 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         } else {
             queueAnimation(animation)
         }
+    }
+
+    fun setMove(move: Move) {
+        val fromPosition = move.getFromPosition(team)
+        val toPosition = move.getToPosition(team)
+
+        if (move.movedPiece == PieceType.KING && abs(fromPosition.x - toPosition.x) == 2.0f) {
+            val animation = performCastle(move.team, fromPosition, toPosition, 0L)
+            animation.invokeOnStartCalls()
+            animation.invokeOnFinishCalls()
+
+            animation.nextAnimation?.invokeOnStartCalls()
+            animation.nextAnimation?.invokeOnFinishCalls()
+        } else {
+            state[toPosition] = state[fromPosition]
+            state[fromPosition] = null
+        }
+
+        if (move.pieceTaken != null) {
+            val takenPosition = move.getTakenPosition(team)!!
+            if (takenPosition != toPosition) {
+                state[takenPosition] = null
+            }
+        }
+
+        incrementMoveCounter()
+        moves += move
     }
 
     open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {

@@ -8,6 +8,10 @@ class Opening(val name: String, val team: Team, val lines: ArrayList<OpeningLine
         lines += line
     }
 
+    fun clear() {
+        lines.clear()
+    }
+
     operator fun plusAssign(openingLine: OpeningLine) {
         lines += openingLine
     }

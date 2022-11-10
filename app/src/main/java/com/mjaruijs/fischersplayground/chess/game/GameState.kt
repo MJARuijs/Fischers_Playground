@@ -56,7 +56,7 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
             state[i][j]
         } catch (e: IndexOutOfBoundsException) {
 //            ErrorHandler.reportCrash(e)
-            NetworkManager.getInstance().sendCrashReport("game_state_int_get_oob_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_game_state_int_get_oob.txt", e.stackTraceToString())
             return null
         }
     }
@@ -67,7 +67,7 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
         return try {
             state[vector2.x.roundToInt()][vector2.y.roundToInt()]
         } catch (e: ArrayIndexOutOfBoundsException) {
-            NetworkManager.getInstance().sendCrashReport("game_state_vec_get_oob_crash.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_game_state_vec_get_oob.txt", e.stackTraceToString())
 
             null
         }
@@ -77,7 +77,7 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
        try {
            state[vector2.x.roundToInt()][vector2.y.roundToInt()] = piece
        } catch (e: IndexOutOfBoundsException) {
-           NetworkManager.getInstance().sendCrashReport("game_state_set_oob_crash.txt", e.stackTraceToString())
+           NetworkManager.getInstance().sendCrashReport("crash_game_state_set_oob.txt", e.stackTraceToString())
 
 //           ErrorHandler.reportCrash(e)
        }
