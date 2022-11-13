@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 import java.util.concurrent.atomic.AtomicBoolean
 
 class NetworkManager {
@@ -81,7 +82,7 @@ class NetworkManager {
         Thread {
             try {
                 clientConnecting.set(true)
-                client = SecureClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
+                client = SecureClient(LOCAL_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
             } catch (e: Exception) {
                 Log.w("Networker", "Failed to connect to server..")
@@ -114,7 +115,7 @@ class NetworkManager {
 
             if (clientConnected.get()) {
                 try {
-                    Log.i(TAG, "Sending message: $message")
+                    Logger.info(TAG, "Sending message: $message")
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
@@ -139,7 +140,7 @@ class NetworkManager {
         sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
         if (message.topic != Topic.CONFIRM_MESSAGE) {
-            Log.i(TAG, "Received message: $message")
+            Logger.info(TAG, "Received message: $message")
         }
 
         val dataManager = DataManager.getInstance(context)

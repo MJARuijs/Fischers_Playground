@@ -23,9 +23,11 @@ import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
+import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.services.StoreDataWorker
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 
 abstract class ClientActivity : AppCompatActivity() {
@@ -173,6 +175,8 @@ abstract class ClientActivity : AppCompatActivity() {
             Topic.DRAW_REJECTED -> ::onDrawRejected
             Topic.CHAT_MESSAGE -> ::onChatMessageReceived
             Topic.USER_STATUS_CHANGED -> ::onUserStatusChanged
+            Topic.COMPARE_OPENINGS -> ::onCompareOpenings
+            Topic.RESTORE_OPENINGS -> { _ -> }
             else -> throw IllegalArgumentException("Failed to handle message with topic: $topic")
         })
     }
@@ -229,6 +233,22 @@ abstract class ClientActivity : AppCompatActivity() {
         // TODO: show popup
     }
 
+    private fun onCompareOpenings(output: Parcelable) {
+        Logger.debug("MyTag", "Comparing Openings")
+        if (output !is ParcelableString) {
+            Logger.debug("MyTag", "Returning")
+            return
+        }
+
+        val missingOpenings = output.value.split(",")
+
+        Logger.debug("MyTag", "Test: $missingOpenings")
+
+        if (missingOpenings.isNotEmpty()) {
+            networkManager.sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|${missingOpenings.joinToString(",")}"))
+        }
+    }
+
     open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 
     private fun sendDataToWorker(topic: Topic, data: Array<String>, messageId: Long, onResult: (Parcelable) -> Unit) {
@@ -248,7 +268,9 @@ abstract class ClientActivity : AppCompatActivity() {
         workManager.getWorkInfoByIdLiveData(worker.id)
             .observe(this) {
                 if (it != null && it.state.isFinished) {
+                    Logger.debug("MyTag", "WHAT")
                     val result = it.outputData.getParcelable(topic.dataType, "output") ?: return@observe
+
                     onResult(result)
                 }
             }

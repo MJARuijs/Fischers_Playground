@@ -53,6 +53,7 @@ class OpeningMovePagerFragment(private val onLineSelected: (OpeningLine, Int) ->
 
         pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
+                
                 val selectedFragment = pagerAdapter.get(position) as OpeningMovesFragment2
                 val line = selectedFragment.getOpeningLine()
                 val selectedMove = selectedFragment.currentMoveIndex

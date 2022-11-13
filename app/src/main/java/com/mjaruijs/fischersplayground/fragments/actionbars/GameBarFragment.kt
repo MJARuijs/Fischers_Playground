@@ -5,7 +5,6 @@ import android.view.View
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.Logger
 
 open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit = {}, private val onForwardClicked: () -> Unit = {}) : ActionBarFragment() {
 
@@ -21,10 +20,12 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
             .setIcon(R.drawable.arrow_back)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
-
+            .isLongClickable(true)
             .disable()
             .setOnClickListener {
-                onBackClicked(backButton)
+                if (backButton.isButtonEnabled()) {
+                    onBackClicked(backButton.isHeld())
+                }
             }
 
         forwardButton = UIButton2(requireContext())
@@ -33,10 +34,12 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
             .setIcon(R.drawable.arrow_forward)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
-
+            .isLongClickable(true)
             .disable()
             .setOnClickListener {
-                onForwardClicked(forwardButton)
+                if (forwardButton.isButtonEnabled()) {
+                    onForwardClicked(forwardButton.isHeld())
+                }
             }
 
         addButtons(backButton)
@@ -91,45 +94,28 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
         }
     }
 
-    private fun onBackClicked(button: UIButton2) {
-        if (!button.isButtonEnabled()) {
-            return
+    private fun onBackClicked(isHeld: Boolean) {
+        val animationSpeed = if (isHeld) {
+            Game.FAST_ANIMATION_SPEED
+        } else {
+            Game.DEFAULT_ANIMATION_SPEED
         }
 
-//        val buttonStates = if (button.isHeld()) {
-//            game.showPreviousMove(false, FAST_ANIMATION_SPEED)
-//        } else {
-        game.showPreviousMove(false)
-//        }
-//        if (buttonStates.first) {
-//            button.disable()
-//        }
-//        if (buttonStates.second) {
-            game.clearBoardData()
-//            enableForwardButton()
-//        }
+        game.showPreviousMove(false, animationSpeed)
+        game.clearBoardData()
         evaluateNavigationButtons()
         onBackClicked()
     }
 
-    private fun onForwardClicked(button: UIButton2) {
-        if (!button.isButtonEnabled()) {
-            return
+    private fun onForwardClicked(isHeld: Boolean) {
+        val animationSpeed = if (isHeld) {
+            Game.FAST_ANIMATION_SPEED
+        } else {
+            Game.DEFAULT_ANIMATION_SPEED
         }
 
-//        val buttonStates = if (button.isHeld()) {
-//            game.showNextMove(false, FAST_ANIMATION_SPEED)
-//        } else {
-        game.showNextMove(false)
-//        }
-
-//        if (buttonStates.first) {
-//            button.disable()
-//        }
-//        if (buttonStates.second) {
-            game.clearBoardData()
-//            enableBackButton()
-//        }
+        game.showNextMove(false, animationSpeed)
+        game.clearBoardData()
         evaluateNavigationButtons()
         onForwardClicked()
     }

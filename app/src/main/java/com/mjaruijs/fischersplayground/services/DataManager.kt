@@ -540,6 +540,17 @@ class DataManager(context: Context) {
         saveRecentOpponents(context)
     }
 
+//    fun saveOpening(name: String, team: Team, opening: Opening, context: Context) {
+//        obtainOpeningLock()
+//
+//        savedOpenings.removeIf { storedOpening ->
+//            storedOpening.name == name && storedOpening.team == team
+//        }
+//
+//        savedOpenings += opening
+//        unlockOpenings()
+//    }
+
     fun saveOpenings(context: Context) {
         obtainOpeningLock()
         Thread {
@@ -553,7 +564,9 @@ class DataManager(context: Context) {
             } finally {
                 unlockOpenings()
             }
+
         }.start()
+
     }
 
     private fun saveGames(context: Context) {

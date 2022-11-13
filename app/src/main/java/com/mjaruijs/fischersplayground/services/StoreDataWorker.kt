@@ -16,18 +16,22 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
+import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.IntNews
 import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
+import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
+import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 
 class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(context, workParams) {
 
@@ -63,6 +67,8 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             Topic.CHAT_MESSAGE -> onChatMessageReceived(content)
             Topic.USER_STATUS_CHANGED -> onUserStatusChanged(content)
             Topic.RECONNECT_TO_SERVER -> reconnectToServer(content)
+            Topic.COMPARE_OPENINGS -> onCompareOpenings(content)
+            Topic.RESTORE_OPENINGS -> restoreOpenings(content)
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
 
@@ -250,5 +256,42 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         if (userId != DEFAULT_USER_ID) {
             networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
         }
+    }
+
+    private fun onCompareOpenings(data: Array<String>): ParcelableString {
+        val missingOpenings = ArrayList<String>()
+
+        val localFiles = FileManager.listFilesInDirectory()
+        for (file in localFiles) {
+            Logger.debug("MyTag", "LocalFile: $file")
+        }
+        val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
+
+        for (serverOpening in data) {
+            if (!openingFiles.contains(serverOpening)) {
+                missingOpenings += serverOpening
+            }
+        }
+
+        Logger.debug("MyTag", "Missing openings: ${missingOpenings.joinToString()}")
+
+        return ParcelableString(missingOpenings.joinToString())
+    }
+
+    private fun restoreOpenings(data: Array<String>) {
+        for (openingFileData in data) {
+            val fileNameSeparator = openingFileData.indexOf(",")
+            val fileName = openingFileData.substring(0, fileNameSeparator)
+            val fileContent = openingFileData.substring(fileNameSeparator + 1)
+
+            val separator = fileName.indexOf("_")
+            val openingName = fileName.substring(0, separator)
+            val openingTeam = Team.fromString(fileName.substring(separator + 1))
+            val opening = Opening(openingName, openingTeam)
+            opening.addFromString(fileContent)
+
+            dataManager.setOpening(openingName, openingTeam, opening)
+        }
+        dataManager.saveOpenings(applicationContext)
     }
 }

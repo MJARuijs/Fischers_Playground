@@ -17,7 +17,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
 import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView
-import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
 class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, private val setupMoves: ArrayList<Move> = arrayListOf(), private val lineMoves: ArrayList<Move> = arrayListOf()) : Fragment() {
@@ -59,11 +58,12 @@ class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, pr
     fun selectMove(index: Int) {
         deselectAllMoves()
 
-        val scrollingDown = index > currentMoveIndex
-
         currentMoveIndex = index
 
         if (index == -1) {
+            scrollView.post {
+                scrollView.smoothScrollTo(0, 0)
+            }
             return
         }
 
@@ -78,40 +78,38 @@ class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, pr
             rowView.selectBlackMove()
         }
 
-        val numberOfHeaders = if (index < setupMoves.size) 1 else 2
-//        val numberOfMoveRows =
-
-        val isSetupMove = index < setupMoves.size
-
-
-
         val tableHeight = scrollView.height
         val selectedRowBottom = moveTable[rowIndex].y + moveTable[rowIndex].height
+        val selectedRowTop = moveTable[rowIndex].y
 
-        Logger.debug("MyTag", "Current row y: $selectedRowBottom. TableHeight: $tableHeight. yScroll: ${scrollView.scrollY}. Height + Scroll: ${tableHeight + scrollView.scrollY}")
+        val scrollingDown = if (selectedRowBottom > tableHeight + scrollView.scrollY) {
+            true
+        } else if (selectedRowTop < scrollView.scrollY) {
+            false
+        } else {
+            null
+        }
 
-        val dY = if (scrollingDown) {
+        val dY = if (scrollingDown == null) {
+            -1
+        } else if (scrollingDown) {
             if (selectedRowBottom > tableHeight + scrollView.scrollY) {
                 val difference = selectedRowBottom - tableHeight
-//                (moveTable[rowIndex].y - tableHeight).roundToInt()
-//                scrollView.scrollY + moveTable[rowIndex].height
                 difference.roundToInt()
             } else {
                 -1
             }
         } else {
-            -1
+            if (rowIndex <= 1) {
+                0
+            } else {
+                selectedRowTop.roundToInt()
+            }
         }
-
-        Logger.debug("MyTag", "dy: $dY ${scrollView.scrollY}")
 
         if (dY != -1) {
             scrollView.post {
-//                scrollView.smoothScrollTo(0, dY)
-                scrollView.scrollTo(0, dY)
-
-
-                Logger.debug("MyTag", "New scrollY: ${scrollView.scrollY}")
+                scrollView.smoothScrollTo(0, dY)
             }
         }
     }
@@ -321,10 +319,6 @@ class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, pr
         }
 
         return false
-    }
-
-    private fun getHeaderHeight(): Int {
-        return moveTable[0].height
     }
 
     private fun addSetupMoves() {

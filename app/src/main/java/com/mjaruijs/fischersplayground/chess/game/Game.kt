@@ -3,13 +3,14 @@ package com.mjaruijs.fischersplayground.chess.game
 import android.util.Log
 import com.mjaruijs.fischersplayground.chess.Action
 import com.mjaruijs.fischersplayground.chess.Board
-import com.mjaruijs.fischersplayground.chess.pieces.*
+import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.pieces.Piece
+import com.mjaruijs.fischersplayground.chess.pieces.PieceType
+import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
-import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -162,16 +163,15 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         val moveIndex = moves.indexOf(move)
-
-        Logger.debug("MyTag", "Going to move: ${move.getSimpleChessNotation()}, moveIndex=$moveIndex, moves.size=${moves.size}, currentMoveIndex=${currentMoveIndex}")
+        val animationSpeed = 0L
 
         if (moveIndex < currentMoveIndex) {
             while (currentMoveIndex != moveIndex) {
-                showPreviousMove(false, FAST_ANIMATION_SPEED)
+                showPreviousMove(false, animationSpeed)
             }
         } else if (moveIndex > currentMoveIndex) {
             while (currentMoveIndex != moveIndex) {
-                showNextMove(false, FAST_ANIMATION_SPEED)
+                showNextMove(false, animationSpeed)
             }
         }
 
@@ -362,7 +362,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    fun setMove(move: Move) {
+    open fun setMove(move: Move) {
         val fromPosition = move.getFromPosition(team)
         val toPosition = move.getToPosition(team)
 
@@ -417,7 +417,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             }
 
             if (currentPositionPiece.type == PieceType.PAWN && (toPosition.y == 0f || toPosition.y == 7f)) {
-                promotedPiece = promotePawn(toPosition)
+                promotedPiece = promotePawn(team, toPosition)
             }
 
             val isCheck = isPlayerChecked(state, !team)
@@ -505,7 +505,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return takenPiece
     }
 
-    private fun promotePawn(toPosition: Vector2): PieceType? {
+    private fun promotePawn(team: Team, toPosition: Vector2): PieceType? {
         promotionLock.set(true)
 
         Thread {

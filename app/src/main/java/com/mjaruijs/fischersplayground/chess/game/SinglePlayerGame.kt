@@ -45,6 +45,12 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
         }
     }
 
+    override fun setMove(move: Move) {
+        super.setMove(move)
+        teamToMove = !move.team
+        Logger.debug("MyTag", "Setting teamToMove: $teamToMove ${move.team}")
+    }
+
     fun undoLastMove() {
         teamToMove = moves.last().team
         undoMove(moves.removeLast(), false)

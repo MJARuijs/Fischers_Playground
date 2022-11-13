@@ -64,15 +64,7 @@ class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecordin
         addLineButton.disable()
     }
 
-    fun enableStopRecordingButton() {
-        recordButton.enable()
-    }
-
-    fun disableStopRecordingButton() {
-        recordButton.disable()
-    }
-
-    fun showStopRecordingButton() {
+    private fun showStopRecordingButton() {
         recordButton.setText("Stop")
             .setIcon(R.drawable.stop_icon)
             .setIconColor(Color.WHITE)

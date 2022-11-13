@@ -16,7 +16,6 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
-import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : LinearLayout(context, attributes) {
 

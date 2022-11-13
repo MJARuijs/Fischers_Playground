@@ -25,8 +25,10 @@ import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment.Co
 import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
+import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
-import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
 import kotlin.math.roundToInt
@@ -36,9 +38,6 @@ class CreateOpeningActivity : GameActivity() {
     override var activityName = "practice_activity_2"
 
     override var isSinglePlayer = true
-
-//    private val setupMoves = ArrayList<Move>()
-//    private val lineMoves = ArrayList<Move>()
 
     private var selectedLine: OpeningLine? = null
 
@@ -75,13 +74,6 @@ class CreateOpeningActivity : GameActivity() {
 
         if (opening.lines.isNotEmpty()) {
             selectedLine = opening.lines[0]
-            for (move in opening.lines[0].setupMoves) {
-//                setupMoves += move
-            }
-
-            for (move in opening.lines[0].lineMoves) {
-//                lineMoves += move
-            }
         }
 
         isPlayingWhite = openingTeam == Team.WHITE
@@ -155,12 +147,10 @@ class CreateOpeningActivity : GameActivity() {
             }
         } else {
             if (recording) {
-//                lineMoves += move
                 runOnUiThread {
                     openingMovesFragment.getCurrentOpeningFragment().addLineMove(move)
                 }
             } else {
-//                setupMoves += move
                 runOnUiThread {
                     openingMovesFragment.getCurrentOpeningFragment().addSetupMove(move)
                 }
@@ -169,18 +159,6 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onLineSelected(line: OpeningLine, selectedMoveIndex: Int) {
-//        val openingMoves = ArrayList<Move>()
-
-//        for (move in line.setupMoves) {
-//            openingMoves += move
-//            setupMoves += move
-//        }
-//
-//        for (move in line.lineMoves) {
-//            openingMoves += move
-//            lineMoves += move
-//        }
-
         selectedLine = line
         game.swapMoves(line.getAllMoves(), selectedMoveIndex)
         evaluateActionButtons()
@@ -194,23 +172,12 @@ class CreateOpeningActivity : GameActivity() {
     // Copy line moves: setup moves -> setup moves & line moves -> setup moves. This is the current implementation
     // Maybe allow copying a selection of moves?
     private fun onLineAdded() {
-//        val lineSetupMoves = ArrayList<Move>()
-
-//        for (move in setupMoves) {
-//            lineSetupMoves += move
-//        }
-//
-//        for (move in lineMoves) {
-//            lineSetupMoves += move
-//        }
-
         findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine?.getAllMoves() ?: arrayListOf())
         (getActionBarFragment() as CreateOpeningActionButtonsFragment).showStartRecordingButton()
         requestRender()
     }
 
     private fun onMoveClicked(move: Move, deleteModeActive: Boolean) {
-        Logger.debug("MyTag", "Click! ${game.currentMoveIndex}")
         if (deleteModeActive) {
             game.clearBoardData()
         } else {
@@ -222,10 +189,8 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onStartRecording() {
         (getActionBarFragment() as CreateOpeningActionButtonsFragment).disableAddLineButton()
-//        (getActionBarFragment() as CreateOpeningActionButtonsFragment).enableStopRecordingButton()
 
         recording = true
-//        lineMoves.clear()
         gameState = game.state.toString()
         runOnUiThread {
             if (!openingMovesFragment.getCurrentOpeningFragment().hasHeader(LINE_MOVES_TEXT)) {
@@ -239,21 +204,6 @@ class CreateOpeningActivity : GameActivity() {
         (getActionBarFragment() as CreateOpeningActionButtonsFragment).enableAddLineButton()
 
         recording = false
-
-//        val openingMoves = ArrayList<Move>()
-
-//        for (move in lineMoves) {
-//            openingMoves += move
-//        }
-
-//        val startMoves = ArrayList<Move>()
-
-//        for (move in setupMoves) {
-//            startMoves += move
-//        }
-
-//        val newLine = OpeningLine(gameState, startMoves, openingMoves)
-//        opening.addLine(newLine)
 
         hasUnsavedChanges = true
     }
@@ -292,7 +242,7 @@ class CreateOpeningActivity : GameActivity() {
     private fun checkMoveCorrectness(move: Move) {
         if (move == currentLine!!.lineMoves[currentMoveIndex]) {
             currentMoveIndex++
-            if (currentMoveIndex >= currentLine!!.lineMoves.size) {
+            if (isLastMoveInLine(move)) {
                 showMoveFeedback(move.getToPosition(openingTeam), true)
                 (getActionBarFragment() as PracticeOpeningActionButtonsFragment).showNextButton()
             } else {
@@ -351,8 +301,6 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onStartPracticing() {
-//        (openingMovesFragment.getCurrentOpeningFragment().deleteMovesAfter(openingMovesFragment.getCurrentOpeningFragment().currentMoveIndex))
-
         if (hasUnsavedChanges) {
             saveOpening()
         }
@@ -390,8 +338,11 @@ class CreateOpeningActivity : GameActivity() {
             (game as SinglePlayerGame).setMove(move)
         }
 
-        val firstMove = currentLine!!.lineMoves[currentMoveIndex++]
-        (game as SinglePlayerGame).move(firstMove)
+        val firstMove = currentLine!!.lineMoves[currentMoveIndex]
+        if (firstMove.team != openingTeam) {
+            (game as SinglePlayerGame).move(firstMove)
+            currentMoveIndex++
+        }
 
         moveFeedbackIcon.hide()
         requestRender()
@@ -424,6 +375,14 @@ class CreateOpeningActivity : GameActivity() {
             }
         }
         return false
+    }
+
+    private fun isLastMoveInLine(move: Move): Boolean {
+        if (currentLine == null) {
+            return true
+        }
+
+        return currentLine!!.lineMoves.indexOf(move) >= currentLine!!.lineMoves.size - 2
     }
 
     private fun onBackClicked() {
@@ -463,6 +422,7 @@ class CreateOpeningActivity : GameActivity() {
             opening.addLine(line)
         }
 
+        networkManager.sendMessage(NetworkMessage(Topic.NEW_OPENING, "$userId|$openingName|$openingTeam|$opening"))
         dataManager.setOpening(openingName, openingTeam, opening)
         dataManager.saveOpenings(applicationContext)
         hasUnsavedChanges = false

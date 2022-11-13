@@ -11,7 +11,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.doOnLayout
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.Move
-import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningMovesRowView(context: Context, attributes: AttributeSet? = null) : LinearLayout(context, attributes) {
 
@@ -48,15 +47,12 @@ class OpeningMovesRowView(context: Context, attributes: AttributeSet? = null) : 
     }
 
     fun setWhiteMove(move: Move, onClick: (Move, Boolean) -> Unit) {
-        Logger.debug("MyTag", "Adding white move: ${move.toChessNotation()}")
         whiteMoveView.setOnClick(move, onClick)
         whiteMoveView.visibility = View.VISIBLE
         selectWhiteMove()
     }
 
     fun setBlackMove(move: Move, onClick: (Move, Boolean) -> Unit) {
-        Logger.debug("MyTag", "Adding black move: ${move.toChessNotation()}")
-
         blackMoveView.setOnClick(move, onClick)
         blackMoveView.visibility = View.VISIBLE
         selectBlackMove()

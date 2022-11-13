@@ -66,15 +66,7 @@
         </activity>
         <activity android:name=".activities.CrashReportActivity" />
         <activity android:name=".activities.game.OpeningMenuActivity" />
-        <activity
-            android:name="com.mjaruijs.fischersplayground.activities.TableTestActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
         <activity android:name="com.mjaruijs.fischersplayground.activities.game.CreateOpeningActivity" />
 
         <meta-data

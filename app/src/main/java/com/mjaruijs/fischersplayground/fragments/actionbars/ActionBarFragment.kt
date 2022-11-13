@@ -10,7 +10,6 @@ import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.Logger
 
 open class ActionBarFragment : Fragment() {
 
@@ -47,7 +46,6 @@ open class ActionBarFragment : Fragment() {
     }
 
     fun removeButton(button: UIButton2) {
-        Logger.debug("MyTag", "Removing button from ActionBar")
         layout.removeView(button)
         childViews.remove(button)
     }

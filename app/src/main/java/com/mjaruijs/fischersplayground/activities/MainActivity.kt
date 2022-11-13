@@ -29,7 +29,9 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
+import kotlin.collections.ArrayList
 
 class MainActivity : ClientActivity() {
 
@@ -118,6 +120,8 @@ class MainActivity : ClientActivity() {
         when (topic) {
             Topic.SET_USER_ID -> onIdReceived(content)
             Topic.SEARCH_PLAYERS -> onPlayersReceived(content)
+//            Topic.COMPARE_OPENINGS -> onCompareOpenings(content)
+
             else -> super.onMessageReceived(topic, content, messageId)
         }
     }
@@ -157,6 +161,23 @@ class MainActivity : ClientActivity() {
             createGameDialog.addPlayers(name, id)
         }
     }
+
+//    private fun onCompareOpenings(content: Array<String>) {
+//        val missingOpenings = ArrayList<String>()
+//
+//        val localFiles = FileManager.listFilesInDirectory()
+//        val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
+//
+//        for (serverOpening in content) {
+//            if (!openingFiles.contains(serverOpening)) {
+//                missingOpenings += serverOpening
+//            }
+//        }
+//
+//        if (missingOpenings.isNotEmpty()) {
+//            networkManager.sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|${missingOpenings.joinToString(",")}"))
+//        }
+//    }
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
