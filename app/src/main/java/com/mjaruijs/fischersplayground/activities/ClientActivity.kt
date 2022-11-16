@@ -7,6 +7,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.*
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.Data
@@ -29,6 +30,7 @@ import com.mjaruijs.fischersplayground.services.StoreDataWorker
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
+import java.util.prefs.PreferenceChangeListener
 
 abstract class ClientActivity : AppCompatActivity() {
 
@@ -74,10 +76,13 @@ abstract class ClientActivity : AppCompatActivity() {
 
         networkManager = NetworkManager.getInstance()
         dataManager = DataManager.getInstance(this)
+
+        
     }
 
     override fun onResume() {
         super.onResume()
+        Logger.debug("MyTag", "Registering receiver")
         registerReceiver(networkReceiver, intentFilter)
 
         NotificationBuilder.getInstance(applicationContext).clearNotifications()
@@ -113,20 +118,39 @@ abstract class ClientActivity : AppCompatActivity() {
         }
     }
 
-    override fun onPause() {
+    override fun onStop() {
         if (saveGamesOnPause) {
             dataManager.saveData(applicationContext)
         }
 
         if (!stayingInApp) {
             leftApp = true
+            Logger.debug("MyTag", "Network stopped by onPause()")
             networkManager.stop()
         }
 
         incomingInviteDialog.destroy()
+        Logger.debug("MyTag", "Unregistering receiver")
         unregisterReceiver(networkReceiver)
-        super.onPause()
+        super.onStop()
     }
+
+//    override fun onPause() {
+//        if (saveGamesOnPause) {
+//            dataManager.saveData(applicationContext)
+//        }
+//
+//        if (!stayingInApp) {
+//            leftApp = true
+//            Logger.debug("MyTag", "Network stopped by onPause()")
+//            networkManager.stop()
+//        }
+//
+//        incomingInviteDialog.destroy()
+//        Logger.debug("MyTag", "Unregistering receiver")
+//        unregisterReceiver(networkReceiver)
+//        super.onPause()
+//    }
 
     override fun onBackPressed() {
         stayingInApp = stayInAppOnBackPress
@@ -142,13 +166,14 @@ abstract class ClientActivity : AppCompatActivity() {
         if (!leftApp) {
             networkManager.run(applicationContext)
             if (userId != DEFAULT_USER_ID) {
-                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
+                networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
             }
         }
     }
 
     private fun onNetworkLost() {
         if (!leftApp) {
+            Logger.debug("MyTag", "Network Lost")
             networkManager.stop()
         }
     }
@@ -162,6 +187,13 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
+        Logger.debug("MyTag", "ClientActivity: Received message: $topic")
+
+        networkManager.sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", messageId))
+        dataManager.handledMessage(messageId)
+        dataManager.lockAndSaveHandledMessages(applicationContext)
+
+
         sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite
             Topic.NEW_GAME -> ::onNewGameStarted
@@ -321,10 +353,11 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val FIRE_BASE_PREFERENCE_FILE = "fire_base"
+        const val FIRE_BASE_PREFERENCE_FILE = "fcm_token"
         const val USER_PREFERENCE_FILE = "user_data"
 
         const val USER_ID_KEY = "user_id"
+        const val USER_EMAIL_KEY = "user_email"
         const val USER_NAME_KEY = "user_name"
         const val INITIALIZED_KEY = "initialized"
 

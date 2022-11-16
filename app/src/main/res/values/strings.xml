@@ -20,4 +20,12 @@
     <string name="opening_name">Opening Name</string>
     <string name="which_side_is_the_opening_played">Which side is the opening played?</string>
     <string name="what_is_the_name_of_the_opening">What is the name of the opening?</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
 </resources>

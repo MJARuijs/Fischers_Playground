@@ -7,9 +7,9 @@ import android.os.Parcelable
 import androidx.work.Data
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.google.firebase.messaging.FirebaseMessagingService
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
+import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_PREFERENCE_FILE
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
@@ -25,7 +25,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
@@ -39,7 +38,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     private lateinit var dataManager: DataManager
 
     override fun doWork(): Result {
-        val preferences = applicationContext.getSharedPreferences("user_data", Service.MODE_PRIVATE)
+        val preferences = applicationContext.getSharedPreferences(USER_PREFERENCE_FILE, Service.MODE_PRIVATE)
         userId = preferences.getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
 
         dataManager = DataManager.getInstance(applicationContext)
@@ -48,6 +47,8 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val content = inputData.getStringArray("content")!!
 //        val runInBackground = inputData.getBoolean("run_in_background", true)
         val messageId = inputData.getLong("messageId", -1L)
+
+        Logger.debug("MyTag", "Start doing work on topic: $topic. $content")
 
         if (messageId == -1L) {
             return Result.failure()
@@ -66,7 +67,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             Topic.DRAW_REJECTED -> onDrawRejected(content)
             Topic.CHAT_MESSAGE -> onChatMessageReceived(content)
             Topic.USER_STATUS_CHANGED -> onUserStatusChanged(content)
-            Topic.RECONNECT_TO_SERVER -> reconnectToServer(content)
             Topic.COMPARE_OPENINGS -> onCompareOpenings(content)
             Topic.RESTORE_OPENINGS -> restoreOpenings(content)
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
@@ -243,19 +243,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         }
 
         return ParcelableString(opponentStatus)
-    }
-
-    private fun reconnectToServer(data: Array<String>) {
-        val address = data[0]
-        val port = data[1].toInt()
-
-        val networkManager = NetworkManager.getInstance()
-        networkManager.run(applicationContext)
-
-        val userId = applicationContext.getSharedPreferences(ClientActivity.USER_PREFERENCE_FILE, FirebaseMessagingService.MODE_PRIVATE).getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
-        if (userId != DEFAULT_USER_ID) {
-            networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
-        }
     }
 
     private fun onCompareOpenings(data: Array<String>): ParcelableString {

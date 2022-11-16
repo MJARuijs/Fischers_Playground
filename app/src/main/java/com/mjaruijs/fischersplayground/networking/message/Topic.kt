@@ -10,8 +10,11 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 
 enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
 
-    SET_USER_ID,
-    SET_USER_NAME,
+    SET_ID,
+    SET_ID_AND_NAME,
+    ID_LOGIN,
+    EMAIL_LOGIN,
+    CREATE_ACCOUNT,
     CHANGE_USER_NAME,
     FIRE_BASE_TOKEN,
     SEARCH_PLAYERS,
@@ -32,7 +35,6 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     HEART_BEAT,
     NEWS,
     CONFIRM_MESSAGE,
-    RECONNECT_TO_SERVER,
     CRASH_REPORT,
     NEW_OPENING,
     COMPARE_OPENINGS(ParcelableString),

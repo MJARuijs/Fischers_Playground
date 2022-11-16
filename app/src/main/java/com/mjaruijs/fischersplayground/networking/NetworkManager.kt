@@ -76,6 +76,7 @@ class NetworkManager {
         manager = Manager("Client")
         manager.context = context
         manager.setOnClientDisconnect {
+            Logger.debug(TAG, "Manager disconnected")
             stop()
         }
 
@@ -115,7 +116,9 @@ class NetworkManager {
 
             if (clientConnected.get()) {
                 try {
-                    Logger.info(TAG, "Sending message: $message")
+                    if (message.topic != Topic.CONFIRM_MESSAGE) {
+                        Logger.info(TAG, "Sending message: $message")
+                    }
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
@@ -137,7 +140,7 @@ class NetworkManager {
             return
         }
 
-        sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
+//        sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
         if (message.topic != Topic.CONFIRM_MESSAGE) {
             Logger.info(TAG, "Received message: $message")
@@ -146,8 +149,8 @@ class NetworkManager {
         val dataManager = DataManager.getInstance(context)
 
         if (!dataManager.isMessageHandled(message.id)) {
-            dataManager.handledMessage(message.id)
-            dataManager.lockAndSaveHandledMessages(context)
+//            dataManager.handledMessage(message.id)
+//            dataManager.lockAndSaveHandledMessages(context)
 
             val intent = Intent("mjaruijs.fischers_playground")
                 .putExtra("topic", message.topic.toString())
@@ -156,7 +159,7 @@ class NetworkManager {
 
             context.sendBroadcast(intent)
         } else {
-//            println("Message already handled: ${message.id} ${message.topic}")
+            Logger.debug(TAG, "Message already handled: ${message.id} ${message.topic}")
         }
     }
 

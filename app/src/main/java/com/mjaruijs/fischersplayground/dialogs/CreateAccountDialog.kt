@@ -9,13 +9,13 @@ import android.widget.EditText
 import androidx.cardview.widget.CardView
 import com.mjaruijs.fischersplayground.R
 
-class CreateUsernameDialog {
+class CreateAccountDialog {
 
     private lateinit var dialog: Dialog
 
     fun create(context: Activity) {
         dialog = Dialog(context)
-        dialog.setContentView(R.layout.create_username_dialog)
+        dialog.setContentView(R.layout.create_account_dialog)
         dialog.show()
         dialog.dismiss()
         dialog.setCancelable(false)
@@ -29,12 +29,14 @@ class CreateUsernameDialog {
         }
     }
 
-    fun show(setUsername: (String) -> Unit) {
+    fun show(setUsername: (String, String) -> Unit) {
+        val emailInputField = dialog.findViewById<EditText>(R.id.email_input_box)
         val usernameInputField = dialog.findViewById<EditText>(R.id.username_input_box)
-        val commitButton = dialog.findViewById<CardView>(R.id.username_send_card)
+        val commitButton = dialog.findViewById<CardView>(R.id.login_button)
         commitButton.setOnClickListener {
+            val email = emailInputField.text.toString()
             val userName = usernameInputField.text.toString()
-            setUsername(userName)
+            setUsername(email, userName)
             dismiss()
         }
 

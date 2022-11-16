@@ -22,16 +22,14 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
-import com.mjaruijs.fischersplayground.dialogs.CreateUsernameDialog
+import com.mjaruijs.fischersplayground.dialogs.CreateAccountDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.FileManager
 import java.util.*
-import kotlin.collections.ArrayList
 
 class MainActivity : ClientActivity() {
 
@@ -43,7 +41,7 @@ class MainActivity : ClientActivity() {
 
     override val stayInAppOnBackPress = false
 
-    private val createUsernameDialog = CreateUsernameDialog()
+//    private val createUsernameDialog = CreateAccountDialog()
     private val createGameDialog = CreateGameDialog(::onInvite)
 
     private lateinit var gameAdapter: GameAdapter
@@ -59,14 +57,7 @@ class MainActivity : ClientActivity() {
 
         setContentView(R.layout.activity_main)
 
-        createUsernameDialog.create(this)
-        createUsernameDialog.setLayout()
-
-        if (userName == DEFAULT_USER_NAME) {
-            createUsernameDialog.show(::saveUserName)
-        } else {
-            findViewById<TextView>(R.id.welcome_text_view).append(", $userName")
-        }
+        findViewById<TextView>(R.id.welcome_text_view).append(", $userName")
 
         if (!initialized) {
             initialized = true
@@ -118,34 +109,9 @@ class MainActivity : ClientActivity() {
 
     override fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
         when (topic) {
-            Topic.SET_USER_ID -> onIdReceived(content)
             Topic.SEARCH_PLAYERS -> onPlayersReceived(content)
-//            Topic.COMPARE_OPENINGS -> onCompareOpenings(content)
-
             else -> super.onMessageReceived(topic, content, messageId)
         }
-    }
-
-    private fun onIdReceived(content: Array<String>) {
-        val id = content[0]
-        this.userId = id
-
-        savePreference(USER_ID_KEY, id)
-
-//        if (hasNewToken) {
-            val token = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
-            networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
-//        }
-        createGameDialog.updateId(id)
-    }
-
-    private fun saveUserName(userName: String) {
-        this.userName = userName
-
-        savePreference(USER_NAME_KEY, userName)
-
-        findViewById<TextView>(R.id.welcome_text_view).append(", $userName")
-        networkManager.sendMessage(NetworkMessage(Topic.SET_USER_NAME, userName))
     }
 
     private fun onPlayersReceived(content: Array<String>) {
@@ -161,23 +127,6 @@ class MainActivity : ClientActivity() {
             createGameDialog.addPlayers(name, id)
         }
     }
-
-//    private fun onCompareOpenings(content: Array<String>) {
-//        val missingOpenings = ArrayList<String>()
-//
-//        val localFiles = FileManager.listFilesInDirectory()
-//        val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
-//
-//        for (serverOpening in content) {
-//            if (!openingFiles.contains(serverOpening)) {
-//                missingOpenings += serverOpening
-//            }
-//        }
-//
-//        if (missingOpenings.isNotEmpty()) {
-//            networkManager.sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|${missingOpenings.joinToString(",")}"))
-//        }
-//    }
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
@@ -342,11 +291,11 @@ class MainActivity : ClientActivity() {
 
         findViewById<TextView>(R.id.welcome_text_view)
             .setOnClickListener { textView ->
-                createUsernameDialog.show {
-                    (textView as TextView).text = "Welcome, $it"
-                    getPreference(USER_PREFERENCE_FILE).edit().putString(USER_NAME_KEY, it).apply()
-                    networkManager.sendMessage(NetworkMessage(Topic.CHANGE_USER_NAME, "$userId|$it"))
-                }
+//                createUsernameDialog.show {
+//                    (textView as TextView).text = "Welcome, $it"
+//                    getPreference(USER_PREFERENCE_FILE).edit().putString(USER_NAME_KEY, it).apply()
+//                    networkManager.sendMessage(NetworkMessage(Topic.CHANGE_USER_NAME, "$userId|$it"))
+//                }
             }
 
 //        findViewById<UIButton>(R.id.settings_button)
