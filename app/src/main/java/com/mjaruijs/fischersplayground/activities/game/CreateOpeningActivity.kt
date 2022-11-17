@@ -35,7 +35,7 @@ import kotlin.math.roundToInt
 
 class CreateOpeningActivity : GameActivity() {
 
-    override var activityName = "practice_activity_2"
+    override var activityName = "create_opening_activity"
 
     override var isSinglePlayer = true
 

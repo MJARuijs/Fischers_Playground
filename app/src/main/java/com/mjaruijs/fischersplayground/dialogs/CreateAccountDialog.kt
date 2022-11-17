@@ -18,8 +18,6 @@ class CreateAccountDialog {
         dialog.setContentView(R.layout.create_account_dialog)
         dialog.show()
         dialog.dismiss()
-        dialog.setCancelable(false)
-        dialog.setCanceledOnTouchOutside(false)
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
     }
 
@@ -34,8 +32,8 @@ class CreateAccountDialog {
         val usernameInputField = dialog.findViewById<EditText>(R.id.username_input_box)
         val commitButton = dialog.findViewById<CardView>(R.id.login_button)
         commitButton.setOnClickListener {
-            val email = emailInputField.text.toString()
-            val userName = usernameInputField.text.toString()
+            val email = emailInputField.text.toString().trim()
+            val userName = usernameInputField.text.toString().trim()
             setUsername(email, userName)
             dismiss()
         }

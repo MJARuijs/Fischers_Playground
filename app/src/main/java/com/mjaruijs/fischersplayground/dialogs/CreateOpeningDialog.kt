@@ -78,7 +78,7 @@ class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
             .setCornerRadius(45.0f)
             .setOnClick {
                 if (selectedTeam != null) {
-                    onTeamSelected(openingNameInput.text.toString(), selectedTeam!!)
+                    onTeamSelected(openingNameInput.text.toString().trim(), selectedTeam!!)
                 }
             }
 

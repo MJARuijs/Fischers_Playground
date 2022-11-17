@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.userinterface
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -12,21 +13,25 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.setPadding
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
+@SuppressLint("ClickableViewAccessibility")
 class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayout(context, attributes) {
 
     private var buttonCard: CardView
     private var buttonIcon: ImageView
     private var buttonText: TextView
 
-    private var cardBackgroundColor = Color.BLACK
-    private var iconColor = Color.WHITE
+    private var cardBackgroundColor = Color.TRANSPARENT
     private var onHoldCardColor = Color.rgb(1.0f - onHoldColorChange, 1.0f - onHoldColorChange, 1.0f - onHoldColorChange)
+
+    private var iconColor = Color.WHITE
 
     private var textColor = Color.WHITE
 
@@ -46,35 +51,9 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
         buttonIcon = findViewById(R.id.button_icon)
         buttonText = findViewById(R.id.button_text)
 
-        isLongClickable = false
-    }
+        buttonCard.setOnTouchListener { _, event ->
+            Logger.debug("MyTag", "Event code: ${event.action}")
 
-    @SuppressLint("ClickableViewAccessibility")
-    fun setIcon(resourceId: Int, mirroredX: Boolean = false, mirroredY: Boolean = false): UIButton2 {
-        this.mirroredX = mirroredX
-        this.mirroredY = mirroredY
-
-        if (mirroredX) {
-            buttonIcon.scaleX *= -1
-        }
-
-        if (mirroredY) {
-            buttonIcon.scaleY *= -1
-        }
-
-        val drawable = ResourcesCompat.getDrawable(resources, resourceId, null) ?: throw IllegalArgumentException("Could not find resource with id: $resourceId")
-        buttonIcon.visibility = View.VISIBLE
-        buttonIcon.setImageDrawable(drawable)
-        buttonCard.setOnLongClickListener {
-            if (isLongClickable) {
-                holding = true
-                handler.post(RepetitiveClicker())
-            }
-
-            false
-        }
-
-         buttonCard.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_BUTTON_PRESS) {
                 performClick()
             }
@@ -96,6 +75,34 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
 
             false
         }
+
+        buttonCard.setOnLongClickListener {
+            if (isLongClickable) {
+                holding = true
+                handler.post(RepetitiveClicker())
+            }
+
+            true
+        }
+        isLongClickable = false
+    }
+
+    fun setIcon(resourceId: Int, mirroredX: Boolean = false, mirroredY: Boolean = false): UIButton2 {
+        this.mirroredX = mirroredX
+        this.mirroredY = mirroredY
+
+        if (mirroredX) {
+            buttonIcon.scaleX *= -1
+        }
+
+        if (mirroredY) {
+            buttonIcon.scaleY *= -1
+        }
+
+        val drawable = ResourcesCompat.getDrawable(resources, resourceId, null) ?: throw IllegalArgumentException("Could not find resource with id: $resourceId")
+        buttonIcon.visibility = View.VISIBLE
+        buttonIcon.setImageDrawable(drawable)
+
 
         return this
     }
@@ -180,6 +187,11 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
         return this
     }
 
+    fun setTextPadding(pixels: Int): UIButton2 {
+        buttonText.setPadding(dpToPx(resources, pixels))
+        return this
+    }
+
     fun show() {
         visibility = View.VISIBLE
         buttonCard.visibility = View.VISIBLE
@@ -188,6 +200,10 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
     fun hide() {
         visibility = View.GONE
         buttonCard.visibility = View.GONE
+    }
+
+    private fun dpToPx(resources: Resources, dp: Int): Int {
+        return (dp * resources.displayMetrics.density).roundToInt()
     }
 
     inner class RepetitiveClicker : Runnable {
@@ -201,7 +217,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
     }
 
     companion object {
-        private const val MAX_CLICK_DELAY = 250L
+        private const val MAX_CLICK_DELAY = 500L
         private const val onHoldColorChange = 0.2f
     }
 

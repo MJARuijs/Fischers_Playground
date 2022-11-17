@@ -41,7 +41,6 @@ class MainActivity : ClientActivity() {
 
     override val stayInAppOnBackPress = false
 
-//    private val createUsernameDialog = CreateAccountDialog()
     private val createGameDialog = CreateGameDialog(::onInvite)
 
     private lateinit var gameAdapter: GameAdapter

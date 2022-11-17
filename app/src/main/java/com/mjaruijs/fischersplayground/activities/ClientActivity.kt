@@ -1,13 +1,10 @@
 package com.mjaruijs.fischersplayground.activities
 
-import android.content.Context
-import android.content.IntentFilter
-import android.content.SharedPreferences
+import android.content.*
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.*
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.Data
@@ -24,20 +21,17 @@ import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.opengl.OBJLoader
-import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.DataManager
+import com.mjaruijs.fischersplayground.services.MessageReceiverService
 import com.mjaruijs.fischersplayground.services.StoreDataWorker
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
+import java.lang.ref.WeakReference
 import java.util.*
-import java.util.prefs.PreferenceChangeListener
 
 abstract class ClientActivity : AppCompatActivity() {
 
     private val tag = "ClientActivity"
-
-    private val networkReceiver = MessageReceiver(::onMessageReceived)
-    private val intentFilter = IntentFilter("mjaruijs.fischers_playground")
 
     protected var userId: String = DEFAULT_USER_ID
     protected var userName = DEFAULT_USER_NAME
@@ -57,6 +51,32 @@ abstract class ClientActivity : AppCompatActivity() {
     open var activityName: String = ""
 
     open val saveGamesOnPause = true
+
+    var clientMessenger = Messenger(IncomingHandler(this))
+
+    var serviceMessenger: Messenger? = null
+    var serviceBound = false
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            if (service == null) {
+                return
+            }
+
+            serviceBound = true
+            serviceMessenger = Messenger(service)
+
+            val registrationMessage = Message.obtain()
+            registrationMessage.replyTo = clientMessenger
+            serviceMessenger!!.send(registrationMessage)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            serviceMessenger = null
+            serviceBound = false
+        }
+
+    }
 
     private fun isUserRegisteredAtServer(): Boolean {
         return getPreference(USER_PREFERENCE_FILE).contains(USER_ID_KEY)
@@ -80,10 +100,19 @@ abstract class ClientActivity : AppCompatActivity() {
         
     }
 
+    override fun onStart() {
+        super.onStart()
+        Logger.debug(activityName, "Binding to service!")
+        bindService(Intent(this, MessageReceiverService::class.java), connection, Context.BIND_AUTO_CREATE)
+    }
+
     override fun onResume() {
         super.onResume()
-        Logger.debug("MyTag", "Registering receiver")
-        registerReceiver(networkReceiver, intentFilter)
+        val preferences = getPreference(USER_PREFERENCE_FILE)
+        userId = preferences.getString(USER_ID_KEY, DEFAULT_USER_ID)!!
+        userName = preferences.getString(USER_NAME_KEY, DEFAULT_USER_NAME)!!
+//        Logger.debug("MyTag", "Registering receiver")
+//        registerReceiver(networkReceiver, intentFilter)
 
         NotificationBuilder.getInstance(applicationContext).clearNotifications()
 
@@ -119,38 +148,27 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        super.onStop()
+        Logger.debug(activityName, "Unbinding from service!")
+        unbindService(connection)
+        serviceBound = false
+    }
+
+    override fun onPause() {
         if (saveGamesOnPause) {
             dataManager.saveData(applicationContext)
         }
 
         if (!stayingInApp) {
             leftApp = true
-            Logger.debug("MyTag", "Network stopped by onPause()")
             networkManager.stop()
         }
 
         incomingInviteDialog.destroy()
-        Logger.debug("MyTag", "Unregistering receiver")
-        unregisterReceiver(networkReceiver)
-        super.onStop()
-    }
-
-//    override fun onPause() {
-//        if (saveGamesOnPause) {
-//            dataManager.saveData(applicationContext)
-//        }
-//
-//        if (!stayingInApp) {
-//            leftApp = true
-//            Logger.debug("MyTag", "Network stopped by onPause()")
-//            networkManager.stop()
-//        }
-//
-//        incomingInviteDialog.destroy()
-//        Logger.debug("MyTag", "Unregistering receiver")
+//        Logger.debug(activityName, "Unregistering receiver")
 //        unregisterReceiver(networkReceiver)
-//        super.onPause()
-//    }
+        super.onPause()
+    }
 
     override fun onBackPressed() {
         stayingInApp = stayInAppOnBackPress
@@ -164,16 +182,19 @@ abstract class ClientActivity : AppCompatActivity() {
 
     private fun onNetworkAvailable() {
         if (!leftApp) {
-            networkManager.run(applicationContext)
-            if (userId != DEFAULT_USER_ID) {
-                networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
+            if (!networkManager.isRunning()) {
+                networkManager.run(applicationContext)
+                if (userId != DEFAULT_USER_ID) {
+                    Logger.info(activityName, "logging in with ID")
+                    networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
+                }
             }
         }
     }
 
     private fun onNetworkLost() {
         if (!leftApp) {
-            Logger.debug("MyTag", "Network Lost")
+            Logger.warn(activityName, "Network Lost")
             networkManager.stop()
         }
     }
@@ -187,12 +208,7 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
-        Logger.debug("MyTag", "ClientActivity: Received message: $topic")
-
-        networkManager.sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", messageId))
-        dataManager.handledMessage(messageId)
-        dataManager.lockAndSaveHandledMessages(applicationContext)
-
+        Logger.debug(activityName, "Received message: $topic")
 
         sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite
@@ -207,7 +223,8 @@ abstract class ClientActivity : AppCompatActivity() {
             Topic.DRAW_REJECTED -> ::onDrawRejected
             Topic.CHAT_MESSAGE -> ::onChatMessageReceived
             Topic.USER_STATUS_CHANGED -> ::onUserStatusChanged
-            Topic.COMPARE_OPENINGS -> ::onCompareOpenings
+//            Topic.COMPARE_OPENINGS -> ::onCompareOpenings
+            Topic.COMPARE_OPENINGS -> { _ -> }
             Topic.RESTORE_OPENINGS -> { _ -> }
             else -> throw IllegalArgumentException("Failed to handle message with topic: $topic")
         })
@@ -265,21 +282,22 @@ abstract class ClientActivity : AppCompatActivity() {
         // TODO: show popup
     }
 
-    private fun onCompareOpenings(output: Parcelable) {
-        Logger.debug("MyTag", "Comparing Openings")
-        if (output !is ParcelableString) {
-            Logger.debug("MyTag", "Returning")
-            return
-        }
-
-        val missingOpenings = output.value.split(",")
-
-        Logger.debug("MyTag", "Test: $missingOpenings")
-
-        if (missingOpenings.isNotEmpty()) {
-            networkManager.sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|${missingOpenings.joinToString(",")}"))
-        }
-    }
+//    private fun onCompareOpenings(output: Parcelable) {
+//        if (output !is ParcelableString) {
+//            Logger.debug(activityName, "Worker output is not a ParcelableString")
+//            return
+//        }
+//
+//
+//        Logger.debug(activityName, "Worker output is: ${output.value}")
+//
+//        val missingOpenings = output.value.split(",")
+//
+//        if (missingOpenings.isNotEmpty()) {
+//            networkManager.sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|${missingOpenings.joinToString(",")}"))
+//        }
+//        Logger.debug(activityName, "Done comparing openings")
+//    }
 
     open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 
@@ -300,9 +318,7 @@ abstract class ClientActivity : AppCompatActivity() {
         workManager.getWorkInfoByIdLiveData(worker.id)
             .observe(this) {
                 if (it != null && it.state.isFinished) {
-                    Logger.debug("MyTag", "WHAT")
                     val result = it.outputData.getParcelable(topic.dataType, "output") ?: return@observe
-
                     onResult(result)
                 }
             }
@@ -359,9 +375,22 @@ abstract class ClientActivity : AppCompatActivity() {
         const val USER_ID_KEY = "user_id"
         const val USER_EMAIL_KEY = "user_email"
         const val USER_NAME_KEY = "user_name"
-        const val INITIALIZED_KEY = "initialized"
 
         const val DEFAULT_USER_ID = "default_user_id"
         const val DEFAULT_USER_NAME = "default_user_name"
+
+        class IncomingHandler(activity: ClientActivity): Handler() {
+
+            private val activityReference = WeakReference(activity)
+
+            override fun handleMessage(msg: Message) {
+                val activity = activityReference.get()
+
+                val message = msg.obj as NetworkMessage
+                val content = message.content.split('|').toTypedArray()
+
+                activity?.onMessageReceived(message.topic, content, message.id)
+            }
+        }
     }
 }

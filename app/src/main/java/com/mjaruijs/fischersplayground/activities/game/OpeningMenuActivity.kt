@@ -18,6 +18,8 @@ import com.mjaruijs.fischersplayground.userinterface.UIButton
 
 class OpeningMenuActivity : ClientActivity() {
 
+    override var activityName = "opening_menu_activity"
+
     private lateinit var openingAdapter: OpeningAdapter
 
     private val createOpeningDialog = CreateOpeningDialog(::onTeamSelected)

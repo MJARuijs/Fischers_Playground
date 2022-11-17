@@ -2,17 +2,86 @@ package com.mjaruijs.fischersplayground.services
 
 import android.app.Service
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Handler
 import android.os.IBinder
+import android.os.Message
+import android.os.Messenger
+import android.widget.Toast
+import com.mjaruijs.fischersplayground.activities.MessageReceiver
+import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.util.Logger
+import java.lang.ref.WeakReference
 
 class MessageReceiverService : Service() {
 
+    companion object {
+        private const val TAG = "MessageReceiverService"
+    }
 
+    private val networkReceiver = MessageReceiver(::onMessageReceived)
+    private val intentFilter = IntentFilter("mjaruijs.fischers_playground")
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
+    private lateinit var networkManager: NetworkManager
+    private lateinit var dataManager: DataManager
+
+    var currentClient: Messenger? = null
+
+    private lateinit var serviceMessenger: Messenger
+
+    private val messageCache = ArrayList<NetworkMessage>()
+
+    override fun onCreate() {
+        super.onCreate()
+        dataManager = DataManager.getInstance(applicationContext)
+        networkManager = NetworkManager.getInstance()
+
+        registerReceiver(networkReceiver, intentFilter)
+    }
+
+    override fun onDestroy() {
+        unregisterReceiver(networkReceiver)
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? {
-        return null
+        serviceMessenger = Messenger(IncomingHandler(this))
+        return serviceMessenger.binder
+    }
+
+    private fun onMessageReceived(topic: Topic, content: String, messageId: Long) {
+        sendMessage(NetworkMessage(topic, content, messageId))
+    }
+
+    private fun sendMessage(data: Any?) {
+        if (currentClient == null) {
+            messageCache += data as NetworkMessage
+            Logger.warn(TAG, "No client connected to service!")
+            Toast.makeText(applicationContext, "No client connected to service!", Toast.LENGTH_LONG).show()
+            return
+        }
+        currentClient!!.send(Message.obtain(null, 0, data))
+    }
+
+    class IncomingHandler(service: MessageReceiverService): Handler() {
+
+        private val serviceReference = WeakReference(service)
+
+        override fun handleMessage(msg: Message) {
+            val service = serviceReference.get()!!
+            service.currentClient = msg.replyTo
+
+            if (service.messageCache.isNotEmpty()) {
+                for (message in service.messageCache) {
+                    Logger.warn(TAG, "Sending backed up message: $message")
+                    sendMessage(Message.obtain(null, 0, message))
+                }
+                service.messageCache.clear()
+            }
+
+        }
+
     }
 }

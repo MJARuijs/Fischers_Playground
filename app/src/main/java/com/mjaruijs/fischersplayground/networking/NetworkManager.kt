@@ -36,7 +36,6 @@ class NetworkManager {
 
             return instance!!
         }
-
     }
 
     private val clientConnecting = AtomicBoolean(false)
@@ -62,12 +61,16 @@ class NetworkManager {
         manager.stop()
     }
 
+    fun isRunning(): Boolean {
+        return clientConnected.get() || clientConnecting.get()
+    }
+
     fun isConnected(): Boolean {
         return clientConnected.get()
     }
 
     fun run(context: Context) {
-        if (clientConnected.get()) {
+        if (clientConnected.get() || clientConnecting.get()) {
             return
         }
 
@@ -76,14 +79,13 @@ class NetworkManager {
         manager = Manager("Client")
         manager.context = context
         manager.setOnClientDisconnect {
-            Logger.debug(TAG, "Manager disconnected")
             stop()
         }
 
         Thread {
             try {
                 clientConnecting.set(true)
-                client = SecureClient(LOCAL_SERVER_IP, SERVER_PORT, ::onRead)
+                client = SecureClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
             } catch (e: Exception) {
                 Log.w("Networker", "Failed to connect to server..")
@@ -133,14 +135,12 @@ class NetworkManager {
 
     private fun onRead(message: NetworkMessage, context: Context) {
 
-        val messageData = message.content.split('|').toTypedArray()
-
         if (message.topic == Topic.HEART_BEAT) {
             sendMessage(NetworkMessage(Topic.HEART_BEAT, ""))
             return
         }
 
-//        sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
+        sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
         if (message.topic != Topic.CONFIRM_MESSAGE) {
             Logger.info(TAG, "Received message: $message")
@@ -149,12 +149,12 @@ class NetworkManager {
         val dataManager = DataManager.getInstance(context)
 
         if (!dataManager.isMessageHandled(message.id)) {
-//            dataManager.handledMessage(message.id)
-//            dataManager.lockAndSaveHandledMessages(context)
+            dataManager.handledMessage(message.id)
+            dataManager.lockAndSaveHandledMessages(context)
 
             val intent = Intent("mjaruijs.fischers_playground")
                 .putExtra("topic", message.topic.toString())
-                .putExtra("content", messageData)
+                .putExtra("content", message.content)
                 .putExtra("messageId", message.id)
 
             context.sendBroadcast(intent)

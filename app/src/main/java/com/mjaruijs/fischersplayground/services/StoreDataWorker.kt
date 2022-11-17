@@ -25,6 +25,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
@@ -45,10 +46,9 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
 
         val topic = Topic.fromString(inputData.getString("topic")!!)
         val content = inputData.getStringArray("content")!!
-//        val runInBackground = inputData.getBoolean("run_in_background", true)
         val messageId = inputData.getLong("messageId", -1L)
 
-        Logger.debug("MyTag", "Start doing work on topic: $topic. $content")
+        Logger.debug(TAG, "Start doing work on topic: $topic. $content")
 
         if (messageId == -1L) {
             return Result.failure()
@@ -76,6 +76,9 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         dataManager.saveData(applicationContext)
 
         return if (output is Parcelable) {
+            if (output is ParcelableString) {
+                Logger.debug(TAG, "Got output: ${output.value}")
+            }
             val dataBuilder = Data.Builder().putParcelable("output", output)
             Result.success(dataBuilder.build())
         } else {
@@ -245,24 +248,22 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         return ParcelableString(opponentStatus)
     }
 
-    private fun onCompareOpenings(data: Array<String>): ParcelableString {
-        val missingOpenings = ArrayList<String>()
-
+    private fun onCompareOpenings(data: Array<String>) {
+        var missingOpeningsString = ""
         val localFiles = FileManager.listFilesInDirectory()
-        for (file in localFiles) {
-            Logger.debug("MyTag", "LocalFile: $file")
-        }
         val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
 
         for (serverOpening in data) {
             if (!openingFiles.contains(serverOpening)) {
-                missingOpenings += serverOpening
+                missingOpeningsString += "$serverOpening,"
             }
         }
 
-        Logger.debug("MyTag", "Missing openings: ${missingOpenings.joinToString()}")
+        missingOpeningsString = missingOpeningsString.removeSuffix(",")
 
-        return ParcelableString(missingOpenings.joinToString())
+        if (missingOpeningsString.isNotBlank()) {
+            NetworkManager.getInstance().sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|$missingOpeningsString"))
+        }
     }
 
     private fun restoreOpenings(data: Array<String>) {
@@ -280,5 +281,9 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             dataManager.setOpening(openingName, openingTeam, opening)
         }
         dataManager.saveOpenings(applicationContext)
+    }
+
+    companion object {
+        private const val TAG = "StoreDataWorker"
     }
 }

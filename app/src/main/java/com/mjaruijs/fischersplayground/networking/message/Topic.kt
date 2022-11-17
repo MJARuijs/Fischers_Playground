@@ -14,6 +14,8 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     SET_ID_AND_NAME,
     ID_LOGIN,
     EMAIL_LOGIN,
+    UNKNOWN_EMAIL,
+    ACCOUNT_ALREADY_EXISTS,
     CREATE_ACCOUNT,
     CHANGE_USER_NAME,
     FIRE_BASE_TOKEN,
@@ -33,11 +35,10 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     CHAT_MESSAGE(ChatMessage.Data),
     USER_STATUS_CHANGED(ParcelableString),
     HEART_BEAT,
-    NEWS,
     CONFIRM_MESSAGE,
     CRASH_REPORT,
     NEW_OPENING,
-    COMPARE_OPENINGS(ParcelableString),
+    COMPARE_OPENINGS,
     RESTORE_OPENINGS;
 
     companion object {
