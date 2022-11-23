@@ -52,8 +52,6 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
         buttonText = findViewById(R.id.button_text)
 
         buttonCard.setOnTouchListener { _, event ->
-            Logger.debug("MyTag", "Event code: ${event.action}")
-
             if (event.action == MotionEvent.ACTION_BUTTON_PRESS) {
                 performClick()
             }

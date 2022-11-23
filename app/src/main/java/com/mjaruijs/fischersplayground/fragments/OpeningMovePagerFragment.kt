@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.activities.game
+package com.mjaruijs.fischersplayground.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,13 +12,33 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.util.Logger
 
-class OpeningMovePagerFragment(private val onLineSelected: (OpeningLine, Int) -> Unit, private val onMoveClick: (Move, Boolean) -> Unit, private val openingLines: ArrayList<OpeningLine> = ArrayList()) : Fragment() {
+class OpeningMovePagerFragment : Fragment() {
+
+    private lateinit var onLineSelected: (OpeningLine, Int) -> Unit
+    private lateinit var onMoveClick: (Move, Boolean) -> Unit
+    private val openingLines = ArrayList<OpeningLine>()
 
     private lateinit var pager: ViewPager2
     private lateinit var tabIndicator: TabLayout
 
     private lateinit var pagerAdapter: ScreenSlidePagerAdapter
+
+    companion object {
+
+        fun getInstance(onLineSelected: (OpeningLine, Int) -> Unit, onMoveClick: (Move, Boolean) -> Unit, openingLines: ArrayList<OpeningLine> = ArrayList()): OpeningMovePagerFragment {
+            val pagerFragment = OpeningMovePagerFragment()
+            pagerFragment.onLineSelected = onLineSelected
+            pagerFragment.onMoveClick = onMoveClick
+
+            for (line in openingLines) {
+                pagerFragment.openingLines += line
+            }
+
+            return pagerFragment
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.opening_move_pager_fragment, container, false)
@@ -76,7 +96,10 @@ class OpeningMovePagerFragment(private val onLineSelected: (OpeningLine, Int) ->
 
     fun getFragments() = pagerAdapter.getFragments()
 
+    // base, bishop, Nc6, Nh5
+
     fun deleteCurrentLine() {
+        Logger.debug("MyTag", "Deleting ${pager.currentItem}")
         pagerAdapter.delete(pager.currentItem)
 
         if (pagerAdapter.itemCount < 2) {
@@ -100,15 +123,15 @@ class OpeningMovePagerFragment(private val onLineSelected: (OpeningLine, Int) ->
 
         fun add(openingLine: OpeningLine? = null) {
             fragments += if (openingLine != null) {
-                OpeningMovesFragment2(onMoveClick, openingLine.setupMoves, openingLine.lineMoves)
+                OpeningMovesFragment2.getInstance(onMoveClick, openingLine.setupMoves, openingLine.lineMoves)
             } else {
-                OpeningMovesFragment2(onMoveClick)
+                OpeningMovesFragment2.getInstance(onMoveClick)
             }
             notifyDataSetChanged()
         }
 
         fun add(setupMoves: ArrayList<Move>) {
-            fragments += OpeningMovesFragment2(onMoveClick, setupMoves)
+            fragments += OpeningMovesFragment2.getInstance(onMoveClick, setupMoves)
             notifyDataSetChanged()
         }
 

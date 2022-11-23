@@ -21,7 +21,7 @@ class BoardRenderer(resources: Resources) {
 
     private val model2D = BoardModel(false)
     private val model3D = BoardModel(true)
-    private val diffuseTexture = TextureLoader.load(resources, R.drawable.wood_test)
+    private val diffuseTexture = TextureLoader.load(resources, R.drawable.wood_diffuse_texture)
 //    private val normalTexture = TextureLoader.load(resources, R.drawable.wood_normal_texture)
 //    private val specularTexture = TextureLoader.load(resources, R.drawable.wood_specular_texture)
 
@@ -50,16 +50,15 @@ class BoardRenderer(resources: Resources) {
 //        specularTexture.init()
     }
 
-    fun render2D(aspectRatio: Float) {
+    fun render2D() {
         board2DProgram.start()
-//        board2DProgram.set("aspectRatio", aspectRatio)
         board2DProgram.set("textureMap", diffuseSampler.index)
         diffuseSampler.bind(diffuseTexture)
         model2D.draw()
         board2DProgram.stop()
     }
 
-    fun render3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int, aspectRatio: Float) {
+    fun render3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int) {
         board3DProgram.start()
         board3DProgram.set("diffuseTexture", diffuseSampler.index)
 //        board3DProgram.set("normalTexture", normalSampler.index)
@@ -71,7 +70,6 @@ class BoardRenderer(resources: Resources) {
         board3DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
         board3DProgram.set("cameraPosition", camera.getPosition())
         board3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
-//        board3DProgram.set("aspectRatio", aspectRatio)
 
         diffuseSampler.bind(diffuseTexture)
 //        normalSampler.bind(normalTexture)

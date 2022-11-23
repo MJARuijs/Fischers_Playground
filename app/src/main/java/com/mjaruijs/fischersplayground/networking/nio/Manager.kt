@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.networking.nio
 
 import android.content.Context
+import com.mjaruijs.fischersplayground.util.Logger
 import java.nio.channels.Selector
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -58,6 +59,7 @@ class Manager(private val name: String) : Runnable {
 //                                    val address = clientInfo.substring(startIndex + 1, endIndex)
 //                                    onClientDisconnect()
 //                                }
+                                Logger.error("Client_Manager", exception.stackTraceToString())
                                 client.close()
                                 key.cancel()
                                 onClientDisconnect()
@@ -67,6 +69,7 @@ class Manager(private val name: String) : Runnable {
                     }
                 }
             } catch (e: Exception) {
+                Logger.error("Client_Manager", e.stackTraceToString())
                 onClientDisconnect()
                 stop()
 

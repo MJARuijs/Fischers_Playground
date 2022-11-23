@@ -165,8 +165,9 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             val piece = takenPieceData?.piece ?: return@run
             val piecePosition = takenPieceData?.position ?: return@run
 
-            val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f)
-            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
+            val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
+
+            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
             piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
             piece2DProgram.set("translation", translation)
 
@@ -180,9 +181,9 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 val row = x - piece.translation.x
                 val col = y - piece.translation.y
 
-                val translation = (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f)
+                val translation = (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
 
-                piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4.0f)
+                piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
                 piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
                 piece2DProgram.set("translation", translation)
                 quad.draw()
@@ -256,5 +257,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     companion object {
         private val ROTATION_MATRIX = Matrix4().rotateZ(PI.toFloat())
+        private const val PIECE_SCALE_OFFSET = 0.03f
+        private const val HALF_PIECE_SCALE = PIECE_SCALE_OFFSET / 2f
     }
 }

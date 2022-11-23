@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.util.Logger
 
 class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, val isCheckMate: Boolean, val isCheck: Boolean, val pieceTaken: PieceType? = null, private val takenPiecePosition: Vector2?, val promotedPiece: PieceType?) : Parcelable {
 
@@ -91,7 +92,6 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         if (promotedPiece != null) {
             notation += promotedPiece.sign
         }
-
 
         if (isCheckMate) {
             notation += "#"
@@ -238,6 +238,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
                 if (lastCharacter == '+') {
                     isCheck = true
                 } else if (lastCharacter == '#') {
+                    isCheck = true
                     isCheckMate = true
                 }
 

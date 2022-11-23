@@ -22,7 +22,7 @@ class NetworkManager {
 
         private const val PUBLIC_SERVER_IP = "94.208.124.161"
 //        private const val PUBLIC_SERVER_IP = "217.101.191.23"
-        private const val LOCAL_SERVER_IP = "192.168.178.103"
+        private const val LOCAL_SERVER_IP = "192.168.178.18"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
         private const val SERVER_PORT = 4500
@@ -79,6 +79,7 @@ class NetworkManager {
         manager = Manager("Client")
         manager.context = context
         manager.setOnClientDisconnect {
+            Logger.warn(TAG, "Manager disconnected!")
             stop()
         }
 
@@ -118,7 +119,7 @@ class NetworkManager {
 
             if (clientConnected.get()) {
                 try {
-                    if (message.topic != Topic.CONFIRM_MESSAGE) {
+                    if (message.topic != Topic.CONFIRM_MESSAGE && message.topic != Topic.CRASH_REPORT) {
                         Logger.info(TAG, "Sending message: $message")
                     }
                     client.write(message.toString())

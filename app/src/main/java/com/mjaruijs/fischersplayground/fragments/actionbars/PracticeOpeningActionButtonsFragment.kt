@@ -26,7 +26,6 @@ class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked
             .setColor(BACKGROUND_COLOR)
             .setTextSize(TEXT_SIZE)
             .setOnClickListener {
-                Logger.debug("MyTag", "Click!")
                 showSolutionButton()
                 onHintClicked()
             }
@@ -62,6 +61,7 @@ class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
+                showHintButton()
                 onNextClicked()
             }
 

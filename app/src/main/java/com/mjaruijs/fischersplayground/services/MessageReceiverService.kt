@@ -59,7 +59,6 @@ class MessageReceiverService : Service() {
         if (currentClient == null) {
             messageCache += data as NetworkMessage
             Logger.warn(TAG, "No client connected to service!")
-            Toast.makeText(applicationContext, "No client connected to service!", Toast.LENGTH_LONG).show()
             return
         }
         currentClient!!.send(Message.obtain(null, 0, data))
@@ -76,7 +75,7 @@ class MessageReceiverService : Service() {
             if (service.messageCache.isNotEmpty()) {
                 for (message in service.messageCache) {
                     Logger.warn(TAG, "Sending backed up message: $message")
-                    sendMessage(Message.obtain(null, 0, message))
+                    msg.replyTo.send(Message.obtain(null, 0, message))
                 }
                 service.messageCache.clear()
             }

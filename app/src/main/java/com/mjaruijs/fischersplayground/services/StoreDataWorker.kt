@@ -72,13 +72,12 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
 
+        Logger.debug(TAG, "Finished work on topic: $topic")
+
         dataManager.handledMessage(messageId)
         dataManager.saveData(applicationContext)
 
         return if (output is Parcelable) {
-            if (output is ParcelableString) {
-                Logger.debug(TAG, "Got output: ${output.value}")
-            }
             val dataBuilder = Data.Builder().putParcelable("output", output)
             Result.success(dataBuilder.build())
         } else {

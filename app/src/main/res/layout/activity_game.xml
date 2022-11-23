@@ -80,10 +80,19 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@+id/lower_fragment_container"
-        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/upper_fragment_container" />
+
+    <com.mjaruijs.fischersplayground.userinterface.BoardTextView
+        android:id="@+id/boardTextView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/opengl_view" />
 
     <com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
         android:id="@+id/move_feedback_icon"

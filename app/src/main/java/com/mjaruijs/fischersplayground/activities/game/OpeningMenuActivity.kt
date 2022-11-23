@@ -89,6 +89,9 @@ class OpeningMenuActivity : ClientActivity() {
             .putExtra("opening_team", openingTeam.toString())
             .putExtra("opening_name", openingName)
 
+        createOpeningDialog.dismiss()
+
+        stayingInApp = true
         startActivity(intent)
     }
 

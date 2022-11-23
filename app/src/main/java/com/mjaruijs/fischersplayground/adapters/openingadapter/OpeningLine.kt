@@ -2,7 +2,7 @@ package com.mjaruijs.fischersplayground.adapters.openingadapter
 
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 
-class OpeningLine(val startingState: String, val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>) {
+class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>) {
 
     fun getAllMoves(): ArrayList<Move> {
         val moves = ArrayList<Move>()
@@ -19,8 +19,6 @@ class OpeningLine(val startingState: String, val setupMoves: ArrayList<Move>, va
     }
 
     override fun toString(): String {
-//        var content = "$startingState|"
-
         var content = ""
 
         for ((i, move) in setupMoves.withIndex()) {
@@ -49,36 +47,43 @@ class OpeningLine(val startingState: String, val setupMoves: ArrayList<Move>, va
         fun fromString(content: String): OpeningLine {
             try {
                 val firstSeparatorIndex = content.indexOf("~")
-//            val secondSeparatorIndex = content.indexOf("|", firstSeparatorIndex + 1)
-//            val thirdSeparatorIndex = content.indexOf("|", secondSeparatorIndex + 1)
 
-//            val gameStateString = content.substring(0, secondSeparatorIndex)
-                val gameStateString = ""
-//            val startingMovesString = content.substring(secondSeparatorIndex + 1, thirdSeparatorIndex)
-//            val movesString = content.substring(thirdSeparatorIndex + 1)
+                if (firstSeparatorIndex == -1) {
+                    val startingMovesData = content.split(",")
+                    val startingMoves = ArrayList<Move>()
 
-                val startingMovesString = content.substring(0, firstSeparatorIndex)
-                val movesString = content.substring(firstSeparatorIndex + 1)
-
-                val startingMovesData = startingMovesString.split(",")
-                val startingMoves = ArrayList<Move>()
-
-                startingMovesData.forEach {
-                    if (it.isNotBlank()) {
-                        startingMoves += Move.fromChessNotation(it)
+                    startingMovesData.forEach {
+                        if (it.isNotBlank()) {
+                            startingMoves += Move.fromChessNotation(it)
+                        }
                     }
+
+                    return OpeningLine(startingMoves, ArrayList())
+                } else {
+                    val startingMovesString = content.substring(0, firstSeparatorIndex)
+                    val movesString = content.substring(firstSeparatorIndex + 1)
+
+                    val startingMovesData = startingMovesString.split(",")
+                    val startingMoves = ArrayList<Move>()
+
+                    startingMovesData.forEach {
+                        if (it.isNotBlank()) {
+                            startingMoves += Move.fromChessNotation(it)
+                        }
+                    }
+
+                    val movesData = movesString.split(",")
+                    val moves = ArrayList<Move>()
+
+                    movesData.forEach {
+                        if (it.isNotBlank()) {
+                            moves += Move.fromChessNotation(it)
+                        }
+                    }
+
+                    return OpeningLine(startingMoves, moves)
                 }
 
-                val movesData = movesString.split(",")
-                val moves = ArrayList<Move>()
-
-                movesData.forEach {
-                    if (it.isNotBlank()) {
-                        moves += Move.fromChessNotation(it)
-                    }
-                }
-
-                return OpeningLine(gameStateString, startingMoves, moves)
             } catch (e: Exception) {
                 throw IllegalArgumentException("Failed to parse text into openingLine: $content")
             }

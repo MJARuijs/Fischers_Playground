@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.activities.game
+package com.mjaruijs.fischersplayground.fragments
 
 import android.graphics.Color
 import android.graphics.Typeface
@@ -17,14 +17,17 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
 import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView
+import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
-class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, private val setupMoves: ArrayList<Move> = arrayListOf(), private val lineMoves: ArrayList<Move> = arrayListOf()) : Fragment() {
+class OpeningMovesFragment2 : Fragment() {
+
+    private lateinit var onMoveClick: (Move, Boolean) -> Unit
+    private val setupMoves = ArrayList<Move>()
+    private val lineMoves = ArrayList<Move>()
 
     private lateinit var typeFace: Typeface
-
     private lateinit var scrollView: ScrollView
-
     private lateinit var moveTable: TableLayout
 
     private var rowOffset = 0
@@ -53,7 +56,7 @@ class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, pr
         }
     }
 
-    fun getOpeningLine() = OpeningLine("", setupMoves, lineMoves)
+    fun getOpeningLine() = OpeningLine(setupMoves, lineMoves)
 
     fun selectMove(index: Int) {
         deselectAllMoves()
@@ -158,6 +161,8 @@ class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, pr
 
     fun addLineMove(move: Move) {
         deselectAllMoves()
+
+        Logger.debug(TAG, "CurrentMoveIndex: $currentMoveIndex")
 
         deleteMovesAfter(currentMoveIndex)
 
@@ -289,6 +294,10 @@ class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, pr
                 setupMoves.removeLast()
             }
 
+            if (setupMoves.last().team == Team.WHITE) {
+                (moveTable[moveTable.childCount - 1] as OpeningMovesRowView).hideBlackMove()
+            }
+
             lineMoves.clear()
         } else {
             val rowIndex = index / 2 + 4
@@ -299,6 +308,10 @@ class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, pr
 
             while (lineMoves.size > index + 1) {
                 lineMoves.removeLast()
+            }
+
+            if (lineMoves.last().team == Team.WHITE) {
+                (moveTable[moveTable.childCount - 1] as OpeningMovesRowView).hideBlackMove()
             }
         }
     }
@@ -394,8 +407,24 @@ class OpeningMovesFragment2(private val onMoveClick: (Move, Boolean) -> Unit, pr
 
     companion object {
 
+        private const val TAG = "OpeningMovesFragment"
+
         const val SETUP_MOVES_TEXT = "Setup Moves"
         const val LINE_MOVES_TEXT = "Line Moves"
 
+        fun getInstance(onMoveClick: (Move, Boolean) -> Unit, setupMoves: ArrayList<Move> = ArrayList(), lineMoves: ArrayList<Move> = ArrayList()): OpeningMovesFragment2 {
+            val fragment = OpeningMovesFragment2()
+
+            fragment.onMoveClick = onMoveClick
+            for (move in setupMoves) {
+                fragment.setupMoves += move
+            }
+
+            for (move in lineMoves) {
+                fragment.lineMoves += move
+            }
+
+            return fragment
+        }
     }
 }

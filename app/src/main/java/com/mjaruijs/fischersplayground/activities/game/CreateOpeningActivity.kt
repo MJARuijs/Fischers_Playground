@@ -15,20 +15,22 @@ import androidx.core.view.doOnLayout
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.activities.game.OpeningMovesFragment2.Companion.LINE_MOVES_TEXT
+import com.mjaruijs.fischersplayground.fragments.OpeningMovesFragment2.Companion.LINE_MOVES_TEXT
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
+import com.mjaruijs.fischersplayground.fragments.OpeningMovePagerFragment
+import com.mjaruijs.fischersplayground.fragments.OpeningMovesFragment2
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment.Companion.BACKGROUND_COLOR
 import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
 import kotlin.math.roundToInt
@@ -87,7 +89,7 @@ class CreateOpeningActivity : GameActivity() {
             moveFeedbackIcon.hide()
         }
 
-        openingMovesFragment = OpeningMovePagerFragment(::onLineSelected, ::onMoveClicked, opening.lines)
+        openingMovesFragment = OpeningMovePagerFragment.getInstance(::onLineSelected, ::onMoveClicked, opening.lines)
 
         loadCreatingActionButtons()
 
@@ -313,7 +315,7 @@ class CreateOpeningActivity : GameActivity() {
 
         loadPracticeActionButtons()
 
-        for (line in opening.lines) {
+        for (line in opening.lines.shuffled()) {
             lines += line
         }
 

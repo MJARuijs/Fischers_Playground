@@ -16,6 +16,7 @@ void main() {
     vec2 position = inPosition;
     position *= scale;
 
+//    position *= 0.1;
 //    position.x /= aspectRatio;
     position.y *= -1.0f;
 

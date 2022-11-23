@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.networking.client
 import android.content.Context
 import android.util.Log
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.util.Logger
 import java.net.InetSocketAddress
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets.UTF_8
@@ -69,7 +70,7 @@ class SecureClient(channel: SocketChannel, callback: (NetworkMessage, Context) -
 
             String(decryptedMessage, UTF_8)
         } catch (e: Exception) {
-            throw ClientException("")
+            throw e
         }
     }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.nio.NonBlockingClient
+import com.mjaruijs.fischersplayground.util.Logger
 import java.net.InetSocketAddress
 import java.nio.Buffer
 import java.nio.ByteBuffer
@@ -20,8 +21,8 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
             val encodedBytes = Base64.getEncoder().encode(bytes)
             val bufferSize = encodedBytes.size.toString().toByteArray()
             val encodedSize = Base64.getEncoder().encode(bufferSize)
-            val buffer = ByteBuffer.allocate(encodedBytes.size + encodedSize.size)
-            buffer.put(encodedSize)
+            val buffer = ByteBuffer.allocate(NUMBER_OF_SIZE_BYTES + encodedBytes.size )
+            buffer.put(encodedSize.copyOf(NUMBER_OF_SIZE_BYTES))
             buffer.put(encodedBytes)
             (buffer as Buffer).rewind()
             channel.write(buffer)
@@ -36,7 +37,7 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
     final override fun read(): ByteArray {
 
         // Read size
-        val readSizeBuffer = ByteBuffer.allocate(Integer.BYTES)
+        val readSizeBuffer = ByteBuffer.allocate(NUMBER_OF_SIZE_BYTES)
         var sizeBytesRead = channel.read(readSizeBuffer)
 
         while (sizeBytesRead == 0) {
@@ -50,15 +51,21 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
         (readSizeBuffer as Buffer).rewind()
 
         // Read data
-        val sizeArray = ByteArray(4)
+        val sizeInputArray = ByteArray(NUMBER_OF_SIZE_BYTES)
         var index = 0
 
         while (readSizeBuffer.hasRemaining()) {
             val b = readSizeBuffer.get()
-            sizeArray[index] = b
+            if (b.toInt() == 0) {
+                readSizeBuffer.clear()
+                break
+            }
+
+            sizeInputArray[index] = b
             index++
         }
 
+        val sizeArray = sizeInputArray.copyOf(index)
         val size = String(Base64.getDecoder().decode(sizeArray)).toInt()
 
         val data = ByteBuffer.allocate(size)
@@ -69,6 +76,7 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
         }
 
         (data as Buffer).rewind()
+
         return Base64.getDecoder().decode(data).array()
     }
 
@@ -83,5 +91,9 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
     override fun close() {
         super.close()
         channel.close()
+    }
+
+    companion object {
+        private const val NUMBER_OF_SIZE_BYTES = 8
     }
 }

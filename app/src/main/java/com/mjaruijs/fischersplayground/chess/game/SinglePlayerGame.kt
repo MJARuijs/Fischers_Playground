@@ -48,7 +48,6 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
     override fun setMove(move: Move) {
         super.setMove(move)
         teamToMove = !move.team
-        Logger.debug("MyTag", "Setting teamToMove: $teamToMove ${move.team}")
     }
 
     fun undoLastMove() {
@@ -58,7 +57,6 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
 
     override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long) {
         if (!isShowingCurrentMove()) {
-            Logger.debug("MyTag", "NOT SHOWING CURRENT MOVE ${moves.size}")
             val moveCount = moves.size
             for (i in currentMoveIndex + 1 until moveCount) {
                 if (i == -1) {

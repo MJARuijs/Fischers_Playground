@@ -161,6 +161,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
         if (!stayingInApp) {
             leftApp = true
+            Logger.warn(activityName, "Stopping networker")
             networkManager.stop()
         }
 
