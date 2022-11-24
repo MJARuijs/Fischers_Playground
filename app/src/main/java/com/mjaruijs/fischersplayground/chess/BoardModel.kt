@@ -65,6 +65,7 @@ class BoardModel(is3D: Boolean) {
         }
 
         mesh = BoardMesh(vertices, is3D)
+
     }
 
     fun draw() {
@@ -72,6 +73,7 @@ class BoardModel(is3D: Boolean) {
     }
 
     fun destroy() {
+
         mesh.destroy()
     }
 
@@ -117,10 +119,6 @@ class BoardModel(is3D: Boolean) {
         points += Vector4(VERTEX_OFFSET, -VERTEX_OFFSET - BOARD_FRAME_WIDTH, BOARD_HEIGHT, POSITIVE_Z_INDEX)
         points += Vector4(VERTEX_OFFSET + BOARD_FRAME_WIDTH, -VERTEX_OFFSET - BOARD_FRAME_WIDTH, BOARD_HEIGHT, POSITIVE_Z_INDEX)
         points += Vector4(VERTEX_OFFSET + BOARD_FRAME_WIDTH, VERTEX_OFFSET + BOARD_FRAME_WIDTH, BOARD_HEIGHT, POSITIVE_Z_INDEX)
-
-//        points += Vector4(VERTEX_OFFSET, VERTEX_OFFSET - BOARD_FRAME_WIDTH, BOARD_HEIGHT, POSITIVE_Z_INDEX)
-//        points += Vector4(VERTEX_OFFSET + BOARD_FRAME_WIDTH, VERTEX_OFFSET + BOARD_FRAME_WIDTH, BOARD_HEIGHT, POSITIVE_Z_INDEX)
-//        points += Vector4(VERTEX_OFFSET + BOARD_FRAME_WIDTH, -VERTEX_OFFSET - BOARD_FRAME_WIDTH, BOARD_HEIGHT, POSITIVE_Z_INDEX)
 
         val vertices = FloatArray(points.size * 4)
         

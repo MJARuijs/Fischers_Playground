@@ -22,12 +22,8 @@ class BoardRenderer(resources: Resources) {
     private val model2D = BoardModel(false)
     private val model3D = BoardModel(true)
     private val diffuseTexture = TextureLoader.load(resources, R.drawable.wood_diffuse_texture)
-//    private val normalTexture = TextureLoader.load(resources, R.drawable.wood_normal_texture)
-//    private val specularTexture = TextureLoader.load(resources, R.drawable.wood_specular_texture)
 
     private val diffuseSampler = Sampler(0)
-//    private val normalSampler = Sampler(1)
-//    private val specularSampler = Sampler(2)
 
     private val ambientLight = AmbientLight(Color.DARK)
     private val directionalLight = DirectionalLight(Color.WHITE, Vector3(0.0f, -0.5f, 1f))
@@ -46,8 +42,6 @@ class BoardRenderer(resources: Resources) {
 
     init {
         diffuseTexture.init()
-//        normalTexture.init()
-//        specularTexture.init()
     }
 
     fun render2D() {
@@ -61,8 +55,6 @@ class BoardRenderer(resources: Resources) {
     fun render3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int) {
         board3DProgram.start()
         board3DProgram.set("diffuseTexture", diffuseSampler.index)
-//        board3DProgram.set("normalTexture", normalSampler.index)
-//        board3DProgram.set("specularTexture", specularSampler.index)
 
         board3DProgram.set("projection", camera.projectionMatrix)
         board3DProgram.set("view", camera.viewMatrix)
@@ -72,8 +64,6 @@ class BoardRenderer(resources: Resources) {
         board3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
 
         diffuseSampler.bind(diffuseTexture)
-//        normalSampler.bind(normalTexture)
-//        specularSampler.bind(specularTexture)
 
         ambientLight.applyTo(board3DProgram)
         directionalLight.applyTo(board3DProgram)
@@ -86,6 +76,7 @@ class BoardRenderer(resources: Resources) {
     fun destroy() {
         model2D.destroy()
         model3D.destroy()
+
         diffuseTexture.destroy()
 
         board2DProgram.destroy()

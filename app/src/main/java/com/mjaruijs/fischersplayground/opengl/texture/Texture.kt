@@ -17,7 +17,13 @@ class Texture(private val bitmap: Bitmap, val pixelData: ByteBuffer) {
     val width = bitmap.width
     val height = bitmap.height
 
+    var initialized = false
+
     fun init() {
+        if (initialized) {
+            return
+        }
+
         val textureHandle = IntArray(1)
         glGenTextures(1, textureHandle, 0)
         handle = textureHandle[0]
@@ -36,16 +42,10 @@ class Texture(private val bitmap: Bitmap, val pixelData: ByteBuffer) {
 
         glGenerateMipmap(GL_TEXTURE_2D)
 
-//        val floatBuffer = FloatArray(1)
-//        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, floatBuffer, 0)
-//        glTexParameterf(GL_TEXTURE_2D, GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, floatBuffer[0])
-
-//        if (loadResource) {
-//            GLUtils.texImage2D(GL_TEXTURE_2D, 0, bitmap, 0)
-//        }
-
         bitmap.recycle()
         glBindTexture(GL_TEXTURE_2D, 0)
+
+        initialized = true
     }
 
     fun destroy() {

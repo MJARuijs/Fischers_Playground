@@ -13,7 +13,7 @@ import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.util.Logger
+//import com.mjaruijs.fischersplayground.util.Logger
 
 class GoogleLoginActivity : AppCompatActivity() {
 
@@ -34,7 +34,7 @@ class GoogleLoginActivity : AppCompatActivity() {
         val account = GoogleSignIn.getLastSignedInAccount(this)
 
         if (account != null) {
-            Logger.info(activityName, "Id: ${account.id}. IdToken: ${account.idToken}. Email: ${account.email}.")
+//            Logger.info(activityName, "Id: ${account.id}. IdToken: ${account.idToken}. Email: ${account.email}.")
 
             startActivity(Intent(this, MainActivity::class.java))
             return
@@ -64,9 +64,9 @@ class GoogleLoginActivity : AppCompatActivity() {
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
             val account = completedTask.getResult(ApiException::class.java)
-            Logger.info(activityName, "Id: ${account.id}. IdToken: ${account.idToken}. Email: ${account.email}.")
+//            Logger.info(activityName, "Id: ${account.id}. IdToken: ${account.idToken}. Email: ${account.email}.")
         } catch (e: ApiException) {
-            Logger.warn(activityName, "SignInResult: FAILED. ${e.statusCode}")
+//            Logger.warn(activityName, "SignInResult: FAILED. ${e.statusCode}")
         }
     }
 

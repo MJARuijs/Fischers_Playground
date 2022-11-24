@@ -12,11 +12,11 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.pieces.Move
-import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningMovePagerFragment : Fragment() {
 
     private lateinit var onLineSelected: (OpeningLine, Int) -> Unit
+    private lateinit var onLineCleared: () -> Unit
     private lateinit var onMoveClick: (Move, Boolean) -> Unit
     private val openingLines = ArrayList<OpeningLine>()
 
@@ -27,9 +27,10 @@ class OpeningMovePagerFragment : Fragment() {
 
     companion object {
 
-        fun getInstance(onLineSelected: (OpeningLine, Int) -> Unit, onMoveClick: (Move, Boolean) -> Unit, openingLines: ArrayList<OpeningLine> = ArrayList()): OpeningMovePagerFragment {
+        fun getInstance(onLineSelected: (OpeningLine, Int) -> Unit, onLineCleared: () -> Unit, onMoveClick: (Move, Boolean) -> Unit, openingLines: ArrayList<OpeningLine> = ArrayList()): OpeningMovePagerFragment {
             val pagerFragment = OpeningMovePagerFragment()
             pagerFragment.onLineSelected = onLineSelected
+            pagerFragment.onLineCleared = onLineCleared
             pagerFragment.onMoveClick = onMoveClick
 
             for (line in openingLines) {
@@ -74,7 +75,9 @@ class OpeningMovePagerFragment : Fragment() {
         pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 
-                val selectedFragment = pagerAdapter.get(position) as OpeningMovesFragment2
+                val selectedFragment = pagerAdapter.get(position)
+//                selectedFragment.selectLastMove()
+
                 val line = selectedFragment.getOpeningLine()
                 val selectedMove = selectedFragment.currentMoveIndex
                 onLineSelected(line, selectedMove)
@@ -82,7 +85,7 @@ class OpeningMovePagerFragment : Fragment() {
         })
     }
 
-    fun getCurrentOpeningFragment() = pagerAdapter.get(pager.currentItem) as OpeningMovesFragment2
+    fun getCurrentOpeningFragment() = pagerAdapter.get(pager.currentItem)
 
     fun addLine(setupMoves: ArrayList<Move> = arrayListOf()) {
         pagerAdapter.add(setupMoves)
@@ -96,26 +99,28 @@ class OpeningMovePagerFragment : Fragment() {
 
     fun getFragments() = pagerAdapter.getFragments()
 
-    // base, bishop, Nc6, Nh5
-
     fun deleteCurrentLine() {
-        Logger.debug("MyTag", "Deleting ${pager.currentItem}")
-        pagerAdapter.delete(pager.currentItem)
-
-        if (pagerAdapter.itemCount < 2) {
-            tabIndicator.visibility = View.INVISIBLE
+        if (pagerAdapter.itemCount == 1) {
+            pagerAdapter.get(0).clear()
+            onLineCleared()
+        } else {
+            pagerAdapter.delete(pager.currentItem)
         }
+
+//        if (pagerAdapter.itemCount < 2) {
+//            tabIndicator.visibility = View.INVISIBLE
+//        }
     }
 
-    fun removeLastMove() {
-        getCurrentOpeningFragment().removeLastMove()
-    }
-
-    inner class ScreenSlidePagerAdapter(val onMoveClick: (Move, Boolean) -> Unit, val fragment: OpeningMovePagerFragment, private val fragments: ArrayList<Fragment> = ArrayList()) : FragmentStateAdapter(fragment) {
+    inner class ScreenSlidePagerAdapter(private val onMoveClick: (Move, Boolean) -> Unit, val fragment: OpeningMovePagerFragment, private val fragments: ArrayList<OpeningMovesFragment2> = ArrayList()) : FragmentStateAdapter(fragment) {
 
         override fun getItemCount() = fragments.size
 
         override fun createFragment(position: Int) = fragments[position]
+
+        override fun getItemId(position: Int): Long {
+            return fragments[position].hashCode().toLong()
+        }
 
         fun isEmpty() = fragments.isEmpty()
 

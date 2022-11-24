@@ -25,7 +25,7 @@ import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.services.MessageReceiverService
 import com.mjaruijs.fischersplayground.services.StoreDataWorker
 import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
+//import com.mjaruijs.fischersplayground.util.Logger
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -40,7 +40,7 @@ abstract class ClientActivity : AppCompatActivity() {
     protected lateinit var dataManager: DataManager
     protected lateinit var vibrator: Vibrator
 
-    protected lateinit var incomingInviteDialog: DoubleButtonDialog
+//    protected lateinit var incomingInviteDialog: DoubleButtonDialog
 
     protected var stayingInApp = false
 
@@ -52,7 +52,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open val saveGamesOnPause = true
 
-    var clientMessenger = Messenger(IncomingHandler(this))
+//    var clientMessenger = Messenger(IncomingHandler(this))
 
     var serviceMessenger: Messenger? = null
     var serviceBound = false
@@ -67,7 +67,7 @@ abstract class ClientActivity : AppCompatActivity() {
             serviceMessenger = Messenger(service)
 
             val registrationMessage = Message.obtain()
-            registrationMessage.replyTo = clientMessenger
+//            registrationMessage.replyTo = clientMessenger
             serviceMessenger!!.send(registrationMessage)
         }
 
@@ -102,7 +102,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        Logger.debug(activityName, "Binding to service!")
+//        Logger.debug(activityName, "Binding to service!")
         bindService(Intent(this, MessageReceiverService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
 
@@ -128,7 +128,7 @@ abstract class ClientActivity : AppCompatActivity() {
             getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
 
-        incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
+//        incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
 
         val networkRequest = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -149,7 +149,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        Logger.debug(activityName, "Unbinding from service!")
+//        Logger.debug(activityName, "Unbinding from service!")
         unbindService(connection)
         serviceBound = false
     }
@@ -161,13 +161,11 @@ abstract class ClientActivity : AppCompatActivity() {
 
         if (!stayingInApp) {
             leftApp = true
-            Logger.warn(activityName, "Stopping networker")
+//            Logger.warn(activityName, "Stopping networker")
             networkManager.stop()
         }
 
-        incomingInviteDialog.destroy()
-//        Logger.debug(activityName, "Unregistering receiver")
-//        unregisterReceiver(networkReceiver)
+//        incomingInviteDialog.destroy()
         super.onPause()
     }
 
@@ -186,7 +184,7 @@ abstract class ClientActivity : AppCompatActivity() {
             if (!networkManager.isRunning()) {
                 networkManager.run(applicationContext)
                 if (userId != DEFAULT_USER_ID) {
-                    Logger.info(activityName, "logging in with ID")
+//                    Logger.info(activityName, "logging in with ID")
                     networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
                 }
             }
@@ -195,7 +193,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     private fun onNetworkLost() {
         if (!leftApp) {
-            Logger.warn(activityName, "Network Lost")
+//            Logger.warn(activityName, "Network Lost")
             networkManager.stop()
         }
     }
@@ -209,7 +207,7 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
-        Logger.debug(activityName, "Received message: $topic")
+//        Logger.debug(activityName, "Received message: $topic")
 
         sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite

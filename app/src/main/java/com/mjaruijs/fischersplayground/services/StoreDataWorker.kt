@@ -31,7 +31,6 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
 
 class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(context, workParams) {
 
@@ -48,7 +47,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val content = inputData.getStringArray("content")!!
         val messageId = inputData.getLong("messageId", -1L)
 
-        Logger.debug(TAG, "Start doing work on topic: $topic. $content")
+//        Logger.debug(TAG, "Start doing work on topic: $topic. $content")
 
         if (messageId == -1L) {
             return Result.failure()
@@ -72,7 +71,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
 
-        Logger.debug(TAG, "Finished work on topic: $topic")
+//        Logger.debug(TAG, "Finished work on topic: $topic")
 
         dataManager.handledMessage(messageId)
         dataManager.saveData(applicationContext)

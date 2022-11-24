@@ -44,7 +44,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     fun getRenderer() = renderer
 
     private fun onContextCreated() {
-        onSurfaceCreated()
+//        onSurfaceCreated()
     }
 
     fun setGame(game: Game) {

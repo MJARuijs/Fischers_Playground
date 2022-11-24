@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.util.Logger
 
 class MessageReceiver(private val onRead: (Topic, String, Long) -> Unit): BroadcastReceiver() {
 

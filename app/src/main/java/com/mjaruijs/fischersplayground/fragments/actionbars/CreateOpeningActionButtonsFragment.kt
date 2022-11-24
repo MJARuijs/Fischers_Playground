@@ -7,7 +7,7 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
-class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecording: () -> Unit, private val onAddLine: () -> Unit, private val onStopRecording: () -> Unit, private val onStartPracticing: () -> Unit, onBackClicked: () -> Unit, onForwardClicked: () -> Unit) : GameBarFragment(game, onBackClicked, onForwardClicked) {
+class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecording: () -> Unit, private val onAddLine: () -> Unit, private val onStartPracticing: () -> Unit, onBackClicked: () -> Unit, onForwardClicked: () -> Unit) : GameBarFragment(game, onBackClicked, onForwardClicked) {
 
     private lateinit var addLineButton: UIButton2
     private lateinit var recordButton: UIButton2
@@ -37,7 +37,6 @@ class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecordin
             .setIconColor(Color.RED)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
-                showStopRecordingButton()
                 onStartRecording()
             }
 
@@ -56,32 +55,4 @@ class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecordin
         addButtonsToLeft(addLineButton)
     }
 
-    fun enableAddLineButton() {
-        addLineButton.enable()
-    }
-
-    fun disableAddLineButton() {
-        addLineButton.disable()
-    }
-
-    private fun showStopRecordingButton() {
-        recordButton.setText("Stop")
-            .setIcon(R.drawable.stop_icon)
-            .setIconColor(Color.WHITE)
-            .setOnClickListener {
-                showStartRecordingButton()
-                onStopRecording()
-            }
-    }
-
-    fun showStartRecordingButton() {
-        recordButton
-            .setIconColor(Color.RED)
-            .setIcon(R.drawable.record_icon)
-            .setText("Record")
-            .setOnClickListener {
-                showStopRecordingButton()
-                onStartRecording()
-            }
-    }
 }

@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.nio.NonBlockingClient
-import com.mjaruijs.fischersplayground.util.Logger
 import java.net.InetSocketAddress
 import java.nio.Buffer
 import java.nio.ByteBuffer

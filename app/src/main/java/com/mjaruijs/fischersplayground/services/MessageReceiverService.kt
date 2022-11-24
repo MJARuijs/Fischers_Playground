@@ -12,7 +12,6 @@ import com.mjaruijs.fischersplayground.activities.MessageReceiver
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.util.Logger
 import java.lang.ref.WeakReference
 
 class MessageReceiverService : Service() {
@@ -58,7 +57,7 @@ class MessageReceiverService : Service() {
     private fun sendMessage(data: Any?) {
         if (currentClient == null) {
             messageCache += data as NetworkMessage
-            Logger.warn(TAG, "No client connected to service!")
+//            Logger.warn(TAG, "No client connected to service!")
             return
         }
         currentClient!!.send(Message.obtain(null, 0, data))
@@ -74,7 +73,7 @@ class MessageReceiverService : Service() {
 
             if (service.messageCache.isNotEmpty()) {
                 for (message in service.messageCache) {
-                    Logger.warn(TAG, "Sending backed up message: $message")
+//                    Logger.warn(TAG, "Sending backed up message: $message")
                     msg.replyTo.send(Message.obtain(null, 0, message))
                 }
                 service.messageCache.clear()

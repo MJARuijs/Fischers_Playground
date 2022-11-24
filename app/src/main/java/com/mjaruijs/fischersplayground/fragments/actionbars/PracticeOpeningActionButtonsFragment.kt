@@ -6,7 +6,6 @@ import android.view.View
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.Logger
 
 class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked: () -> Unit, private val onSolutionClicked: () -> Unit, private val onRetryClicked: () -> Unit, private val onNextClicked: () -> Unit) : GameBarFragment(game) {
 

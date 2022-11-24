@@ -18,6 +18,11 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
         return moves
     }
 
+    fun clearMoves() {
+        setupMoves.clear()
+        lineMoves.clear()
+    }
+
     override fun toString(): String {
         var content = ""
 

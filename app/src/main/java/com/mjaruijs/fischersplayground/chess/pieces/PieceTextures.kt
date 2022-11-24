@@ -16,6 +16,22 @@ class PieceTextures(resources: Resources) {
 
 //    private val initialized = AtomicBoolean(false)
 
+    companion object {
+
+        private var instance: PieceTextures? = null
+
+        fun getInstance(resources: Resources): PieceTextures {
+
+            if (instance != null) {
+                return instance!!
+            }
+
+            instance = PieceTextures(resources)
+            return instance!!
+        }
+
+    }
+
     init {
 //        if (initialized.get()) {
 //            return

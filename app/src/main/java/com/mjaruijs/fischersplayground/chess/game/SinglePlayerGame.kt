@@ -7,7 +7,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
-import com.mjaruijs.fischersplayground.util.Logger
 
 class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlayingWhite, lastUpdated) {
 
@@ -33,6 +32,11 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
 
     fun move(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         move(move.team, move.getFromPosition(team), move.getToPosition(team), animationSpeed)
+    }
+
+    override fun resetMoves() {
+        super.resetMoves()
+        teamToMove = Team.WHITE
     }
 
     override fun swapMoves(newMoves: ArrayList<Move>, selectedMoveIndex: Int) {

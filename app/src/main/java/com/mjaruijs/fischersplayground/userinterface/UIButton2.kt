@@ -16,7 +16,6 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.setPadding
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
-import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt

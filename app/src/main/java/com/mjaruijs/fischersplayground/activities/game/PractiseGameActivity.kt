@@ -23,15 +23,15 @@ class PractiseGameActivity : GameActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
-        findViewById<FragmentContainerView>(R.id.upper_fragment_container).visibility = View.GONE
+//        findViewById<FragmentContainerView>(R.id.upper_fragment_container).visibility = View.GONE
 
         val isPlayingWhite = intent.getBooleanExtra("is_playing_white", true)
-        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp())
+//        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp())
 
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::onBackClicked, ::onForwardClicked, ::onAddVariationClicked))
-            replace(R.id.lower_fragment_container, OpeningMovesFragment(), "opening_moves")
+//            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::onBackClicked, ::onForwardClicked, ::onAddVariationClicked))
+//            replace(R.id.lower_fragment_container, OpeningMovesFragment(), "opening_moves")
         }
     }
 
@@ -40,8 +40,8 @@ class PractiseGameActivity : GameActivity() {
         runOnUiThread {
             val constraints = ConstraintSet()
             constraints.clone(gameLayout)
-            constraints.clear(R.id.opengl_view, ConstraintSet.TOP)
-            constraints.clear(R.id.opengl_view, ConstraintSet.BOTTOM)
+//            constraints.clear(R.id.opengl_view, ConstraintSet.TOP)
+//            constraints.clear(R.id.opengl_view, ConstraintSet.BOTTOM)
 
             constraints.applyTo(gameLayout)
             gameLayout.invalidate()
@@ -52,9 +52,9 @@ class PractiseGameActivity : GameActivity() {
     }
 
     override fun onResume() {
-        (getActionBarFragment() as GameBarFragment).game = game
+//        (getActionBarFragment() as GameBarFragment).game = game
         val movesFragment = findFragment<OpeningMovesFragment>()
-        movesFragment?.setGame(game as SinglePlayerGame)
+//        movesFragment?.setGame(game as SinglePlayerGame)
         movesFragment?.setOnLastMoveClicked(::onLastMoveClicked)
 
         super.onResume()

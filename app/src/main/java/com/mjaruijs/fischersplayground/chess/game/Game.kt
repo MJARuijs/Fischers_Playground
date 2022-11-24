@@ -74,7 +74,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     fun getMoveIndex() = currentMoveIndex
 
-    fun resetMoves() {
+    open fun resetMoves() {
         for (i in currentMoveIndex  downTo 0) {
             val move = moves[i]
             undoMove(move, true)
@@ -123,22 +123,12 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             moves.add(move)
         }
 
-//        currentMoveIndex = selectedMoveIndex
-
         while (currentMoveIndex != selectedMoveIndex) {
             showNextMove(true, 0L)
         }
-
-
     }
 
     fun swapMoves(newMoves: ArrayList<Move>, currentMove: Move) {
-//        while (currentMoveIndex >= 0) {
-//            showPreviousMove(true, 0L)
-//        }
-//
-//        moves.clear()
-
         resetMoves()
 
         for (move in newMoves) {
@@ -151,10 +141,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         while (currentMoveIndex != moveIndex) {
             showNextMove(true, 0L)
         }
-//
-//        if (moveIndex == moves.size - 1) {
-//            disableForwardButton()
-//        }
     }
 
     fun goToMove(move: Move) {

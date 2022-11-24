@@ -156,14 +156,14 @@ class MainActivity : ClientActivity() {
     }
 
     private fun showNewInviteDialog(inviteId: String, opponentName: String) {
-        incomingInviteDialog.setMessage("$opponentName is inviting you for a game!")
-        incomingInviteDialog.setRightOnClick {
-            networkManager.sendMessage(NetworkMessage(Topic.INVITE_ACCEPTED, inviteId))
-        }
-        incomingInviteDialog.setLeftOnClick {
-            networkManager.sendMessage(NetworkMessage(Topic.INVITE_REJECTED, inviteId))
-        }
-        incomingInviteDialog.show()
+//        incomingInviteDialog.setMessage("$opponentName is inviting you for a game!")
+//        incomingInviteDialog.setRightOnClick {
+//            networkManager.sendMessage(NetworkMessage(Topic.INVITE_ACCEPTED, inviteId))
+//        }
+//        incomingInviteDialog.setLeftOnClick {
+//            networkManager.sendMessage(NetworkMessage(Topic.INVITE_REJECTED, inviteId))
+//        }
+//        incomingInviteDialog.show()
     }
 
     override fun onNewGameStarted(output: Parcelable) {
@@ -346,6 +346,7 @@ class MainActivity : ClientActivity() {
             .setTextSize(28f)
             .setOnClickListener {
                 stayingInApp = true
+//                startActivity(Intent(this, MemoryTestActivity::class.java))
                 startActivity(Intent(this, SinglePlayerGameActivity::class.java))
             }
 

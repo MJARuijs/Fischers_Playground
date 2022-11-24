@@ -14,7 +14,6 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder.Companion.GROUP_CHANNEL_ID
 import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
 
 class FirebaseService : FirebaseMessagingService() {
 
@@ -22,7 +21,7 @@ class FirebaseService : FirebaseMessagingService() {
         super.onNewToken(token)
         getSharedPreferences(FIRE_BASE_PREFERENCE_FILE, MODE_PRIVATE).edit().putString("token", token).apply()
 
-        Logger.debug("MyTag", "New FCM Token: $token")
+//        Logger.debug("MyTag", "New FCM Token: $token")
         val userId = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, "")!!
 
         if (userId.isNotBlank()) {

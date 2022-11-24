@@ -12,7 +12,6 @@ import androidx.core.text.isDigitsOnly
 import androidx.core.view.children
 import androidx.core.view.doOnLayout
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.util.Logger
 
 class BoardTextView(context: Context, attributes: AttributeSet?) : LinearLayout(context, attributes) {
 

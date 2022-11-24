@@ -18,7 +18,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
@@ -555,7 +554,6 @@ class DataManager(context: Context) {
         obtainOpeningLock()
         Thread {
             try {
-                Logger.debug("MyTag", "Saving openings")
                 for (opening in savedOpenings) {
                     FileManager.write(context, "opening_${opening.name}_${opening.team}.txt", opening.toString())
                 }

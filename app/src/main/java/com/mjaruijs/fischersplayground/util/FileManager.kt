@@ -43,7 +43,7 @@ object FileManager {
 
     fun mkdir(dir: String): Boolean {
         val dirFile = File("$filesPath/$dir")
-        Logger.debug("MyTag", "Can write to dir: ${dirFile.canWrite()} ${dirFile.isDirectory}")
+//        Logger.debug("MyTag", "Can write to dir: ${dirFile.canWrite()} ${dirFile.isDirectory}")
         return dirFile.mkdir()
     }
 

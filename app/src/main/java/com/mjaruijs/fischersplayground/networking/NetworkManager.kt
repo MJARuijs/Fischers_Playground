@@ -11,7 +11,6 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
 import java.util.concurrent.atomic.AtomicBoolean
 
 class NetworkManager {
@@ -79,7 +78,7 @@ class NetworkManager {
         manager = Manager("Client")
         manager.context = context
         manager.setOnClientDisconnect {
-            Logger.warn(TAG, "Manager disconnected!")
+//            Logger.warn(TAG, "Manager disconnected!")
             stop()
         }
 
@@ -120,7 +119,7 @@ class NetworkManager {
             if (clientConnected.get()) {
                 try {
                     if (message.topic != Topic.CONFIRM_MESSAGE && message.topic != Topic.CRASH_REPORT) {
-                        Logger.info(TAG, "Sending message: $message")
+//                        Logger.info(TAG, "Sending message: $message")
                     }
                     client.write(message.toString())
                     messageQueue.remove(message)
@@ -144,7 +143,7 @@ class NetworkManager {
         sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
         if (message.topic != Topic.CONFIRM_MESSAGE) {
-            Logger.info(TAG, "Received message: $message")
+//            Logger.info(TAG, "Received message: $message")
         }
 
         val dataManager = DataManager.getInstance(context)
@@ -160,7 +159,7 @@ class NetworkManager {
 
             context.sendBroadcast(intent)
         } else {
-            Logger.debug(TAG, "Message already handled: ${message.id} ${message.topic}")
+//            Logger.debug(TAG, "Message already handled: ${message.id} ${message.topic}")
         }
     }
 

@@ -14,7 +14,6 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
 import com.mjaruijs.fischersplayground.opengl.texture.TextureArray
 import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
-import com.mjaruijs.fischersplayground.util.Logger
 
 class HighlightRenderer(resources: Resources) {
 

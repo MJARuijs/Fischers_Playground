@@ -23,7 +23,6 @@ import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.OpeningMoveView
-import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningMovesFragment : Fragment() {
 
@@ -73,8 +72,8 @@ class OpeningMovesFragment : Fragment() {
             }
         }.start()
 
-        Logger.mute("Rewrite")
-        Logger.mute("debug")
+//        Logger.mute("Rewrite")
+//        Logger.mute("debug")
     }
 
     fun setGame(game: SinglePlayerGame) {
@@ -96,7 +95,7 @@ class OpeningMovesFragment : Fragment() {
 
     private fun addMoveToLine(move: Move) {
         val line = lines[selectedLineIndex]
-        Logger.debug("fix", "Going to add move to line: lineId=${line.id}, currentIndex=${line.currentIndex} size=${line.moves.size} ")
+//        Logger.debug("fix", "Going to add move to line: lineId=${line.id}, currentIndex=${line.currentIndex} size=${line.moves.size} ")
 
         if (line.currentIndex != line.getNumberOfMoves()) {
             removeRemainingMoves()
@@ -105,7 +104,7 @@ class OpeningMovesFragment : Fragment() {
 
         line.addMove(move)
 
-        Logger.debug("fix", "Adding move: ${move.getSimpleChessNotation()} to line: lineId=${line.id}, currentIndex=${line.currentIndex}, size=${line.moves.size}")
+//        Logger.debug("fix", "Adding move: ${move.getSimpleChessNotation()} to line: lineId=${line.id}, currentIndex=${line.currentIndex}, size=${line.moves.size}")
 
 //        if (move.team == Team.WHITE) {
 //            addRowToTable()
@@ -154,7 +153,7 @@ class OpeningMovesFragment : Fragment() {
         val line = lines[selectedLineIndex]
         line.currentIndex++
 
-        Logger.debug("debug", "Trying to go forward: ${line.id} ${line.currentIndex} ${line.moves.size}")
+//        Logger.debug("debug", "Trying to go forward: ${line.id} ${line.currentIndex} ${line.moves.size}")
 
         selectMove(line.currentIndex - 1)
     }
@@ -176,7 +175,7 @@ class OpeningMovesFragment : Fragment() {
 
         game.clearBoardData()
 
-        Logger.debug("fix", "Clicked move: ${move.getSimpleChessNotation()} in line: lineId=$lineId, currentIndex=${line.currentIndex}, size=${line.moves.size}")
+//        Logger.debug("fix", "Clicked move: ${move.getSimpleChessNotation()} in line: lineId=$lineId, currentIndex=${line.currentIndex}, size=${line.moves.size}")
         selectedLineIndex = lineId
     }
 
@@ -226,7 +225,7 @@ class OpeningMovesFragment : Fragment() {
         val line = lines[selectedLineIndex]
 
         for (i in line.getNumberOfMoves() - 1 downTo line.currentIndex) {
-            Logger.debug("fix", "Removing remaining: $i : ${line[i].getSimpleChessNotation()}")
+//            Logger.debug("fix", "Removing remaining: $i : ${line[i].getSimpleChessNotation()}")
             deleteMove(line[i])
             line.deleteMoveAt(i)
         }
@@ -261,7 +260,7 @@ class OpeningMovesFragment : Fragment() {
 //                moveCounterLayout.removeViewAt(rowIndex)
 //            }
         } catch (e: Exception) {
-            Logger.error("Rewrite", e.stackTraceToString())
+//            Logger.error("Rewrite", e.stackTraceToString())
 //            throw IllegalArgumentException("Failed to delete move at index: $moveIndex. Number of moves was ${mainMoves.size}")
         }
     }
@@ -352,11 +351,11 @@ class OpeningMovesFragment : Fragment() {
 
             val isDefaultView = (row[1] as OpeningMoveView).getText() == "0-0-0@"
             if (isDefaultView) {
-                Logger.debug("fix", "getLastEmptyRow(): Reusing row at: $i")
+//                Logger.debug("fix", "getLastEmptyRow(): Reusing row at: $i")
                 return row
             }
         }
-        Logger.debug("fix", "getLastEmptyRow(): Creating new row")
+//        Logger.debug("fix", "getLastEmptyRow(): Creating new row")
 
         return addRowToTable(lineTable)
     }
@@ -428,7 +427,7 @@ class OpeningMovesFragment : Fragment() {
             if (i == 0) {
                 whiteMove.doOnLayout {
                     moveViewHeight = it.height
-                    Logger.debug("fix", "MoveView height: $moveViewHeight")
+//                    Logger.debug("fix", "MoveView height: $moveViewHeight")
                 }
             }
 
@@ -446,7 +445,7 @@ class OpeningMovesFragment : Fragment() {
     }
 
     private fun addViewsToCounterLayout() {
-        Logger.debug("fix", "Adding Counter Views")
+//        Logger.debug("fix", "Adding Counter Views")
         for (i in 0 until 20) {
             val moveStringPlaceHolder = requireContext().resources.getString(R.string.move_row_string)
             val moveString = String.format(moveStringPlaceHolder, i)

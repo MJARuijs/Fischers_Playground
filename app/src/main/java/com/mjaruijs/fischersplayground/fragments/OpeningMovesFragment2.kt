@@ -17,7 +17,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
 import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView
-import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
 class OpeningMovesFragment2 : Fragment() {
@@ -51,12 +50,19 @@ class OpeningMovesFragment2 : Fragment() {
         if (lineMoves.isNotEmpty()) {
             rowOffset = if (setupMoves.last().team == Team.WHITE) 1 else 0
 
-            addHeaderRow(LINE_MOVES_TEXT, false)
+            addHeaderRow(LINE_MOVES_TEXT, true)
             addLineMoves()
         }
     }
 
     fun getOpeningLine() = OpeningLine(setupMoves, lineMoves)
+
+    fun selectLastMove() {
+        if (setupMoves.isEmpty() && lineMoves.isEmpty()) {
+            return
+        }
+        selectMove(setupMoves.size + lineMoves.size)
+    }
 
     fun selectMove(index: Int) {
         deselectAllMoves()
@@ -127,7 +133,7 @@ class OpeningMovesFragment2 : Fragment() {
         moveTable.invalidate()
     }
 
-    fun addSetupMove(move: Move) {
+    private fun addSetupMove(move: Move) {
         deselectAllMoves()
 
         deleteMovesAfter(currentMoveIndex)
@@ -159,10 +165,16 @@ class OpeningMovesFragment2 : Fragment() {
         }
     }
 
-    fun addLineMove(move: Move) {
-        deselectAllMoves()
+    fun addMove(move: Move) {
+        if (hasHeader(LINE_MOVES_TEXT)) {
+            addLineMove(move)
+        } else {
+            addSetupMove(move)
+        }
+    }
 
-        Logger.debug(TAG, "CurrentMoveIndex: $currentMoveIndex")
+    private fun addLineMove(move: Move) {
+        deselectAllMoves()
 
         deleteMovesAfter(currentMoveIndex)
 
@@ -221,49 +233,78 @@ class OpeningMovesFragment2 : Fragment() {
         }
     }
 
-    fun removeLastMove() {
-        if (moveTable.childCount == 0) {
-            return
-        }
-
-        if (lineMoves.isNotEmpty()) {
-            lineMoves.removeLast()
-        } else if (setupMoves.isNotEmpty()) {
-            setupMoves.removeLast()
-        }
-
-        val lastRow = moveTable.children.last()
-        if (lastRow is OpeningMovesRowView) {
-            if (lastRow.isBlackMoveHidden()) {
-                moveTable.removeView(lastRow)
-            } else {
-                lastRow.hideBlackMove()
-                if (lastRow.areBothMovesHidden()) {
-                    moveTable.removeView(lastRow)
-                }
-            }
-
-            if (moveTable.childCount != 0) {
-                val newLastRow = moveTable.children.last()
-                if (newLastRow is MoveHeaderView) {
-                    if (newLastRow.getText() != SETUP_MOVES_TEXT) {
-                        moveTable.removeView(newLastRow)
-                    }
-                }
-            }
-        }
-
-        currentMoveIndex--
+    fun clear() {
+        deleteMovesAfter(-1)
     }
 
     fun addHeaderRow(text: String, scrollDown: Boolean) {
-        val headerView = MoveHeaderView(requireContext())
-        headerView.setText(text)
-        moveTable.addView(headerView)
+        if (currentMoveIndex != -1) {
+            val currentMoveIndexCopy = currentMoveIndex
 
-        if (scrollDown) {
-            scrollView.post {
-                scrollView.fullScroll(View.FOCUS_DOWN)
+            if (currentMoveIndex < setupMoves.size) {
+                val newLineMoves = ArrayList<Move>()
+
+                for (i in currentMoveIndex + 1 until setupMoves.size + lineMoves.size) {
+                    newLineMoves += if (i < setupMoves.size) {
+                        setupMoves[i]
+                    } else {
+                        lineMoves[i - setupMoves.size]
+                    }
+                }
+
+                deleteMovesAfter(currentMoveIndex)
+
+                val headerView = MoveHeaderView(requireContext())
+                headerView.setText(text)
+
+                moveTable.addView(headerView)
+
+                for (move in newLineMoves) {
+                    addLineMove(move)
+                }
+            } else {
+                val newSetupMoves = ArrayList<Move>()
+                val newLineMoves = ArrayList<Move>()
+
+                for (move in setupMoves) {
+                    newSetupMoves += move
+                }
+
+                for (i in 0 until currentMoveIndex - setupMoves.size + 1) {
+                    newSetupMoves += lineMoves[i]
+                }
+
+                for (i in currentMoveIndex - setupMoves.size + 1 until lineMoves.size) {
+                    newLineMoves += lineMoves[i]
+                }
+
+                deleteMovesAfter(-1)
+
+                for (move in newSetupMoves) {
+                    addSetupMove(move)
+                }
+
+                val headerView = MoveHeaderView(requireContext())
+                headerView.setText(LINE_MOVES_TEXT)
+
+                moveTable.addView(headerView)
+
+                for (move in newLineMoves) {
+                    addLineMove(move)
+                }
+            }
+
+            selectMove(currentMoveIndexCopy)
+        } else {
+            val headerView = MoveHeaderView(requireContext())
+            headerView.setText(text)
+
+            moveTable.addView(headerView)
+
+            if (scrollDown) {
+                scrollView.post {
+                    scrollView.fullScroll(View.FOCUS_DOWN)
+                }
             }
         }
     }
@@ -294,8 +335,10 @@ class OpeningMovesFragment2 : Fragment() {
                 setupMoves.removeLast()
             }
 
-            if (setupMoves.last().team == Team.WHITE) {
-                (moveTable[moveTable.childCount - 1] as OpeningMovesRowView).hideBlackMove()
+            if (setupMoves.isNotEmpty()) {
+                if (setupMoves.last().team == Team.WHITE) {
+                    (moveTable[moveTable.childCount - 1] as OpeningMovesRowView).hideBlackMove()
+                }
             }
 
             lineMoves.clear()
@@ -310,13 +353,15 @@ class OpeningMovesFragment2 : Fragment() {
                 lineMoves.removeLast()
             }
 
-            if (lineMoves.last().team == Team.WHITE) {
-                (moveTable[moveTable.childCount - 1] as OpeningMovesRowView).hideBlackMove()
+            if (lineMoves.isNotEmpty()) {
+                if (lineMoves.last().team == Team.WHITE) {
+                    (moveTable[moveTable.childCount - 1] as OpeningMovesRowView).hideBlackMove()
+                }
             }
         }
     }
 
-    fun hasHeader(text: String): Boolean {
+    private fun hasHeader(text: String): Boolean {
         if (moveTable.childCount == 0) {
             return false
         }
@@ -403,6 +448,7 @@ class OpeningMovesFragment2 : Fragment() {
         }
 
         deselectAllMoves()
+        selectMove(currentMoveIndex)
     }
 
     companion object {
