@@ -188,7 +188,7 @@ class CreateOpeningActivity : GameActivity() {
             game.goToMove(move)
 
             //TODO: is this line necessary?
-            openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex)
+            openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
             evaluateActionButtons()
         }
     }
@@ -384,11 +384,11 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onBackClicked() {
-        openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex)
+        openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
     }
 
     private fun onForwardClicked() {
-        openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex)
+        openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
     }
 
     private fun finishedPracticingOpening() {
