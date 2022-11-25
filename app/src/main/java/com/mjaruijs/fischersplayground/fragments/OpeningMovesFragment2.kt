@@ -3,13 +3,13 @@ package com.mjaruijs.fischersplayground.fragments
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ScrollView
 import android.widget.TableLayout
-import androidx.core.view.children
-import androidx.core.view.get
+import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
@@ -17,6 +17,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
 import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView
+import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
 class OpeningMovesFragment2 : Fragment() {
@@ -29,7 +30,7 @@ class OpeningMovesFragment2 : Fragment() {
     private lateinit var scrollView: ScrollView
     private lateinit var moveTable: TableLayout
 
-    private var rowOffset = 0
+//    private var rowOffset = 0
     var currentMoveIndex = -1
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -48,24 +49,32 @@ class OpeningMovesFragment2 : Fragment() {
         addSetupMoves()
 
         if (lineMoves.isNotEmpty()) {
-            rowOffset = if (setupMoves.last().team == Team.WHITE) 1 else 0
+//            rowOffset = if (setupMoves.last().team == Team.WHITE) 1 else 0
 
             addHeaderRow(LINE_MOVES_TEXT, true)
             addLineMoves()
+        }
+
+        moveTable.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+//            selectLastMove()
         }
     }
 
     fun getOpeningLine() = OpeningLine(setupMoves, lineMoves)
 
-    fun selectLastMove() {
+    private fun selectLastMove() {
         if (setupMoves.isEmpty() && lineMoves.isEmpty()) {
+            Logger.debug("MyTag", "MOVES ARE EMPTY")
             return
         }
-        selectMove(setupMoves.size + lineMoves.size)
+
+        selectMove(setupMoves.size + lineMoves.size - 1)
     }
 
     fun selectMove(index: Int) {
         deselectAllMoves()
+
+        Logger.debug(TAG, "Clicked on index: $index")
 
         currentMoveIndex = index
 
@@ -76,6 +85,7 @@ class OpeningMovesFragment2 : Fragment() {
             return
         }
 
+        val rowOffset = if (setupMoves.last().team == Team.WHITE) 1 else 0
         val headerOffset = if (index < setupMoves.size) 1 else 2 + rowOffset
 
         val rowIndex = index / 2 + headerOffset
@@ -87,7 +97,7 @@ class OpeningMovesFragment2 : Fragment() {
             rowView.selectBlackMove()
         }
 
-        val tableHeight = scrollView.height
+        val tableHeight = scrollView.measuredHeight
         val selectedRowBottom = moveTable[rowIndex].y + moveTable[rowIndex].height
         val selectedRowTop = moveTable[rowIndex].y
 
@@ -102,12 +112,8 @@ class OpeningMovesFragment2 : Fragment() {
         val dY = if (scrollingDown == null) {
             -1
         } else if (scrollingDown) {
-            if (selectedRowBottom > tableHeight + scrollView.scrollY) {
-                val difference = selectedRowBottom - tableHeight
-                difference.roundToInt()
-            } else {
-                -1
-            }
+            val difference = selectedRowBottom - tableHeight
+            difference.roundToInt()
         } else {
             if (rowIndex <= 1) {
                 0
@@ -131,6 +137,14 @@ class OpeningMovesFragment2 : Fragment() {
             }
         }
         moveTable.invalidate()
+    }
+
+    fun addMove(move: Move) {
+        if (hasHeader(LINE_MOVES_TEXT)) {
+            addLineMove(move)
+        } else {
+            addSetupMove(move)
+        }
     }
 
     private fun addSetupMove(move: Move) {
@@ -165,25 +179,22 @@ class OpeningMovesFragment2 : Fragment() {
         }
     }
 
-    fun addMove(move: Move) {
-        if (hasHeader(LINE_MOVES_TEXT)) {
-            addLineMove(move)
-        } else {
-            addSetupMove(move)
-        }
-    }
-
     private fun addLineMove(move: Move) {
         deselectAllMoves()
 
-        deleteMovesAfter(currentMoveIndex)
+        if (!isShowingLastMove()) {
+            Logger.debug(TAG, "Not showing latest move! Deleting moves after $currentMoveIndex")
+            deleteMovesAfter(currentMoveIndex)
+        }
 
         if (lineMoves.isEmpty()) {
-            rowOffset = if (setupMoves.last().team == Team.WHITE) 1 else 0
+//            rowOffset = if (setupMoves.last().team == Team.WHITE) 1 else 0
 
-            if (!hasHeader(LINE_MOVES_TEXT)) {
-                addHeaderRow(LINE_MOVES_TEXT, true)
-            }
+//            if (!hasHeader(LINE_MOVES_TEXT)) {
+//                Logger.debug(TAG, "Does not have header")
+//
+//                addHeaderRow(LINE_MOVES_TEXT, true)
+//            }
 
             val moveNumber = setupMoves.size / 2 + 1
             val movesView = OpeningMovesRowView(requireContext())
@@ -237,11 +248,16 @@ class OpeningMovesFragment2 : Fragment() {
         deleteMovesAfter(-1)
     }
 
+    fun test() {
+        deleteMovesAfter(currentMoveIndex)
+    }
+
     fun addHeaderRow(text: String, scrollDown: Boolean) {
         if (currentMoveIndex != -1) {
             val currentMoveIndexCopy = currentMoveIndex
 
             if (currentMoveIndex < setupMoves.size) {
+//                Logger.debug(TAG, "if")
                 val newLineMoves = ArrayList<Move>()
 
                 for (i in currentMoveIndex + 1 until setupMoves.size + lineMoves.size) {
@@ -252,7 +268,9 @@ class OpeningMovesFragment2 : Fragment() {
                     }
                 }
 
-                deleteMovesAfter(currentMoveIndex)
+                if (!isShowingLastMove()) {
+                    deleteMovesAfter(currentMoveIndex)
+                }
 
                 val headerView = MoveHeaderView(requireContext())
                 headerView.setText(text)
@@ -262,7 +280,11 @@ class OpeningMovesFragment2 : Fragment() {
                 for (move in newLineMoves) {
                     addLineMove(move)
                 }
+
+//                selectMove(currentMoveIndexCopy)
             } else {
+//                Logger.debug(TAG, "else")
+
                 val newSetupMoves = ArrayList<Move>()
                 val newLineMoves = ArrayList<Move>()
 
@@ -294,7 +316,7 @@ class OpeningMovesFragment2 : Fragment() {
                 }
             }
 
-            selectMove(currentMoveIndexCopy)
+//            selectMove(currentMoveIndexCopy)
         } else {
             val headerView = MoveHeaderView(requireContext())
             headerView.setText(text)
@@ -309,6 +331,8 @@ class OpeningMovesFragment2 : Fragment() {
         }
     }
 
+    // a3 e7 d3 g7 e2
+
     private fun deleteMovesAfter(index: Int) {
         if (index > setupMoves.size + lineMoves.size) {
             return
@@ -319,10 +343,50 @@ class OpeningMovesFragment2 : Fragment() {
                 moveTable.removeViewAt(moveTable.childCount - 1)
             }
 
+            currentMoveIndex = -1
             setupMoves.clear()
             lineMoves.clear()
             return
         }
+
+//        if (index < setupMoves.size) {
+//            Logger.debug(TAG, "if")
+//
+//            while (setupMoves.size > index + 1) {
+//                setupMoves.removeLast()
+//            }
+//
+//            lineMoves.clear()
+//        } else {
+//            Logger.debug(TAG, "else")
+//
+//            while (lineMoves.size > index) {
+//                lineMoves.removeLast()
+//            }
+//        }
+//
+//        currentMoveIndex = index
+//
+//        moveTable.removeAllViews()
+//
+//        Logger.debug(TAG, "Current move index: $currentMoveIndex, ${setupMoves.size} + ${lineMoves.size}")
+//
+//        addHeaderRow(SETUP_MOVES_TEXT, false)
+//        addSetupMoves()
+////
+//        if (lineMoves.isNotEmpty()) {
+//            Logger.debug(TAG, "LineMoves is not empty")
+//////            rowOffset = if (setupMoves.last().team == Team.WHITE) 1 else 0
+////
+////            addHeaderRow(LINE_MOVES_TEXT, true)
+////            addLineMoves()
+//            val headerView = MoveHeaderView(requireContext())
+//            headerView.setText(LINE_MOVES_TEXT)
+//
+//            moveTable.addView(headerView)
+//        } else {
+//            Logger.debug(TAG, "Linemoves is empty")
+//        }
 
         if (index < setupMoves.size) {
             val rowIndex = index / 2 + 2
@@ -349,7 +413,7 @@ class OpeningMovesFragment2 : Fragment() {
                 moveTable.removeViewAt(moveTable.childCount - 1)
             }
 
-            while (lineMoves.size > index + 1) {
+            while (lineMoves.size > index) {
                 lineMoves.removeLast()
             }
 
@@ -359,6 +423,10 @@ class OpeningMovesFragment2 : Fragment() {
                 }
             }
         }
+    }
+
+    private fun isShowingLastMove(): Boolean {
+        return currentMoveIndex == setupMoves.size + lineMoves.size - 1
     }
 
     private fun hasHeader(text: String): Boolean {

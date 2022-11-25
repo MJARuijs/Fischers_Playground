@@ -2,17 +2,24 @@ package com.mjaruijs.fischersplayground.activities
 
 import android.content.Intent
 import android.graphics.Color
+import android.os.AsyncTask
 import android.os.Bundle
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
 import androidx.cardview.widget.CardView
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.dialogs.CreateAccountDialog
 import com.mjaruijs.fischersplayground.dialogs.SingleButtonDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.opengl.OBJLoader
+import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.Logger
 
 class LoginActivity : ClientActivity() {
 
@@ -28,6 +35,17 @@ class LoginActivity : ClientActivity() {
 
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
+
+        loadResources()
+
+//        Thread {
+//            preloadModels()
+//            preloadTextures()
+//        }.start()
+
+
+//        startActivity(Intent(this, MainActivity::class.java))
+
 
         val userId = getPreference(USER_PREFERENCE_FILE).getString(USER_ID_KEY, "")!!
         if (userId.isNotBlank()) {
@@ -98,6 +116,8 @@ class LoginActivity : ClientActivity() {
         accountAlreadyExistsDialog.show()
     }
 
+
+
     private fun setupUIElements() {
         val createAccountButton = findViewById<UIButton2>(R.id.create_account_button)
         createAccountButton.setText("Create Account")
@@ -135,6 +155,60 @@ class LoginActivity : ClientActivity() {
             putString(key, value)
             apply()
         }
+    }
+
+    private fun loadResources() {
+        val textures = arrayOf(
+            R.drawable.wood_diffuse_texture,
+            R.drawable.white_pawn,
+            R.drawable.white_knight,
+            R.drawable.white_bishop,
+            R.drawable.white_rook,
+            R.drawable.white_queen,
+            R.drawable.white_king,
+            R.drawable.black_pawn,
+            R.drawable.black_knight,
+            R.drawable.black_bishop,
+            R.drawable.black_rook,
+            R.drawable.black_queen,
+            R.drawable.black_king,
+            R.drawable.diffuse_map_pawn,
+            R.drawable.diffuse_map_knight,
+            R.drawable.diffuse_map_bishop,
+            R.drawable.diffuse_map_rook,
+            R.drawable.diffuse_map_queen,
+            R.drawable.diffuse_map_king,
+            R.drawable.king_checked,
+        )
+
+        val models = arrayOf(
+            R.raw.pawn_bytes,
+            R.raw.knight_bytes,
+            R.raw.bishop_bytes,
+            R.raw.rook_bytes,
+            R.raw.queen_bytes,
+            R.raw.king_bytes
+        )
+//
+//        val textureLoader = TextureLoader.getInstance()
+//
+//        for (textureId in textures) {
+//            textureLoader.load(applicationContext.resources, textureId)
+//        }
+//
+//        for (modelId in models) {
+//            OBJLoader.preload(applicationContext.resources, modelId)
+//        }
+        val worker = OneTimeWorkRequestBuilder<LoadResourcesWorker>()
+            .setInputData(
+                workDataOf(
+                    Pair("texture_resources", textures),
+                    Pair("model_resources", models)
+                )
+            ).build()
+
+        val workManager = WorkManager.getInstance(applicationContext)
+        workManager.enqueue(worker)
     }
 
 }

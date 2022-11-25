@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.opengl.texture
 
-import android.opengl.GLES20
 import android.opengl.GLES30.*
 import kotlin.math.log2
 import kotlin.math.max

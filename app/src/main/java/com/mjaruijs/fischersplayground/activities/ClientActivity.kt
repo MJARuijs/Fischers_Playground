@@ -25,6 +25,7 @@ import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.services.MessageReceiverService
 import com.mjaruijs.fischersplayground.services.StoreDataWorker
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 //import com.mjaruijs.fischersplayground.util.Logger
 import java.lang.ref.WeakReference
 import java.util.*
@@ -40,7 +41,7 @@ abstract class ClientActivity : AppCompatActivity() {
     protected lateinit var dataManager: DataManager
     protected lateinit var vibrator: Vibrator
 
-//    protected lateinit var incomingInviteDialog: DoubleButtonDialog
+    protected lateinit var incomingInviteDialog: DoubleButtonDialog
 
     protected var stayingInApp = false
 
@@ -52,7 +53,7 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open val saveGamesOnPause = true
 
-//    var clientMessenger = Messenger(IncomingHandler(this))
+    var clientMessenger = Messenger(IncomingHandler(this))
 
     var serviceMessenger: Messenger? = null
     var serviceBound = false
@@ -67,7 +68,7 @@ abstract class ClientActivity : AppCompatActivity() {
             serviceMessenger = Messenger(service)
 
             val registrationMessage = Message.obtain()
-//            registrationMessage.replyTo = clientMessenger
+            registrationMessage.replyTo = clientMessenger
             serviceMessenger!!.send(registrationMessage)
         }
 
@@ -75,7 +76,6 @@ abstract class ClientActivity : AppCompatActivity() {
             serviceMessenger = null
             serviceBound = false
         }
-
     }
 
     private fun isUserRegisteredAtServer(): Boolean {
@@ -102,7 +102,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-//        Logger.debug(activityName, "Binding to service!")
         bindService(Intent(this, MessageReceiverService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
 
@@ -111,8 +110,6 @@ abstract class ClientActivity : AppCompatActivity() {
         val preferences = getPreference(USER_PREFERENCE_FILE)
         userId = preferences.getString(USER_ID_KEY, DEFAULT_USER_ID)!!
         userName = preferences.getString(USER_NAME_KEY, DEFAULT_USER_NAME)!!
-//        Logger.debug("MyTag", "Registering receiver")
-//        registerReceiver(networkReceiver, intentFilter)
 
         NotificationBuilder.getInstance(applicationContext).clearNotifications()
 
@@ -128,7 +125,7 @@ abstract class ClientActivity : AppCompatActivity() {
             getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
 
-//        incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
+        incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
 
         val networkRequest = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -139,17 +136,12 @@ abstract class ClientActivity : AppCompatActivity() {
         if (!networkManager.isConnected()) {
             val connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
             connectivityManager.requestNetwork(networkRequest, ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost))
-
-//            networkManager.run(applicationContext)
-//            if (userId != DEFAULT_USER_ID) {
-//                networkManager.sendMessage(NetworkMessage(Topic.SET_USER_ID, userId))
-//            }
         }
     }
 
     override fun onStop() {
         super.onStop()
-//        Logger.debug(activityName, "Unbinding from service!")
+
         unbindService(connection)
         serviceBound = false
     }
@@ -161,11 +153,10 @@ abstract class ClientActivity : AppCompatActivity() {
 
         if (!stayingInApp) {
             leftApp = true
-//            Logger.warn(activityName, "Stopping networker")
             networkManager.stop()
         }
 
-//        incomingInviteDialog.destroy()
+        incomingInviteDialog.destroy()
         super.onPause()
     }
 
@@ -184,7 +175,6 @@ abstract class ClientActivity : AppCompatActivity() {
             if (!networkManager.isRunning()) {
                 networkManager.run(applicationContext)
                 if (userId != DEFAULT_USER_ID) {
-//                    Logger.info(activityName, "logging in with ID")
                     networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
                 }
             }
@@ -222,7 +212,6 @@ abstract class ClientActivity : AppCompatActivity() {
             Topic.DRAW_REJECTED -> ::onDrawRejected
             Topic.CHAT_MESSAGE -> ::onChatMessageReceived
             Topic.USER_STATUS_CHANGED -> ::onUserStatusChanged
-//            Topic.COMPARE_OPENINGS -> ::onCompareOpenings
             Topic.COMPARE_OPENINGS -> { _ -> }
             Topic.RESTORE_OPENINGS -> { _ -> }
             else -> throw IllegalArgumentException("Failed to handle message with topic: $topic")
@@ -339,32 +328,6 @@ abstract class ClientActivity : AppCompatActivity() {
     fun showPopup(moveData: MoveData) {
         val game = dataManager.getGame(moveData.gameId)!!
         Toast.makeText(applicationContext, "${game.opponentName} played ${moveData.move.toChessNotation()}", Toast.LENGTH_SHORT).show()
-    }
-
-    protected fun preloadModels() {
-        Thread {
-            OBJLoader.preload(resources, R.raw.pawn_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.bishop_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.knight_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.rook_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.queen_bytes)
-        }.start()
-
-        Thread {
-            OBJLoader.preload(resources, R.raw.king_bytes)
-        }.start()
     }
 
     companion object {

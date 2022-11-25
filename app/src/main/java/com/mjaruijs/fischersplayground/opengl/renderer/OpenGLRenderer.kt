@@ -10,13 +10,14 @@ import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Companion.CAMERA_ZOOM_KEY
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.game.Game
-import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
+import com.mjaruijs.fischersplayground.opengl.texture.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Camera.Companion.DEFAULT_ZOOM
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
+import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
 import java.nio.ByteBuffer
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
@@ -62,12 +63,12 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        pieceTextures = PieceTextures.getInstance(resources)
+        TextureLoader.getInstance().initTextures()
+        pieceTextures = PieceTextures(resources)
 
-//        backgroundRenderer = BackgroundRenderer(context)
         try {
-//            pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame)
-            pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, ::getGame)
+            pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame)
+
             while (animationQueue.isNotEmpty()) {
                 val animation = animationQueue.poll() ?: break
                 pieceRenderer.queueAnimation(animation)
@@ -108,7 +109,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     }
 
     fun setPieceScale(scale: Float) {
-//        pieceRenderer.pieceScale = Vector3(scale, scale, scale)
+        pieceRenderer.pieceScale = Vector3(scale, scale, scale)
     }
 
     fun setGame(game: Game) {
@@ -124,11 +125,11 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     }
 
     private fun queueAnimation(animationData: AnimationData) {
-//        if (this::pieceRenderer.isInitialized) {
-//            pieceRenderer.queueAnimation(animationData)
-//        } else {
-//            animationQueue += animationData
-//        }
+        if (this::pieceRenderer.isInitialized) {
+            pieceRenderer.queueAnimation(animationData)
+        } else {
+            animationQueue += animationData
+        }
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
@@ -145,9 +146,9 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     var renderCircle = false
 
     override fun onDrawFrame(p0: GL10?) {
-//        if (!this::game.isInitialized) {
-//            return
-//        }
+        if (!this::game.isInitialized) {
+            return
+        }
 
         try {
             if (is3D) {
@@ -157,21 +158,19 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
                 boardRenderer.render3D(board, camera, displayWidth, displayHeight)
                 highlightRenderer.renderSelectedSquares3D(board, camera)
 
-                pieceRenderer.render3D(game, camera, aspectRatio)
-//                pieceRenderer.render3D(game, camera, pieceTextures, aspectRatio)
+                pieceRenderer.render3D(game, camera, pieceTextures, aspectRatio)
                 highlightRenderer.renderPossibleSquares3D(board, camera)
             } else {
                 glClear(GL_COLOR_BUFFER_BIT)
 
 //            backgroundRenderer.render2D(aspectRatio)
                 boardRenderer.render2D()
-//                highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
-//                highlightRenderer.renderLastMoveHighlights(game, displayWidth, displayHeight)
-//                highlightRenderer.renderHighlightedSquares(displayWidth, displayHeight)
+                highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
+                highlightRenderer.renderLastMoveHighlights(game, displayWidth, displayHeight)
+                highlightRenderer.renderHighlightedSquares(displayWidth, displayHeight)
 
-//                pieceRenderer.render2D(game, aspectRatio)
-//                pieceRenderer.render2D(game, pieceTextures, aspectRatio)
-//                highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
+                pieceRenderer.render2D(game, pieceTextures, aspectRatio)
+                highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
             }
 
             if (pixelsRequested) {
@@ -188,15 +187,15 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
     }
 
     fun addHighlightedSquare(square: Vector2) {
-//        highlightRenderer.addHighlightedSquare(square)
+        highlightRenderer.addHighlightedSquare(square)
     }
 
     fun removeHighlightedSquare(square: Vector2) {
-//        highlightRenderer.removeHighlightedSquare(square)
+        highlightRenderer.removeHighlightedSquare(square)
     }
 
     fun clearHighlightedSquares() {
-//        highlightRenderer.clearHighlightedSquares()
+        highlightRenderer.clearHighlightedSquares()
     }
 
     private fun updateBoardCamera() {

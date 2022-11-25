@@ -13,9 +13,9 @@
         android:layout_width="30dp"
         android:layout_height="60dp"
         android:background="#808080"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/lower_fragment_container"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/lower_fragment_container"
         app:srcCompat="@drawable/arrow_back" />
 
     <ImageView
@@ -30,37 +30,37 @@
         app:layout_constraintStart_toStartOf="@id/open_chat_button"
         app:layout_constraintTop_toTopOf="@id/open_chat_button" />
 
-<!--    <androidx.fragment.app.FragmentContainerView-->
-<!--        android:id="@+id/upper_fragment_container"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginStart="8dp"-->
-<!--        android:layout_marginTop="8dp"-->
-<!--        android:layout_marginBottom="8dp"-->
-<!--        app:layout_constraintBottom_toTopOf="@+id/opengl_view"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toTopOf="parent"-->
-<!--        tools:layout="@layout/player_card" />-->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/upper_fragment_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/opengl_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout="@layout/player_card" />
 
-<!--    <androidx.fragment.app.FragmentContainerView-->
-<!--        android:id="@+id/lower_fragment_container"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="0dp"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toBottomOf="@+id/opengl_view"-->
-<!--        tools:layout="@layout/player_card" />-->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/lower_fragment_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/action_buttons_fragment"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/opengl_view"
+        tools:layout="@layout/player_card" />
 
-<!--    <androidx.fragment.app.FragmentContainerView-->
-<!--        android:id="@+id/action_buttons_fragment"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="60dp"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        tools:layout="@layout/multiplayer_actionbar" />-->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/action_buttons_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout="@layout/multiplayer_actionbar" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/chat_container"
@@ -79,25 +79,24 @@
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/lower_fragment_container"
         app:layout_constraintDimensionRatio="h,1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/upper_fragment_container" />
 
-<!--    <com.mjaruijs.fischersplayground.userinterface.BoardTextView-->
-<!--        android:id="@+id/boardTextView"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="0dp"-->
-<!--        app:layout_constraintDimensionRatio="1:1"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toTopOf="@+id/opengl_view" />-->
+        <com.mjaruijs.fischersplayground.userinterface.BoardTextView
+            android:id="@+id/boardTextView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/opengl_view" />
 
-<!--    <com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon-->
-<!--        android:id="@+id/move_feedback_icon"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:visibility="invisible" />-->
-
+        <com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
+            android:id="@+id/move_feedback_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="invisible" />
 </androidx.constraintlayout.widget.ConstraintLayout>

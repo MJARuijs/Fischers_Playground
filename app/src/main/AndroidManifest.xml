@@ -9,33 +9,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FischersPlayground">
-        <activity android:name=".activities.MemoryTestActivity" />
         <activity
             android:name=".activities.settings.SettingsActivity"
             android:exported="true" />
         <activity
             android:name=".activities.game.GameActivity"
             android:windowSoftInputMode="adjustNothing" />
-        <activity
-            android:name=".activities.MainActivity"
-            android:exported="true"
-            android:windowSoftInputMode="adjustNothing"/>
-        <activity
-            android:name=".activities.game.MultiplayerGameActivity"
-            android:parentActivityName=".activities.MainActivity"
-            android:windowSoftInputMode="adjustNothing" />
-        <activity
-            android:name=".activities.game.SinglePlayerGameActivity"
-            android:parentActivityName=".activities.MainActivity"
-            android:windowSoftInputMode="adjustNothing" />
-        <activity
-            android:name=".activities.game.PractiseGameActivity"
-            android:exported="true"
-            android:parentActivityName=".activities.MainActivity"
-            android:windowSoftInputMode="adjustNothing" />
-        <activity android:name=".activities.CrashReportActivity" />
-        <activity android:name=".activities.game.OpeningMenuActivity" />
-        <activity android:name=".activities.game.CreateOpeningActivity" />
         <activity
             android:name=".activities.LoginActivity"
             android:exported="true">
@@ -45,6 +24,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+
+        <activity
+            android:name=".activities.MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustNothing">
+
+        </activity>
+        <activity
+            android:name=".activities.game.MultiplayerGameActivity"
+            android:parentActivityName=".activities.MainActivity"
+            android:windowSoftInputMode="adjustNothing" />
+        <activity
+            android:name=".activities.game.SinglePlayerGameActivity"
+            android:parentActivityName=".activities.MainActivity"
+            android:windowSoftInputMode="adjustNothing" />
+        <activity android:name=".activities.CrashReportActivity" />
+        <activity android:name=".activities.game.OpeningMenuActivity" />
+        <activity android:name=".activities.game.CreateOpeningActivity" />
+
         <activity
             android:name=".activities.GoogleLoginActivity"
             android:exported="true">
@@ -54,7 +53,6 @@
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
-        <activity android:name="com.mjaruijs.fischersplayground.activities.MemoryTestActivity" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"

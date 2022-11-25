@@ -4,8 +4,7 @@ import android.content.res.Resources
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
-import com.mjaruijs.fischersplayground.chess.pieces.PieceTextures
-import com.mjaruijs.fischersplayground.chess.pieces.PieceType
+import com.mjaruijs.fischersplayground.opengl.texture.PieceTextures
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.Color
 import com.mjaruijs.fischersplayground.math.matrices.Matrix4
@@ -15,9 +14,7 @@ import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Quad
 import com.mjaruijs.fischersplayground.opengl.light.AmbientLight
 import com.mjaruijs.fischersplayground.opengl.light.DirectionalLight
-import com.mjaruijs.fischersplayground.opengl.model.Entity
 import com.mjaruijs.fischersplayground.opengl.model.Material
-import com.mjaruijs.fischersplayground.opengl.model.MeshLoader
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.PieceAnimator
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.TakenPieceData
@@ -29,8 +26,8 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.PI
 
-//class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game) {
-class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val requestGame: () -> Game) {
+class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game) {
+//class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val requestGame: () -> Game) {
 
     private val quad = Quad()
     private val sampler = Sampler(0)
@@ -123,15 +120,12 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             }
         )
 
-//        runOnUiThread {
-//            animator.start()
-//        }
+        runOnUiThread {
+            animator.start()
+        }
     }
 
-    fun queueAnimation(animationData: AnimationData?) {
-        if (animationData == null) {
-            return
-        }
+    fun queueAnimation(animationData: AnimationData) {
         animationQueue.add(animationData)
     }
 
@@ -155,13 +149,12 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         return pieceTextures3D[piece]!!
     }
 
-    fun render2D(game: Game, aspectRatio: Float) {
-//    fun render2D(game: Game, pieceTextures: PieceTextures, aspectRatio: Float) {
+    fun render2D(game: Game, pieceTextures: PieceTextures, aspectRatio: Float) {
         piece2DProgram.start()
         piece2DProgram.set("textureMaps", sampler.index)
         piece2DProgram.set("aspectRatio", aspectRatio)
 
-//        sampler.bind(pieceTextures.get2DTextureArray())
+        sampler.bind(pieceTextures.get2DTextureArray())
 
         if (takenPieceData != null) run {
             val piece = takenPieceData?.piece ?: return@run
@@ -170,7 +163,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
 
             piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
-//            piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
+            piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
             piece2DProgram.set("translation", translation)
 
             quad.draw()
@@ -186,7 +179,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 val translation = (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
 
                 piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
-//                piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
+                piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
                 piece2DProgram.set("translation", translation)
                 quad.draw()
             }
@@ -195,8 +188,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         piece2DProgram.stop()
     }
 
-    fun render3D(game: Game, camera: Camera, aspectRatio: Float) {
-//    fun render3D(game: Game, camera: Camera, pieceTextures: PieceTextures, aspectRatio: Float) {
+    fun render3D(game: Game, camera: Camera, pieceTextures: PieceTextures, aspectRatio: Float) {
         piece3DProgram.start()
 
         piece3DProgram.set("projection", camera.projectionMatrix)
@@ -208,7 +200,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         ambientLight.applyTo(piece3DProgram)
         directionalLight.applyTo(piece3DProgram)
 
-//        sampler.bind(pieceTextures.get3DTextureArray())
+        sampler.bind(pieceTextures.get3DTextureArray())
 
         for (x in 0 until 8) {
             for (y in 0 until 8) {
@@ -225,7 +217,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 val translation = (Vector2(row * 2.0f, col * 2.0f) / 8.0f) - Vector2(7f / 8f, 7f / 8f)
 
                 piece3DProgram.set("isWhite", if (piece.team == Team.WHITE) 1f else 0f)
-//                piece3DProgram.set("textureId", getPieceTexture3d(piece, pieceTextures).toFloat())
+                piece3DProgram.set("textureId", getPieceTexture3d(piece, pieceTextures).toFloat())
                 piece3DProgram.set("translation", translation)
 
 //                when (piece.type) {

@@ -35,8 +35,8 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         this.runOnUiThread = runOnUiThread
         this.onSurfaceCreated = onSurfaceCreated
         this.onClick = onClick
-        renderer.runOnUiThread = runOnUiThread
 
+        renderer.runOnUiThread = runOnUiThread
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
         renderer.isPlayerWhite = isPlayerWhite
     }
@@ -44,7 +44,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     fun getRenderer() = renderer
 
     private fun onContextCreated() {
-//        onSurfaceCreated()
+        onSurfaceCreated()
     }
 
     fun setGame(game: Game) {

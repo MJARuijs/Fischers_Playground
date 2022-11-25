@@ -46,7 +46,10 @@ class OpeningMovesRowView(context: Context, attributes: AttributeSet? = null) : 
         moveNumber = n
     }
 
+    lateinit var whiteMove: Move
+
     fun setWhiteMove(move: Move, onClick: (Move, Boolean) -> Unit) {
+        whiteMove = move
         whiteMoveView.setOnClick(move, onClick)
         whiteMoveView.visibility = View.VISIBLE
         selectWhiteMove()

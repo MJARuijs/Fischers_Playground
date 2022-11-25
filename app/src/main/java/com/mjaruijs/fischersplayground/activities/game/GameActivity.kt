@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.mjaruijs.fischersplayground.R
@@ -27,12 +28,12 @@ import kotlin.math.roundToInt
 
 abstract class GameActivity : ClientActivity() {
 
-//    private lateinit var checkMateDialog: DoubleButtonDialog
-//    lateinit var glView: SurfaceView
+    private lateinit var checkMateDialog: DoubleButtonDialog
+    lateinit var glView: SurfaceView
 
     protected lateinit var gameLayout: ConstraintLayout
 
-//    private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
+    private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
     private var displayWidth = 0
     private var displayHeight = 0
@@ -44,7 +45,7 @@ abstract class GameActivity : ClientActivity() {
     lateinit var gameId: String
     lateinit var opponentName: String
 
-//    open lateinit var game: Game
+    open lateinit var game: Game
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,13 +59,13 @@ abstract class GameActivity : ClientActivity() {
 
             hideActivityDecorations(fullScreen)
 
-//            pieceChooserDialog.create(this)
+            pieceChooserDialog.create(this)
 
             userId = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, "")!!
             userName = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_NAME_KEY, "")!!
 
-//            glView = findViewById(R.id.opengl_view)
-//            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
+            glView = findViewById(R.id.opengl_view)
+            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
         } catch (e: Exception) {
             FileManager.append(this, "game_activity_crash_report.txt", e.stackTraceToString())
         }
@@ -73,21 +74,21 @@ abstract class GameActivity : ClientActivity() {
     override fun onResume() {
         super.onResume()
 
-//        checkMateDialog = DoubleButtonDialog(this, "Checkmate!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin, 0.7f)
+        checkMateDialog = DoubleButtonDialog(this, "Checkmate!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin, 0.7f)
         stayingInApp = false
 
-//        pieceChooserDialog.setLayout()
+        pieceChooserDialog.setLayout()
     }
 
     override fun onStop() {
         super.onStop()
 
-//        checkMateDialog.destroy()
-//        pieceChooserDialog.destroy()
+        checkMateDialog.destroy()
+        pieceChooserDialog.destroy()
     }
 
     override fun onDestroy() {
-//        glView.destroy()
+        glView.destroy()
 
         super.onDestroy()
     }
@@ -106,18 +107,18 @@ abstract class GameActivity : ClientActivity() {
     fun getActionBarFragment() = findFragment<GameBarFragment>()
 
     open fun evaluateActionButtons() {
-//        if (game.moves.isNotEmpty()) {
-//            if (game.getMoveIndex() != -1) {
-//                (getActionBarFragment() as GameBarFragment).enableBackButton()
-//            } else {
-//                (getActionBarFragment() as GameBarFragment).disableBackButton()
-//            }
-//            if (!game.isShowingCurrentMove()) {
-//                (getActionBarFragment() as GameBarFragment).enableForwardButton()
-//            } else {
-//                (getActionBarFragment() as GameBarFragment).disableForwardButton()
-//            }
-//        }
+        if (game.moves.isNotEmpty()) {
+            if (game.getMoveIndex() != -1) {
+                (getActionBarFragment() as GameBarFragment).enableBackButton()
+            } else {
+                (getActionBarFragment() as GameBarFragment).disableBackButton()
+            }
+            if (!game.isShowingCurrentMove()) {
+                (getActionBarFragment() as GameBarFragment).enableForwardButton()
+            } else {
+                (getActionBarFragment() as GameBarFragment).disableForwardButton()
+            }
+        }
     }
 
     open fun onContextCreated() {
@@ -125,8 +126,8 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun setGameCallbacks() {
-//        game.onPawnPromoted = ::onPawnPromoted
-//        game.onMoveMade = ::onMoveMade
+        game.onPawnPromoted = ::onPawnPromoted
+        game.onMoveMade = ::onMoveMade
     }
 
     open fun onMoveMade(move: Move) {
@@ -137,7 +138,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     fun setGameForRenderer() {
-//        glView.setGame(game)
+        glView.setGame(game)
     }
 
     private fun restorePreferences() {
@@ -148,18 +149,18 @@ abstract class GameActivity : ClientActivity() {
         val pieceScale = preferences.getFloat(SettingsActivity.PIECE_SCALE_KEY, 1.0f)
 
         if (cameraRotation.isNotBlank()) {
-//            glView.getRenderer().setCameraRotation(Vector3.fromString(cameraRotation))
+            glView.getRenderer().setCameraRotation(Vector3.fromString(cameraRotation))
         }
 
-//        glView.getRenderer().setFoV(fov)
-//        glView.getRenderer().setPieceScale(pieceScale)
+        glView.getRenderer().setFoV(fov)
+        glView.getRenderer().setPieceScale(pieceScale)
     }
 
     private fun onPawnUpgraded(square: Vector2, pieceType: PieceType, team: Team) {
-//        game.upgradePawn(square, pieceType, team)
+        game.upgradePawn(square, pieceType, team)
         Thread {
             Thread.sleep(10)
-//            glView.invalidate()
+            glView.invalidate()
             requestRender()
         }.start()
     }
@@ -175,7 +176,7 @@ abstract class GameActivity : ClientActivity() {
             if (vibrateOnClick) {
                 vibrate()
             }
-//            game.onClick(x, y, displayWidth, displayHeight)
+            game.onClick(x, y, displayWidth, displayHeight)
         } catch (e: Exception) {
             networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString())
         }
@@ -186,19 +187,19 @@ abstract class GameActivity : ClientActivity() {
     }
 
     protected fun requestRender() {
-//        glView.requestRender()
+        glView.requestRender()
     }
 
     open fun onCheckMate(team: Team) {
         runOnUiThread {
             if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
-//                checkMateDialog.setMessage("You won!")
-//                    .setRightOnClick { closeAndSaveGameAsWin() }
-//                    .show()
+                checkMateDialog.setMessage("You won!")
+                    .setRightOnClick { closeAndSaveGameAsWin() }
+                    .show()
             } else {
-//                checkMateDialog.setMessage("$opponentName has won!")
-//                    .setRightOnClick { closeAndSaveGameAsLoss() }
-//                    .show()
+                checkMateDialog.setMessage("$opponentName has won!")
+                    .setRightOnClick { closeAndSaveGameAsLoss() }
+                    .show()
             }
         }
     }
@@ -217,8 +218,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun viewBoardAfterFinish() {
-//        checkMateDialog.dismiss()
-
+        checkMateDialog.dismiss()
     }
 
     open fun closeAndSaveGameAsWin() {
@@ -236,45 +236,22 @@ abstract class GameActivity : ClientActivity() {
     private fun hideActivityDecorations(isFullscreen: Boolean) {
         supportActionBar?.hide()
 
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+
         if (isFullscreen) {
-            val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
             windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
         } else {
-            val windowInsetsController = ViewCompat.getWindowInsetsController(window.decorView) ?: return
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
     private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
         runOnUiThread {
-//            pieceChooserDialog.show(square, team)
+            pieceChooserDialog.show(square, team)
         }
         return PieceType.QUEEN
     }
-//
-//    private fun enableBackButton() {
-//
-//        (getActionBarFragment() as GameBarFragment).enableBackButton()
-//        requestRender()
-//    }
-//
-//    private fun enableForwardButton() {
-//
-//        (getActionBarFragment() as GameBarFragment).enableForwardButton()
-//        requestRender()
-//    }
-//
-//    private fun disableBackButton() {
-//        (getActionBarFragment() as GameBarFragment).disableBackButton()
-//        requestRender()
-//    }
-//
-//    private fun disableForwardButton() {
-//
-//        (getActionBarFragment() as GameBarFragment).disableForwardButton()
-//        requestRender()
-//    }
 
     protected fun dpToPx(resources: Resources, dp: Int): Int {
         return (dp * resources.displayMetrics.density).roundToInt()

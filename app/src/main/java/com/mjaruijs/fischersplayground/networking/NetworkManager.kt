@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 import java.util.concurrent.atomic.AtomicBoolean
 
 class NetworkManager {
@@ -48,6 +49,7 @@ class NetworkManager {
 
     fun stop() {
         while (sendingMessage.get()) {
+            Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
             Thread.sleep(1)
         }
         messageQueue.clear()
@@ -119,16 +121,19 @@ class NetworkManager {
             if (clientConnected.get()) {
                 try {
                     if (message.topic != Topic.CONFIRM_MESSAGE && message.topic != Topic.CRASH_REPORT) {
-//                        Logger.info(TAG, "Sending message: $message")
+                        Logger.info(TAG, "Sending message: $message")
                     }
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
                     sendCrashReport("crash_network_send.txt", e.stackTraceToString())
+                } finally {
+                    sendingMessage.set(false)
                 }
             } else {
                 messageQueue += message
             }
+
             sendingMessage.set(false)
         }.start()
     }

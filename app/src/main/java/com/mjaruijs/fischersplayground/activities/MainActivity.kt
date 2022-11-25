@@ -12,6 +12,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.activities.game.OpeningMenuActivity
@@ -22,20 +25,17 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
-import com.mjaruijs.fischersplayground.dialogs.CreateAccountDialog
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.opengl.OBJLoader
+import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
-import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 
 class MainActivity : ClientActivity() {
-
-    companion object {
-        private var initialized = false
-    }
 
     override var activityName = "main_activity"
 
@@ -48,8 +48,6 @@ class MainActivity : ClientActivity() {
     private var hasNewToken = false
     private var showFinishedGames = false
 
-    private var maxTextSize = Float.MAX_VALUE
-
     override fun onCreate(savedInstanceState: Bundle?) {
         AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES)
         super.onCreate(savedInstanceState)
@@ -57,12 +55,7 @@ class MainActivity : ClientActivity() {
         setContentView(R.layout.activity_main)
 
         findViewById<TextView>(R.id.welcome_text_view).append(", $userName")
-
-        if (!initialized) {
-            initialized = true
-
-            preloadModels()
-        }
+//        loadResources()
 
         initUIComponents()
 
@@ -237,15 +230,6 @@ class MainActivity : ClientActivity() {
         gameAdapter.hasUpdate(gameId)
     }
 
-    private fun savePreference(key: String, value: String) {
-        val preferences = getPreference(USER_PREFERENCE_FILE)
-
-        with(preferences.edit()) {
-            putString(key, value)
-            apply()
-        }
-    }
-
     private fun manageGameVisibility() {
         val preferences = getSharedPreferences(SettingsActivity.GAME_PREFERENCES_KEY, MODE_PRIVATE)
         showFinishedGames = preferences.getBoolean(SettingsActivity.SHOW_FINISHED_GAMES_KEY, false)
@@ -261,21 +245,13 @@ class MainActivity : ClientActivity() {
 
         supportActionBar?.hide()
 
-        if (isFullscreen) {
-            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-            windowInsetsController?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            windowInsetsController?.hide(WindowInsetsCompat.Type.systemBars())
-        } else {
-            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-            windowInsetsController?.show(WindowInsetsCompat.Type.systemBars())
-        }
-    }
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
 
-    private fun onButtonInitialized(textSize: Float) {
-        if (textSize < maxTextSize) {
-            maxTextSize = textSize
-//            findViewById<UIButton>(R.id.start_new_game_button).setButtonTextSize(maxTextSize)
-            findViewById<UIButton>(R.id.practice_button).setButtonTextSize(maxTextSize)
+        if (isFullscreen) {
+            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
@@ -297,83 +273,35 @@ class MainActivity : ClientActivity() {
 //                }
             }
 
-//        findViewById<UIButton>(R.id.settings_button)
-//            .setColoredDrawable(R.drawable.settings_solid_icon)
-//            .setColor(Color.TRANSPARENT)
-//            .setChangeIconColorOnHover(false)
-//            .setChangeTextColorOnHover(true)
-//            .setOnClick {
-//                stayingInApp = true
-//                val intent = Intent(this, SettingsActivity::class.java)
-//                startActivity(intent)
-//            }
-
-        val settingsButton = findViewById<UIButton2>(R.id.settings_button)
-        settingsButton.setIconScale(0.65f)
-//        settingsButton.setText("Settings")
-        settingsButton.setIcon(R.drawable.settings_solid_icon)
-
-        settingsButton.setOnClickListener {
-            stayingInApp = true
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-        }
-
-        findViewById<UIButton>(R.id.practice_button)
-            .setText("Practice Mode")
-            .setButtonTextSize(70.0f)
-            .setColor(235, 186, 145)
-            .setCornerRadius(45.0f)
-            .setChangeTextColorOnHover(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
+        findViewById<UIButton2>(R.id.settings_button)
+            .setIconScale(0.65f)
+            .setIcon(R.drawable.settings_solid_icon)
+            .setOnClickListener {
                 stayingInApp = true
-//                val intent = Intent(this, PractiseGameActivity::class.java)
-//                    .putExtra("id", userId)
-//                    .putExtra("user_name", userName)
-//                    .putExtra("is_single_player", true)
-//                    .putExtra("is_playing_white", true)
-//                    .putExtra("game_id", "test_game")
-//                    .putExtra("opponent_name", "Opponent")
-//                startActivity(intent)
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+            }
+
+        findViewById<UIButton2>(R.id.practice_button)
+            .setText("Practice Mode")
+            .setColor(Color.rgb(235, 186, 145))
+            .setCornerRadius(45.0f)
+            .setTextSize(28f)
+            .setOnClickListener {
+                stayingInApp = true
                 startActivity(Intent(this, OpeningMenuActivity::class.java))
             }
 
-        val startNewGameButton = findViewById<UIButton2>(R.id.start_new_game_button)
-        startNewGameButton.setText("Start new game")
+        findViewById<UIButton2>(R.id.start_new_game_button)
+            .setText("Start new game")
             .setColor(Color.rgb(235, 186, 145))
             .setCornerRadius(45f)
             .setTextSize(28f)
             .setOnClickListener {
+//                createGameDialog.show()
                 stayingInApp = true
-//                startActivity(Intent(this, MemoryTestActivity::class.java))
                 startActivity(Intent(this, SinglePlayerGameActivity::class.java))
             }
-
-
-//        findViewById<UIButton>(R.id.start_new_game_button)
-//            .setText("Start new game")
-//            .setButtonTextSize(70.0f)
-//            .setColor(235, 186, 145)
-//            .setCornerRadius(45.0f)
-//            .setChangeTextColorOnHover(false)
-//            .setOnButtonInitialized(::onButtonInitialized)
-//            .setOnClick {
-////                createGameDialog.show()
-//                stayingInApp = true
-//                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
-//            }
-
-        findViewById<UIButton>(R.id.crash_menu_button)
-            .setColor(Color.TRANSPARENT)
-            .setColoredDrawable(R.drawable.bug_report_icon)
-            .setChangeIconColorOnHover(false)
-            .setChangeTextColorOnHover(true)
-            .setOnClick {
-                stayingInApp = true
-                startActivity(Intent(this, CrashReportActivity::class.java))
-            }
-
     }
 
     private fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
@@ -412,6 +340,60 @@ class MainActivity : ClientActivity() {
 
     override fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {
         createGameDialog.setRecentOpponents(opponents ?: return)
+    }
+
+    private fun loadResources() {
+        val textures = arrayOf(
+            R.drawable.wood_diffuse_texture,
+            R.drawable.white_pawn,
+            R.drawable.white_knight,
+            R.drawable.white_bishop,
+            R.drawable.white_rook,
+            R.drawable.white_queen,
+            R.drawable.white_king,
+            R.drawable.black_pawn,
+            R.drawable.black_knight,
+            R.drawable.black_bishop,
+            R.drawable.black_rook,
+            R.drawable.black_queen,
+            R.drawable.black_king,
+            R.drawable.diffuse_map_pawn,
+            R.drawable.diffuse_map_knight,
+            R.drawable.diffuse_map_bishop,
+            R.drawable.diffuse_map_rook,
+            R.drawable.diffuse_map_queen,
+            R.drawable.diffuse_map_king,
+            R.drawable.king_checked,
+        )
+
+        val models = arrayOf(
+            R.raw.pawn_bytes,
+            R.raw.knight_bytes,
+            R.raw.bishop_bytes,
+            R.raw.rook_bytes,
+            R.raw.queen_bytes,
+            R.raw.king_bytes
+        )
+//
+//        val textureLoader = TextureLoader.getInstance()
+//
+//        for (textureId in textures) {
+//            textureLoader.load(applicationContext.resources, textureId)
+//        }
+//
+//        for (modelId in models) {
+//            OBJLoader.preload(applicationContext.resources, modelId)
+//        }
+        val worker = OneTimeWorkRequestBuilder<LoadResourcesWorker>()
+            .setInputData(
+                workDataOf(
+                    Pair("texture_resources", textures),
+                    Pair("model_resources", models)
+                )
+            ).build()
+
+        val workManager = WorkManager.getInstance(applicationContext)
+        workManager.enqueue(worker)
     }
 
 }

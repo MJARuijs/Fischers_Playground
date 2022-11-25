@@ -12,8 +12,6 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
-import com.mjaruijs.fischersplayground.opengl.texture.TextureArray
-import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
 
 class HighlightRenderer(resources: Resources) {
 
@@ -41,18 +39,7 @@ class HighlightRenderer(resources: Resources) {
         ShaderLoader.load(R.raw.selected_square_highlighter_3d_fragment, ShaderType.FRAGMENT, resources)
     )
 
-    private val circleTexture = TextureLoader.loadFromBitmap(resources, R.drawable.circle)
-    private val squareSelectedTexture = TextureLoader.load(resources, R.drawable.square_selected, "Square Selected")
-    private val kingCheckedTexture = TextureLoader.load(resources, R.drawable.king_checked, "King Checked")
-    private val textureEffects = TextureArray(listOf(squareSelectedTexture, kingCheckedTexture))
-
     private val highlightedSquares = ArrayList<Vector2>()
-
-    init {
-        circleTexture.init()
-        kingCheckedTexture.init()
-        squareSelectedTexture.init()
-    }
 
     fun addHighlightedSquare(square: Vector2) {
         highlightedSquares += square
@@ -144,7 +131,7 @@ class HighlightRenderer(resources: Resources) {
         highlight3DProgram.set("projection", camera.projectionMatrix)
         highlight3DProgram.set("view", camera.viewMatrix)
         highlight3DProgram.set("circleTexture", circleSampler.index)
-        circleSampler.bind(circleTexture)
+//        circleSampler.bind(circleText ure)
 
         for ((i, possibleSquare) in board.getPossibleMoves().withIndex()) {
             highlight3DProgram.set("translations[$i]", (possibleSquare / 8.0f) * 2.0f - 1.0f)
@@ -159,7 +146,7 @@ class HighlightRenderer(resources: Resources) {
         selectedSquare3DProgram.set("projection", camera.projectionMatrix)
         selectedSquare3DProgram.set("view", camera.viewMatrix)
         selectedSquare3DProgram.set("effectSampler", effectSampler.index)
-        effectSampler.bind(textureEffects)
+//        effectSampler.bind(textureEffects)
 
         var i = 0
 
@@ -181,10 +168,6 @@ class HighlightRenderer(resources: Resources) {
 
     fun destroy() {
         quad.destroy()
-        kingCheckedTexture.destroy()
-        circleTexture.destroy()
-        squareSelectedTexture.destroy()
-        textureEffects.destroy()
         highlight2DProgram.destroy()
         highlight3DProgram.destroy()
         selectedSquare2DProgram.destroy()

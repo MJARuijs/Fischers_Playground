@@ -65,7 +65,6 @@ class BoardModel(is3D: Boolean) {
         }
 
         mesh = BoardMesh(vertices, is3D)
-
     }
 
     fun draw() {
@@ -73,7 +72,6 @@ class BoardModel(is3D: Boolean) {
     }
 
     fun destroy() {
-
         mesh.destroy()
     }
 

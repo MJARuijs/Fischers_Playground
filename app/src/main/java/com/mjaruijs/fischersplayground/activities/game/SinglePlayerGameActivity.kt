@@ -22,7 +22,7 @@ class SinglePlayerGameActivity : GameActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
-//        game = SinglePlayerGame(true, Time.getFullTimeStamp())
+        game = SinglePlayerGame(true, Time.getFullTimeStamp())
 
         val playerBundle = Bundle()
         playerBundle.putString("player_name", userName)
