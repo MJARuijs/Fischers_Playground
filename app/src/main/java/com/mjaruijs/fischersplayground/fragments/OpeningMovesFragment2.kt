@@ -3,14 +3,16 @@ package com.mjaruijs.fischersplayground.fragments
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnLayoutChangeListener
+import android.view.View.OnScrollChangeListener
 import android.view.ViewGroup
 import android.widget.ScrollView
 import android.widget.TableLayout
-import androidx.core.view.*
+import androidx.core.view.children
+import androidx.core.view.doOnLayout
+import androidx.core.view.get
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
@@ -31,6 +33,8 @@ class OpeningMovesFragment2 : Fragment() {
     private lateinit var scrollView: ScrollView
     private lateinit var moveTable: TableLayout
 
+    private lateinit var layoutChangeListener: LayoutChangeListener
+
     var currentMoveIndex = -1
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -45,49 +49,59 @@ class OpeningMovesFragment2 : Fragment() {
         scrollView = view.findViewById(R.id.scroll_view)
         moveTable = view.findViewById(R.id.move_table)
 
-        addHeaderRow(SETUP_MOVES_TEXT, false)
+        addSetupHeader()
         addSetupMoves()
 
         if (lineMoves.isNotEmpty()) {
-            addHeaderRow(LINE_MOVES_TEXT, true)
+            addLineHeader()
             addLineMoves()
         }
-//
-//        scrollView.addOnLayoutChangeListener(object : OnLayoutChangeListener {
-//            override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
-//                selectLastMove()
-//                view.removeOnLayoutChangeListener(this)
-//            }
-//
-//        })
 
-//        scrollView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-//            selectLastMove()
-//        }
+        layoutChangeListener = LayoutChangeListener()
+
+        if (moveTable.childCount > 0) {
+
+            scrollView.addOnLayoutChangeListener(layoutChangeListener)
+            scrollView.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                if (scrollY + scrollView.height == moveTable.height) {
+                    scrollView.removeOnLayoutChangeListener(layoutChangeListener)
+                }
+            }
+        }
+    }
+
+    private fun addSetupHeader() {
+        val headerView = MoveHeaderView(requireContext())
+        headerView.setText(SETUP_MOVES_TEXT)
+
+        moveTable.addView(headerView)
+    }
+
+    private fun addLineHeader() {
+        val headerView = MoveHeaderView(requireContext())
+        headerView.setText(LINE_MOVES_TEXT)
+
+        moveTable.addView(headerView)
     }
 
     fun getOpeningLine() = OpeningLine(setupMoves, lineMoves)
 
-    private fun selectLastMove() {
+    fun selectLastMove() {
         if (setupMoves.isEmpty() && lineMoves.isEmpty()) {
-            Logger.debug("MyTag", "MOVES ARE EMPTY")
             return
         }
 
-        selectMove(setupMoves.size + lineMoves.size - 1, true)
+        selectMove(setupMoves.size + lineMoves.size - 1, false)
     }
 
     fun selectMove(index: Int, scrollToMove: Boolean) {
         deselectAllMoves()
-
-        Logger.debug(TAG, "Selecting move at index: $index")
 
         currentMoveIndex = index
 
         if (index == -1) {
             if (scrollToMove) {
                 scrollView.post {
-                    Logger.debug(TAG, "SCROLLED TO TOP")
                     scrollView.smoothScrollTo(0, 0)
                 }
             }
@@ -107,40 +121,9 @@ class OpeningMovesFragment2 : Fragment() {
         }
 
         if (scrollToMove) {
-            val tableHeight = scrollView.measuredHeight
-            val selectedRowBottom = moveTable[rowIndex].y + moveTable[rowIndex].height
-            val selectedRowTop = moveTable[rowIndex].y
-
-            val scrollingDown = if (selectedRowBottom > tableHeight + scrollView.scrollY) {
-                true
-            } else if (selectedRowTop < scrollView.scrollY) {
-                false
-            } else {
-                null
-            }
-
-            Logger.debug(TAG, "Scrolling parameters: ${(moveTable[rowIndex] as OpeningMovesRowView).whiteMove.getSimpleChessNotation()} $selectedRowBottom $selectedRowTop, $tableHeight, ${scrollView.scrollY}")
-
-            val dY = if (scrollingDown == null) {
-                -1
-            } else if (scrollingDown) {
-                val difference = selectedRowBottom - tableHeight
-                difference.roundToInt()
-            } else {
-                if (rowIndex <= 1) {
-                    Logger.debug(TAG, "RowIndex <= 1")
-                    0
-                } else {
-                    selectedRowTop.roundToInt()
-                }
-            }
-
-            if (dY != -1) {
-                scrollView.post {
-                    Logger.debug(TAG, "Scrolling with: $dY")
-                    scrollView.smoothScrollTo(0, dY)
-                }
-            }
+//            rowView.doOnLayout {
+                scrollToView(rowView)
+//            }
         }
     }
 
@@ -151,7 +134,7 @@ class OpeningMovesFragment2 : Fragment() {
                 child.deselectBlackMove()
             }
         }
-//        moveTable.invalidate()
+        moveTable.invalidate()
     }
 
     fun addMove(move: Move) {
@@ -162,14 +145,14 @@ class OpeningMovesFragment2 : Fragment() {
             deleteMovesAfter(currentMoveIndex)
         }
 
-        if (hasHeader(LINE_MOVES_TEXT)) {
-            addLineMove(move)
+        if (hasLineHeader()) {
+            addLineMove(move, true)
         } else {
-            addSetupMove(move)
+            addSetupMove(move, true)
         }
     }
 
-    private fun addSetupMove(move: Move) {
+    private fun addSetupMove(move: Move, scrollToMove: Boolean) {
         if (move.team == Team.WHITE) {
             val moveNumber = setupMoves.size / 2 + 1
             val movesView = OpeningMovesRowView(requireContext())
@@ -184,21 +167,32 @@ class OpeningMovesFragment2 : Fragment() {
             }
 
             moveTable.addView(movesView)
+
+            if (scrollToMove) {
+                movesView.doOnLayout {
+                    scrollToView(movesView)
+                }
+            }
         } else {
             val movesView = moveTable[moveTable.childCount - 1] as OpeningMovesRowView
             movesView.setBlackMove(move, onMoveClick)
+
+            if (scrollToMove) {
+                scrollToView(movesView)
+            }
         }
 
         setupMoves += move
         currentMoveIndex++
 
-        scrollView.post {
-            Logger.debug(TAG, "Scrolling down after SetupMove")
-            scrollView.fullScroll(View.FOCUS_DOWN)
-        }
+//        scrollView.post {
+//            Logger.debug(TAG, "Scrolling down after SetupMove")
+//            scrollView.fullScroll(View.FOCUS_DOWN)
+//        }
     }
 
-    private fun addLineMove(move: Move) {
+    private fun addLineMove(move: Move, scrollToMove: Boolean) {
+
         if (lineMoves.isEmpty()) {
             val moveNumber = setupMoves.size / 2 + 1
             val movesView = OpeningMovesRowView(requireContext())
@@ -219,9 +213,16 @@ class OpeningMovesFragment2 : Fragment() {
             }
 
             moveTable.addView(movesView)
+
+            if (scrollToMove) {
+                movesView.doOnLayout {
+                    scrollToView(movesView)
+                }
+            }
         } else {
             if (move.team == Team.WHITE) {
-                val moveNumber = setupMoves.size / 2 + 1 + lineMoves.size / 2 + 1
+                val headerOffset = if (setupMoves.last().team == Team.WHITE) 2 else 1
+                val moveNumber = moveTable.childCount - headerOffset
                 val movesView = OpeningMovesRowView(requireContext())
                 movesView.setTypeFace(typeFace)
                 movesView.setMoveNumber(moveNumber)
@@ -234,34 +235,36 @@ class OpeningMovesFragment2 : Fragment() {
                 }
 
                 moveTable.addView(movesView)
+
+                if (scrollToMove) {
+                    movesView.doOnLayout {
+                        scrollToView(movesView)
+                    }
+                }
             } else {
                 val lastRow = moveTable[moveTable.childCount - 1] as OpeningMovesRowView
                 lastRow.setBlackMove(move, onMoveClick)
+
+                if (scrollToMove) {
+                    scrollToView(lastRow)
+                }
             }
         }
 
         lineMoves += move
         currentMoveIndex++
-
-        scrollView.post {
-            Logger.debug(TAG, "Scrolling down after LineMove")
-            scrollView.fullScroll(View.FOCUS_DOWN)
-        }
     }
 
     fun clear() {
         deleteMovesAfter(-1)
     }
 
-    fun test() {
-        deleteMovesAfter(currentMoveIndex)
-    }
-
-    fun addHeaderRow(text: String, scrollDown: Boolean) {
+    fun setLineHeader() {
         if (currentMoveIndex != -1) {
             val currentMoveIndexCopy = currentMoveIndex
 
-            Logger.debug(TAG, "Adding HeaderRow after move at: $currentMoveIndex")
+            val headerView = MoveHeaderView(requireContext())
+            headerView.setText(LINE_MOVES_TEXT)
 
             if (currentMoveIndex < setupMoves.size) {
                 val newLineMoves = ArrayList<Move>()
@@ -278,16 +281,13 @@ class OpeningMovesFragment2 : Fragment() {
                     deleteMovesAfter(currentMoveIndex)
                 }
 
-                val headerView = MoveHeaderView(requireContext())
-                headerView.setText(text)
-
-                moveTable.addView(headerView)
-
-                for (move in newLineMoves) {
-                    addLineMove(move)
+                if (!hasLineHeader()) {
+                    moveTable.addView(headerView)
                 }
 
-//                selectMove(currentMoveIndexCopy)
+                for (move in newLineMoves) {
+                    addLineMove(move, false)
+                }
             } else {
                 val newSetupMoves = ArrayList<Move>()
                 val newLineMoves = ArrayList<Move>()
@@ -307,31 +307,19 @@ class OpeningMovesFragment2 : Fragment() {
                 deleteMovesAfter(-1)
 
                 for (move in newSetupMoves) {
-                    addSetupMove(move)
+                    addSetupMove(move, false)
                 }
-
-                val headerView = MoveHeaderView(requireContext())
-                headerView.setText(LINE_MOVES_TEXT)
 
                 moveTable.addView(headerView)
 
                 for (move in newLineMoves) {
-                    addLineMove(move)
+                    addLineMove(move, false)
                 }
             }
 
             selectMove(currentMoveIndexCopy, false)
-        } else {
-            val headerView = MoveHeaderView(requireContext())
-            headerView.setText(text)
-
-            moveTable.addView(headerView)
-
-            if (scrollDown) {
-                scrollView.post {
-                    Logger.debug(TAG, "Scrolling down after Add Header")
-                    scrollView.fullScroll(View.FOCUS_DOWN)
-                }
+            headerView.doOnLayout {
+                scrollToView(headerView)
             }
         }
     }
@@ -393,7 +381,7 @@ class OpeningMovesFragment2 : Fragment() {
         return currentMoveIndex == setupMoves.size + lineMoves.size - 1
     }
 
-    private fun hasHeader(text: String): Boolean {
+    private fun hasLineHeader(): Boolean {
         if (moveTable.childCount == 0) {
             return false
         }
@@ -403,7 +391,7 @@ class OpeningMovesFragment2 : Fragment() {
                 continue
             }
 
-            if (row.getText() == text) {
+            if (row.getText() == LINE_MOVES_TEXT) {
                 return true
             }
         }
@@ -433,6 +421,7 @@ class OpeningMovesFragment2 : Fragment() {
             moveTable.addView(movesView)
         }
 
+        currentMoveIndex = setupMoves.size - 1
         deselectAllMoves()
     }
 
@@ -481,6 +470,58 @@ class OpeningMovesFragment2 : Fragment() {
 
         deselectAllMoves()
         selectMove(currentMoveIndex, false)
+    }
+
+    private fun scrollToView(view: View) {
+        val rowIndex = moveTable.indexOfChild(view)
+
+        if (rowIndex == -1) {
+            return
+        }
+
+        val tableHeight = scrollView.measuredHeight
+        val selectedRowBottom = moveTable[rowIndex].y + moveTable[rowIndex].height
+        val selectedRowTop = moveTable[rowIndex].y
+
+//        Logger.debug(TAG, "Scrolling to view: $rowIndex ::: $selectedRowBottom > $tableHeight + ${scrollView.scrollY} || $selectedRowTop < ${scrollView.scrollY}")
+
+        val scrollingDown = if (selectedRowBottom > tableHeight + scrollView.scrollY) {
+            true
+        } else if (selectedRowTop < scrollView.scrollY) {
+            false
+        } else {
+            null
+        }
+
+        val dY = if (scrollingDown == null) {
+            -1
+        } else if (scrollingDown) {
+            val difference = selectedRowBottom - tableHeight
+            difference.roundToInt()
+        } else {
+            if (rowIndex <= 1) {
+                0
+            } else {
+                selectedRowTop.roundToInt()
+            }
+        }
+
+        if (dY != -1) {
+            scrollView.post {
+//                Logger.debug(TAG, "Scrolling view to: $dY")
+                scrollView.smoothScrollTo(0, dY)
+            }
+        }
+    }
+
+    inner class LayoutChangeListener : OnLayoutChangeListener {
+        override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+            selectLastMove()
+            scrollView.post {
+                scrollView.fullScroll(View.FOCUS_DOWN)
+            }
+        }
+
     }
 
     companion object {

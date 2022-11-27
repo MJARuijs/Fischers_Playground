@@ -15,14 +15,12 @@ import androidx.core.view.doOnLayout
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.fragments.OpeningMovesFragment2.Companion.LINE_MOVES_TEXT
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.fragments.OpeningMovePagerFragment
-import com.mjaruijs.fischersplayground.fragments.OpeningMovesFragment2
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment.Companion.BACKGROUND_COLOR
 import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeOpeningActionButtonsFragment
@@ -176,9 +174,10 @@ class CreateOpeningActivity : GameActivity() {
     // Copy line moves: setup moves -> setup moves & line moves -> setup moves. This is the current implementation
     // Maybe allow copying a selection of moves?
     private fun onLineAdded() {
+        saveOpening()
+
         findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine?.getAllMoves() ?: arrayListOf())
         requestRender()
-        saveOpening()
     }
 
     private fun onMoveClicked(move: Move, deleteModeActive: Boolean) {
@@ -187,7 +186,6 @@ class CreateOpeningActivity : GameActivity() {
         } else {
             game.goToMove(move)
 
-            //TODO: is this line necessary?
             openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
             evaluateActionButtons()
         }
@@ -195,7 +193,7 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onStartRecording() {
         runOnUiThread {
-            openingMovesFragment.getCurrentOpeningFragment().addHeaderRow(LINE_MOVES_TEXT, true)
+            openingMovesFragment.getCurrentOpeningFragment().setLineHeader()
 //            openingMovesFragment.getCurrentOpeningFragment().test()
             hasUnsavedChanges = true
         }

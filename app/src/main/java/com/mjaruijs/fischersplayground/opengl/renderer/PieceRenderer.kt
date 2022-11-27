@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
 import android.content.res.Resources
+import androidx.annotation.NonNull
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -68,7 +69,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     private val whiteKnightRotation = if (isPlayerWhite) ROTATION_MATRIX else Matrix4()
     private val blackKnightRotation = if (isPlayerWhite) Matrix4() else ROTATION_MATRIX
 
-    private val animationQueue = PriorityQueue<AnimationData>()
+    private val animationQueue = LinkedList<AnimationData>()
     private val animationRunning = AtomicBoolean(false)
     private val runAnimationThread = AtomicBoolean(true)
 
