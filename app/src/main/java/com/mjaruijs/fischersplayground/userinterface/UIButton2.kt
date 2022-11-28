@@ -22,7 +22,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 @SuppressLint("ClickableViewAccessibility")
-class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayout(context, attributes) {
+class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayout(context, attributes) {
 
     private var buttonCard: CardView
     private var buttonIcon: ImageView
