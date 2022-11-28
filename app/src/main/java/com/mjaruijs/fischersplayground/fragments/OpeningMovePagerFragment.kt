@@ -73,10 +73,9 @@ class OpeningMovePagerFragment : Fragment() {
         tabMediator.detach()
 
         pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+
             override fun onPageSelected(position: Int) {
-                
                 val selectedFragment = pagerAdapter.get(position)
-//                selectedFragment.selectLastMove()
 
                 val line = selectedFragment.getOpeningLine()
                 val selectedMove = selectedFragment.currentMoveIndex
@@ -112,7 +111,7 @@ class OpeningMovePagerFragment : Fragment() {
 //        }
     }
 
-    inner class ScreenSlidePagerAdapter(private val onMoveClick: (Move, Boolean) -> Unit, val fragment: OpeningMovePagerFragment, private val fragments: ArrayList<OpeningMovesFragment2> = ArrayList()) : FragmentStateAdapter(fragment) {
+    inner class ScreenSlidePagerAdapter(private val onMoveClick: (Move, Boolean) -> Unit, val fragment: OpeningMovePagerFragment, private val fragments: ArrayList<OpeningMovesFragment> = ArrayList()) : FragmentStateAdapter(fragment) {
 
         override fun getItemCount() = fragments.size
 
@@ -128,15 +127,15 @@ class OpeningMovePagerFragment : Fragment() {
 
         fun add(openingLine: OpeningLine? = null) {
             fragments += if (openingLine != null) {
-                OpeningMovesFragment2.getInstance(onMoveClick, openingLine.setupMoves, openingLine.lineMoves)
+                OpeningMovesFragment.getInstance(onMoveClick, openingLine.setupMoves, openingLine.lineMoves)
             } else {
-                OpeningMovesFragment2.getInstance(onMoveClick)
+                OpeningMovesFragment.getInstance(onMoveClick)
             }
             notifyDataSetChanged()
         }
 
         fun add(setupMoves: ArrayList<Move>) {
-            fragments += OpeningMovesFragment2.getInstance(onMoveClick, setupMoves)
+            fragments += OpeningMovesFragment.getInstance(onMoveClick, setupMoves)
             notifyDataSetChanged()
         }
 

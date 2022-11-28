@@ -21,7 +21,6 @@ class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecordin
         startPracticeButton = UIButton2(requireContext())
 
         addLineButton
-            .setIconColor(Color.WHITE)
             .setText("Add Line")
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
@@ -33,8 +32,7 @@ class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecordin
         recordButton
             .setText("Record")
             .setTextSize(TEXT_SIZE)
-            .setIcon(R.drawable.record_icon)
-            .setIconColor(Color.RED)
+            .setIcon(R.drawable.record_icon, Color.RED)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
                 onStartRecording()
@@ -44,7 +42,6 @@ class CreateOpeningActionButtonsFragment(game: Game, private val onStartRecordin
             .setText("Practice")
             .setTextSize(TEXT_SIZE)
             .setIcon(R.drawable.student_icon)
-            .setIconColor(Color.WHITE)
             .setColor(Color.rgb(235, 186, 145))
             .setOnClickListener {
                 onStartPracticing()

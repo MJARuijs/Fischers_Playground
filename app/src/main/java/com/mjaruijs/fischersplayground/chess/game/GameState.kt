@@ -11,44 +11,53 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
 
     init {
         if (state.isEmpty()) {
-            for (row in 0 until 8) {
-                state += ArrayList<Piece?>()
+            loadStartingState()
+        }
+    }
 
-                for (col in 0 until 8) {
-                    state[row] += null
-                }
-            }
+    private fun loadStartingState() {
+        for (row in 0 until 8) {
+            state += ArrayList<Piece?>()
 
-            val whiteIndex = if (isPlayingWhite) 0 else 7
-            val blackIndex = if (isPlayingWhite) 7 else 0
-            val whitePawnIndex = if (isPlayingWhite) 1 else 6
-            val blackPawnIndex = if (isPlayingWhite) 6 else 1
-
-            val queenOffset = if (isPlayingWhite) 0 else 1
-
-            state[0][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
-            state[1][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE)
-            state[2][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE)
-            state[3 + queenOffset][whiteIndex] = Piece(PieceType.QUEEN, Team.WHITE)
-            state[4 - queenOffset][whiteIndex] = Piece(PieceType.KING, Team.WHITE)
-            state[5][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE)
-            state[6][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE)
-            state[7][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
-
-            state[0][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
-            state[1][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
-            state[2][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
-            state[3 + queenOffset][blackIndex] = Piece(PieceType.QUEEN, Team.BLACK)
-            state[4 - queenOffset][blackIndex] = Piece(PieceType.KING, Team.BLACK)
-            state[5][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
-            state[6][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
-            state[7][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
-
-            for (i in 0 until 8) {
-                state[i][whitePawnIndex] = Piece(PieceType.PAWN, Team.WHITE)
-                state[i][blackPawnIndex] = Piece(PieceType.PAWN, Team.BLACK)
+            for (col in 0 until 8) {
+                state[row] += null
             }
         }
+
+        val whiteIndex = if (isPlayingWhite) 0 else 7
+        val blackIndex = if (isPlayingWhite) 7 else 0
+        val whitePawnIndex = if (isPlayingWhite) 1 else 6
+        val blackPawnIndex = if (isPlayingWhite) 6 else 1
+
+        val queenOffset = if (isPlayingWhite) 0 else 1
+
+        state[0][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
+        state[1][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE)
+        state[2][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE)
+        state[3 + queenOffset][whiteIndex] = Piece(PieceType.QUEEN, Team.WHITE)
+        state[4 - queenOffset][whiteIndex] = Piece(PieceType.KING, Team.WHITE)
+        state[5][whiteIndex] = Piece(PieceType.BISHOP, Team.WHITE)
+        state[6][whiteIndex] = Piece(PieceType.KNIGHT, Team.WHITE)
+        state[7][whiteIndex] = Piece(PieceType.ROOK, Team.WHITE)
+
+        state[0][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
+        state[1][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
+        state[2][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
+        state[3 + queenOffset][blackIndex] = Piece(PieceType.QUEEN, Team.BLACK)
+        state[4 - queenOffset][blackIndex] = Piece(PieceType.KING, Team.BLACK)
+        state[5][blackIndex] = Piece(PieceType.BISHOP, Team.BLACK)
+        state[6][blackIndex] = Piece(PieceType.KNIGHT, Team.BLACK)
+        state[7][blackIndex] = Piece(PieceType.ROOK, Team.BLACK)
+
+        for (i in 0 until 8) {
+            state[i][whitePawnIndex] = Piece(PieceType.PAWN, Team.WHITE)
+            state[i][blackPawnIndex] = Piece(PieceType.PAWN, Team.BLACK)
+        }
+    }
+
+    fun reset() {
+        state.clear()
+        loadStartingState()
     }
 
     operator fun get(i: Int, j: Int): Piece? {

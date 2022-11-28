@@ -21,7 +21,6 @@ class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked
         hintButton
             .setText("Hint")
             .setIcon(R.drawable.hint_icon)
-            .setIconColor(Color.WHITE)
             .setColor(BACKGROUND_COLOR)
             .setTextSize(TEXT_SIZE)
             .setOnClickListener {
@@ -33,7 +32,6 @@ class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked
         solutionButton
             .setText("Solution")
             .setIcon(R.drawable.solution_icon)
-            .setIconColor(Color.WHITE)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
@@ -44,8 +42,7 @@ class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked
         retryButton = UIButton2(requireContext())
         retryButton
             .setText("Retry")
-            .setIcon(R.drawable.retry_icon, true)
-            .setIconColor(Color.WHITE)
+            .setIcon(R.drawable.retry_icon, mirroredX = true)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
@@ -55,8 +52,7 @@ class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked
         nextButton = UIButton2(requireContext())
         nextButton
             .setText("Next Line")
-            .setIcon(R.drawable.next_arrow_icon)
-            .setIconColor(Color.rgb(235, 186, 145))
+            .setIcon(R.drawable.next_arrow_icon, Color.rgb(235, 186, 145))
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {

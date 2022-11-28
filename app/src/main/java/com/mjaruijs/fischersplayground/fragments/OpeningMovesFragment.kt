@@ -3,53 +3,40 @@ package com.mjaruijs.fischersplayground.fragments
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.LinearLayout.LayoutParams
-import android.widget.LinearLayout.VERTICAL
 import android.widget.ScrollView
-import android.widget.TableRow
-import android.widget.TextView
-import androidx.cardview.widget.CardView
+import android.widget.TableLayout
+import androidx.core.view.children
 import androidx.core.view.doOnLayout
 import androidx.core.view.get
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.adapters.openingmovesadapter.OpeningLine
-import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
+import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
-import com.mjaruijs.fischersplayground.userinterface.OpeningMoveView
+import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
+import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView
+import kotlin.math.roundToInt
 
 class OpeningMovesFragment : Fragment() {
 
+    private lateinit var onMoveClick: (Move, Boolean) -> Unit
+    private val setupMoves = ArrayList<Move>()
+    private val lineMoves = ArrayList<Move>()
+
     private lateinit var typeFace: Typeface
+    private lateinit var scrollView: ScrollView
+    private lateinit var moveTable: TableLayout
 
-    private lateinit var verticalScrollView: ScrollView
+    private lateinit var layoutChangeListener: LayoutChangeListener
 
-    private lateinit var moveCounterLayout: LinearLayout
-    private lateinit var variationsTable: LinearLayout
-
-    private lateinit var game: SinglePlayerGame
-    private lateinit var onLastMoveClicked: () -> Unit
-
-    private var moveViewHeight = -1
-//    private var counterViewHeight = -1
-
-//    private val mainMoves = ArrayList<Move>()
-//    private var mainLineIndex = 0
-
-    private var maxDepth = 0
-
-    private var selectedLineIndex = 0
-
-    private val lines = ArrayList<OpeningLine>()
+    var currentMoveIndex = -1
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.opening_moves_fragment, container, false)
+        return inflater.inflate(R.layout.opening_moves_fragment_2, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -57,408 +44,505 @@ class OpeningMovesFragment : Fragment() {
 
         typeFace = resources.getFont(R.font.anonymous_bold)
 
-        verticalScrollView = view.findViewById(R.id.vertical_scroll_view)
-        moveCounterLayout = view.findViewById(R.id.move_numbers_layout)
-        variationsTable = view.findViewById(R.id.variations_table)
+        scrollView = view.findViewById(R.id.scroll_view)
+        moveTable = view.findViewById(R.id.move_table)
 
-        addMainLineTable()
-        Thread {
-            while (moveViewHeight == -1) {
-                Thread.sleep(1)
+        addSetupHeader()
+        addSetupMoves()
+
+        if (lineMoves.isNotEmpty()) {
+            addLineHeader()
+            addLineMoves()
+        }
+
+        layoutChangeListener = LayoutChangeListener()
+
+        if (moveTable.childCount > 0) {
+            scrollView.addOnLayoutChangeListener(layoutChangeListener)
+            scrollView.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                if (scrollY + scrollView.height == moveTable.height) {
+                    scrollView.removeOnLayoutChangeListener(layoutChangeListener)
+                }
             }
 
-            requireActivity().runOnUiThread {
-                addViewsToCounterLayout()
+            scrollView.doOnLayout {
+                if (scrollView.height > moveTable.height) {
+                    scrollView.removeOnLayoutChangeListener(layoutChangeListener)
+                }
             }
-        }.start()
-
-//        Logger.mute("Rewrite")
-//        Logger.mute("debug")
+        }
     }
 
-    fun setGame(game: SinglePlayerGame) {
-        this.game = game
+    private fun addSetupHeader() {
+        val headerView = MoveHeaderView(requireContext())
+        headerView.setText(SETUP_MOVES_TEXT)
+
+        moveTable.addView(headerView)
     }
 
-    fun setOnLastMoveClicked(onLastMoveClicked: () -> Unit) {
-        this.onLastMoveClicked = onLastMoveClicked
+    private fun addLineHeader() {
+        val headerView = MoveHeaderView(requireContext())
+        headerView.setText(LINE_MOVES_TEXT)
+
+        moveTable.addView(headerView)
+    }
+
+    fun getOpeningLine() = OpeningLine(setupMoves, lineMoves)
+
+    fun selectLastMove() {
+        if (setupMoves.isEmpty() && lineMoves.isEmpty()) {
+            return
+        }
+
+        selectMove(setupMoves.size + lineMoves.size - 1, false)
+    }
+
+    fun selectMove(index: Int, scrollToMove: Boolean) {
+        deselectAllMoves()
+
+        currentMoveIndex = index
+
+        if (index == -1) {
+            if (scrollToMove) {
+                scrollView.post {
+                    scrollView.smoothScrollTo(0, 0)
+                }
+            }
+            return
+        }
+
+        val rowOffset = if (setupMoves.last().team == Team.WHITE) 1 else 0
+        val headerOffset = if (index < setupMoves.size) 1 else 2 + rowOffset
+
+        val rowIndex = index / 2 + headerOffset
+
+        val rowView = moveTable[rowIndex] as OpeningMovesRowView
+        if (index % 2 == 0) {
+            rowView.selectWhiteMove()
+        } else {
+            rowView.selectBlackMove()
+        }
+
+        if (scrollToMove) {
+            scrollToView(rowView)
+        }
+    }
+
+    private fun deselectAllMoves() {
+        for (child in moveTable.children) {
+            if (child is OpeningMovesRowView) {
+                child.deselectWhiteMove()
+                child.deselectBlackMove()
+            }
+        }
+        moveTable.invalidate()
     }
 
     fun addMove(move: Move) {
-        deselectAll()
-        addMoveToLine(move)
+        deselectAllMoves()
 
-        verticalScrollView.post {
-//            verticalScrollView.fullScroll(View.FOCUS_DOWN)
+        if (!isShowingLastMove()) {
+            deleteMovesAfter(currentMoveIndex)
+        }
+
+        if (hasLineHeader()) {
+            addLineMove(move, true)
+        } else {
+            addSetupMove(move, true)
         }
     }
 
-    private fun addMoveToLine(move: Move) {
-        val line = lines[selectedLineIndex]
-//        Logger.debug("fix", "Going to add move to line: lineId=${line.id}, currentIndex=${line.currentIndex} size=${line.moves.size} ")
-
-        if (line.currentIndex != line.getNumberOfMoves()) {
-            removeRemainingMoves()
-            onLastMoveClicked()
-        }
-
-        line.addMove(move)
-
-//        Logger.debug("fix", "Adding move: ${move.getSimpleChessNotation()} to line: lineId=${line.id}, currentIndex=${line.currentIndex}, size=${line.moves.size}")
-
-//        if (move.team == Team.WHITE) {
-//            addRowToTable()
-//        }
-
-//        val moveView = MoveView(line.id, requireContext(), MoveView.MoveViewData(move, ::onMoveClicked, ::onMoveViewInitialized))
-
-        val moveView = OpeningMoveView(requireContext())
-
-        val lastEmptyRow = getLastEmptyRow()
+    private fun addSetupMove(move: Move, scrollToMove: Boolean) {
         if (move.team == Team.WHITE) {
-            (lastEmptyRow[0] as OpeningMoveView)
-                .setLineId(line.id)
-                .setMove(move)
-//                .setOnClick(::onMoveClicked)
-                .show()
+            val moveNumber = setupMoves.size / 2 + 1
+            val movesView = OpeningMovesRowView(requireContext())
+            movesView.setMoveNumber(moveNumber)
+            movesView.setTypeFace(typeFace)
+            movesView.setWhiteMove(move, onMoveClick)
+
+            if (moveNumber % 2 == 1) {
+                movesView.setBackgroundColor(Color.rgb(0.3f, 0.3f, 0.3f))
+            } else {
+                movesView.setBackgroundColor(Color.DKGRAY)
+            }
+
+            moveTable.addView(movesView)
+
+            if (scrollToMove) {
+                movesView.doOnLayout {
+                    scrollToView(movesView)
+                }
+            }
         } else {
-            (lastEmptyRow[1] as OpeningMoveView)
-                .setLineId(line.id)
-                .setMove(move)
-//                .setOnClick(::onMoveClicked)
-                .show()
+            val movesView = moveTable[moveTable.childCount - 1] as OpeningMovesRowView
+            movesView.setBlackMove(move, onMoveClick)
+
+            if (scrollToMove) {
+                scrollToView(movesView)
+            }
         }
 
-        lastEmptyRow.visibility = View.VISIBLE
-        addCounterRow(line.getNumberOfMoves())
-        selectMove(moveView)
+        setupMoves += move
+        currentMoveIndex++
     }
 
-    fun onBackClicked() {
-        deselectAll()
+    private fun addLineMove(move: Move, scrollToMove: Boolean) {
 
-        val line = lines[selectedLineIndex]
-        line.currentIndex--
+        if (lineMoves.isEmpty()) {
+            val moveNumber = setupMoves.size / 2 + 1
+            val movesView = OpeningMovesRowView(requireContext())
 
-        if (line.currentIndex <= 0) {
+            movesView.setTypeFace(typeFace)
+            movesView.setMoveNumber(moveNumber)
+
+            if (move.team == Team.WHITE) {
+                movesView.setWhiteMove(move, onMoveClick)
+            } else {
+                movesView.setBlackMove(move, onMoveClick)
+            }
+
+            if (moveNumber % 2 == 1) {
+                movesView.setBackgroundColor(Color.rgb(0.3f, 0.3f, 0.3f))
+            } else {
+                movesView.setBackgroundColor(Color.DKGRAY)
+            }
+
+            moveTable.addView(movesView)
+
+            if (scrollToMove) {
+                movesView.doOnLayout {
+                    scrollToView(movesView)
+                }
+            }
+        } else {
+            if (move.team == Team.WHITE) {
+                val headerOffset = if (setupMoves.last().team == Team.WHITE) 2 else 1
+                val moveNumber = moveTable.childCount - headerOffset
+                val movesView = OpeningMovesRowView(requireContext())
+                movesView.setTypeFace(typeFace)
+                movesView.setMoveNumber(moveNumber)
+                movesView.setWhiteMove(move, onMoveClick)
+
+                if (moveNumber % 2 == 1) {
+                    movesView.setBackgroundColor(Color.rgb(0.3f, 0.3f, 0.3f))
+                } else {
+                    movesView.setBackgroundColor(Color.DKGRAY)
+                }
+
+                moveTable.addView(movesView)
+
+                if (scrollToMove) {
+                    movesView.doOnLayout {
+                        scrollToView(movesView)
+                    }
+                }
+            } else {
+                val lastRow = moveTable[moveTable.childCount - 1] as OpeningMovesRowView
+                lastRow.setBlackMove(move, onMoveClick)
+
+                if (scrollToMove) {
+                    scrollToView(lastRow)
+                }
+            }
+        }
+
+        lineMoves += move
+        currentMoveIndex++
+    }
+
+    fun clear() {
+        deleteMovesAfter(-1)
+    }
+
+    fun setLineHeader() {
+        if (currentMoveIndex != -1) {
+            val currentMoveIndexCopy = currentMoveIndex
+
+            val headerView = MoveHeaderView(requireContext())
+            headerView.setText(LINE_MOVES_TEXT)
+
+            if (currentMoveIndex < setupMoves.size) {
+                val newLineMoves = ArrayList<Move>()
+
+                for (i in currentMoveIndex + 1 until setupMoves.size + lineMoves.size) {
+                    newLineMoves += if (i < setupMoves.size) {
+                        setupMoves[i]
+                    } else {
+                        lineMoves[i - setupMoves.size]
+                    }
+                }
+
+                if (!isShowingLastMove()) {
+                    deleteMovesAfter(currentMoveIndex)
+                }
+
+                if (!hasLineHeader()) {
+                    moveTable.addView(headerView)
+                }
+
+                for (move in newLineMoves) {
+                    addLineMove(move, false)
+                }
+            } else {
+                val newSetupMoves = ArrayList<Move>()
+                val newLineMoves = ArrayList<Move>()
+
+                for (move in setupMoves) {
+                    newSetupMoves += move
+                }
+
+                for (i in 0 until currentMoveIndex - setupMoves.size + 1) {
+                    newSetupMoves += lineMoves[i]
+                }
+
+                for (i in currentMoveIndex - setupMoves.size + 1 until lineMoves.size) {
+                    newLineMoves += lineMoves[i]
+                }
+
+                deleteMovesAfter(-1)
+
+                for (move in newSetupMoves) {
+                    addSetupMove(move, false)
+                }
+
+                moveTable.addView(headerView)
+
+                for (move in newLineMoves) {
+                    addLineMove(move, false)
+                }
+            }
+
+            selectMove(currentMoveIndexCopy, false)
+            headerView.doOnLayout {
+                scrollToView(headerView)
+            }
+        }
+    }
+
+    private fun deleteMovesAfter(index: Int) {
+        if (index > setupMoves.size + lineMoves.size) {
             return
         }
 
-        selectMove(line.currentIndex - 1)
-    }
+        if (index == -1) {
+            while (moveTable.childCount > 1) {
+                moveTable.removeViewAt(moveTable.childCount - 1)
+            }
 
-    fun onForwardClicked() {
-        deselectAll()
-
-        val line = lines[selectedLineIndex]
-        line.currentIndex++
-
-//        Logger.debug("debug", "Trying to go forward: ${line.id} ${line.currentIndex} ${line.moves.size}")
-
-        selectMove(line.currentIndex - 1)
-    }
-
-    private fun onMoveClicked(lineId: Int, move: Move) {
-        val line = lines[lineId]
-        line.jumpToMove(move)
-
-        if (line.currentIndex == line.getNumberOfMoves()) {
-            onLastMoveClicked()
+            currentMoveIndex = -1
+            setupMoves.clear()
+            lineMoves.clear()
+            return
         }
 
-        deselectAll()
-        if (lineId == selectedLineIndex) {
-            game.goToMove(move)
+        if (index < setupMoves.size) {
+            val offset = if (index == setupMoves.size - 1) 3 else 2
+
+            val rowIndex = index / 2 + offset
+
+            while (moveTable.childCount > rowIndex) {
+                moveTable.removeViewAt(moveTable.childCount - 1)
+            }
+
+            while (setupMoves.size > index + 1) {
+                setupMoves.removeLast()
+            }
+
+            if (setupMoves.isNotEmpty()) {
+                if (setupMoves.last().team == Team.WHITE) {
+                    val lastRow = moveTable[moveTable.childCount - 1]
+                    if (lastRow is OpeningMovesRowView) {
+                        lastRow.hideBlackMove()
+                    }
+                }
+            }
+
+            lineMoves.clear()
         } else {
-            game.swapMoves(line.moves, move)
-        }
+            val offset = if (setupMoves.last().team == Team.WHITE) 4 else 3
+            val rowIndex = index / 2 + offset
 
-        game.clearBoardData()
+            while (moveTable.childCount > rowIndex) {
+                moveTable.removeViewAt(moveTable.childCount - 1)
+            }
 
-//        Logger.debug("fix", "Clicked move: ${move.getSimpleChessNotation()} in line: lineId=$lineId, currentIndex=${line.currentIndex}, size=${line.moves.size}")
-        selectedLineIndex = lineId
-    }
+            while (lineMoves.size > index - setupMoves.size + 1) {
+                lineMoves.removeLast()
+            }
 
-    private fun deselectAll() {
-        for (lineIndex in 0 until variationsTable.childCount) {
-            val line = variationsTable[lineIndex] as LinearLayout
-            for (rowIndex in 0 until line.childCount) {
-                val row = line[rowIndex] as TableRow
-                for (i in 0 until row.childCount) {
-                    val moveView = row[i]
-                    deselectMove(moveView)
+            if (lineMoves.isNotEmpty()) {
+                if (lineMoves.last().team == Team.WHITE) {
+                    (moveTable[moveTable.childCount - 1] as OpeningMovesRowView).hideBlackMove()
                 }
             }
         }
     }
 
-    private fun deselectMove(view: View) {
-        val card = view.findViewById<CardView>(R.id.opening_move_card)
-        card.setBackgroundColor(Color.TRANSPARENT)
-
-        val textView = view.findViewById<TextView>(R.id.opening_move_notation)
-        textView.setTypeface(null, Typeface.NORMAL)
+    private fun isShowingLastMove(): Boolean {
+        return currentMoveIndex == setupMoves.size + lineMoves.size - 1
     }
 
-    private fun selectMove(i: Int) {
-        val rowIndex = i / 2
-        val columnIndex = i % 2
-        val lineView = (variationsTable[selectedLineIndex] as LinearLayout)
-        if (rowIndex >= lineView.childCount) {
+    private fun hasLineHeader(): Boolean {
+        if (moveTable.childCount == 0) {
+            return false
+        }
+
+        for (row in moveTable.children) {
+            if (row !is MoveHeaderView) {
+                continue
+            }
+
+            if (row.getText() == LINE_MOVES_TEXT) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun addSetupMoves() {
+        for (i in 0 until setupMoves.size step 2) {
+            val movesView = OpeningMovesRowView(requireContext())
+            val moveNumber = i / 2 + 1
+            val whiteMove = setupMoves[i]
+            movesView.setTypeFace(typeFace)
+            movesView.setMoveNumber(moveNumber)
+            movesView.setWhiteMove(whiteMove, onMoveClick)
+
+            if (moveNumber % 2 == 1) {
+                movesView.setBackgroundColor(Color.rgb(0.3f, 0.3f, 0.3f))
+            } else {
+                movesView.setBackgroundColor(Color.DKGRAY)
+            }
+
+            if (setupMoves.size > i + 1) {
+                movesView.setBlackMove(setupMoves[i + 1], onMoveClick)
+            }
+
+            moveTable.addView(movesView)
+        }
+
+        currentMoveIndex = setupMoves.size - 1
+        deselectAllMoves()
+    }
+
+    private fun addLineMoves() {
+        var lineMovesStartIndex = 0
+
+        if (lineMoves.first().team == Team.BLACK) {
+            val moveNumber = setupMoves.size / 2 + 1
+            val movesView = OpeningMovesRowView(requireContext())
+            val move = lineMoves.first()
+
+            movesView.setTypeFace(typeFace)
+            movesView.setMoveNumber(moveNumber)
+            movesView.setBlackMove(move, onMoveClick)
+
+            if (moveNumber % 2 == 1) {
+                movesView.setBackgroundColor(Color.rgb(0.3f, 0.3f, 0.3f))
+            } else {
+                movesView.setBackgroundColor(Color.DKGRAY)
+            }
+
+            moveTable.addView(movesView)
+            lineMovesStartIndex = 1
+        }
+
+        for (i in lineMovesStartIndex until lineMoves.size step 2) {
+            val moveNumber = setupMoves.size / 2 + i / 2 + 1 + lineMovesStartIndex
+            val movesView = OpeningMovesRowView(requireContext())
+            val whiteMove = lineMoves[i]
+            movesView.setTypeFace(typeFace)
+            movesView.setMoveNumber(moveNumber)
+            movesView.setWhiteMove(whiteMove, onMoveClick)
+
+            if (moveNumber % 2 == 1) {
+                movesView.setBackgroundColor(Color.rgb(0.3f, 0.3f, 0.3f))
+            } else {
+                movesView.setBackgroundColor(Color.DKGRAY)
+            }
+
+            if (lineMoves.size > i + 1) {
+                movesView.setBlackMove(lineMoves[i + 1], onMoveClick)
+            }
+
+            moveTable.addView(movesView)
+        }
+
+        deselectAllMoves()
+        selectMove(currentMoveIndex, false)
+    }
+
+    private fun scrollToView(view: View) {
+        val rowIndex = moveTable.indexOfChild(view)
+
+        if (rowIndex == -1) {
             return
         }
 
-        val row = lineView[rowIndex] as TableRow
-        val moveView = row[columnIndex]
-        selectMove(moveView)
-    }
+        val tableHeight = scrollView.measuredHeight
+        val selectedRowBottom = moveTable[rowIndex].y + moveTable[rowIndex].height
+        val selectedRowTop = moveTable[rowIndex].y
 
-    private fun selectMove(view: View) {
-//        val card = view.findViewById<CardView>(R.id.opening_move_card)
-//        card.setBackgroundColor(Color.argb(0.25f, 1.0f, 1.0f, 1.0f))
-
-//        val textView = view.findViewById<TextView>(R.id.opening_move_notation)
-//        textView.setTypeface(null, Typeface.BOLD)
-    }
-
-    private fun removeRemainingMoves() {
-        val line = lines[selectedLineIndex]
-
-        for (i in line.getNumberOfMoves() - 1 downTo line.currentIndex) {
-//            Logger.debug("fix", "Removing remaining: $i : ${line[i].getSimpleChessNotation()}")
-            deleteMove(line[i])
-            line.deleteMoveAt(i)
-        }
-    }
-
-    private fun deleteMove(move: Move) {
-        deselectAll()
-
-        val line = lines[selectedLineIndex]
-        val moveIndex = line.indexOf(move)
-        val rowIndex = moveIndex / 2
-        val columnIndex = moveIndex % 2
-
-        try {
-            val lineColumn = variationsTable[selectedLineIndex] as LinearLayout
-            val row = lineColumn[rowIndex] as TableRow
-            row.removeViewAt(columnIndex)
-
-            if (row.childCount == 0) {
-                lineColumn.removeViewAt(rowIndex)
-                // TODO: Also remove the view from moveCounterLayout, if this was the line with the largest depth
-
-
-
-
-            }
-
-//            (variationsTable[rowIndex] as TableRow).removeViewAt(columnIndex)
-//            if ((variationsTable[rowIndex] as TableRow).childCount == 0) {
-//                Logger.info("MyTag", "Removing row at: $rowIndex")
-//                variationsTable.removeViewAt(rowIndex)
-//                moveCounterLayout.removeViewAt(rowIndex)
-//            }
-        } catch (e: Exception) {
-//            Logger.error("Rewrite", e.stackTraceToString())
-//            throw IllegalArgumentException("Failed to delete move at index: $moveIndex. Number of moves was ${mainMoves.size}")
-        }
-    }
-
-    private fun onMoveViewInitialized(height: Int) {
-//        moveViewHeight = height
-//        counterViewHeight = moveCounterLayout[0].height
-
-//        val i = moveCounterLayout.childCount - 1
-//        if (moveCounterLayout[i].paddingBottom != 0) {
-//            return
-//        }
-
-//        val textViewHeight = moveCounterLayout[i].height
-//        val topPadding = (height - textViewHeight) / 2
-//        val bottomPadding = height - topPadding - textViewHeight
-//
-//        (moveCounterLayout[i] as TextView).setPadding(0, topPadding, 0, bottomPadding)
-    }
-
-    private fun addRowToTable(tableLayout: LinearLayout): TableRow {
-        val rowParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-        val newRow = TableRow(requireContext())
-        newRow.layoutParams = rowParams
-        newRow.orientation = LinearLayout.HORIZONTAL
-        tableLayout.addView(newRow)
-        return newRow
-    }
-
-    private fun addRowToTable(): TableRow {
-        val rowParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-        val newRow = TableRow(requireContext())
-        newRow.layoutParams = rowParams
-        newRow.orientation = LinearLayout.HORIZONTAL
-
-        val selectedLineTable = getSelectedLineTable()
-        val selectedLine = lines[selectedLineIndex]
-
-        selectedLineTable.addView(newRow)
-
-        val lineDepth = selectedLine.totalDepth()
-        if (lineDepth < moveCounterLayout.childCount) {
-            moveCounterLayout[lineDepth].visibility = View.VISIBLE
+        val scrollingDown = if (selectedRowBottom > tableHeight + scrollView.scrollY) {
+            true
+        } else if (selectedRowTop < scrollView.scrollY) {
+            false
         } else {
-//            addCounterRow()
+            null
         }
-//        if (lineDepth > maxDepth) {
-//            maxDepth = lineDepth
-//            addCounterRow()
-//        }
-        return newRow
-    }
 
-    private fun addCounterRow(n: Int) {
-
-
-//        val currentRow = maxDepth
-//
-//        val moveStringPlaceHolder = requireContext().resources.getString(R.string.move_row_string)
-//        val moveString = String.format(moveStringPlaceHolder, currentRow)
-//
-//        val textView = TextView(requireContext())
-//        textView.text = moveString
-//        textView.textSize = 20.0f
-//        textView.typeface = typeFace
-//
-//        moveCounterLayout.addView(textView)
-    }
-
-    private fun getLastRow(lineTable: LinearLayout): TableRow {
-        return lineTable[lineTable.childCount - 1] as TableRow
-    }
-
-    private fun getLastRow(): TableRow {
-        val selectedTable = getSelectedLineTable()
-
-        return selectedTable[selectedTable.childCount - 1] as TableRow
-    }
-
-    private fun getLastEmptyRow() = getLastEmptyRow(getSelectedLineTable())
-
-    private fun getLastEmptyRow(lineTable: LinearLayout): TableRow {
-        for (i in 0 until lineTable.childCount) {
-            val row = lineTable[i] as TableRow
-            if (row.childCount == 0) {
-                return row
-            }
-
-            val isDefaultView = (row[1] as OpeningMoveView).getText() == "0-0-0@"
-            if (isDefaultView) {
-//                Logger.debug("fix", "getLastEmptyRow(): Reusing row at: $i")
-                return row
+        val dY = if (scrollingDown == null) {
+            -1
+        } else if (scrollingDown) {
+            val difference = selectedRowBottom - tableHeight
+            difference.roundToInt()
+        } else {
+            if (rowIndex <= 1) {
+                0
+            } else {
+                selectedRowTop.roundToInt()
             }
         }
-//        Logger.debug("fix", "getLastEmptyRow(): Creating new row")
 
-        return addRowToTable(lineTable)
+        if (dY != -1) {
+            scrollView.post {
+                scrollView.smoothScrollTo(0, dY)
+            }
+        }
     }
 
-    private fun getSelectedLineTable(): LinearLayout {
-        return variationsTable[selectedLineIndex] as LinearLayout
-    }
-
-    fun addVariation() {
-        val tableParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-        val variationNumber = variationsTable.childCount
-
-        val newTable = LinearLayout(requireContext())
-
-//        if (variationNumber % 2 == 1) {
-        newTable.setBackgroundColor(Color.GRAY)
-//        } else {
-//            newTable.setBackgroundColor(Color.DKGRAY)
-//        }
-
-        newTable.orientation = VERTICAL
-        newTable.layoutParams = tableParams
-
-        val parentLine = lines[selectedLineIndex]
-        val newLine = OpeningLine(variationNumber)
-
-        for (i in 0 until parentLine.currentIndex) {
-            newLine.addMove(parentLine[i])
+    inner class LayoutChangeListener : OnLayoutChangeListener {
+        override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
+            selectLastMove()
+            scrollView.post {
+                scrollView.fullScroll(View.FOCUS_DOWN)
+            }
         }
 
-        for (i in 0 until 15) {
-            addRowToTable(newTable)
-
-            val lastRow = getLastRow(newTable)
-            val whiteMove = OpeningMoveView(requireContext())
-            whiteMove.setLineId(0)
-            whiteMove.hide()
-
-            val blackMove = OpeningMoveView(requireContext())
-            blackMove.setLineId(0)
-            blackMove.hide()
-
-            lastRow.addView(whiteMove)
-            lastRow.addView(blackMove)
-        }
-
-        variationsTable.addView(newTable)
-
-        lines += newLine
-        selectedLineIndex = variationNumber
     }
 
-    private fun addMainLineTable() {
-        val tableParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+    companion object {
 
-        val table = LinearLayout(requireContext())
-//        table.setBackgroundColor(Color.GRAY)
-        table.orientation = VERTICAL
-        table.layoutParams = tableParams
+        private const val TAG = "OpeningMovesFragment"
 
-        for (i in 0 until 15) {
-            addRowToTable(table)
-            val lastRow = getLastRow(table)
+        const val SETUP_MOVES_TEXT = "Setup Moves"
+        const val LINE_MOVES_TEXT = "Line Moves"
 
-            val whiteMove = OpeningMoveView(requireContext())
-            whiteMove.setLineId(0)
-            whiteMove.hide()
+        fun getInstance(onMoveClick: (Move, Boolean) -> Unit, setupMoves: ArrayList<Move> = ArrayList(), lineMoves: ArrayList<Move> = ArrayList()): OpeningMovesFragment {
+            val fragment = OpeningMovesFragment()
 
-            if (i == 0) {
-                whiteMove.doOnLayout {
-                    moveViewHeight = it.height
-//                    Logger.debug("fix", "MoveView height: $moveViewHeight")
-                }
+            fragment.currentMoveIndex = setupMoves.size + lineMoves.size - 1
+            fragment.onMoveClick = onMoveClick
+            for (move in setupMoves) {
+                fragment.setupMoves += move
             }
 
-            val blackMove = OpeningMoveView(requireContext())
-            blackMove.setLineId(0)
-            blackMove.hide()
+            for (move in lineMoves) {
+                fragment.lineMoves += move
+            }
 
-            lastRow.addView(whiteMove)
-            lastRow.addView(blackMove)
-        }
-
-        variationsTable.addView(table)
-
-        lines += OpeningLine(0)
-    }
-
-    private fun addViewsToCounterLayout() {
-//        Logger.debug("fix", "Adding Counter Views")
-        for (i in 0 until 20) {
-            val moveStringPlaceHolder = requireContext().resources.getString(R.string.move_row_string)
-            val moveString = String.format(moveStringPlaceHolder, i)
-
-            val textView = TextView(requireContext())
-            textView.visibility = View.INVISIBLE
-            textView.gravity = Gravity.CENTER_VERTICAL
-            textView.text = moveString
-            textView.textSize = 20.0f
-            textView.typeface = typeFace
-            textView.height = moveViewHeight
-
-            moveCounterLayout.addView(textView)
+            return fragment
         }
     }
 }

@@ -16,6 +16,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.setPadding
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -31,8 +32,10 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
     private var onHoldCardColor = Color.rgb(1.0f - onHoldColorChange, 1.0f - onHoldColorChange, 1.0f - onHoldColorChange)
 
     private var iconColor = Color.WHITE
+    private var onHoldIconColor = Color.rgb(1.0f - onHoldColorChange, 1.0f - onHoldColorChange, 1.0f - onHoldColorChange)
 
     private var textColor = Color.WHITE
+    private var onHoldTextColor = Color.rgb(1.0f - onHoldColorChange, 1.0f - onHoldColorChange, 1.0f - onHoldColorChange)
 
     private var buttonEnabled = true
 
@@ -40,6 +43,8 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
     private var mirroredY = false
 
     private var holding = false
+
+    private var hasIcon = false
 
     private var startClickTimer = -1L
 
@@ -57,7 +62,12 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
 
             if (event.action == MotionEvent.ACTION_DOWN) {
                 startClickTimer = System.currentTimeMillis()
-                buttonCard.setCardBackgroundColor(onHoldCardColor)
+                if (hasIcon) {
+                    buttonIcon.setColorFilter(onHoldIconColor)
+                    buttonText.setTextColor(onHoldTextColor)
+                } else {
+                    buttonCard.setCardBackgroundColor(onHoldCardColor)
+                }
             }
 
             if (event.action == MotionEvent.ACTION_UP) {
@@ -67,7 +77,12 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
                 if (buttonReleasedTime - startClickTimer < MAX_CLICK_DELAY) {
                     callOnClick()
                 }
-                buttonCard.setCardBackgroundColor(cardBackgroundColor)
+                if (hasIcon) {
+                    buttonIcon.setColorFilter(iconColor)
+                    buttonText.setTextColor(textColor)
+                } else {
+                    buttonCard.setCardBackgroundColor(cardBackgroundColor)
+                }
             }
 
             false
@@ -84,7 +99,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
         isLongClickable = false
     }
 
-    fun setIcon(resourceId: Int, mirroredX: Boolean = false, mirroredY: Boolean = false): UIButton2 {
+    fun setIcon(resourceId: Int, color: Int = Color.WHITE, mirroredX: Boolean = false, mirroredY: Boolean = false): UIButton2 {
         this.mirroredX = mirroredX
         this.mirroredY = mirroredY
 
@@ -100,6 +115,9 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
         buttonIcon.visibility = View.VISIBLE
         buttonIcon.setImageDrawable(drawable)
 
+        setIconColor(color)
+
+        hasIcon = true
 
         return this
     }
@@ -141,9 +159,25 @@ class UIButton2(context: Context, attributes: AttributeSet? = null): LinearLayou
         return this
     }
 
-    fun setIconColor(color: Int): UIButton2 {
+    private fun setIconColor(color: Int): UIButton2 {
         buttonIcon.setColorFilter(color)
         iconColor = color
+
+        val normalRed = Color.red(iconColor).toFloat() / 255f
+        val normalGreen = Color.green(iconColor).toFloat() / 255f
+        val normalBlue = Color.blue(iconColor).toFloat() / 255f
+
+        val total = normalRed + normalBlue + normalGreen
+
+        val colorModifier = if (total < 1.5f) 1 else -1
+
+        val onHoldRed = max(0.0f, min(normalRed + onHoldColorChange * colorModifier, 1.0f))
+        val onHoldGreen = max(0.0f, min(normalGreen + onHoldColorChange * colorModifier, 1.0f))
+        val onHoldBlue = max(0.0f, min(normalBlue + onHoldColorChange * colorModifier, 1.0f))
+
+        Logger.debug("MyTag", "OnHoldRed: $onHoldRed $onHoldGreen $onHoldBlue || $normalRed $normalGreen $normalBlue")
+
+        onHoldIconColor = Color.rgb(onHoldRed, onHoldGreen, onHoldBlue)
 
         return this
     }

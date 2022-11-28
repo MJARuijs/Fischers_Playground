@@ -16,18 +16,18 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
 
     override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(if (isPlayingWhite) Team.WHITE else Team.BLACK, piece, square, true, state, moves, lookingForCheck)
 
-    override fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long): Pair<Boolean, Boolean> {
+    override fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long) {
         if (currentMoveIndex != -1) {
             teamToMove = !teamToMove
         }
-        return super.showPreviousMove(runInBackground, animationSpeed)
+        super.showPreviousMove(runInBackground, animationSpeed)
     }
 
-    override fun showNextMove(runInBackground: Boolean, animationSpeed: Long): Pair<Boolean, Boolean> {
+    override fun showNextMove(runInBackground: Boolean, animationSpeed: Long){
         if (!isShowingCurrentMove()) {
             teamToMove = !teamToMove
         }
-        return super.showNextMove(runInBackground, animationSpeed)
+        super.showNextMove(runInBackground, animationSpeed)
     }
 
     fun move(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {

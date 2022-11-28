@@ -23,9 +23,11 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
+import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.PI
+import kotlin.math.roundToInt
 
 class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game) {
 //class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val requestGame: () -> Game) {
@@ -103,6 +105,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     private fun startAnimation(currentAnimation: AnimationData?) {
         if (currentAnimation == null) {
+            Logger.warn(TAG, "Tried to play animation but was null..")
             return
         }
 
@@ -122,8 +125,34 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         )
 
         runOnUiThread {
+            val piece = requestGame().state[currentAnimation.piecePosition]
+            if (piece == null) {
+                Logger.error(TAG, "Tried to animate piece from ${currentAnimation.piecePosition} to ${currentAnimation.piecePosition + currentAnimation.translation}, but no piece was found at the starting square..")
+                return@runOnUiThread
+            }
+
+            Logger.debug(TAG, "Playing animation: moving ${piece.type} from ${vectorToChessSquares(currentAnimation.piecePosition)} to ${vectorToChessSquares(currentAnimation.translation + currentAnimation.piecePosition)}")
             animator.start()
         }
+    }
+
+    private fun vectorToChessSquares(position: Vector2): String {
+        var square = ""
+
+        square += when (position.x.roundToInt()) {
+            0 -> "a"
+            1 -> "b"
+            2 -> "c"
+            3 -> "d"
+            4 -> "e"
+            5 -> "f"
+            6 -> "g"
+            7 -> "h"
+            else -> ""
+        }
+
+        square += position.y.roundToInt() + 1
+        return square
     }
 
     fun queueAnimation(animationData: AnimationData) {
@@ -252,6 +281,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     }
 
     companion object {
+        private const val TAG = "PieceRenderer"
         private val ROTATION_MATRIX = Matrix4().rotateZ(PI.toFloat())
         private const val PIECE_SCALE_OFFSET = 0.03f
         private const val HALF_PIECE_SCALE = PIECE_SCALE_OFFSET / 2f

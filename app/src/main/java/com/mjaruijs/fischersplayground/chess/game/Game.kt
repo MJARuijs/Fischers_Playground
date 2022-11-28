@@ -9,6 +9,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
@@ -35,7 +36,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     var enableBackButton: () -> Unit = {}
     var enableForwardButton: () -> Unit = {}
     var disableBackButton: () -> Unit = {}
-    var disableForwardButton: () -> Unit = {}
     var onPieceTaken: (PieceType, Team) -> Unit = { _, _ -> }
     var onPieceRegained: (PieceType, Team) -> Unit = { _, _ -> }
     var onCheckMate: (Team) -> Unit = {}
@@ -74,16 +74,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     fun getMoveIndex() = currentMoveIndex
 
-    open fun resetMoves() {
-        for (i in currentMoveIndex  downTo 0) {
-            val move = moves[i]
-            undoMove(move, true)
-        }
-
-        moves.clear()
-        clearBoardData()
-    }
-
     fun getCurrentMove(): Move? {
         if (moves.isEmpty()) {
             return null
@@ -116,6 +106,20 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return currentMoveIndex
     }
 
+    open fun resetMoves() {
+//        for (i in currentMoveIndex  downTo 0) {
+//            val move = moves[i]
+//            undoMove(move, true)
+//        }
+
+        state.reset()
+
+        currentMoveIndex = -1
+
+        moves.clear()
+        clearBoardData()
+    }
+
     open fun swapMoves(newMoves: ArrayList<Move>, selectedMoveIndex: Int) {
         resetMoves()
 
@@ -124,21 +128,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         while (currentMoveIndex != selectedMoveIndex) {
-            showNextMove(true, 0L)
-        }
-    }
-
-    fun swapMoves(newMoves: ArrayList<Move>, currentMove: Move) {
-        resetMoves()
-
-        for (move in newMoves) {
-            moves.add(move)
-        }
-
-        currentMoveIndex = -1
-
-        val moveIndex = moves.indexOf(currentMove)
-        while (currentMoveIndex != moveIndex) {
             showNextMove(true, 0L)
         }
     }
@@ -164,32 +153,22 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         clearBoardData()
     }
 
-    open fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
+    open fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         if (currentMoveIndex == -1) {
-            return Pair(first = true, second = false)
+            return
         }
 
         val currentMove = moves[currentMoveIndex]
         undoMove(currentMove, runInBackground, animationSpeed)
-
-        val shouldDisableBackButton = currentMoveIndex == -1
-        val shouldEnableForwardButton = currentMoveIndex == moves.size - 2
-
-        return Pair(shouldDisableBackButton, shouldEnableForwardButton)
     }
 
-    open fun showNextMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED): Pair<Boolean, Boolean> {
+    open fun showNextMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
         if (currentMoveIndex >= moves.size - 1) {
-            return Pair(first = true, second = false)
+            return
         }
 
         val nextMove = moves[incrementMoveCounter()]
         redoMove(nextMove, runInBackground, animationSpeed)
-
-        val shouldDisableForwardButton = currentMoveIndex == moves.size - 1
-        val shouldEnableBackButton = currentMoveIndex == 0
-
-        return Pair(shouldDisableForwardButton, shouldEnableBackButton)
     }
 
     fun isShowingCurrentMove(): Boolean {
@@ -281,6 +260,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             animation.nextAnimation?.invokeOnStartCalls()
             animation.nextAnimation?.invokeOnFinishCalls()
         } else {
+            Logger.debug(TAG, "Queueing redo animation for ${move.movedPiece}: ${move.getSimpleChessNotation()}")
             queueAnimation(animation)
         }
     }
@@ -344,6 +324,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             animation.nextAnimation?.invokeOnStartCalls()
             animation.nextAnimation?.invokeOnFinishCalls()
         } else {
+            Logger.debug(TAG, "Queueing undo animation for ${move.movedPiece}: ${move.getSimpleChessNotation()}")
             queueAnimation(animation)
         }
     }

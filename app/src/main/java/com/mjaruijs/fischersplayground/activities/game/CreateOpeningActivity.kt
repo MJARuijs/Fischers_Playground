@@ -28,6 +28,7 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
 import kotlin.math.roundToInt
@@ -181,6 +182,7 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onMoveClicked(move: Move, deleteModeActive: Boolean) {
+        Logger.debug(activityName, "Move Clicked")
         if (deleteModeActive) {
             game.clearBoardData()
         } else {
