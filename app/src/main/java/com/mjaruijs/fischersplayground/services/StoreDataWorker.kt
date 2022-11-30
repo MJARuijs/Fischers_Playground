@@ -31,6 +31,7 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 
 class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(context, workParams) {
 
@@ -252,12 +253,13 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
 
         for (serverOpening in data) {
+//            val convertedOpeningName = serverOpening.replace("_", " ")
             if (!openingFiles.contains(serverOpening)) {
-                missingOpeningsString += "$serverOpening,"
+                missingOpeningsString += "$serverOpening%"
             }
         }
 
-        missingOpeningsString = missingOpeningsString.removeSuffix(",")
+        missingOpeningsString = missingOpeningsString.removeSuffix("%")
 
         if (missingOpeningsString.isNotBlank()) {
             NetworkManager.getInstance().sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|$missingOpeningsString"))
@@ -265,10 +267,11 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     }
 
     private fun restoreOpenings(data: Array<String>) {
+        Logger.debug(TAG, "Working on RestoreOpening")
         for (openingFileData in data) {
-            val fileNameSeparator = openingFileData.indexOf(",")
+            val fileNameSeparator = openingFileData.indexOf("@#!")
             val fileName = openingFileData.substring(0, fileNameSeparator)
-            val fileContent = openingFileData.substring(fileNameSeparator + 1)
+            val fileContent = openingFileData.substring(fileNameSeparator + 3)
 
             val separator = fileName.indexOf("_")
             val openingName = fileName.substring(0, separator)

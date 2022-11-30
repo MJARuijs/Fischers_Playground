@@ -14,7 +14,10 @@ import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningAdapter
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.CreateOpeningDialog
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.util.FileManager
 
 class OpeningMenuActivity : ClientActivity() {
 
@@ -95,8 +98,14 @@ class OpeningMenuActivity : ClientActivity() {
         startActivity(intent)
     }
 
+    private fun onDeleteOpening(opening: Opening) {
+        openingAdapter.deleteOpening(opening)
+        FileManager.delete("opening_${opening.name}_${opening.team}.txt")
+        networkManager.sendMessage(NetworkMessage(Topic.DELETE_OPENING, "$userId|${opening.name}|${opening.team}"))
+    }
+
     private fun initUIComponents() {
-        openingAdapter = OpeningAdapter(::onOpeningClicked)
+        openingAdapter = OpeningAdapter(::onOpeningClicked, ::onDeleteOpening)
 
         val openingRecyclerView = findViewById<RecyclerView>(R.id.opening_list)
         openingRecyclerView.layoutManager = LinearLayoutManager(this)

@@ -11,19 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/opening_name"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:text="TextView"
-            android:textSize="24sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/opening_team"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <View
             android:id="@+id/opening_team"
             android:layout_width="10dp"
@@ -32,6 +19,27 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <com.mjaruijs.fischersplayground.userinterface.UIButton2
+            android:id="@+id/delete_opening_button"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="h,1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.mjaruijs.fischersplayground.userinterface.UIButton2
+            android:id="@+id/opening_card_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/delete_opening_button"
+            app:layout_constraintStart_toEndOf="@+id/opening_team"
+            app:layout_constraintTop_toTopOf="parent" >
+
+        </com.mjaruijs.fischersplayground.userinterface.UIButton2>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

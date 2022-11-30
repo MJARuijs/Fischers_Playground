@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.activities
 
+//import com.mjaruijs.fischersplayground.util.Logger
 import android.content.*
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -11,7 +12,6 @@ import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
@@ -20,13 +20,10 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
-import com.mjaruijs.fischersplayground.opengl.OBJLoader
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.services.MessageReceiverService
 import com.mjaruijs.fischersplayground.services.StoreDataWorker
 import com.mjaruijs.fischersplayground.util.FileManager
-import com.mjaruijs.fischersplayground.util.Logger
-//import com.mjaruijs.fischersplayground.util.Logger
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -41,7 +38,7 @@ abstract class ClientActivity : AppCompatActivity() {
     protected lateinit var dataManager: DataManager
     protected lateinit var vibrator: Vibrator
 
-    protected lateinit var incomingInviteDialog: DoubleButtonDialog
+    private lateinit var incomingInviteDialog: DoubleButtonDialog
 
     protected var stayingInApp = false
 
@@ -96,8 +93,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
         networkManager = NetworkManager.getInstance()
         dataManager = DataManager.getInstance(this)
-
-        
     }
 
     override fun onStart() {
@@ -269,23 +264,6 @@ abstract class ClientActivity : AppCompatActivity() {
     open fun onUserStatusChanged(output: Parcelable) {
         // TODO: show popup
     }
-
-//    private fun onCompareOpenings(output: Parcelable) {
-//        if (output !is ParcelableString) {
-//            Logger.debug(activityName, "Worker output is not a ParcelableString")
-//            return
-//        }
-//
-//
-//        Logger.debug(activityName, "Worker output is: ${output.value}")
-//
-//        val missingOpenings = output.value.split(",")
-//
-//        if (missingOpenings.isNotEmpty()) {
-//            networkManager.sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|${missingOpenings.joinToString(",")}"))
-//        }
-//        Logger.debug(activityName, "Done comparing openings")
-//    }
 
     open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 

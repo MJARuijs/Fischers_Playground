@@ -1,5 +1,8 @@
 package com.mjaruijs.fischersplayground.activities.game
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.Color
 import android.graphics.Point
 import android.graphics.drawable.ColorDrawable
@@ -91,7 +94,7 @@ class CreateOpeningActivity : GameActivity() {
         supportActionBar?.show()
         supportActionBar?.setDisplayShowCustomEnabled(true)
         supportActionBar?.setCustomView(R.layout.action_bar_view)
-        supportActionBar?.customView?.findViewById<TextView>(R.id.title_view)?.text = openingName
+        supportActionBar?.customView?.findViewById<TextView>(R.id.title_view)?.text = openingName.replace("%", " ")
         supportActionBar?.setBackgroundDrawable(ColorDrawable(BACKGROUND_COLOR))
     }
 
@@ -106,6 +109,13 @@ class CreateOpeningActivity : GameActivity() {
                 openingMovesFragment.deleteCurrentLine()
                 hasUnsavedChanges = true
                 return true
+            }
+            R.id.copy_opening_to_clipboard -> {
+                saveOpening()
+                val clipBoard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("Opening", opening.toString())
+
+                clipBoard.setPrimaryClip(clip)
             }
         }
         return super.onOptionsItemSelected(item)
@@ -128,9 +138,9 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     override fun onPause() {
-        if (hasUnsavedChanges) {
+//        if (hasUnsavedChanges) {
             saveOpening()
-        }
+//        }
         super.onPause()
     }
 
@@ -177,7 +187,13 @@ class CreateOpeningActivity : GameActivity() {
     private fun onLineAdded() {
         saveOpening()
 
-        findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine?.getAllMoves() ?: arrayListOf())
+        if (selectedLine == null) {
+            return
+        }
+        if (selectedLine!!.setupMoves.isEmpty()) {
+            return
+        }
+        findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine!!.setupMoves, selectedLine!!.lineMoves)
         requestRender()
     }
 
@@ -419,7 +435,7 @@ class CreateOpeningActivity : GameActivity() {
             val line = fragment.getOpeningLine()
             opening.addLine(line)
         }
-
+//        Logger.debug(activityName, "Going to save new opening with name: $convertedOpeningName")
         networkManager.sendMessage(NetworkMessage(Topic.NEW_OPENING, "$userId|$openingName|$openingTeam|$opening"))
         dataManager.setOpening(openingName, openingTeam, opening)
         dataManager.saveOpenings(applicationContext)

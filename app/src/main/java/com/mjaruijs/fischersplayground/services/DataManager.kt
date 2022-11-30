@@ -18,6 +18,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
@@ -174,6 +175,7 @@ class DataManager(context: Context) {
 
     private fun obtainOpeningLock() {
         while (areOpeningsLocked()) {
+            Logger.debug(TAG, "Waiting for lock")
             Thread.sleep(1)
         }
 
@@ -555,6 +557,7 @@ class DataManager(context: Context) {
         Thread {
             try {
                 for (opening in savedOpenings) {
+                    Logger.debug(TAG, "Saving opening with name: opening_${opening.name}_${opening.team}.txt")
                     FileManager.write(context, "opening_${opening.name}_${opening.team}.txt", opening.toString())
                 }
             } catch (e: Exception) {
@@ -649,6 +652,8 @@ class DataManager(context: Context) {
     }
 
     companion object {
+
+        private const val TAG = "DataManager"
 
         const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
         const val INVITES_FILE = "received_invites.txt"

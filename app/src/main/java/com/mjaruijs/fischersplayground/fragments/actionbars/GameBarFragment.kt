@@ -20,7 +20,7 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
             .setIcon(R.drawable.arrow_back)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
-            .isLongClickable(true)
+            .setRepeatOnHold()
             .disable()
             .setOnClickListener {
                 if (backButton.isButtonEnabled()) {
@@ -34,7 +34,7 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
             .setIcon(R.drawable.arrow_forward)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
-            .isLongClickable(true)
+            .setRepeatOnHold()
             .disable()
             .setOnClickListener {
                 if (forwardButton.isButtonEnabled()) {

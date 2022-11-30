@@ -89,6 +89,8 @@ class NetworkManager {
                 clientConnecting.set(true)
                 client = SecureClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
+                Looper.prepare()
+                Toast.makeText(context, "Connected to server", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Log.w("Networker", "Failed to connect to server..")
                 Looper.prepare()
@@ -115,6 +117,7 @@ class NetworkManager {
 
         Thread {
             while (clientConnecting.get()) {
+                Logger.debug(TAG, "Waiting for clientConnecting")
                 Thread.sleep(1)
             }
 
@@ -131,6 +134,7 @@ class NetworkManager {
                     sendingMessage.set(false)
                 }
             } else {
+                Logger.warn(TAG, "Client not connected; ${message.topic} message added to queue")
                 messageQueue += message
             }
 
@@ -148,7 +152,7 @@ class NetworkManager {
         sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
         if (message.topic != Topic.CONFIRM_MESSAGE) {
-//            Logger.info(TAG, "Received message: $message")
+            Logger.info(TAG, "Received message: $message")
         }
 
         val dataManager = DataManager.getInstance(context)

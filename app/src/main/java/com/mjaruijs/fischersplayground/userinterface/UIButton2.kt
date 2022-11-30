@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.userinterface
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -43,24 +42,32 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
     private var mirroredY = false
 
     private var holding = false
+    private var hasLongClickCallbacks = false
 
     private var hasIcon = false
+
 
     private var startClickTimer = -1L
 
     init {
+        Logger.mute(TAG)
+
         LayoutInflater.from(context).inflate(R.layout.ui_button, this, true)
 
         buttonCard = findViewById(R.id.button_card)
         buttonIcon = findViewById(R.id.button_icon)
         buttonText = findViewById(R.id.button_text)
 
+        textAlignment = View.TEXT_ALIGNMENT_CENTER
         buttonCard.setOnTouchListener { _, event ->
+            Logger.debug(TAG, "BUTTON EVENT: ${event.action}")
             if (event.action == MotionEvent.ACTION_BUTTON_PRESS) {
+                Logger.debug(TAG, "BUTTON ACTION PRESS")
                 performClick()
             }
 
             if (event.action == MotionEvent.ACTION_DOWN) {
+                Logger.debug(TAG, "BUTTON ACTION DOWN")
                 startClickTimer = System.currentTimeMillis()
                 if (hasIcon) {
                     buttonIcon.setColorFilter(onHoldIconColor)
@@ -71,6 +78,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
             }
 
             if (event.action == MotionEvent.ACTION_UP) {
+                Logger.debug(TAG, "BUTTON ACTION UP")
                 holding = false
 
                 val buttonReleasedTime = System.currentTimeMillis()
@@ -85,8 +93,14 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
                 }
             }
 
-            false
+            !hasLongClickCallbacks
         }
+
+    }
+
+    fun setRepeatOnHold(): UIButton2 {
+        isLongClickable = true
+        hasLongClickCallbacks = true
 
         buttonCard.setOnLongClickListener {
             if (isLongClickable) {
@@ -96,7 +110,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
             true
         }
-        isLongClickable = false
+        return this
     }
 
     fun setIcon(resourceId: Int, color: Int = Color.WHITE, mirroredX: Boolean = false, mirroredY: Boolean = false): UIButton2 {
@@ -140,9 +154,9 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
     fun isButtonEnabled() = buttonEnabled
 
-    fun isLongClickable(longClickable: Boolean): UIButton2 {
-        this.isLongClickable = longClickable
-        return this
+    override fun setOnLongClickListener(listener: OnLongClickListener?) {
+        super.setOnLongClickListener(listener)
+        hasLongClickCallbacks = true
     }
 
     fun setIconScale(scale: Float): UIButton2 {
@@ -163,6 +177,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         buttonIcon.setColorFilter(color)
         iconColor = color
 
+        val normalAlpha = Color.alpha(iconColor).toFloat() / 255f
         val normalRed = Color.red(iconColor).toFloat() / 255f
         val normalGreen = Color.green(iconColor).toFloat() / 255f
         val normalBlue = Color.blue(iconColor).toFloat() / 255f
@@ -171,13 +186,11 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
         val colorModifier = if (total < 1.5f) 1 else -1
 
-        val onHoldRed = max(0.0f, min(normalRed + onHoldColorChange * colorModifier, 1.0f))
-        val onHoldGreen = max(0.0f, min(normalGreen + onHoldColorChange * colorModifier, 1.0f))
-        val onHoldBlue = max(0.0f, min(normalBlue + onHoldColorChange * colorModifier, 1.0f))
+        val onHoldRed = max(0.0f, min(normalRed + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
+        val onHoldGreen = max(0.0f, min(normalGreen + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
+        val onHoldBlue = max(0.0f, min(normalBlue + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
 
-        Logger.debug("MyTag", "OnHoldRed: $onHoldRed $onHoldGreen $onHoldBlue || $normalRed $normalGreen $normalBlue")
-
-        onHoldIconColor = Color.rgb(onHoldRed, onHoldGreen, onHoldBlue)
+        onHoldIconColor = Color.argb(1.0f, onHoldRed, onHoldGreen, onHoldBlue)
 
         return this
     }
@@ -185,6 +198,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
     fun setColor(color: Int): UIButton2 {
         cardBackgroundColor = color
 
+        val normalAlpha = Color.alpha(cardBackgroundColor).toFloat() / 255f
         val normalRed = Color.red(cardBackgroundColor).toFloat() / 255f
         val normalGreen = Color.green(cardBackgroundColor).toFloat() / 255f
         val normalBlue = Color.blue(cardBackgroundColor).toFloat() / 255f
@@ -193,11 +207,11 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
         val colorModifier = if (total < 1.5f) 1 else -1
 
-        val onHoldRed = max(0.0f, min(normalRed + onHoldColorChange * colorModifier, 1.0f))
-        val onHoldGreen = max(0.0f, min(normalGreen + onHoldColorChange * colorModifier, 1.0f))
-        val onHoldBlue = max(0.0f, min(normalBlue + onHoldColorChange * colorModifier, 1.0f))
+        val onHoldRed = max(0.0f, min(normalRed + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
+        val onHoldGreen = max(0.0f, min(normalGreen + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
+        val onHoldBlue = max(0.0f, min(normalBlue + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
 
-        onHoldCardColor = Color.rgb(onHoldRed, onHoldGreen, onHoldBlue)
+        onHoldCardColor = Color.argb(normalAlpha, onHoldRed, onHoldGreen, onHoldBlue)
         buttonCard.setCardBackgroundColor(color)
         return this
     }
@@ -205,6 +219,15 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
     fun setCornerRadius(radius: Float): UIButton2 {
         buttonCard.radius = radius
         return this
+    }
+
+    override fun setTextAlignment(alignment: Int) {
+        buttonText.textAlignment = alignment
+        buttonText.setPadding(dpToPx(8), 0, 0, 0)
+    }
+
+    fun setTextPadding(left: Int, top: Int, right: Int, bottom: Int) {
+        buttonText.setPadding(dpToPx(left), dpToPx(top), dpToPx(right), dpToPx(bottom))
     }
 
     fun setText(text: String): UIButton2 {
@@ -219,7 +242,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
     }
 
     fun setTextPadding(pixels: Int): UIButton2 {
-        buttonText.setPadding(dpToPx(resources, pixels))
+        buttonText.setPadding(dpToPx(pixels))
         return this
     }
 
@@ -233,7 +256,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         buttonCard.visibility = View.GONE
     }
 
-    private fun dpToPx(resources: Resources, dp: Int): Int {
+    private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).roundToInt()
     }
 
@@ -248,6 +271,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
     }
 
     companion object {
+        private const val TAG = "UIButton2"
         private const val MAX_CLICK_DELAY = 500L
         private const val onHoldColorChange = 0.2f
     }

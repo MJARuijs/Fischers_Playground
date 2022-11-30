@@ -2,10 +2,15 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-<item
-    android:id="@+id/delete_line_button"
-    android:icon="@drawable/delete_icon"
-    app:showAsAction="never"
-    android:title="Delete Line" />
+    <item
+        android:id="@+id/delete_line_button"
+        android:icon="@drawable/delete_icon"
+        app:showAsAction="never"
+        android:title="Delete Line" />
+
+    <item
+        android:id="@+id/copy_opening_to_clipboard"
+        android:title="Copy To Clipboard"
+        app:showAsAction="never" />
 
 </menu>

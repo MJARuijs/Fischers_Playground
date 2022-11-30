@@ -39,7 +39,8 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     CRASH_REPORT,
     NEW_OPENING,
     COMPARE_OPENINGS,
-    RESTORE_OPENINGS;
+    RESTORE_OPENINGS,
+    DELETE_OPENING;
 
     companion object {
         fun fromString(value: String): Topic {

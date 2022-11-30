@@ -86,14 +86,13 @@ class OpeningMovePagerFragment : Fragment() {
 
     fun getCurrentOpeningFragment() = pagerAdapter.get(pager.currentItem)
 
-    fun addLine(setupMoves: ArrayList<Move> = arrayListOf()) {
-        pagerAdapter.add(setupMoves)
+    fun addLine(setupMoves: ArrayList<Move> = arrayListOf(), lineMoves: ArrayList<Move> = arrayListOf()) {
+        pagerAdapter.add(pager.currentItem + 1, setupMoves, lineMoves)
 
         if (pagerAdapter.itemCount >= 2) {
             tabIndicator.visibility = View.VISIBLE
         }
-
-        pager.setCurrentItem(pagerAdapter.itemCount - 1, true)
+        pager.setCurrentItem(pager.currentItem + 1, true)
     }
 
     fun getFragments() = pagerAdapter.getFragments()
@@ -134,8 +133,8 @@ class OpeningMovePagerFragment : Fragment() {
             notifyDataSetChanged()
         }
 
-        fun add(setupMoves: ArrayList<Move>) {
-            fragments += OpeningMovesFragment.getInstance(onMoveClick, setupMoves)
+        fun add(index: Int, setupMoves: ArrayList<Move>, lineMoves: ArrayList<Move>) {
+            fragments.add(index, OpeningMovesFragment.getInstance(onMoveClick, setupMoves, lineMoves))
             notifyDataSetChanged()
         }
 
