@@ -223,7 +223,6 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
     override fun setTextAlignment(alignment: Int) {
         buttonText.textAlignment = alignment
-        buttonText.setPadding(dpToPx(8), 0, 0, 0)
     }
 
     fun setTextPadding(left: Int, top: Int, right: Int, bottom: Int) {
