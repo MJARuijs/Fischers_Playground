@@ -3,7 +3,6 @@ package com.mjaruijs.fischersplayground.activities.game
 import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.os.Parcelable
-import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintSet
@@ -88,7 +87,7 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             val layoutParams = Constraints.LayoutParams(Constraints.LayoutParams.MATCH_CONSTRAINT, Constraints.LayoutParams.WRAP_CONTENT)
             lowerFragment.layoutParams = layoutParams
 
-            val margin = dpToPx(resources, 8)
+            val margin = dpToPx(8)
 
             val constraints = ConstraintSet()
             constraints.clone(gameLayout)
@@ -204,7 +203,7 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             runOnUiThread {
                 setOpponentStatusIcon((game as MultiPlayerGame).opponentStatus)
 
-                evaluateActionButtons()
+                evaluateNavigationButtons()
 
                 getPlayerFragment()!!.removeAllPieces()
                 getOpponentFragment()!!.removeAllPieces()
@@ -234,8 +233,8 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         }
     }
 
-    override fun evaluateActionButtons() {
-        super.evaluateActionButtons()
+    override fun evaluateNavigationButtons() {
+        super.evaluateNavigationButtons()
         if ((game as MultiPlayerGame).isFinished()) {
             val actionBar = (getActionBarFragment() as MultiplayerActionButtonsFragment)
             actionBar.disableUndoButton()
@@ -589,7 +588,7 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         chatBoxAnimator.start()
         chatButtonAnimator.start()
 
-        evaluateActionButtons()
+        evaluateNavigationButtons()
 
         chatOpened = false
     }

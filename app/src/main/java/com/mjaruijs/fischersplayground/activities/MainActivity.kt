@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Parcelable
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
@@ -31,6 +32,7 @@ import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
+import com.mjaruijs.fischersplayground.userinterface.RippleEffect
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
@@ -276,11 +278,21 @@ class MainActivity : ClientActivity() {
         findViewById<UIButton2>(R.id.settings_button)
             .setIconScale(0.65f)
             .setIcon(R.drawable.settings_solid_icon)
+            .setRippleEffect(RippleEffect.OVAL)
             .setOnClickListener {
                 stayingInApp = true
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)
             }
+
+//        val settingsButton = findViewById<ImageView>(R.id.settings_button)
+//        settingsButton.setBackgroundResource(R.drawable.settings_solid_icon)
+//        settingsButton.setOnClickListener {
+//            stayingInApp = true
+//            val intent = Intent(this, SettingsActivity::class.java)
+//            startActivity(intent)
+//        }
+
 
         findViewById<UIButton2>(R.id.practice_button)
             .setText("Practice Mode")

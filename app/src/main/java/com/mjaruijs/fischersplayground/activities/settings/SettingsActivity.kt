@@ -158,11 +158,11 @@ class SettingsActivity : ClientActivity() {
         super.onDestroy()
     }
 
-    private fun runOnUIThread(runnable: () -> Unit) {
-        runOnUiThread {
-            runnable()
-        }
-    }
+//    private fun runOnUIThread(runnable: () -> Unit) {
+//        runOnUiThread {
+//            runnable()
+//        }
+//    }
 
     @SuppressLint("Recycle")
     private fun expand() {

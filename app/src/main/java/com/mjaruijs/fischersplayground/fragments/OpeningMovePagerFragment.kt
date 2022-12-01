@@ -17,7 +17,7 @@ class OpeningMovePagerFragment : Fragment() {
 
     private lateinit var onLineSelected: (OpeningLine, Int) -> Unit
     private lateinit var onLineCleared: () -> Unit
-    private lateinit var onMoveClick: (Move, Boolean) -> Unit
+    private var onMoveClick: (Move, Boolean) -> Unit = { _, _ -> }
     private val openingLines = ArrayList<OpeningLine>()
 
     private lateinit var pager: ViewPager2

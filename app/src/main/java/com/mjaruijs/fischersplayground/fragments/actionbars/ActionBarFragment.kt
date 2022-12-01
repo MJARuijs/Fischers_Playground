@@ -13,7 +13,9 @@ import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
 open class ActionBarFragment : Fragment() {
 
-    private lateinit var layout: LinearLayout
+    protected lateinit var runOnUIThread: (() -> Unit) -> Unit
+
+    protected lateinit var layout: LinearLayout
     private val childViews = ArrayList<View>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

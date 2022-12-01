@@ -1,10 +1,8 @@
 package com.mjaruijs.fischersplayground.activities.game
 
-import android.content.res.Resources
 import android.os.Bundle
 import android.os.VibrationEffect
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -19,11 +17,13 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
 import com.mjaruijs.fischersplayground.dialogs.PieceChooserDialog
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
+import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
 abstract class GameActivity : ClientActivity() {
@@ -93,11 +93,6 @@ abstract class GameActivity : ClientActivity() {
         super.onDestroy()
     }
 
-    private fun runOnUIThread(runnable: () -> Unit) {
-        runOnUiThread {
-            runnable()
-        }
-    }
 
     inline fun <reified T>findFragment(): T? {
         val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: return null
@@ -106,19 +101,24 @@ abstract class GameActivity : ClientActivity() {
 
     fun getActionBarFragment() = findFragment<GameBarFragment>()
 
-    open fun evaluateActionButtons() {
+    open fun evaluateNavigationButtons() {
         if (game.moves.isNotEmpty()) {
             if (game.getMoveIndex() != -1) {
+                Logger.debug(activityName, "Enabling BackButton")
                 (getActionBarFragment() as GameBarFragment).enableBackButton()
             } else {
+                Logger.debug(activityName, "Disabling BackButton")
                 (getActionBarFragment() as GameBarFragment).disableBackButton()
             }
             if (!game.isShowingCurrentMove()) {
-                (getActionBarFragment() as GameBarFragment).enableForwardButton()
+                Logger.debug(activityName, "Enabling ForwardButton")
+                findFragment<CreateOpeningActionButtonsFragment>()?.enableForwardButton()
             } else {
-                (getActionBarFragment() as GameBarFragment).disableForwardButton()
+                Logger.debug(activityName, "Disabling ForwardButton")
+                findFragment<CreateOpeningActionButtonsFragment>()?.disableForwardButton()
             }
         }
+        requestRender()
     }
 
     open fun onContextCreated() {
@@ -131,10 +131,11 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun onMoveMade(move: Move) {
-        val actionBar = getActionBarFragment()
-        if (actionBar is GameBarFragment) {
-            actionBar.evaluateNavigationButtons()
-        }
+//        val actionBar = getActionBarFragment()
+//        if (actionBar is GameBarFragment) {
+            evaluateNavigationButtons()
+//            actionBar.evaluateNavigationButtons()
+//        }
     }
 
     fun setGameForRenderer() {
@@ -253,7 +254,7 @@ abstract class GameActivity : ClientActivity() {
         return PieceType.QUEEN
     }
 
-    protected fun dpToPx(resources: Resources, dp: Int): Int {
+    protected fun dpToPx(@Suppress("SameParameterValue") dp: Int): Int {
         return (dp * resources.displayMetrics.density).roundToInt()
     }
 }

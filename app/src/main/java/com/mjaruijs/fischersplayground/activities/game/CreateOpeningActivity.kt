@@ -167,14 +167,14 @@ class CreateOpeningActivity : GameActivity() {
     private fun onLineSelected(line: OpeningLine, selectedMoveIndex: Int) {
         selectedLine = line
         game.swapMoves(line.getAllMoves(), selectedMoveIndex)
-        evaluateActionButtons()
+        evaluateNavigationButtons()
         requestRender()
     }
 
     private fun onLineCleared() {
         game.resetMoves()
         selectedLine?.clearMoves()
-        evaluateActionButtons()
+        evaluateNavigationButtons()
         requestRender()
     }
 
@@ -204,8 +204,8 @@ class CreateOpeningActivity : GameActivity() {
         } else {
             game.goToMove(move)
 
+            evaluateNavigationButtons()
             openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
-            evaluateActionButtons()
         }
     }
 
@@ -414,7 +414,7 @@ class CreateOpeningActivity : GameActivity() {
     private fun loadCreatingActionButtons() {
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, CreateOpeningActionButtonsFragment(game, ::onStartRecording, ::onLineAdded, ::onStartPracticing, ::onBackClicked, ::onForwardClicked))
+            replace(R.id.action_buttons_fragment, CreateOpeningActionButtonsFragment.getInstance(game, ::evaluateNavigationButtons, ::onStartRecording, ::onLineAdded, ::onStartPracticing, ::onBackClicked, ::onForwardClicked))
             replace(R.id.lower_fragment_container, openingMovesFragment)
         }
     }
@@ -422,7 +422,7 @@ class CreateOpeningActivity : GameActivity() {
     private fun loadPracticeActionButtons() {
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, PracticeOpeningActionButtonsFragment(game, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked))
+            replace(R.id.action_buttons_fragment, PracticeOpeningActionButtonsFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked))
         }
     }
 

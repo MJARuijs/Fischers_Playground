@@ -6,10 +6,23 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
-open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit = {}, private val onForwardClicked: () -> Unit = {}) : ActionBarFragment() {
+open class GameBarFragment : ActionBarFragment() {
+
+    lateinit var game: Game
 
     protected lateinit var backButton: UIButton2
     protected lateinit var forwardButton: UIButton2
+
+    protected lateinit var evaluateNavigationButtons: () -> Unit
+    protected lateinit var onBackClicked: () -> Unit
+    protected lateinit var onForwardClicked: () -> Unit
+
+    fun init(game: Game, evaluateNavigationButtons: () -> Unit, onBackClicked: () -> Unit = {}, onForwardClicked: () -> Unit = {}) {
+        this.game = game
+        this.evaluateNavigationButtons = evaluateNavigationButtons
+        this.onBackClicked = onBackClicked
+        this.onForwardClicked = onForwardClicked
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -20,6 +33,7 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
             .setIcon(R.drawable.arrow_back)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
+            .setIconPadding(0, 4, 0, 0)
             .setRepeatOnHold()
             .disable()
             .setOnClickListener {
@@ -34,6 +48,7 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
             .setIcon(R.drawable.arrow_forward)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
+            .setIconPadding(0, 4, 0, 0)
             .setRepeatOnHold()
             .disable()
             .setOnClickListener {
@@ -44,11 +59,6 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
 
         addButtons(backButton)
         addButtons(forwardButton)
-    }
-
-    fun hideButtons() {
-        backButton.visibility = View.GONE
-        forwardButton.visibility = View.GONE
     }
 
     fun enableBackButton() {
@@ -71,27 +81,12 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
 
     fun disableForwardButton() {
         forwardButton.disable()
+        layout.invalidate()
+        layout.requestLayout()
     }
 
     fun disableBackButton() {
         backButton.disable()
-    }
-
-    fun evaluateNavigationButtons() {
-        if (game.moves.isNotEmpty()) {
-            if (game.getMoveIndex() != -1) {
-                enableBackButton()
-            } else {
-                disableBackButton()
-            }
-            if (!game.isShowingCurrentMove()) {
-                enableForwardButton()
-            } else {
-                disableForwardButton()
-            }
-        } else {
-            disableButtons()
-        }
     }
 
     private fun onBackClicked(isHeld: Boolean) {
@@ -118,6 +113,18 @@ open class GameBarFragment(var game: Game, private val onBackClicked: () -> Unit
         game.clearBoardData()
         evaluateNavigationButtons()
         onForwardClicked()
+    }
+
+    companion object {
+
+        private const val TAG = "GameBarFragment"
+
+        fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onBackClicked: () -> Unit = {}, onForwardClicked: () -> Unit = {}): GameBarFragment {
+            val fragment = GameBarFragment()
+            fragment.init(game, evaluateNavigationButtons, onBackClicked, onForwardClicked)
+            return fragment
+        }
+
     }
 
 }

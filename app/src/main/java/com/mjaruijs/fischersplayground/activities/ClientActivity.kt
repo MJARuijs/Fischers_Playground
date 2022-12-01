@@ -308,6 +308,12 @@ abstract class ClientActivity : AppCompatActivity() {
         Toast.makeText(applicationContext, "${game.opponentName} played ${moveData.move.toChessNotation()}", Toast.LENGTH_SHORT).show()
     }
 
+    fun runOnUIThread(runnable: () -> Unit) {
+        runOnUiThread {
+            runnable()
+        }
+    }
+
     companion object {
         const val FIRE_BASE_PREFERENCE_FILE = "fcm_token"
         const val USER_PREFERENCE_FILE = "user_data"

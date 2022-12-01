@@ -16,8 +16,7 @@ import androidx.core.view.setPadding
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.util.Logger
-import kotlin.math.max
-import kotlin.math.min
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
 @SuppressLint("ClickableViewAccessibility")
@@ -28,88 +27,98 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
     private var buttonText: TextView
 
     private var cardBackgroundColor = Color.TRANSPARENT
-    private var onHoldCardColor = Color.rgb(1.0f - onHoldColorChange, 1.0f - onHoldColorChange, 1.0f - onHoldColorChange)
-
     private var iconColor = Color.WHITE
-    private var onHoldIconColor = Color.rgb(1.0f - onHoldColorChange, 1.0f - onHoldColorChange, 1.0f - onHoldColorChange)
-
-    private var textColor = Color.WHITE
-    private var onHoldTextColor = Color.rgb(1.0f - onHoldColorChange, 1.0f - onHoldColorChange, 1.0f - onHoldColorChange)
 
     private var buttonEnabled = true
 
     private var mirroredX = false
     private var mirroredY = false
 
-    private var holding = false
-    private var hasLongClickCallbacks = false
+    private var holding = AtomicBoolean(false)
+    private var shouldRepeatOnHold = false
 
-    private var hasIcon = false
-
-
-    private var startClickTimer = -1L
+    private var rippleEffect = RippleEffect.RECTANGLE
 
     init {
-        Logger.mute(TAG)
-
         LayoutInflater.from(context).inflate(R.layout.ui_button, this, true)
 
         buttonCard = findViewById(R.id.button_card)
         buttonIcon = findViewById(R.id.button_icon)
         buttonText = findViewById(R.id.button_text)
 
+        buttonIcon.visibility = View.GONE
+        buttonText.visibility = View.GONE
+        buttonCard.foreground = ResourcesCompat.getDrawable(resources, R.drawable.ripple_rectangle, null)
+
         textAlignment = View.TEXT_ALIGNMENT_CENTER
-        buttonCard.setOnTouchListener { _, event ->
-            Logger.debug(TAG, "BUTTON EVENT: ${event.action}")
-            if (event.action == MotionEvent.ACTION_BUTTON_PRESS) {
-                Logger.debug(TAG, "BUTTON ACTION PRESS")
-                performClick()
+
+        buttonCard.setOnLongClickListener {
+            if (shouldRepeatOnHold) {
+                holding.set(true)
+                handler.post(RepetitiveClicker())
             }
 
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                Logger.debug(TAG, "BUTTON ACTION DOWN")
-                startClickTimer = System.currentTimeMillis()
-                if (hasIcon) {
-                    buttonIcon.setColorFilter(onHoldIconColor)
-                    buttonText.setTextColor(onHoldTextColor)
-                } else {
-                    buttonCard.setCardBackgroundColor(onHoldCardColor)
-                }
-            }
-
-            if (event.action == MotionEvent.ACTION_UP) {
-                Logger.debug(TAG, "BUTTON ACTION UP")
-                holding = false
-
-                val buttonReleasedTime = System.currentTimeMillis()
-                if (buttonReleasedTime - startClickTimer < MAX_CLICK_DELAY) {
-                    callOnClick()
-                }
-                if (hasIcon) {
-                    buttonIcon.setColorFilter(iconColor)
-                    buttonText.setTextColor(textColor)
-                } else {
-                    buttonCard.setCardBackgroundColor(cardBackgroundColor)
-                }
-            }
-
-            !hasLongClickCallbacks
+            return@setOnLongClickListener true
         }
+        buttonCard.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                holding.set(false)
+            }
 
+            holding.get()
+        }
+    }
+
+    fun setRippleEffect(rippleEffect: RippleEffect): UIButton2 {
+        this.rippleEffect = rippleEffect
+        if (rippleEffect == RippleEffect.OVAL) {
+            buttonCard.foreground = ResourcesCompat.getDrawable(resources, R.drawable.ripple_oval, null)
+        } else {
+            buttonCard.foreground = ResourcesCompat.getDrawable(resources, R.drawable.ripple_rectangle, null)
+        }
+        return this
     }
 
     fun setRepeatOnHold(): UIButton2 {
         isLongClickable = true
-        hasLongClickCallbacks = true
+        shouldRepeatOnHold = true
 
         buttonCard.setOnLongClickListener {
             if (isLongClickable) {
-                holding = true
+                holding.set(true)
                 handler.post(RepetitiveClicker())
             }
 
             true
         }
+        return this
+    }
+
+    fun isHeld() = holding.get()
+
+    override fun setOnClickListener(l: OnClickListener?) {
+        super.setOnClickListener(l)
+        buttonCard.setOnClickListener(l)
+    }
+
+    fun enable(): UIButton2 {
+        buttonEnabled = true
+        buttonIcon.setColorFilter(iconColor)
+        buttonText.setTextColor(Color.WHITE)
+        return this
+    }
+
+    fun disable(): UIButton2 {
+        buttonEnabled = false
+        buttonIcon.setColorFilter(Color.GRAY)
+        buttonText.setTextColor(Color.GRAY)
+        return this
+    }
+
+    fun isButtonEnabled() = buttonEnabled
+
+    fun setIconPadding(left: Int, top: Int, right: Int, bottom: Int): UIButton2 {
+        buttonIcon.setPadding(dpToPx(left), dpToPx(top), dpToPx(right), dpToPx(bottom))
         return this
     }
 
@@ -128,35 +137,20 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         val drawable = ResourcesCompat.getDrawable(resources, resourceId, null) ?: throw IllegalArgumentException("Could not find resource with id: $resourceId")
         buttonIcon.visibility = View.VISIBLE
         buttonIcon.setImageDrawable(drawable)
-
+        buttonCard.foreground = ResourcesCompat.getDrawable(resources, R.drawable.ripple_rectangle, null)
         setIconColor(color)
 
-        hasIcon = true
-
         return this
     }
 
-    fun isHeld() = holding
-
-    fun enable(): UIButton2 {
-        buttonEnabled = true
-        buttonIcon.setColorFilter(iconColor)
-        buttonText.setTextColor(textColor)
+    private fun setIconColor(color: Int): UIButton2 {
+        buttonIcon.setColorFilter(color)
+        iconColor = color
         return this
     }
-
-    fun disable(): UIButton2 {
-        buttonEnabled = false
-        buttonIcon.setColorFilter(Color.GRAY)
-        buttonText.setTextColor(Color.GRAY)
-        return this
-    }
-
-    fun isButtonEnabled() = buttonEnabled
 
     override fun setOnLongClickListener(listener: OnLongClickListener?) {
-        super.setOnLongClickListener(listener)
-        hasLongClickCallbacks = true
+        buttonCard.setOnLongClickListener(listener)
     }
 
     fun setIconScale(scale: Float): UIButton2 {
@@ -173,45 +167,8 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         return this
     }
 
-    private fun setIconColor(color: Int): UIButton2 {
-        buttonIcon.setColorFilter(color)
-        iconColor = color
-
-        val normalAlpha = Color.alpha(iconColor).toFloat() / 255f
-        val normalRed = Color.red(iconColor).toFloat() / 255f
-        val normalGreen = Color.green(iconColor).toFloat() / 255f
-        val normalBlue = Color.blue(iconColor).toFloat() / 255f
-
-        val total = normalRed + normalBlue + normalGreen
-
-        val colorModifier = if (total < 1.5f) 1 else -1
-
-        val onHoldRed = max(0.0f, min(normalRed + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
-        val onHoldGreen = max(0.0f, min(normalGreen + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
-        val onHoldBlue = max(0.0f, min(normalBlue + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
-
-        onHoldIconColor = Color.argb(1.0f, onHoldRed, onHoldGreen, onHoldBlue)
-
-        return this
-    }
-
     fun setColor(color: Int): UIButton2 {
         cardBackgroundColor = color
-
-        val normalAlpha = Color.alpha(cardBackgroundColor).toFloat() / 255f
-        val normalRed = Color.red(cardBackgroundColor).toFloat() / 255f
-        val normalGreen = Color.green(cardBackgroundColor).toFloat() / 255f
-        val normalBlue = Color.blue(cardBackgroundColor).toFloat() / 255f
-
-        val total = normalRed + normalBlue + normalGreen
-
-        val colorModifier = if (total < 1.5f) 1 else -1
-
-        val onHoldRed = max(0.0f, min(normalRed + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
-        val onHoldGreen = max(0.0f, min(normalGreen + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
-        val onHoldBlue = max(0.0f, min(normalBlue + onHoldColorChange * colorModifier / normalAlpha, 1.0f))
-
-        onHoldCardColor = Color.argb(normalAlpha, onHoldRed, onHoldGreen, onHoldBlue)
         buttonCard.setCardBackgroundColor(color)
         return this
     }
@@ -261,7 +218,8 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
     inner class RepetitiveClicker : Runnable {
         override fun run() {
-            if (holding) {
+            if (holding.get()) {
+                Logger.debug(TAG, "RepetitveClicker")
                 callOnClick()
                 handler.postDelayed(RepetitiveClicker(), Game.FAST_ANIMATION_SPEED)
             }

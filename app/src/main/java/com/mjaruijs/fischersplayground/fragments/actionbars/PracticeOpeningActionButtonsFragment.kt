@@ -7,7 +7,12 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
-class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked: () -> Unit, private val onSolutionClicked: () -> Unit, private val onRetryClicked: () -> Unit, private val onNextClicked: () -> Unit) : GameBarFragment(game) {
+class PracticeOpeningActionButtonsFragment : GameBarFragment() {
+
+    private lateinit var onHintClicked: () -> Unit
+    private lateinit var onSolutionClicked: () -> Unit
+    private lateinit var onRetryClicked: () -> Unit
+    private lateinit var onNextClicked: () -> Unit
 
     private lateinit var hintButton: UIButton2
     private lateinit var solutionButton: UIButton2
@@ -101,5 +106,19 @@ class PracticeOpeningActionButtonsFragment(game: Game, private val onHintClicked
         hintButton.hide()
         nextButton.show()
     }
+
+     companion object {
+
+         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit): PracticeOpeningActionButtonsFragment {
+             val fragment = PracticeOpeningActionButtonsFragment()
+             fragment.init(game, evaluateNavigationButtons)
+             fragment.onHintClicked = onHintClicked
+             fragment.onSolutionClicked = onSolutionClicked
+             fragment.onRetryClicked = onRetryClicked
+             fragment.onNextClicked = onNextClicked
+             return fragment
+         }
+
+     }
 
 }

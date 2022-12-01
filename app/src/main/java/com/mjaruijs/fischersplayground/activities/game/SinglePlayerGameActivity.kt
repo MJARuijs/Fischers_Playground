@@ -36,25 +36,25 @@ class SinglePlayerGameActivity : GameActivity() {
 
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-//            replace(R.id.lower_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
-//            replace(R.id.upper_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
-//            replace(R.id.action_buttons_fragment, GameBarFragment(game))
+            replace(R.id.lower_fragment_container, PlayerCardFragment::class.java, playerBundle, "player")
+            replace(R.id.upper_fragment_container, PlayerCardFragment::class.java, opponentBundle, "opponent")
+            replace(R.id.action_buttons_fragment, GameBarFragment.getInstance(game, ::evaluateNavigationButtons))
 //            replace(R.id.action_buttons_fragment, PracticeActionButtonsFragment(::requestRender, networkManager))
         }
 
-//        val lowerFragment = findViewById<FragmentContainerView>(R.id.lower_fragment_container)
+        val lowerFragment = findViewById<FragmentContainerView>(R.id.lower_fragment_container)
 
         val layoutParams = Constraints.LayoutParams(Constraints.LayoutParams.MATCH_CONSTRAINT, Constraints.LayoutParams.WRAP_CONTENT)
-//        lowerFragment.layoutParams = layoutParams
+        lowerFragment.layoutParams = layoutParams
 
-        val margin = dpToPx(resources, 8)
+        val margin = dpToPx(8)
 
         val constraints = ConstraintSet()
         constraints.clone(gameLayout)
-//        constraints.connect(R.id.lower_fragment_container, ConstraintSet.TOP, R.id.opengl_view, ConstraintSet.BOTTOM, margin)
-//        constraints.connect(R.id.lower_fragment_container, ConstraintSet.BOTTOM, R.id.action_buttons_fragment, ConstraintSet.TOP, margin)
-//        constraints.connect(R.id.lower_fragment_container, ConstraintSet.LEFT, gameLayout.id, ConstraintSet.LEFT, margin)
-//        constraints.connect(R.id.lower_fragment_container, ConstraintSet.RIGHT, gameLayout.id, ConstraintSet.RIGHT, margin)
+        constraints.connect(R.id.lower_fragment_container, ConstraintSet.TOP, R.id.opengl_view, ConstraintSet.BOTTOM, margin)
+        constraints.connect(R.id.lower_fragment_container, ConstraintSet.BOTTOM, R.id.action_buttons_fragment, ConstraintSet.TOP, margin)
+        constraints.connect(R.id.lower_fragment_container, ConstraintSet.LEFT, gameLayout.id, ConstraintSet.LEFT, margin)
+        constraints.connect(R.id.lower_fragment_container, ConstraintSet.RIGHT, gameLayout.id, ConstraintSet.RIGHT, margin)
 
         constraints.applyTo(gameLayout)
 

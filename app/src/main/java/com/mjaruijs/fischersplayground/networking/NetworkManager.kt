@@ -117,7 +117,6 @@ class NetworkManager {
 
         Thread {
             while (clientConnecting.get()) {
-                Logger.debug(TAG, "Waiting for clientConnecting")
                 Thread.sleep(1)
             }
 
