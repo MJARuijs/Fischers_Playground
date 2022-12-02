@@ -15,18 +15,14 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
-import com.mjaruijs.fischersplayground.opengl.texture.Texture
 import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
-import com.mjaruijs.fischersplayground.util.Logger
 
 class BoardRenderer(val resources: Resources) {
 
-    private val tag = "BoardRenderer"
-
     private val model2D = BoardModel(false)
     private val model3D = BoardModel(true)
-    private val diffuseTexture = TextureLoader.getInstance().get(resources, R.drawable.wood_diffuse_texture)
 
+    private val diffuseTexture = TextureLoader.getInstance().get(resources, R.drawable.wood_diffuse_texture)
     private val diffuseSampler = Sampler(0)
 
     private val ambientLight = AmbientLight(Color.DARK)
@@ -53,24 +49,24 @@ class BoardRenderer(val resources: Resources) {
     }
 
     fun render3D(board: Board, camera: Camera, displayWidth: Int, displayHeight: Int) {
-//        board3DProgram.start()
-//        board3DProgram.set("diffuseTexture", diffuseSampler.index)
-//
-//        board3DProgram.set("projection", camera.projectionMatrix)
-//        board3DProgram.set("view", camera.viewMatrix)
-//        board3DProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
-//        board3DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
-//        board3DProgram.set("cameraPosition", camera.getPosition())
-//        board3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
-//
-//        diffuseSampler.bind(diffuseTexture)
-//
-//        ambientLight.applyTo(board3DProgram)
-//        directionalLight.applyTo(board3DProgram)
-//        boardFrameMaterial.applyTo(board3DProgram)
-//
-//        model3D.draw()
-//        board3DProgram.stop()
+        board3DProgram.start()
+        board3DProgram.set("diffuseTexture", diffuseSampler.index)
+
+        board3DProgram.set("projection", camera.projectionMatrix)
+        board3DProgram.set("view", camera.viewMatrix)
+        board3DProgram.set("selectedSquareCoordinates", (board.selectedSquare / 8.0f) * 2.0f - 1.0f)
+        board3DProgram.set("checkedKingSquare", (board.checkedKingSquare / 8.0f) * 2.0f - 1.0f)
+        board3DProgram.set("cameraPosition", camera.getPosition())
+        board3DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
+
+        diffuseSampler.bind(diffuseTexture)
+
+        ambientLight.applyTo(board3DProgram)
+        directionalLight.applyTo(board3DProgram)
+        boardFrameMaterial.applyTo(board3DProgram)
+
+        model3D.draw()
+        board3DProgram.stop()
     }
 
     fun destroy() {
@@ -83,4 +79,7 @@ class BoardRenderer(val resources: Resources) {
         board3DProgram.destroy()
     }
 
+    companion object {
+        private const val TAG = "BoardRenderer"
+    }
 }
