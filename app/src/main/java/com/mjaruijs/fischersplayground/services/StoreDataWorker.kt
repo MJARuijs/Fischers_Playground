@@ -248,14 +248,41 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     }
 
     private fun onCompareData(data: Array<String>) {
-        var missingOpeningsString = ""
         val localFiles = FileManager.listFilesInDirectory()
-        val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
 
-        var missingPracticeSessionString = ""
-        val practiceFiles = localFiles.filter { fileName -> fileName.startsWith("practice_session_") }.map { openingName -> openingName.removePrefix("practice_session_") }
+        val missingData = ArrayList<String>()
 
+        for (serverData in data) {
+            if (serverData.startsWith("opening:")) {
+                var missingOpeningsString = "opening:"
+                val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
 
+                val serverFiles = parseServerFiles(serverData)
+                for (serverFile in serverFiles) {
+                    if (!openingFiles.contains(serverFile)) {
+                        missingOpeningsString += "$serverFile%"
+                    }
+                }
+
+                missingOpeningsString = missingOpeningsString.removeSuffix("%")
+                missingData += missingOpeningsString
+            } else if (serverData.startsWith("practice_session:")) {
+                var missingPracticeSessionString = "practice_session:"
+                val practiceFiles = localFiles.filter { fileName -> fileName.startsWith("practice_session_") }.map { openingName -> openingName.removePrefix("practice_session_") }
+
+                val serverFiles = parseServerFiles(serverData)
+                for (serverFile in serverFiles) {
+                    if (!practiceFiles.contains(serverFile)) {
+                        missingPracticeSessionString += "$serverFile%"
+                    }
+                }
+
+                missingPracticeSessionString = missingPracticeSessionString.removeSuffix("%")
+                missingData += missingPracticeSessionString
+            }
+        }
+
+        NetworkManager.getInstance().sendMessage(NetworkMessage(Topic.RESTORE_DATA, "$userId|${missingData.joinToString("|")}"))
     }
 
     private fun onCompareOpenings(data: Array<String>) {
@@ -264,7 +291,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
 
         for (serverOpening in data) {
-//            val convertedOpeningName = serverOpening.replace("_", " ")
             if (!openingFiles.contains(serverOpening)) {
                 missingOpeningsString += "$serverOpening%"
             }
@@ -293,6 +319,13 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             dataManager.setOpening(openingName, openingTeam, opening)
         }
         dataManager.saveOpenings(applicationContext)
+    }
+
+    private fun parseServerFiles(serverData: String): List<String> {
+        val separatorIndex = serverData.indexOf(':')
+        val filesString = serverData.substring(separatorIndex + 1)
+
+        return filesString.split("~").toList()
     }
 
     companion object {
