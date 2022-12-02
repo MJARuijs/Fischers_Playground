@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
+import com.mjaruijs.fischersplayground.activities.opening.PracticeSession
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
@@ -27,6 +28,7 @@ import kotlin.collections.HashSet
 
 class DataManager(context: Context) {
 
+    private val savedPracticeSessions = ArrayList<PracticeSession>()
     private val savedOpenings = ArrayList<Opening>()
     private val savedGames = HashMap<String, MultiPlayerGame>()
     private val savedInvites = HashMap<String, InviteData>()
@@ -35,6 +37,7 @@ class DataManager(context: Context) {
 
     private var userId = DEFAULT_USER_ID
 
+    private val practiceLock = AtomicBoolean(false)
     private val openingLock = AtomicBoolean(false)
     private val gamesLock = AtomicBoolean(false)
     private val invitesLock = AtomicBoolean(false)
@@ -46,7 +49,6 @@ class DataManager(context: Context) {
             val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
             userId = preferences.getString(ClientActivity.USER_ID_KEY, "") ?: DEFAULT_USER_ID
 
-            FileManager.delete("opening_Hoi|WHITE.txt")
             loadData(context)
         } catch (e: Exception) {
             NetworkManager.getInstance().sendCrashReport("crash_data_manager_init.txt", e.stackTraceToString())
@@ -68,6 +70,25 @@ class DataManager(context: Context) {
         savedOpenings.removeIf { opening -> opening.name == name }
 
         unlockOpenings()
+    }
+
+    fun setPracticeSession(name: String, practiceSession: PracticeSession) {
+        obtainPracticeSessionLock()
+
+        savedPracticeSessions.removeIf { session ->
+            session.openingName == name
+        }
+
+        savedPracticeSessions += practiceSession
+        unlockPracticeSessions()
+    }
+
+    fun removePracticeSession(name: String) {
+        obtainPracticeSessionLock()
+        savedPracticeSessions.removeIf { session ->
+            session.openingName == name
+        }
+        unlockPracticeSessions()
     }
 
     fun setOpening(name: String, team: Team, opening: Opening) {
@@ -161,7 +182,9 @@ class DataManager(context: Context) {
         return opponents
     }
 
-    fun isLocked() = areGamesLocked() || areInvitesLocked() || areOpponentsLocked() || areOpeningsLocked()
+    fun isLocked() = areGamesLocked() || areInvitesLocked() || areOpponentsLocked() || areOpeningsLocked() || arePracticeSessionsLocked()
+
+    private fun arePracticeSessionsLocked() = practiceLock.get()
 
     private fun areOpeningsLocked() = openingLock.get()
 
@@ -172,6 +195,14 @@ class DataManager(context: Context) {
     private fun areOpponentsLocked() = recentOpponentsLock.get()
 
     private fun areMessagesLocked() = messageLock.get()
+
+    private fun obtainPracticeSessionLock() {
+        while (arePracticeSessionsLocked()) {
+            Thread.sleep(1)
+        }
+
+        lockPracticeSessions()
+    }
 
     private fun obtainOpeningLock() {
         while (areOpeningsLocked()) {
@@ -212,6 +243,14 @@ class DataManager(context: Context) {
         }
 
         lockMessages()
+    }
+
+    private fun lockPracticeSessions() {
+        practiceLock.set(true)
+    }
+
+    private fun unlockPracticeSessions() {
+        practiceLock.set(false)
     }
 
     private fun lockOpenings() {
@@ -268,6 +307,18 @@ class DataManager(context: Context) {
     }
 
     fun loadData(context: Context) {
+        obtainPracticeSessionLock()
+        Thread {
+            try {
+                savedPracticeSessions.clear()
+                loadPracticeSessions(context)
+            } catch (e: Exception) {
+                NetworkManager.getInstance().sendCrashReport("crash_loading_practice_sessions.txt", e.stackTraceToString())
+            } finally {
+                unlockPracticeSessions()
+            }
+        }.start()
+
         obtainOpeningLock()
         Thread {
             try {
@@ -384,6 +435,19 @@ class DataManager(context: Context) {
                 unlockMessages()
             }
         }.start()
+    }
+
+    private fun loadPracticeSessions(context: Context) {
+        val files = FileManager.listFilesInDirectory()
+
+        val practiceFiles = files.filter { fileName -> fileName.startsWith("practice_session_") }
+
+        for (practiceFileName in practiceFiles) {
+            val fileContent = FileManager.readText(context, practiceFileName) ?: continue
+
+            val practiceSession = PracticeSession.fromString(fileContent)
+            savedPracticeSessions += practiceSession
+        }
     }
 
     private fun loadSavedOpenings(context: Context) {
@@ -551,6 +615,21 @@ class DataManager(context: Context) {
 //        savedOpenings += opening
 //        unlockOpenings()
 //    }
+
+    fun savePracticeSessions(context: Context) {
+        obtainPracticeSessionLock()
+        Thread {
+            try {
+                for (practiceSession in savedPracticeSessions) {
+                    FileManager.write(context, "practice_session_${practiceSession.openingName}.txt", practiceSession.toString())
+                }
+            } catch (e: Exception) {
+                NetworkManager.getInstance().sendCrashReport("crash_practice_sessions_saving.txt", e.stackTraceToString())
+            } finally {
+                unlockPracticeSessions()
+            }
+        }.start()
+    }
 
     fun saveOpenings(context: Context) {
         obtainOpeningLock()

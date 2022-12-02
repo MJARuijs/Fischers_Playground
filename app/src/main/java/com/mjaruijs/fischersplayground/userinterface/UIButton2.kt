@@ -182,6 +182,11 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         return setColor(color)
     }
 
+    fun setColorResource(resourceId: Int): UIButton2 {
+        val color = resources.getColor(resourceId, null)
+        return setColor(color)
+    }
+
     fun setColor(color: Int): UIButton2 {
         cardBackgroundColor = color
         buttonCard.setCardBackgroundColor(color)

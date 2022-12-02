@@ -19,8 +19,9 @@ import com.mjaruijs.fischersplayground.adapters.variationadapter.VariationAdapte
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.CreateVariationDialog
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment
+import com.mjaruijs.fischersplayground.userinterface.PopupBar
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import kotlin.math.roundToInt
+import com.mjaruijs.fischersplayground.util.Logger
 
 class VariationMenuActivity : ClientActivity() {
 
@@ -28,6 +29,7 @@ class VariationMenuActivity : ClientActivity() {
 
     private lateinit var createVariationDialog: CreateVariationDialog
     private lateinit var variationAdapter: VariationAdapter
+    private lateinit var popupBar: PopupBar
 
     private lateinit var addVariationButton: UIButton2
 
@@ -78,7 +80,6 @@ class VariationMenuActivity : ClientActivity() {
                         variationAdapter += variation
                     }
                 }
-//                restoreSavedOpenings(dataManager.getSavedOpenings())
             }
         }.start()
     }
@@ -100,11 +101,6 @@ class VariationMenuActivity : ClientActivity() {
     }
 
     private fun onVariationClicked(variationName: String) {
-
-//        opening.addVariation(Variation(variationName))
-//        dataManager.setOpening(openingName, openingTeam, opening)
-//        dataManager.saveOpenings(applicationContext)
-
         stayingInApp = true
 
         val intent = Intent(this, CreateOpeningActivity::class.java)
@@ -138,7 +134,7 @@ class VariationMenuActivity : ClientActivity() {
                 val intent = Intent(this, PracticeActivity::class.java)
                 intent.putExtra("opening_name", openingName)
                 intent.putExtra("opening_team", openingTeam.toString())
-                intent.putExtra("variation_name", selectedVariations.toArray())
+                intent.putStringArrayListExtra("variation_name", selectedVariations)
 
                 startActivity(intent)
             }
@@ -155,8 +151,6 @@ class VariationMenuActivity : ClientActivity() {
     private fun hideActivityDecorations() {
         val preferences = getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
         val isFullscreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
-
-//        supportActionBar?.hide()
 
         if (isFullscreen) {
             val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
@@ -178,16 +172,28 @@ class VariationMenuActivity : ClientActivity() {
 
         addVariationButton = findViewById(R.id.add_variation_button)
         addVariationButton.setIcon(R.drawable.add_icon)
-            .setColor(235, 186, 145)
+            .setColorResource(R.color.accent_color)
             .setIconPadding(8, 8, 8, 8)
             .setCornerRadius(90.0f)
             .hideText()
             .setOnClickListener {
                 createVariationDialog.show()
             }
-    }
 
-    private fun dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).roundToInt()
+        popupBar = findViewById(R.id.popup_bar)
+        popupBar
+            .setText("Resume practice session")
+            .attachToLayout(variationsLayout)
+            .setOnClickListener {
+                popupBar.hide()
+            }
+
+        Thread {
+            Thread.sleep(1000)
+            runOnUiThread {
+                popupBar.show()
+            }
+        }.start()
+
     }
 }

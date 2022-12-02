@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -201,7 +200,7 @@ class CreateOpeningActivity : GameActivity() {
         val intent = Intent(this, PracticeActivity::class.java)
         intent.putExtra("opening_name", openingName)
         intent.putExtra("opening_team", openingTeam.toString())
-        intent.putExtra("variation_name", arrayOf(variationName))
+        intent.putStringArrayListExtra("variation_name", arrayListOf(variationName))
 
         startActivity(intent)
     }

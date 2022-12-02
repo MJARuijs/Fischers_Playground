@@ -2,10 +2,12 @@ package com.mjaruijs.fischersplayground.activities.opening
 
 import android.graphics.Color
 import android.graphics.Point
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
+import android.window.OnBackInvokedCallback
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.FragmentContainerView
@@ -19,7 +21,10 @@ import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
+import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
@@ -34,19 +39,18 @@ class PracticeActivity : GameActivity() {
 
     private var hintRequested = false
     private var madeMistakes = false
+    private var finishedPracticeSession = false
 
     private val lines = LinkedList<OpeningLine>()
     private var currentLine: OpeningLine? = null
     private var nextLine: OpeningLine? = null
     private var currentMoveIndex = 0
 
+    private val variationLines = ArrayList<OpeningLine>()
+
     private lateinit var openingName: String
     private lateinit var openingTeam: Team
-//    private lateinit var variationName: String
     private lateinit var opening: Opening
-    private val variationLines = ArrayList<OpeningLine>()
-//    private val lines = ArrayList<OpeningLine>()
-//    private lateinit var variation: Variation
 
     private lateinit var moveFeedbackIcon: MoveFeedbackIcon
 
@@ -59,8 +63,8 @@ class PracticeActivity : GameActivity() {
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
 
         opening = dataManager.getOpening(openingName, openingTeam)
-//        val variation = opening.getVariation(variationName) ?: throw IllegalArgumentException("Could not find variation with name: $variation in opening with name: $openingName")
-        val variationNames = intent.getStringArrayExtra("variation_name")?.toList() ?: ArrayList<String>()
+
+        val variationNames = intent.getStringArrayListExtra("variation_name") ?: ArrayList<String>()
         for (variationName in variationNames) {
             val variation = opening.getVariation(variationName) ?: throw IllegalArgumentException("Could not find variation with name: $variationName in opening with name: $openingName")
             for (line in variation.lines) {
@@ -96,7 +100,7 @@ class PracticeActivity : GameActivity() {
         setGameCallbacks()
         setGameForRenderer()
 
-        startPracticing()
+        startNewPracticeSession()
     }
 
     override fun onMoveMade(move: Move) {
@@ -108,6 +112,14 @@ class PracticeActivity : GameActivity() {
             runOnUiThread {
                 checkMoveCorrectness(move)
             }
+        }
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+
+        if (!finishedPracticeSession) {
+            saveSession()
         }
     }
 
@@ -136,6 +148,7 @@ class PracticeActivity : GameActivity() {
     private fun onNextClicked() {
         val isFinished = getNextLine()
         if (isFinished) {
+            finishedPracticeSession = true
             finishedPracticingOpening()
         } else {
             setUpLineState()
@@ -203,7 +216,7 @@ class PracticeActivity : GameActivity() {
         moveFeedbackIcon.show()
     }
 
-    private fun startPracticing() {
+    private fun startNewPracticeSession() {
         for (line in variationLines.shuffled()) {
             if (line.lineMoves.isNotEmpty()) {
                 lines += line
@@ -221,6 +234,10 @@ class PracticeActivity : GameActivity() {
         }
 
         setUpLineState()
+    }
+
+    private fun resumePracticeSession() {
+
     }
 
     private fun setUpLineState() {
@@ -285,6 +302,7 @@ class PracticeActivity : GameActivity() {
 
     private fun finishedPracticingOpening() {
         Toast.makeText(applicationContext, "Done with opening!", Toast.LENGTH_SHORT).show()
+        networkManager.sendMessage(NetworkMessage(Topic.DELETE_PRACTICE_SESSION, "$userId|$openingName"))
     }
 
     private fun loadPracticeActionButtons() {
@@ -298,5 +316,12 @@ class PracticeActivity : GameActivity() {
         val screenSize = Point()
         windowManager.defaultDisplay.getSize(screenSize)
         return screenSize.x
+    }
+
+    private fun saveSession() {
+        val practiceSession = PracticeSession(openingName, currentLine!!, lines)
+        dataManager.setPracticeSession(openingName, practiceSession)
+        dataManager.savePracticeSessions(applicationContext)
+        networkManager.sendMessage(NetworkMessage(Topic.NEW_PRACTICE_SESSION, "$userId|$openingName|$practiceSession"))
     }
 }

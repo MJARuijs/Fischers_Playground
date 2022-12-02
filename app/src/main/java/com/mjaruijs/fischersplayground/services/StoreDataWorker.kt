@@ -247,6 +247,17 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         return ParcelableString(opponentStatus)
     }
 
+    private fun onCompareData(data: Array<String>) {
+        var missingOpeningsString = ""
+        val localFiles = FileManager.listFilesInDirectory()
+        val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
+
+        var missingPracticeSessionString = ""
+        val practiceFiles = localFiles.filter { fileName -> fileName.startsWith("practice_session_") }.map { openingName -> openingName.removePrefix("practice_session_") }
+
+
+    }
+
     private fun onCompareOpenings(data: Array<String>) {
         var missingOpeningsString = ""
         val localFiles = FileManager.listFilesInDirectory()

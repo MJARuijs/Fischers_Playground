@@ -47,6 +47,48 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
         return content
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (other == null) {
+            return false
+        }
+
+        if (this === other) {
+            return true
+        }
+
+        if (other !is OpeningLine) {
+            return false
+        }
+
+        if (setupMoves.size != other.setupMoves.size) {
+            return false
+        }
+
+        if (lineMoves.size != other.lineMoves.size) {
+            return false
+        }
+
+        for (i in 0 until setupMoves.size) {
+            if (setupMoves[i] != other.setupMoves[i]) {
+                return false
+            }
+        }
+
+        for (i in 0 until lineMoves.size) {
+            if (lineMoves[i] != other.lineMoves[i]) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = setupMoves.hashCode()
+        result = 31 * result + lineMoves.hashCode()
+        return result
+    }
+
     companion object {
 
         fun fromString(content: String): OpeningLine {
