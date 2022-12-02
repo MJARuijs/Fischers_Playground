@@ -1,35 +1,48 @@
 package com.mjaruijs.fischersplayground.adapters.openingadapter
 
+import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 
-class Opening(val name: String, val team: Team, val lines: ArrayList<OpeningLine> = arrayListOf()) {
+class Opening(val name: String, val team: Team, val variations: ArrayList<Variation> = arrayListOf()) {
 
-    fun addLine(line: OpeningLine) {
-        lines += line
+    fun addVariation(variation: Variation) {
+        variations += variation
     }
 
     fun clear() {
-        lines.clear()
+        variations.clear()
     }
 
-    operator fun plusAssign(openingLine: OpeningLine) {
-        lines += openingLine
+    operator fun plusAssign(variation: Variation) {
+        variations += variation
+    }
+
+    fun getVariation(name: String): Variation? {
+        return variations.find { variation -> variation.name == name }
     }
 
     fun addFromString(content: String) {
-        val lineData = content.split("\n")
-
-        for (line in lineData) {
-            if (line.isNotBlank()) {
-                lines += OpeningLine.fromString(line)
-            }
+        val variationsStrings = content.split("*")
+        for (variationString in variationsStrings) {
+            variations += Variation.fromString(variationString)
         }
+//        val lineData = content.split("\n")
+
+//        for (line in lineData) {
+//            if (line.isNotBlank()) {
+//                variations += OpeningLine.fromString(line)
+//            }
+//        }
     }
 
     override fun toString(): String {
         var content = ""
-        for (line in lines) {
-            content += "$line\n"
+        for ((i, variation) in variations.withIndex()) {
+            content += "$variation"
+
+            if (i != variations.size - 1) {
+                content += "*"
+            }
         }
         return content
     }
@@ -61,7 +74,7 @@ class Opening(val name: String, val team: Team, val lines: ArrayList<OpeningLine
     override fun hashCode(): Int {
         var result = name.hashCode()
         result = 31 * result + team.hashCode()
-        result = 31 * result + lines.hashCode()
+        result = 31 * result + variations.hashCode()
         return result
     }
 

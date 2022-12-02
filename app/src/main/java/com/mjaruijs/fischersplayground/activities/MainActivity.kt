@@ -4,7 +4,6 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Parcelable
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
@@ -18,8 +17,8 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
-import com.mjaruijs.fischersplayground.activities.game.OpeningMenuActivity
 import com.mjaruijs.fischersplayground.activities.game.SinglePlayerGameActivity
+import com.mjaruijs.fischersplayground.activities.opening.OpeningMenuActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
@@ -27,14 +26,11 @@ import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.MoveData
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.opengl.OBJLoader
-import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
 import com.mjaruijs.fischersplayground.userinterface.RippleEffect
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 
 class MainActivity : ClientActivity() {
@@ -60,7 +56,6 @@ class MainActivity : ClientActivity() {
 //        loadResources()
 
         initUIComponents()
-
 //        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
 //            val token = result.token
 //            val currentToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!

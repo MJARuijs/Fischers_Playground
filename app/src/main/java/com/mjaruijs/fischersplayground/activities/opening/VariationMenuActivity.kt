@@ -1,0 +1,193 @@
+package com.mjaruijs.fischersplayground.activities.opening
+
+import android.content.Intent
+import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
+import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.mjaruijs.fischersplayground.R
+import com.mjaruijs.fischersplayground.activities.ClientActivity
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
+import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
+import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
+import com.mjaruijs.fischersplayground.adapters.variationadapter.VariationAdapter
+import com.mjaruijs.fischersplayground.chess.pieces.Team
+import com.mjaruijs.fischersplayground.dialogs.CreateVariationDialog
+import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import kotlin.math.roundToInt
+
+class VariationMenuActivity : ClientActivity() {
+
+    override var activityName = "variation_menu_activity"
+
+    private lateinit var createVariationDialog: CreateVariationDialog
+    private lateinit var variationAdapter: VariationAdapter
+
+    private lateinit var addVariationButton: UIButton2
+
+    private lateinit var openingName: String
+    private lateinit var openingTeam: Team
+    private lateinit var opening: Opening
+
+    private val selectedVariations = ArrayList<String>()
+
+    private lateinit var variationsLayout: ConstraintLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContentView(R.layout.activity_variation_menu)
+
+        openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
+        openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
+
+        opening = dataManager.getOpening(openingName, openingTeam)
+
+        initComponents()
+
+        createVariationDialog = CreateVariationDialog(::onVariationCreated)
+        createVariationDialog.create(this)
+
+        supportActionBar?.show()
+        supportActionBar?.setDisplayShowCustomEnabled(true)
+        supportActionBar?.setCustomView(R.layout.action_bar_view)
+        supportActionBar?.customView?.findViewById<TextView>(R.id.title_view)?.text = openingName
+        supportActionBar?.setBackgroundDrawable(ColorDrawable(ActionBarFragment.BACKGROUND_COLOR))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideActivityDecorations()
+
+        Thread {
+            while (dataManager.isLocked()) {
+                Thread.sleep(1)
+            }
+
+            runOnUiThread {
+                opening = dataManager.getOpening(openingName, openingTeam)
+
+                for (variation in opening.variations) {
+                    if (!variationAdapter.contains(variation)) {
+                        variationAdapter += variation
+                    }
+                }
+//                restoreSavedOpenings(dataManager.getSavedOpenings())
+            }
+        }.start()
+    }
+
+    private fun onVariationCreated(variationName: String) {
+        stayingInApp = true
+        opening.addVariation(Variation(variationName))
+        dataManager.setOpening(openingName, openingTeam, opening)
+        dataManager.saveOpenings(applicationContext)
+
+        createVariationDialog.dismiss()
+
+        val intent = Intent(this, CreateOpeningActivity::class.java)
+            .putExtra("opening_team", openingTeam.toString())
+            .putExtra("opening_name", openingName)
+            .putExtra("variation_name", variationName)
+
+        startActivity(intent)
+    }
+
+    private fun onVariationClicked(variationName: String) {
+
+//        opening.addVariation(Variation(variationName))
+//        dataManager.setOpening(openingName, openingTeam, opening)
+//        dataManager.saveOpenings(applicationContext)
+
+        stayingInApp = true
+
+        val intent = Intent(this, CreateOpeningActivity::class.java)
+            .putExtra("opening_team", openingTeam.toString())
+            .putExtra("opening_name", openingName)
+            .putExtra("variation_name", variationName)
+
+        startActivity(intent)
+    }
+
+    private fun onVariationSelected(variationName: String, selected: Boolean) {
+        if (selected) {
+            if (selectedVariations.isEmpty()) {
+                showPracticeButton()
+            }
+            selectedVariations += variationName
+        } else {
+            selectedVariations.remove(variationName)
+            if (selectedVariations.isEmpty()) {
+                hidePracticeButton()
+            }
+        }
+    }
+
+    private fun showPracticeButton() {
+        addVariationButton
+            .setIcon(R.drawable.next_arrow_icon)
+            .setOnClickListener {
+                stayingInApp = true
+
+                val intent = Intent(this, PracticeActivity::class.java)
+                intent.putExtra("opening_name", openingName)
+                intent.putExtra("opening_team", openingTeam.toString())
+                intent.putExtra("variation_name", selectedVariations.toArray())
+
+                startActivity(intent)
+            }
+    }
+
+    private fun hidePracticeButton() {
+        addVariationButton
+            .setIcon(R.drawable.add_icon)
+            .setOnClickListener {
+                createVariationDialog.show()
+            }
+    }
+
+    private fun hideActivityDecorations() {
+        val preferences = getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
+        val isFullscreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
+
+//        supportActionBar?.hide()
+
+        if (isFullscreen) {
+            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    private fun initComponents() {
+        variationsLayout = findViewById(R.id.variations_layout)
+        variationAdapter = VariationAdapter(::onVariationClicked, ::onVariationSelected)
+
+        val variationRecyclerView = findViewById<RecyclerView>(R.id.variation_recycler)
+        variationRecyclerView.layoutManager = LinearLayoutManager(applicationContext)
+        variationRecyclerView.adapter = variationAdapter
+
+        addVariationButton = findViewById(R.id.add_variation_button)
+        addVariationButton.setIcon(R.drawable.add_icon)
+            .setColor(235, 186, 145)
+            .setIconPadding(8, 8, 8, 8)
+            .setCornerRadius(90.0f)
+            .hideText()
+            .setOnClickListener {
+                createVariationDialog.show()
+            }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).roundToInt()
+    }
+}

@@ -41,8 +41,8 @@
             android:parentActivityName=".activities.MainActivity"
             android:windowSoftInputMode="adjustNothing" />
         <activity android:name=".activities.CrashReportActivity" />
-        <activity android:name=".activities.game.OpeningMenuActivity" />
-        <activity android:name=".activities.game.CreateOpeningActivity" />
+        <activity android:name=".activities.opening.OpeningMenuActivity" />
+        <activity android:name=".activities.opening.CreateOpeningActivity" />
 
         <activity
             android:name=".activities.GoogleLoginActivity"
@@ -53,6 +53,8 @@
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
+        <activity android:name="com.mjaruijs.fischersplayground.activities.opening.VariationMenuActivity" />
+        <activity android:name="com.mjaruijs.fischersplayground.activities.opening.PracticeActivity" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"

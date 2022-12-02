@@ -54,7 +54,20 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+    </com.mjaruijs.fischersplayground.userinterface.UIButton2>
+
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
+        android:id="@+id/settings_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:focusable="true"
+        app:layout_constraintBottom_toTopOf="@+id/game_list"
+        app:layout_constraintDimensionRatio="h,1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/settings_solid_icon" />
 
     <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/practice_button"
@@ -67,16 +80,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent" />
-
-    <com.mjaruijs.fischersplayground.userinterface.UIButton2
-        android:id="@+id/settings_button"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:focusable="true"
-        app:layout_constraintBottom_toTopOf="@+id/game_list"
-        app:layout_constraintDimensionRatio="h,1:1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/settings_solid_icon" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

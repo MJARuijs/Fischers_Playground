@@ -37,7 +37,6 @@ class OpeningAdapter(private val onOpeningClicked: (String, Team) -> Unit, priva
     override fun onBindViewHolder(holder: OpeningViewHolder, position: Int) {
         val opening = openings[position]
         holder.openingTeamView.setBackgroundColor(opening.team.color)
-//        holder.openingCard.setCardBackgroundColor(Color.WHITE)
         holder.cardButton.setText(opening.name)
         holder.cardButton.setTextSize(20.0f)
         holder.cardButton.setTextPadding(8, 0, 0 , 0)

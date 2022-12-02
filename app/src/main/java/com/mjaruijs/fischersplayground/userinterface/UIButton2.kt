@@ -122,6 +122,16 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         return this
     }
 
+    fun hideIcon(): UIButton2 {
+        buttonIcon.visibility = View.INVISIBLE
+        return this
+    }
+
+    fun showIcon(): UIButton2 {
+        buttonIcon.visibility = View.VISIBLE
+        return this
+    }
+
     fun setIcon(resourceId: Int, color: Int = Color.WHITE, mirroredX: Boolean = false, mirroredY: Boolean = false): UIButton2 {
         this.mirroredX = mirroredX
         this.mirroredY = mirroredY
@@ -167,6 +177,11 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         return this
     }
 
+    fun setColor(r: Int, g: Int, b: Int): UIButton2 {
+        val color = Color.rgb(r, g, b)
+        return setColor(color)
+    }
+
     fun setColor(color: Int): UIButton2 {
         cardBackgroundColor = color
         buttonCard.setCardBackgroundColor(color)
@@ -175,6 +190,16 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
     fun setCornerRadius(radius: Float): UIButton2 {
         buttonCard.radius = radius
+        return this
+    }
+
+    fun hideText(): UIButton2 {
+        buttonText.visibility = View.GONE
+        return this
+    }
+
+    fun showText(): UIButton2 {
+        buttonText.visibility = View.VISIBLE
         return this
     }
 

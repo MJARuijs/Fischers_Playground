@@ -17,7 +17,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
 import com.mjaruijs.fischersplayground.dialogs.PieceChooserDialog
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
-import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
@@ -104,18 +103,14 @@ abstract class GameActivity : ClientActivity() {
     open fun evaluateNavigationButtons() {
         if (game.moves.isNotEmpty()) {
             if (game.getMoveIndex() != -1) {
-                Logger.debug(activityName, "Enabling BackButton")
                 (getActionBarFragment() as GameBarFragment).enableBackButton()
             } else {
-                Logger.debug(activityName, "Disabling BackButton")
                 (getActionBarFragment() as GameBarFragment).disableBackButton()
             }
             if (!game.isShowingCurrentMove()) {
-                Logger.debug(activityName, "Enabling ForwardButton")
-                findFragment<CreateOpeningActionButtonsFragment>()?.enableForwardButton()
+                (getActionBarFragment() as GameBarFragment).enableForwardButton()
             } else {
-                Logger.debug(activityName, "Disabling ForwardButton")
-                findFragment<CreateOpeningActionButtonsFragment>()?.disableForwardButton()
+                (getActionBarFragment() as GameBarFragment).disableForwardButton()
             }
         }
         requestRender()
@@ -133,7 +128,9 @@ abstract class GameActivity : ClientActivity() {
     open fun onMoveMade(move: Move) {
 //        val actionBar = getActionBarFragment()
 //        if (actionBar is GameBarFragment) {
+        runOnUiThread {
             evaluateNavigationButtons()
+        }
 //            actionBar.evaluateNavigationButtons()
 //        }
     }

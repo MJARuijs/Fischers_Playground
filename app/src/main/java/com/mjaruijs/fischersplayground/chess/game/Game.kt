@@ -421,6 +421,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             onMoveMade(move)
         }
 
+        Logger.debug(TAG, "Making move ")
         queueAnimation(animation)
     }
 

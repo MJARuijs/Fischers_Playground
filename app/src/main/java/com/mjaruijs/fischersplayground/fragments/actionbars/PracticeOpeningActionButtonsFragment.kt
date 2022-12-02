@@ -27,6 +27,7 @@ class PracticeOpeningActionButtonsFragment : GameBarFragment() {
             .setText("Hint")
             .setIcon(R.drawable.hint_icon)
             .setColor(BACKGROUND_COLOR)
+            .setIconPadding(0, 4, 0, 0)
             .setTextSize(TEXT_SIZE)
             .setOnClickListener {
                 showSolutionButton()
@@ -37,6 +38,7 @@ class PracticeOpeningActionButtonsFragment : GameBarFragment() {
         solutionButton
             .setText("Solution")
             .setIcon(R.drawable.solution_icon)
+            .setIconPadding(0, 4, 0, 0)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
@@ -48,6 +50,7 @@ class PracticeOpeningActionButtonsFragment : GameBarFragment() {
         retryButton
             .setText("Retry")
             .setIcon(R.drawable.retry_icon, mirroredX = true)
+            .setIconPadding(0, 4, 0, 0)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
@@ -57,7 +60,8 @@ class PracticeOpeningActionButtonsFragment : GameBarFragment() {
         nextButton = UIButton2(requireContext())
         nextButton
             .setText("Next Line")
-            .setIcon(R.drawable.next_arrow_icon, Color.rgb(235, 186, 145))
+            .setIcon(R.drawable.next_arrow_circle_icon, Color.rgb(235, 186, 145))
+            .setIconPadding(0, 4, 0, 0)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {

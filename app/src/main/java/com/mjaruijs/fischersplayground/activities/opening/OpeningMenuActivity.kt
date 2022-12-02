@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.activities.game
+package com.mjaruijs.fischersplayground.activities.opening
 
 import android.content.Intent
 import android.os.Bundle
@@ -56,7 +56,14 @@ class OpeningMenuActivity : ClientActivity() {
     }
 
     private fun onTeamSelected(openingName: String, team: Team) {
-        val intent = Intent(this, CreateOpeningActivity::class.java)
+//        val intent = Intent(this, CreateOpeningActivity::class.java)
+//            .putExtra("opening_team", team.toString())
+//            .putExtra("opening_name", openingName)
+
+        createOpeningDialog.dismiss()
+
+        stayingInApp = true
+        val intent = Intent(this, VariationMenuActivity::class.java)
             .putExtra("opening_team", team.toString())
             .putExtra("opening_name", openingName)
 
@@ -88,7 +95,7 @@ class OpeningMenuActivity : ClientActivity() {
     }
 
     private fun onOpeningClicked(openingName: String, openingTeam: Team) {
-        val intent = Intent(this, CreateOpeningActivity::class.java)
+        val intent = Intent(this, VariationMenuActivity::class.java)
             .putExtra("opening_team", openingTeam.toString())
             .putExtra("opening_name", openingName)
 

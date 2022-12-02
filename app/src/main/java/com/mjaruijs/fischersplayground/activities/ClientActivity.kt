@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.activities
 
-//import com.mjaruijs.fischersplayground.util.Logger
 import android.content.*
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities

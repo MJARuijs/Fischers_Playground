@@ -21,6 +21,8 @@
     <string name="opening_name">Opening Name</string>
     <string name="which_side_is_the_opening_played">Which side is the opening played?</string>
     <string name="what_is_the_name_of_the_opening">What is the name of the opening?</string>
+    <string name="create_variation_dialog_title">What is the name of the variation?</string>
+    <string name="create_variation_dialog_hint">Variation Name</string>
     <string name="title_activity_login">LoginActivity</string>
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password</string>
