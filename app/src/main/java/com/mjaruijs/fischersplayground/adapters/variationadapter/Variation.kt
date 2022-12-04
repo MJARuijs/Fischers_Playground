@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.adapters.variationadapter
 
 import com.google.errorprone.annotations.Var
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
+import com.mjaruijs.fischersplayground.util.Logger
 
 class Variation(val name: String, val lines: ArrayList<OpeningLine> = arrayListOf()) {
 
@@ -53,6 +54,8 @@ class Variation(val name: String, val lines: ArrayList<OpeningLine> = arrayListO
 
     companion object {
 
+        private const val TAG = "Variation"
+
         fun fromString(content: String): Variation {
             val fileLines = content.split("\n")
             val name = fileLines[0].trim()
@@ -64,7 +67,9 @@ class Variation(val name: String, val lines: ArrayList<OpeningLine> = arrayListO
                     continue
                 }
 
-                openingLines += OpeningLine.fromString(line)
+                val openingLine = OpeningLine.fromString(line)
+                Logger.debug(TAG, "Adding opening to variation $name: $openingLine || $line")
+                openingLines += openingLine
             }
 
             return Variation(name, openingLines)

@@ -69,6 +69,8 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             Topic.USER_STATUS_CHANGED -> onUserStatusChanged(content)
             Topic.COMPARE_OPENINGS -> onCompareOpenings(content)
             Topic.RESTORE_OPENINGS -> restoreOpenings(content)
+            Topic.COMPARE_DATA -> onCompareData(content)
+            Topic.RESTORE_DATA -> onRestoreData(content)
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
 
@@ -259,6 +261,9 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
 
                 val serverFiles = parseServerFiles(serverData)
                 for (serverFile in serverFiles) {
+                    if (serverFile.isBlank()) {
+                        continue
+                    }
                     if (!openingFiles.contains(serverFile)) {
                         missingOpeningsString += "$serverFile%"
                     }
@@ -272,6 +277,9 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
 
                 val serverFiles = parseServerFiles(serverData)
                 for (serverFile in serverFiles) {
+                    if (serverFile.isBlank()) {
+                        continue
+                    }
                     if (!practiceFiles.contains(serverFile)) {
                         missingPracticeSessionString += "$serverFile%"
                     }
@@ -283,6 +291,27 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         }
 
         NetworkManager.getInstance().sendMessage(NetworkMessage(Topic.RESTORE_DATA, "$userId|${missingData.joinToString("|")}"))
+    }
+
+    private fun onRestoreData(data: Array<String>) {
+        for (serverData in data) {
+            val separatorIndex = serverData.indexOf(":")
+            val dataType = serverData.substring(0, separatorIndex)
+            val filesData = serverData.substring(separatorIndex + 1).split("%")
+
+            for (fileData in filesData) {
+                if (fileData.isBlank()) {
+                    continue
+                }
+
+                val fileSeparatorIndex = fileData.indexOf("@#!")
+                val fileName = fileData.substring(0, fileSeparatorIndex)
+                val fileContent = fileData.substring(fileSeparatorIndex + 3)
+                FileManager.write(applicationContext, "${dataType}_$fileName.txt", fileContent)
+            }
+        }
+
+        dataManager.loadData(applicationContext)
     }
 
     private fun onCompareOpenings(data: Array<String>) {
@@ -304,7 +333,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
     }
 
     private fun restoreOpenings(data: Array<String>) {
-        Logger.debug(TAG, "Working on RestoreOpening")
         for (openingFileData in data) {
             val fileNameSeparator = openingFileData.indexOf("@#!")
             val fileName = openingFileData.substring(0, fileNameSeparator)
@@ -325,7 +353,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val separatorIndex = serverData.indexOf(':')
         val filesString = serverData.substring(separatorIndex + 1)
 
-        return filesString.split("~").toList()
+        return filesString.split("%").toList()
     }
 
     companion object {

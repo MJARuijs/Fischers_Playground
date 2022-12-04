@@ -82,6 +82,17 @@ class VariationMenuActivity : ClientActivity() {
                 }
             }
         }.start()
+
+        val hasSession = dataManager.getPracticeSession(openingName, openingTeam) != null
+        Logger.debug(activityName, "HasSession: $hasSession")
+        if (hasSession) {
+            Thread {
+                Thread.sleep(500)
+                runOnUiThread {
+                    popupBar.show()
+                }
+            }.start()
+        }
     }
 
     private fun onVariationCreated(variationName: String) {
@@ -134,6 +145,7 @@ class VariationMenuActivity : ClientActivity() {
                 val intent = Intent(this, PracticeActivity::class.java)
                 intent.putExtra("opening_name", openingName)
                 intent.putExtra("opening_team", openingTeam.toString())
+                intent.putExtra("resume_session", false)
                 intent.putStringArrayListExtra("variation_name", selectedVariations)
 
                 startActivity(intent)
@@ -185,15 +197,19 @@ class VariationMenuActivity : ClientActivity() {
             .setText("Resume practice session")
             .attachToLayout(variationsLayout)
             .setOnClickListener {
+                stayingInApp = true
+
+                val intent = Intent(this, PracticeActivity::class.java)
+
+                intent.putExtra("opening_name", openingName)
+                intent.putExtra("opening_team", openingTeam.toString())
+                intent.putExtra("resume_session", true)
+
+                startActivity(intent)
+
                 popupBar.hide()
             }
 
-        Thread {
-            Thread.sleep(1000)
-            runOnUiThread {
-                popupBar.show()
-            }
-        }.start()
 
     }
 }

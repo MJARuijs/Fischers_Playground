@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.adapters.openingadapter
 
 import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>) {
 
@@ -26,6 +27,8 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
     override fun toString(): String {
         var content = ""
 
+        if (setupMoves.isEmpty()) return ""
+
         for ((i, move) in setupMoves.withIndex()) {
             content += move.toChessNotation()
 
@@ -37,6 +40,8 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
         content += "~"
 
         for ((i, move) in lineMoves.withIndex()) {
+            val chessNotation = move.toChessNotation()
+            Logger.debug(TAG, "Adding $chessNotation to string")
             content += move.toChessNotation()
 
             if (i != lineMoves.size - 1) {
@@ -90,6 +95,8 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
     }
 
     companion object {
+
+        private const val TAG = "OpeningLine"
 
         fun fromString(content: String): OpeningLine {
             try {

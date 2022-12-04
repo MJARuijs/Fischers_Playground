@@ -6,6 +6,11 @@ object Logger {
 
     private val mutedTags = ArrayList<String>()
 
+    init {
+        mute("Move")
+        mute("Variation")
+    }
+
     fun mute(tag: String) {
         if (!mutedTags.contains(tag)) {
             mutedTags.add(tag)

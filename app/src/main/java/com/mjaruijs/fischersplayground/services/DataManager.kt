@@ -83,11 +83,13 @@ class DataManager(context: Context) {
         unlockPracticeSessions()
     }
 
-    fun removePracticeSession(name: String) {
+
+    fun removePracticeSession(name: String, team: Team) {
         obtainPracticeSessionLock()
         savedPracticeSessions.removeIf { session ->
-            session.openingName == name
+            session.openingName == name && session.team == team
         }
+        FileManager.delete("practice_session_${name}_$team.txt")
         unlockPracticeSessions()
     }
 
@@ -116,6 +118,14 @@ class DataManager(context: Context) {
 
         unlockOpenings()
         return opening
+    }
+
+    fun getPracticeSession(name: String, team: Team): PracticeSession? {
+        obtainPracticeSessionLock()
+
+        val session = savedPracticeSessions.find { session -> session.openingName == name && session.team == team }
+        unlockPracticeSessions()
+        return session
     }
 
     fun addOpening(opening: Opening) {
@@ -621,7 +631,8 @@ class DataManager(context: Context) {
         Thread {
             try {
                 for (practiceSession in savedPracticeSessions) {
-                    FileManager.write(context, "practice_session_${practiceSession.openingName}.txt", practiceSession.toString())
+                    Logger.debug(TAG, "Saving session: $practiceSession")
+                    FileManager.write(context, "practice_session_${practiceSession.openingName}_${practiceSession.team}.txt", practiceSession.toString())
                 }
             } catch (e: Exception) {
                 NetworkManager.getInstance().sendCrashReport("crash_practice_sessions_saving.txt", e.stackTraceToString())

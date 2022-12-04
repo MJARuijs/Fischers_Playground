@@ -2,12 +2,10 @@ package com.mjaruijs.fischersplayground.activities.opening
 
 import android.graphics.Color
 import android.graphics.Point
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
-import android.window.OnBackInvokedCallback
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.FragmentContainerView
@@ -24,11 +22,9 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
-import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 class PracticeActivity : GameActivity() {
@@ -51,8 +47,12 @@ class PracticeActivity : GameActivity() {
     private lateinit var openingName: String
     private lateinit var openingTeam: Team
     private lateinit var opening: Opening
+    private lateinit var session: PracticeSession
+
+    private var resumeSession = false
 
     private lateinit var moveFeedbackIcon: MoveFeedbackIcon
+    private lateinit var practiceNavigationButtons: PracticeOpeningActionButtonsFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,13 +62,31 @@ class PracticeActivity : GameActivity() {
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
 
+        if (!intent.hasExtra("resume_session")) {
+            throw IllegalArgumentException("Missing essential information for starting PracticeActivity: resume_session")
+        }
+
         opening = dataManager.getOpening(openingName, openingTeam)
 
-        val variationNames = intent.getStringArrayListExtra("variation_name") ?: ArrayList<String>()
-        for (variationName in variationNames) {
-            val variation = opening.getVariation(variationName) ?: throw IllegalArgumentException("Could not find variation with name: $variationName in opening with name: $openingName")
-            for (line in variation.lines) {
-                variationLines += line
+        resumeSession = intent.getBooleanExtra("resume_session", false)
+        if (resumeSession) {
+            session = dataManager.getPracticeSession(openingName, openingTeam) ?: throw IllegalArgumentException("Tried to resume session with name: $openingName and team $openingTeam, but could not find it..")
+            if (session.currentLine != null) {
+                lines += session.currentLine!!
+            }
+            if (session.nextLine != null) {
+                lines += session.nextLine!!
+            }
+            for (line in session.lines) {
+                lines += line
+            }
+        } else {
+            val variationNames = intent.getStringArrayListExtra("variation_name") ?: ArrayList()
+            for (variationName in variationNames) {
+                val variation = opening.getVariation(variationName) ?: throw IllegalArgumentException("Could not find variation with name: $variationName in opening with name: $openingName")
+                for (line in variation.lines) {
+                    variationLines += line
+                }
             }
         }
 
@@ -100,7 +118,18 @@ class PracticeActivity : GameActivity() {
         setGameCallbacks()
         setGameForRenderer()
 
-        startNewPracticeSession()
+        if (resumeSession) {
+            resumePracticeSession()
+        } else {
+            startNewPracticeSession()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (!finishedPracticeSession) {
+//            saveSession()
+        }
     }
 
     override fun onMoveMade(move: Move) {
@@ -146,13 +175,7 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun onNextClicked() {
-        val isFinished = getNextLine()
-        if (isFinished) {
-            finishedPracticeSession = true
-            finishedPracticingOpening()
-        } else {
-            setUpLineState()
-        }
+        setUpLineState()
     }
 
     private fun checkMoveCorrectness(move: Move) {
@@ -160,7 +183,7 @@ class PracticeActivity : GameActivity() {
             currentMoveIndex++
             if (isLastMoveInLine(move)) {
                 showMoveFeedback(move.getToPosition(openingTeam), true)
-                (getActionBarFragment() as PracticeOpeningActionButtonsFragment).showNextButton()
+                processLineFinished()
             } else {
                 (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
                 (getActionBarFragment() as PracticeOpeningActionButtonsFragment).showHintButton()
@@ -169,11 +192,28 @@ class PracticeActivity : GameActivity() {
         } else {
             if (!madeMistakes) {
                 madeMistakes = true
-                lines.addLast(currentLine)
+                if (nextLine == null) {
+                    nextLine = currentLine
+                } else {
+                    lines.addLast(currentLine)
+                }
+                saveSession()
             }
             showMoveFeedback(move.getToPosition(openingTeam), false)
             (getActionBarFragment() as PracticeOpeningActionButtonsFragment).showRetryButton()
         }
+    }
+
+    private fun processLineFinished() {
+        (getActionBarFragment() as PracticeOpeningActionButtonsFragment).showNextButton()
+        val isFinished = getNextLine()
+        if (isFinished) {
+            finishedPracticeSession = true
+            finishedPracticingOpening()
+        } else {
+            saveSession()
+        }
+//        saveSession()
     }
 
     private fun giveHint() {
@@ -233,11 +273,21 @@ class PracticeActivity : GameActivity() {
             nextLine = lines.pop()
         }
 
+        saveSession()
         setUpLineState()
     }
 
     private fun resumePracticeSession() {
+        if (lines.isEmpty()) {
+            return
+        }
 
+        currentLine = lines.pop()
+        if (lines.isNotEmpty()) {
+            nextLine = lines.pop()
+        }
+
+        setUpLineState()
     }
 
     private fun setUpLineState() {
@@ -252,10 +302,8 @@ class PracticeActivity : GameActivity() {
         }
 
         val firstMove = currentLine!!.lineMoves[currentMoveIndex]
-        Logger.debug(activityName, "First move: ${firstMove.getSimpleChessNotation()} ${firstMove.team} $openingTeam")
         if (firstMove.team != openingTeam) {
             (game as SinglePlayerGame).move(firstMove)
-            Logger.debug(activityName, "Making first move: ${firstMove.getSimpleChessNotation()}")
             currentMoveIndex++
         }
 
@@ -302,13 +350,19 @@ class PracticeActivity : GameActivity() {
 
     private fun finishedPracticingOpening() {
         Toast.makeText(applicationContext, "Done with opening!", Toast.LENGTH_SHORT).show()
-        networkManager.sendMessage(NetworkMessage(Topic.DELETE_PRACTICE_SESSION, "$userId|$openingName"))
+        supportFragmentManager.commit {
+            hide(practiceNavigationButtons)
+        }
+        dataManager.removePracticeSession(openingName, openingTeam)
+        dataManager.savePracticeSessions(applicationContext)
+        networkManager.sendMessage(NetworkMessage(Topic.DELETE_PRACTICE_SESSION, "$userId|$openingName|$openingTeam"))
     }
 
     private fun loadPracticeActionButtons() {
+        practiceNavigationButtons = PracticeOpeningActionButtonsFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked)
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.action_buttons_fragment, PracticeOpeningActionButtonsFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked))
+            replace(R.id.action_buttons_fragment, practiceNavigationButtons)
         }
     }
 
@@ -319,9 +373,9 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun saveSession() {
-        val practiceSession = PracticeSession(openingName, currentLine!!, lines)
+        val practiceSession = PracticeSession(openingName, openingTeam, currentLine, nextLine, lines)
         dataManager.setPracticeSession(openingName, practiceSession)
         dataManager.savePracticeSessions(applicationContext)
-        networkManager.sendMessage(NetworkMessage(Topic.NEW_PRACTICE_SESSION, "$userId|$openingName|$practiceSession"))
+        networkManager.sendMessage(NetworkMessage(Topic.NEW_PRACTICE_SESSION, "$userId|$openingName|$openingTeam|$practiceSession"))
     }
 }

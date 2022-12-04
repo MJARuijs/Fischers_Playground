@@ -2,8 +2,10 @@ package com.mjaruijs.fischersplayground.chess.pieces
 
 import android.os.Parcel
 import android.os.Parcelable
+import android.util.Log
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.util.Logger
 
 class Move(val team: Team, private val fromPosition: Vector2, private val toPosition: Vector2, var movedPiece: PieceType, val isCheckMate: Boolean, val isCheck: Boolean, val pieceTaken: PieceType? = null, private val takenPiecePosition: Vector2?, val promotedPiece: PieceType?) : Parcelable {
 
@@ -121,6 +123,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
 
     override fun equals(other: Any?): Boolean {
         if (other == null) {
+            Logger.debug(TAG, "Comparison failed on null check")
             return false
         }
 
@@ -129,42 +132,52 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         }
 
         if (other !is Move) {
+            Logger.debug(TAG, "Comparison failed on type check")
             return false
         }
 
         if (team != other.team) {
+            Logger.debug(TAG, "Comparison failed on team check")
             return false
         }
 
         if (fromPosition != other.fromPosition) {
+            Logger.debug(TAG, "Comparison failed on fromPosition check")
             return false
         }
 
         if (toPosition != other.toPosition) {
+            Logger.debug(TAG, "Comparison failed on toPosition check")
             return false
         }
 
         if (movedPiece != other.movedPiece) {
+            Logger.debug(TAG, "Comparison failed on movedPiece check")
             return false
         }
 
         if (isCheck != other.isCheck) {
+            Logger.debug(TAG, "Comparison failed on isCheck check")
             return false
         }
 
         if (isCheckMate != other.isCheckMate) {
+            Logger.debug(TAG, "Comparison failed on isCheckMate check")
             return false
         }
 
         if (pieceTaken != other.pieceTaken) {
+            Logger.debug(TAG, "Comparison failed on pieceTaken check")
             return false
         }
 
         if (takenPiecePosition != other.takenPiecePosition) {
+            Logger.debug(TAG, "Comparison failed on takenPiecePosition check")
             return false
         }
 
         if (promotedPiece != other.promotedPiece) {
+            Logger.debug(TAG, "Comparison failed on promotedPiece check")
             return false
         }
 
@@ -185,6 +198,8 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
     }
 
     companion object CREATOR : Parcelable.Creator<Move> {
+
+        private const val TAG = "Move"
 
         fun fromChessNotation(moveContent: String): Move {
             if (moveContent.length < 6) {
@@ -233,7 +248,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
                 var isCheckMate = false
                 var isCheck = false
 
-                val lastCharacter = moveContent.last()
+                val lastCharacter = moveContent.trim().last()
                 if (lastCharacter == '+') {
                     isCheck = true
                 } else if (lastCharacter == '#') {
@@ -241,7 +256,11 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
                     isCheckMate = true
                 }
 
-                Move(team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, takenPiecePosition, promotedPiece)
+                val move = Move(team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, takenPiecePosition, promotedPiece)
+
+                Logger.debug(TAG, "Parsed ${move.toChessNotation()} from $moveContent  : $lastCharacter |")
+
+                return move
             } catch (e: Exception) {
                 NetworkManager.getInstance().sendCrashReport("crash_move_from_chess_notation.txt", e.stackTraceToString())
                 throw IllegalArgumentException("Failed to parse move from: $moveContent")

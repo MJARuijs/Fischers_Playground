@@ -200,6 +200,7 @@ class CreateOpeningActivity : GameActivity() {
         val intent = Intent(this, PracticeActivity::class.java)
         intent.putExtra("opening_name", openingName)
         intent.putExtra("opening_team", openingTeam.toString())
+        intent.putExtra("resume_session", false)
         intent.putStringArrayListExtra("variation_name", arrayListOf(variationName))
 
         startActivity(intent)
