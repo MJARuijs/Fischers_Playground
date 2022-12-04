@@ -1,6 +1,6 @@
 package com.mjaruijs.fischersplayground.adapters.openingmovesadapter
 
-import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.game.Move
 
 class OpeningMove(val move: Move) {
 

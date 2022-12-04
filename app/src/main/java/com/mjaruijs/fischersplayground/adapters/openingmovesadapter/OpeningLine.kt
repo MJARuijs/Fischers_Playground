@@ -1,6 +1,6 @@
 package com.mjaruijs.fischersplayground.adapters.openingmovesadapter
 
-import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.game.Move
 
 class OpeningLine(val id: Int, val moves: ArrayList<Move> = arrayListOf(), var currentIndex: Int = 0) {
 

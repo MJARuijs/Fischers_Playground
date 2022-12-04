@@ -3,7 +3,6 @@ package com.mjaruijs.fischersplayground.chess.game
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.chess.Action
-import com.mjaruijs.fischersplayground.chess.pieces.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
@@ -64,7 +63,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
     override fun getCurrentTeam() = team
 
-    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(team, piece, square, false, state, moves, lookingForCheck)
+    override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(team, piece, square, false, state, moves.subList(0, currentMoveIndex), lookingForCheck)
 
     fun undoMoves(numberOfMoves: Int) {
         for (i in 0 until numberOfMoves) {

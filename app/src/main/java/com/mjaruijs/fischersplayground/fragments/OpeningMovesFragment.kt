@@ -15,7 +15,7 @@ import androidx.core.view.get
 import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
-import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
 import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView

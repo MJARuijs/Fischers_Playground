@@ -1,8 +1,9 @@
-package com.mjaruijs.fischersplayground.chess.pieces
+package com.mjaruijs.fischersplayground.chess.game
 
 import android.os.Parcel
 import android.os.Parcelable
-import android.util.Log
+import com.mjaruijs.fischersplayground.chess.pieces.PieceType
+import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.util.Logger
@@ -52,15 +53,25 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
 
     fun getSimpleChessNotation(): String {
         var notation = ""
+
+        val fromPositionColSign = getColSign(fromPosition)
+        val toPositionColSign = getColSign(toPosition)
+
         val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
         notation += movedPieceSign
 
-        if (pieceTaken != null) {
-            notation += "x"
-        }
+        if (movedPiece == PieceType.KING && fromPositionColSign == "e" && toPositionColSign == "g") {
+            notation += "0-0"
+        } else if (movedPiece == PieceType.KING && fromPositionColSign == "e" && toPositionColSign == "c") {
+            notation += "0-0-0"
+        } else {
+            if (pieceTaken != null) {
+                notation += "x"
+            }
 
-        notation += getColSign(toPosition)
-        notation += getRowSign(toPosition)
+            notation += toPositionColSign
+            notation += getRowSign(toPosition)
+        }
 
         if (isCheckMate) {
             notation += "#"
@@ -73,25 +84,35 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
 
     fun toChessNotation(): String {
         var notation = ""
+
+        val fromPositionColSign = getColSign(fromPosition)
+        val toPositionColSign = getColSign(toPosition)
+
         val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
-
         notation += movedPieceSign
-        notation += getColSign(fromPosition)
-        notation += getRowSign(fromPosition)
-        notation += if (pieceTaken == null) "-" else "x"
 
-        if (pieceTaken != null && takenPiecePosition != null) {
-            val takenPieceSign = if (team == Team.BLACK) pieceTaken.sign.uppercase() else pieceTaken.sign.lowercase()
-            notation += takenPieceSign
-            notation += getColSign(takenPiecePosition)
-            notation += getRowSign(takenPiecePosition)
-        }
+        if (movedPiece == PieceType.KING && fromPositionColSign == "e" && toPositionColSign == "g") {
+            notation += "0-0"
+        } else if (movedPiece == PieceType.KING && fromPositionColSign == "e" && toPositionColSign == "c") {
+            notation += "0-0-0"
+        } else {
+            notation += fromPositionColSign
+            notation += getRowSign(fromPosition)
+            notation += if (pieceTaken == null) "-" else "x"
 
-        notation += getColSign(toPosition)
-        notation += getRowSign(toPosition)
+            if (pieceTaken != null && takenPiecePosition != null) {
+                val takenPieceSign = if (team == Team.BLACK) pieceTaken.sign.uppercase() else pieceTaken.sign.lowercase()
+                notation += takenPieceSign
+                notation += getColSign(takenPiecePosition)
+                notation += getRowSign(takenPiecePosition)
+            }
 
-        if (promotedPiece != null) {
-            notation += promotedPiece.sign
+            notation += toPositionColSign
+            notation += getRowSign(toPosition)
+
+            if (promotedPiece != null) {
+                notation += promotedPiece.sign
+            }
         }
 
         if (isCheckMate) {
@@ -202,47 +223,66 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         private const val TAG = "Move"
 
         fun fromChessNotation(moveContent: String): Move {
-            if (moveContent.length < 6) {
-                throw IllegalArgumentException("Received notation is too short to be a proper Chess notation: $moveContent")
-            }
-
             return try {
                 var i = 0
                 val movedPieceSign = moveContent[i++]
                 val movedPiece = PieceType.getBySign(movedPieceSign)
                 val team = if (movedPieceSign.isUpperCase()) Team.WHITE else Team.BLACK
 
-                val fromCol = moveContent[i++]
-                val fromRow = moveContent[i++]
-
-                val fromX = colToNumber(fromCol)
-                val fromY = fromRow.toString().toInt() - 1
-
-                val moveType = moveContent[i++]
-                val takenPieceSign: Char
-                var takenPiece: PieceType? = null
-
-                var takenPiecePosition: Vector2? = null
-
-                if (moveType == 'x') {
-                    takenPieceSign = moveContent[i++]
-                    takenPiece = PieceType.getBySign(takenPieceSign)
-                    val takenPieceCol = moveContent[i++]
-                    val takenPieceRow = moveContent[i++]
-                    takenPiecePosition = Vector2(colToNumber(takenPieceCol), takenPieceRow.toString().toInt() - 1)
-                }
-
-                val toCol = moveContent[i++]
-                val toRow = moveContent[i++]
-
-                val toX = colToNumber(toCol)
-                val toY = toRow.toString().toInt() - 1
+                val fromX: Int
+                val fromY: Int
+                val toX: Int
+                val toY: Int
 
                 var promotedPiece: PieceType? = null
+                var takenPiece: PieceType? = null
+                var takenPiecePosition: Vector2? = null
 
-                if (movedPiece == PieceType.PAWN && ((team == Team.WHITE && toY == 7) || (team == Team.BLACK && toY == 0))) {
-                    val promotedPieceSign = moveContent[i]
-                    promotedPiece = PieceType.getBySign(promotedPieceSign)
+                if (movedPiece == PieceType.KING && moveContent[1] == '0') {
+                    if (team == Team.WHITE) {
+                        fromY = 0
+                        toY = 0
+                    } else {
+                        fromY = 7
+                        toY = 7
+                    }
+
+                    fromX = colToNumber('e')
+
+                    val numberOfZeros = moveContent.count { c -> c == '0' }
+                    toX = when (numberOfZeros) {
+                        2 -> colToNumber('g')
+                        3 -> colToNumber('c')
+                        else -> throw IllegalArgumentException("Failed to parse into valid chess notation: $moveContent")
+                    }
+                } else {
+                    val fromCol = moveContent[i++]
+                    val fromRow = moveContent[i++]
+
+                    fromX = colToNumber(fromCol)
+                    fromY = fromRow.toString().toInt() - 1
+
+                    val moveType = moveContent[i++]
+                    val takenPieceSign: Char
+
+                    if (moveType == 'x') {
+                        takenPieceSign = moveContent[i++]
+                        takenPiece = PieceType.getBySign(takenPieceSign)
+                        val takenPieceCol = moveContent[i++]
+                        val takenPieceRow = moveContent[i++]
+                        takenPiecePosition = Vector2(colToNumber(takenPieceCol), takenPieceRow.toString().toInt() - 1)
+                    }
+
+                    val toCol = moveContent[i++]
+                    val toRow = moveContent[i++]
+
+                    toX = colToNumber(toCol)
+                    toY = toRow.toString().toInt() - 1
+
+                    if (movedPiece == PieceType.PAWN && ((team == Team.WHITE && toY == 7) || (team == Team.BLACK && toY == 0))) {
+                        val promotedPieceSign = moveContent[i]
+                        promotedPiece = PieceType.getBySign(promotedPieceSign)
+                    }
                 }
 
                 var isCheckMate = false
@@ -258,7 +298,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
 
                 val move = Move(team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, takenPiecePosition, promotedPiece)
 
-                Logger.debug(TAG, "Parsed ${move.toChessNotation()} from $moveContent  : $lastCharacter |")
+                Logger.debug(TAG, "Parsed ${move.toChessNotation()} from $moveContent")
 
                 return move
             } catch (e: Exception) {

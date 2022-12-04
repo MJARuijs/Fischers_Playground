@@ -1,4 +1,4 @@
-package com.mjaruijs.fischersplayground.chess.pieces
+package com.mjaruijs.fischersplayground.chess.game
 
 import android.os.Parcel
 import android.os.Parcelable

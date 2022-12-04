@@ -10,7 +10,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.doOnLayout
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.game.Move
 
 class OpeningMovesRowView(context: Context, attributes: AttributeSet? = null) : LinearLayout(context, attributes) {
 

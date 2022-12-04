@@ -1,6 +1,6 @@
 package com.mjaruijs.fischersplayground.adapters.openingadapter
 
-import com.mjaruijs.fischersplayground.chess.pieces.Move
+import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>) {

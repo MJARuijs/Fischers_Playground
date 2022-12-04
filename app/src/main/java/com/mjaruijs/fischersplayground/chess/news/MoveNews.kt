@@ -1,6 +1,6 @@
 package com.mjaruijs.fischersplayground.chess.news
 
-import com.mjaruijs.fischersplayground.chess.pieces.MoveData
+import com.mjaruijs.fischersplayground.chess.game.MoveData
 
 class MoveNews(newsType: NewsType, val moveData: MoveData) : News(newsType) {
 

@@ -16,6 +16,8 @@ import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightObserve
 import com.mjaruijs.fischersplayground.activities.keyboard.KeyboardHeightProvider
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
+import com.mjaruijs.fischersplayground.chess.game.Move
+import com.mjaruijs.fischersplayground.chess.game.MoveData
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.news.IntNews
 import com.mjaruijs.fischersplayground.chess.news.MoveNews

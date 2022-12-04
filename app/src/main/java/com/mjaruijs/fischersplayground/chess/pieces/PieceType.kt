@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.chess.pieces
 
 import com.mjaruijs.fischersplayground.chess.game.GameState
+import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -41,7 +42,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
 
 //        fun getPossibleMoves(team: Team, piece: Piece, square: Vector2, gameState: GameState, moves: ArrayList<Move>) = getPossibleMoves(team, piece, square, gameState, moves)
 
-        fun getPossibleMoves(perspectiveOfTeam: Team, piece: Piece, square: Vector2, isSinglePlayer: Boolean, gameState: GameState, moves: ArrayList<Move>, lookingForCheck: Boolean): ArrayList<Vector2> {
+        fun getPossibleMoves(perspectiveOfTeam: Team, piece: Piece, square: Vector2, isSinglePlayer: Boolean, gameState: GameState, moves: List<Move>, lookingForCheck: Boolean): ArrayList<Vector2> {
             return when (piece.type) {
                 KING -> getPossibleMovesForKing(piece, perspectiveOfTeam, square, moves, isSinglePlayer, gameState, lookingForCheck)
                 QUEEN -> getPossibleMovesForQueen(piece, square, gameState)
@@ -100,7 +101,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun getPossibleMovesForPawn(team: Team, piece: Piece, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: GameState): ArrayList<Vector2> {
+        private fun getPossibleMovesForPawn(team: Team, piece: Piece, square: Vector2, moves: List<Move>, isSinglePlayer: Boolean, gameState: GameState): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             val x = square.x.roundToInt()
@@ -199,7 +200,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun getPossibleMovesForKing(piece: Piece, perspectiveOfTeam: Team, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, gameState: GameState, lookingForCheck: Boolean): ArrayList<Vector2> {
+        private fun getPossibleMovesForKing(piece: Piece, perspectiveOfTeam: Team, square: Vector2, moves: List<Move>, isSinglePlayer: Boolean, gameState: GameState, lookingForCheck: Boolean): ArrayList<Vector2> {
             val possibleMoves = ArrayList<Vector2>()
 
             for (i in -1 .. 1) {
@@ -382,7 +383,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun canShortCastle(pieceTeam: Team, perspectiveOfTeam: Team, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
+        private fun canShortCastle(pieceTeam: Team, perspectiveOfTeam: Team, moves: List<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             val kingX = if (isSinglePlayer) {
                 if (perspectiveOfTeam == Team.WHITE) 4 else 3
             } else {
@@ -401,6 +402,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             for (move in moves) {
                 if (move.team == pieceTeam) {
                     if (move.movedPiece == KING) {
+
                         kingMoved = true
                     }
 
@@ -445,7 +447,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return true
         }
 
-        private fun canLongCastle(pieceTeam: Team, perspectiveOfTeam: Team, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
+        private fun canLongCastle(pieceTeam: Team, perspectiveOfTeam: Team, moves: List<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             val kingX = if (isSinglePlayer) {
                 if (perspectiveOfTeam == Team.WHITE) 4 else 3
             } else {
@@ -513,7 +515,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return true
         }
 
-        private fun isSquareAttacked(team: Team, square: Vector2, moves: ArrayList<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
+        private fun isSquareAttacked(team: Team, square: Vector2, moves: List<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             for (x in 0 until 8) {
                 for (y in 0 until 8) {
                     val piece = state[x, y] ?: continue
