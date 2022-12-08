@@ -22,13 +22,16 @@ import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.game.Move
+import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.PracticeSettingsDialog
 import com.mjaruijs.fischersplayground.fragments.OpeningMovePagerFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment.Companion.BACKGROUND_COLOR
 import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
@@ -50,10 +53,14 @@ class CreateOpeningActivity : GameActivity() {
     private lateinit var practiceSettingsDialog: PracticeSettingsDialog
     private lateinit var openingMovesFragment: OpeningMovePagerFragment
 
+    private lateinit var boardOverlay: BoardOverlay
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
         findViewById<FragmentContainerView>(R.id.upper_fragment_container).visibility = View.GONE
+
+        boardOverlay = findViewById(R.id.board_overlay)
 
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
 
@@ -68,7 +75,7 @@ class CreateOpeningActivity : GameActivity() {
         }
 
         isPlayingWhite = openingTeam == Team.WHITE
-        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp())
+        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp(), ::onArrowAdded)
 
         practiceSettingsDialog = PracticeSettingsDialog(::onStartPracticing)
         practiceSettingsDialog.create(this as Activity)
@@ -119,6 +126,8 @@ class CreateOpeningActivity : GameActivity() {
             gameLayout.invalidate()
         }
 
+        boardOverlay.invalidate()
+
         setGameCallbacks()
         setGameForRenderer()
     }
@@ -128,6 +137,13 @@ class CreateOpeningActivity : GameActivity() {
             saveOpening()
         }
         super.onPause()
+    }
+
+    override fun onLongClick(x: Float, y: Float) {
+        super.onLongClick(x, y)
+
+//        glView.highlightSquare(selectedSquare)
+//        glView.requestRender()
     }
 
     override fun onMoveMade(move: Move) {
@@ -145,6 +161,7 @@ class CreateOpeningActivity : GameActivity() {
     private fun onLineSelected(line: OpeningLine, selectedMoveIndex: Int) {
         selectedLine = line
         game.swapMoves(line.getAllMoves(), selectedMoveIndex)
+
         evaluateNavigationButtons()
         requestRender()
     }
@@ -175,16 +192,12 @@ class CreateOpeningActivity : GameActivity() {
         requestRender()
     }
 
-    private fun onMoveClicked(move: Move, deleteModeActive: Boolean) {
+    private fun onMoveClicked(move: Move) {
         Logger.debug(activityName, "Move Clicked")
-        if (deleteModeActive) {
-            game.clearBoardData()
-        } else {
-            game.goToMove(move)
+        game.goToMove(move)
 
-            evaluateNavigationButtons()
-            openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
-        }
+        evaluateNavigationButtons()
+        openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
     }
 
     private fun onStartRecording() {
@@ -192,6 +205,13 @@ class CreateOpeningActivity : GameActivity() {
             openingMovesFragment.getCurrentOpeningFragment().setLineHeader()
             hasUnsavedChanges = true
         }
+    }
+
+    private fun onArrowAdded(startSquare: Vector2, endSquare: Vector2) {
+        val arrow = MoveArrow(startSquare, endSquare)
+        openingMovesFragment.getCurrentOpeningFragment().addArrow(arrow)
+        boardOverlay.addArrow(arrow)
+        boardOverlay.invalidate()
     }
 
     private fun onStartPracticing() {

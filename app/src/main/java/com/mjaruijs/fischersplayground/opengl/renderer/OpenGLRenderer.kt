@@ -18,6 +18,7 @@ import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Camera.Companion.DEFAULT_ZOOM
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
 import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
+import com.mjaruijs.fischersplayground.util.Logger
 import java.nio.ByteBuffer
 import java.util.*
 import javax.microedition.khronos.egl.EGLConfig
@@ -163,11 +164,13 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
             } else {
                 glClear(GL_COLOR_BUFFER_BIT)
 
+                Logger.debug(TAG, "Cleared buffer!")
+
 //            backgroundRenderer.render2D(aspectRatio)
                 boardRenderer.render2D()
                 highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
-                highlightRenderer.renderLastMoveHighlights(game, displayWidth, displayHeight)
-                highlightRenderer.renderHighlightedSquares(displayWidth, displayHeight)
+//                highlightRenderer.renderLastMoveHighlights(game, displayWidth, displayHeight)
+                highlightRenderer.renderHighlightedSquares(game, displayWidth, displayHeight)
 
                 pieceRenderer.render2D(game, pieceTextures, aspectRatio)
                 highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
@@ -270,5 +273,9 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
         if (this::boardRenderer.isInitialized) {
             boardRenderer.destroy()
         }
+    }
+
+    companion object {
+        private const val TAG = "OpenGLRenderer"
     }
 }

@@ -1,13 +1,13 @@
 package com.mjaruijs.fischersplayground.chess.game
 
-import com.mjaruijs.fischersplayground.chess.Action
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
+import com.mjaruijs.fischersplayground.util.Logger
 
-class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlayingWhite, lastUpdated) {
+class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, private val onArrowAdded: (Vector2, Vector2) -> Unit = { _, _ ->}) : Game(isPlayingWhite, lastUpdated) {
 
     private var teamToMove = Team.WHITE
 
@@ -85,8 +85,10 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
         super.move(team, actualFromPosition, actualToPosition, animationSpeed)
     }
 
-    override fun processOnClick(clickedSquare: Vector2): Action {
-        if (board.isASquareSelected()) {
+    override fun processOnClick(clickedSquare: Vector2) {
+        if (board.isASquareLongClicked()) {
+            onArrowAdded(board.longClickSelectedSquare, clickedSquare)
+        } else if (board.isASquareSelected()) {
             val previouslySelectedSquare = board.selectedSquare
 
             if (possibleMoves.contains(clickedSquare)) {
@@ -94,22 +96,34 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
                     move(teamToMove, previouslySelectedSquare, clickedSquare)
                 }.start()
 
-                return Action.PIECE_MOVED
+                board.deselectSquare()
+                return
             }
 
-            val pieceAtSquare = state[clickedSquare] ?: return Action.NO_OP
+            val pieceAtSquare = state[clickedSquare] ?: return
 
             if (pieceAtSquare.team == teamToMove) {
-                return if (FloatUtils.compare(previouslySelectedSquare, clickedSquare)) Action.SQUARE_DESELECTED else Action.SQUARE_SELECTED
+                if (FloatUtils.compare(previouslySelectedSquare, clickedSquare)) {
+                    board.deselectSquare()
+                } else {
+                    board.selectSquare(clickedSquare)
+                }
             }
         } else {
-            val pieceAtSquare = state[clickedSquare] ?: return Action.NO_OP
+            val pieceAtSquare = state[clickedSquare]
+            if (pieceAtSquare == null) {
+                board.deselectSquare()
+                return
+            }
 
             if (pieceAtSquare.team == teamToMove) {
-                return Action.SQUARE_SELECTED
+                board.selectSquare(clickedSquare)
             }
         }
 
-        return Action.NO_OP
+    }
+
+    override fun processOnLongClick(clickedSquare: Vector2) {
+        board.selectSquareLongClick(clickedSquare)
     }
 }

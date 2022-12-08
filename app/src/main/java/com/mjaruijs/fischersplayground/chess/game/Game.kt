@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.chess.game
 
 import android.util.Log
-import com.mjaruijs.fischersplayground.chess.Action
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
@@ -58,18 +57,21 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     abstract fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean): ArrayList<Vector2>
 
-    abstract fun processOnClick(clickedSquare: Vector2): Action
+    abstract fun processOnClick(clickedSquare: Vector2)
+
+    abstract fun processOnLongClick(clickedSquare: Vector2)
 
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
         val selectedSquare = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
-        val action = processOnClick(selectedSquare)
-
-        if (action == Action.SQUARE_SELECTED) {
-            board.updateSelectedSquare(selectedSquare)
-        } else if (action == Action.SQUARE_DESELECTED || action == Action.PIECE_MOVED) {
-            board.deselectSquare()
-        }
+        processOnClick(selectedSquare)
     }
+
+    fun onLongClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
+        val selectedSquare = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
+        processOnLongClick(selectedSquare)
+    }
+
+    fun determineSelectedSquare(x: Float, y: Float, displayWidth: Int, displayHeight: Int) = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
 
     fun getMoveIndex() = currentMoveIndex
 

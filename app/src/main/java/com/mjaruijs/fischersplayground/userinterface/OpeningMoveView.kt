@@ -24,7 +24,6 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
     private var cardView: CardView
 
     private var lineId = 0
-    private var deleteModeActive = false
 
     private var pieceDrawable: Drawable? = null
     private lateinit var move: Move
@@ -67,11 +66,11 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
         return this
     }
 
-    fun setOnClick(move: Move, onClick: (Move, Boolean) -> Unit): OpeningMoveView {
+    fun setOnClick(move: Move, onClick: (Move) -> Unit): OpeningMoveView {
         setMove(move)
         cardView.setOnClickListener {
 //            if (this::move.isInitialized) {
-                onClick(move, deleteModeActive)
+                onClick(move)
 //            }
         }
         return this

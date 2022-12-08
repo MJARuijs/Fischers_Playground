@@ -11,13 +11,23 @@ import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Comp
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
+import com.mjaruijs.fischersplayground.util.Logger
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.roundToInt
 
 class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView(context, attributeSet) {
 
     private val renderer: OpenGLRenderer
     private lateinit var onSurfaceCreated: () -> Unit
     private lateinit var onClick: (Float, Float) -> Unit
+    private lateinit var onLongClick: (Float, Float) -> Unit
     private lateinit var runOnUiThread: (() -> Unit) -> Unit
+
+    private var startClickTimer = -1L
+    private val holding = AtomicBoolean(false)
+    private val holdingX = AtomicInteger(-1)
+    private val holdingY = AtomicInteger(-1)
 
     init {
         setEGLContextClientVersion(3)
@@ -31,10 +41,11 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
-    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean) {
+    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onLongClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean) {
         this.runOnUiThread = runOnUiThread
         this.onSurfaceCreated = onSurfaceCreated
         this.onClick = onClick
+        this.onLongClick = onLongClick
 
         renderer.runOnUiThread = runOnUiThread
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
@@ -70,7 +81,39 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         }
 
         if (event.action == MotionEvent.ACTION_DOWN) {
-            onClick(event.x, event.y)
+            startClickTimer = System.currentTimeMillis()
+            holdingX.set(event.x.roundToInt())
+            holdingY.set(event.y.roundToInt())
+
+            Thread {
+                holding.set(true)
+                while (holding.get()) {
+                    if (System.currentTimeMillis() - startClickTimer >= LONG_CLICK_DURATION) {
+                        holding.set(false)
+                        startClickTimer = -1
+                        runOnUiThread {
+                            onLongClick(holdingX.get().toFloat(), holdingY.get().toFloat())
+                            requestRender()
+                        }
+                    }
+                }
+            }.start()
+        }
+
+        if (event.action == MotionEvent.ACTION_CANCEL) {
+            startClickTimer = -1
+        }
+
+        if (event.action == MotionEvent.ACTION_UP) {
+            if (holding.get()) {
+                holding.set(false)
+                if (System.currentTimeMillis() - startClickTimer < MAX_CLICK_DURATION) {
+                    onClick(event.x, event.y)
+                }
+
+                startClickTimer = -1
+            }
+
             requestRender()
         }
 
@@ -79,6 +122,12 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
     fun destroy() {
         renderer.destroy()
+    }
+
+    companion object {
+        private const val TAG = "SurfaceView"
+        private const val MAX_CLICK_DURATION = 250L
+        private const val LONG_CLICK_DURATION = 500L
     }
 
 }

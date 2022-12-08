@@ -12,6 +12,7 @@ import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderType
 import com.mjaruijs.fischersplayground.opengl.texture.Sampler
+import com.mjaruijs.fischersplayground.util.Logger
 
 class HighlightRenderer(resources: Resources) {
 
@@ -111,17 +112,46 @@ class HighlightRenderer(resources: Resources) {
         selectedSquare2DProgram.stop()
     }
 
-    fun renderHighlightedSquares(displayWidth: Int, displayHeight: Int) {
+    fun renderHighlightedSquares(game: Game, displayWidth: Int, displayHeight: Int) {
         selectedSquare2DProgram.start()
         selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
         selectedSquare2DProgram.set("hasGradient", false)
 
-        for ((i, square) in highlightedSquares.withIndex()) {
-            selectedSquare2DProgram.set("translations[$i]", (square / 8.0f) * 2.0f - 1.0f)
-            selectedSquare2DProgram.set("colors[$i]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+        val instances = if (game.board.longClickSelectedSquare.x != -1.0f) {
+            Logger.debug(TAG, "Not Rendering highlights")
+
+            selectedSquare2DProgram.set("translations[0]", (game.board.longClickSelectedSquare / 8.0f) * 2.0f - 1.0f)
+            selectedSquare2DProgram.set("colors[0]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+            1
+        } else {
+            Logger.debug(TAG, "Rendering highlights")
+
+            var instances = 0
+
+            val lastMove = game.getCurrentMove()
+
+            if (lastMove != null) {
+                instances += 2
+                val fromPosition = lastMove.getFromPosition(game.team)
+                val toPosition = lastMove.getToPosition(game.team)
+
+                selectedSquare2DProgram.set("translations[0]", (fromPosition / 8.0f) * 2.0f - 1.0f)
+                selectedSquare2DProgram.set("colors[0]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+
+                selectedSquare2DProgram.set("translations[1]", (toPosition / 8.0f) * 2.0f - 1.0f)
+                selectedSquare2DProgram.set("colors[1]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+            }
+
+            for ((i, square) in highlightedSquares.withIndex()) {
+                selectedSquare2DProgram.set("translations[${instances + i}]", (square / 8.0f) * 2.0f - 1.0f)
+                selectedSquare2DProgram.set("colors[${instances + i}]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+            }
+            instances + highlightedSquares.size
         }
 
-        quad.drawInstanced(highlightedSquares.size)
+//        val instances = highlightedSquares.size + .
+
+        quad.drawInstanced(instances)
 
         selectedSquare2DProgram.stop()
     }
@@ -172,5 +202,10 @@ class HighlightRenderer(resources: Resources) {
         highlight3DProgram.destroy()
         selectedSquare2DProgram.destroy()
         selectedSquare3DProgram.destroy()
+    }
+
+    companion object {
+
+        private const val TAG = "HighlightRenderer"
     }
 }

@@ -1,9 +1,10 @@
 package com.mjaruijs.fischersplayground.adapters.openingadapter
 
 import com.mjaruijs.fischersplayground.chess.game.Move
+import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.util.Logger
 
-class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>) {
+class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>, val arrows: HashMap<Int, ArrayList<MoveArrow>> = HashMap()) {
 
     fun getAllMoves(): ArrayList<Move> {
         val moves = ArrayList<Move>()
@@ -49,6 +50,27 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
             }
         }
 
+        if (arrows.isNotEmpty()) {
+            content += "~"
+
+            // 1[<x, y> <x, y>,<x, y> <x, y>,<x, y> <x, y>],5[<x, y> <x, y>,<x, y> <x, y>]
+
+            for ((i, entry) in arrows.entries.withIndex()) {
+//                content += arrow.toString()
+                var arrowContent = "${entry.key}["
+
+                for (arrow in entry.value) {
+                    arrowContent += "${arrow.startSquare} ${arrow.endSquare}"
+                }
+
+                arrowContent += "]"
+
+                if (i != arrows.size - 1) {
+                    content += ","
+                }
+            }
+        }
+
         return content
     }
 
@@ -91,6 +113,7 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
     override fun hashCode(): Int {
         var result = setupMoves.hashCode()
         result = 31 * result + lineMoves.hashCode()
+        result = 31 * result + arrows.hashCode()
         return result
     }
 
@@ -115,7 +138,12 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
                     return OpeningLine(startingMoves, ArrayList())
                 } else {
                     val startingMovesString = content.substring(0, firstSeparatorIndex)
-                    val movesString = content.substring(firstSeparatorIndex + 1)
+                    val secondSeparatorIndex = content.indexOf("~", firstSeparatorIndex + 1)
+                    val movesString = if (secondSeparatorIndex == -1) {
+                        content.substring(firstSeparatorIndex + 1)
+                    } else {
+                        content.substring(firstSeparatorIndex + 1, secondSeparatorIndex)
+                    }
 
                     val startingMovesData = startingMovesString.split(",")
                     val startingMoves = ArrayList<Move>()
@@ -133,6 +161,25 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
                         if (it.isNotBlank()) {
                             moves += Move.fromChessNotation(it)
                         }
+                    }
+
+                    if (secondSeparatorIndex != -1) {
+                        var arrowString = content.substring(secondSeparatorIndex + 1)
+                        var currentIndex = 0
+                        while (true) {
+                            val listEndIndex = arrowString.indexOf("]", currentIndex + 1)
+                            if (listEndIndex == -1) {
+                                break
+                            }
+
+                            val arrowData = arrowString.substring(currentIndex, listEndIndex)
+                            Logger.debug(TAG, "Got arrow data: $arrowData")
+
+
+
+                            currentIndex = listEndIndex
+                        }
+
                     }
 
                     return OpeningLine(startingMoves, moves)

@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
-import com.mjaruijs.fischersplayground.chess.Action
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
@@ -230,13 +229,13 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         status = GameStatus.OPPONENT_MOVE
     }
 
-    override fun processOnClick(clickedSquare: Vector2): Action {
+    override fun processOnClick(clickedSquare: Vector2) {
         if (!isShowingCurrentMove()) {
-            return Action.NO_OP
+            return
         }
 
         if (status != GameStatus.PLAYER_MOVE) {
-            return Action.NO_OP
+            return
         }
 
         if (board.isASquareSelected()) {
@@ -246,23 +245,29 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
                 Thread {
                     movePlayer(previouslySelectedSquare, clickedSquare)
                 }.start()
-                return Action.PIECE_MOVED
+                board.deselectSquare()
+                return
             }
 
-            val pieceAtSquare = state[clickedSquare] ?: return Action.NO_OP
+            val pieceAtSquare = state[clickedSquare] ?: return
 
             if (pieceAtSquare.team == team) {
-                return if (FloatUtils.compare(previouslySelectedSquare, clickedSquare)) Action.SQUARE_DESELECTED else Action.SQUARE_SELECTED
+                if (FloatUtils.compare(previouslySelectedSquare, clickedSquare)) {
+                    board.deselectSquare()
+                } else {
+                    board.selectSquare(clickedSquare)
+                }
             }
         } else {
-            val pieceAtSquare = state[clickedSquare] ?: return Action.NO_OP
+            val pieceAtSquare = state[clickedSquare] ?: return
 
             if (pieceAtSquare.team == team) {
-                return Action.SQUARE_SELECTED
+                board.selectSquare(clickedSquare)
             }
         }
-
-        return Action.NO_OP
     }
 
+    override fun processOnLongClick(clickedSquare: Vector2) {
+
+    }
 }

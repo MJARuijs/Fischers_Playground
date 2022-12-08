@@ -17,7 +17,7 @@ class OpeningMovePagerFragment : Fragment() {
 
     private lateinit var onLineSelected: (OpeningLine, Int) -> Unit
     private lateinit var onLineCleared: () -> Unit
-    private var onMoveClick: (Move, Boolean) -> Unit = { _, _ -> }
+    private var onMoveClick: (Move) -> Unit = { _ -> }
     private val openingLines = ArrayList<OpeningLine>()
 
     private lateinit var pager: ViewPager2
@@ -27,7 +27,7 @@ class OpeningMovePagerFragment : Fragment() {
 
     companion object {
 
-        fun getInstance(onLineSelected: (OpeningLine, Int) -> Unit, onLineCleared: () -> Unit, onMoveClick: (Move, Boolean) -> Unit, openingLines: ArrayList<OpeningLine> = ArrayList()): OpeningMovePagerFragment {
+        fun getInstance(onLineSelected: (OpeningLine, Int) -> Unit, onLineCleared: () -> Unit, onMoveClick: (Move) -> Unit, openingLines: ArrayList<OpeningLine> = ArrayList()): OpeningMovePagerFragment {
             val pagerFragment = OpeningMovePagerFragment()
             pagerFragment.onLineSelected = onLineSelected
             pagerFragment.onLineCleared = onLineCleared
@@ -110,7 +110,7 @@ class OpeningMovePagerFragment : Fragment() {
 //        }
     }
 
-    inner class ScreenSlidePagerAdapter(private val onMoveClick: (Move, Boolean) -> Unit, val fragment: OpeningMovePagerFragment, private val fragments: ArrayList<OpeningMovesFragment> = ArrayList()) : FragmentStateAdapter(fragment) {
+    inner class ScreenSlidePagerAdapter(private val onMoveClick: (Move) -> Unit, val fragment: OpeningMovePagerFragment, private val fragments: ArrayList<OpeningMovesFragment> = ArrayList()) : FragmentStateAdapter(fragment) {
 
         override fun getItemCount() = fragments.size
 

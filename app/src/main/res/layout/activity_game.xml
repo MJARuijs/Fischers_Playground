@@ -85,8 +85,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/upper_fragment_container" />
 
-    <com.mjaruijs.fischersplayground.userinterface.BoardTextView
-        android:id="@+id/boardTextView"
+    <com.mjaruijs.fischersplayground.userinterface.BoardOverlay
+        android:id="@+id/board_overlay"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintDimensionRatio="1:1"

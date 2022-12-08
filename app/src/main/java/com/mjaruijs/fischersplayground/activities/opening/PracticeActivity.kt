@@ -130,7 +130,7 @@ class PracticeActivity : GameActivity() {
         moveFeedbackIcon = findViewById(R.id.move_feedback_icon)
         moveFeedbackIcon.setPosition(Vector2())
         moveFeedbackIcon.doOnLayout {
-            moveFeedbackIcon.scaleToSize((getDisplayWidth().toFloat() / 8f / 2f).roundToInt())
+            moveFeedbackIcon.scaleToSize((getWindowWidth().toFloat() / 8f / 2f).roundToInt())
             moveFeedbackIcon.hide()
         }
 
@@ -280,7 +280,7 @@ class PracticeActivity : GameActivity() {
         val x = square.x.roundToInt()
         val flippedY = 7 - square.y.roundToInt()
 
-        val squareWidth = getDisplayWidth() / 8.0f
+        val squareWidth = getWindowWidth() / 8.0f
         val offset = Vector2(0f, 0f)
 
         if (square.x.roundToInt() == 7) {
@@ -295,7 +295,7 @@ class PracticeActivity : GameActivity() {
             offset.y = -squareWidth * 0.25f
         }
 
-        val transitionedSquare = (Vector2(x, flippedY) / 8.0f) * getDisplayWidth() + offset
+        val transitionedSquare = (Vector2(x, flippedY) / 8.0f) * getWindowWidth() + offset
         if (correctMove) {
             moveFeedbackIcon.setColor(Color.rgb(0.0f, 0.75f, 0.0f))
             moveFeedbackIcon.setIcon(R.drawable.check_mark_icon)
@@ -433,7 +433,7 @@ class PracticeActivity : GameActivity() {
         }
     }
 
-    private fun getDisplayWidth(): Int {
+    private fun getWindowWidth(): Int {
         val screenSize = Point()
         windowManager.defaultDisplay.getSize(screenSize)
         return screenSize.x

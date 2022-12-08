@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.game.Move
+import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
 import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView
@@ -23,9 +24,11 @@ import kotlin.math.roundToInt
 
 class OpeningMovesFragment : Fragment() {
 
-    private lateinit var onMoveClick: (Move, Boolean) -> Unit
+    private lateinit var onMoveClick: (Move) -> Unit
     private val setupMoves = ArrayList<Move>()
     private val lineMoves = ArrayList<Move>()
+
+    private val arrows = HashMap<Int, ArrayList<MoveArrow>>()
 
     private lateinit var typeFace: Typeface
     private lateinit var scrollView: ScrollView
@@ -87,7 +90,7 @@ class OpeningMovesFragment : Fragment() {
         moveTable.addView(headerView)
     }
 
-    fun getOpeningLine() = OpeningLine(setupMoves, lineMoves)
+    fun getOpeningLine() = OpeningLine(setupMoves, lineMoves, arrows)
 
     fun selectLastMove() {
         if (setupMoves.isEmpty() && lineMoves.isEmpty()) {
@@ -136,6 +139,14 @@ class OpeningMovesFragment : Fragment() {
             }
         }
         moveTable.invalidate()
+    }
+
+    fun addArrow(arrow: MoveArrow) {
+        if (arrows[currentMoveIndex + 1] == null) {
+            arrows[currentMoveIndex + 1] = arrayListOf(arrow)
+        } else {
+            arrows[currentMoveIndex + 1]!!.add(arrow)
+        }
     }
 
     fun addMove(move: Move) {
@@ -529,7 +540,7 @@ class OpeningMovesFragment : Fragment() {
         const val SETUP_MOVES_TEXT = "Setup Moves"
         const val LINE_MOVES_TEXT = "Line Moves"
 
-        fun getInstance(onMoveClick: (Move, Boolean) -> Unit, setupMoves: ArrayList<Move> = ArrayList(), lineMoves: ArrayList<Move> = ArrayList()): OpeningMovesFragment {
+        fun getInstance(onMoveClick: (Move) -> Unit, setupMoves: ArrayList<Move> = ArrayList(), lineMoves: ArrayList<Move> = ArrayList()): OpeningMovesFragment {
             val fragment = OpeningMovesFragment()
 
             fragment.currentMoveIndex = setupMoves.size + lineMoves.size - 1

@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.adapters.variationadapter
 
-import com.google.errorprone.annotations.Var
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.util.Logger
 

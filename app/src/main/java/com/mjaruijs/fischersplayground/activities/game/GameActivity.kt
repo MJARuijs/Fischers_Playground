@@ -63,7 +63,7 @@ abstract class GameActivity : ClientActivity() {
             userName = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_NAME_KEY, "")!!
 
             glView = findViewById(R.id.opengl_view)
-            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite)
+            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onLongClick, ::onDisplaySizeChanged, isPlayingWhite)
         } catch (e: Exception) {
             FileManager.append(this, "game_activity_crash_report.txt", e.stackTraceToString())
         }
@@ -179,8 +179,14 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
+    open fun onLongClick(x: Float, y: Float) {
+        game.onLongClick(x, y, displayWidth, displayHeight)
+//        val vibrateOnClick = getSharedPreferences(SettingsActivity.GAME_PREFERENCES_KEY, MODE_PRIVATE).getBoolean(SettingsActivity.VIBRATE_KEY, false)
+        vibrate()
+    }
+
     private fun vibrate() {
-        vibrator.vibrate(VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE))
+        vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
     protected fun requestRender() {

@@ -13,6 +13,9 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
     var selectedSquare = Vector2(-1, -1)
         private set
 
+    var longClickSelectedSquare = Vector2(-1, -1)
+        private set
+
     private var camera = Camera()
 
     var is3D = false
@@ -29,12 +32,17 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
 
     fun getPossibleMoves() = possibleSquaresForMove
 
+    fun isASquareLongClicked(): Boolean {
+        return longClickSelectedSquare.x != -1f
+    }
+
     fun isASquareSelected(): Boolean {
         return selectedSquare.x != -1f
     }
 
     fun deselectSquare() {
         selectedSquare = Vector2(-1, -1)
+        longClickSelectedSquare = Vector2(-1, -1)
         clearPossibleMoves()
     }
 
@@ -52,7 +60,15 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
         }
     }
 
-    fun updateSelectedSquare(square: Vector2) {
+    fun selectSquareLongClick(square: Vector2) {
+//        if (square == Vector2(-1, -1)) {
+
+//        } else {
+            longClickSelectedSquare = square
+//        }
+    }
+
+    fun selectSquare(square: Vector2) {
         if (square == Vector2(-1, -1)) {
             deselectSquare()
         } else {
