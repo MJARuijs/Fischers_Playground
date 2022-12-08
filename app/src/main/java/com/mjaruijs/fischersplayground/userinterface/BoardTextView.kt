@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.userinterface
 
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Typeface
 import android.util.AttributeSet
@@ -62,6 +63,15 @@ class BoardTextView(context: Context, attributes: AttributeSet?) : LinearLayout(
                 }
             }
         }
+    }
+
+    override fun onDraw(canvas: Canvas?) {
+        super.onDraw(canvas)
+        if (canvas == null) {
+            return
+        }
+
+
     }
 
     companion object {

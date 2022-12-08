@@ -29,7 +29,7 @@ class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
 
     fun create(context: Activity) {
         dialog = Dialog(context)
-        dialog.setContentView(R.layout.create_opening_dialog)
+        dialog.setContentView(R.layout.dialog_create_opening)
         dialog.show()
         dialog.dismiss()
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))

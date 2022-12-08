@@ -9,6 +9,7 @@ object Logger {
     init {
         mute("Move")
         mute("Variation")
+        mute("OpeningLine")
     }
 
     fun mute(tag: String) {

@@ -15,7 +15,7 @@ class CreateAccountDialog {
 
     fun create(context: Activity) {
         dialog = Dialog(context)
-        dialog.setContentView(R.layout.create_account_dialog)
+        dialog.setContentView(R.layout.dialog_create_account)
         dialog.show()
         dialog.dismiss()
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))

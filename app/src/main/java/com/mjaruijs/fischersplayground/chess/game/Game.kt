@@ -237,14 +237,14 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         if (animation.nextAnimation == null) {
-            animation.onFinishCalls += {
+            animation.onStartCalls += {
                 val isCheck = isPlayerChecked(state, !move.team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
                 updateCheckData(move.team, isCheck, isCheckMate)
             }
         } else {
-            animation.nextAnimation!!.onFinishCalls += {
+            animation.nextAnimation!!.onStartCalls += {
                 val isCheck = isPlayerChecked(state, !move.team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
@@ -306,11 +306,11 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         decrementMoveCounter()
 
         if (animation.nextAnimation == null) {
-            animation.onFinishCalls += {
+            animation.onStartCalls += {
                 finishMove(move)
             }
         } else {
-            animation.nextAnimation!!.onFinishCalls += {
+            animation.nextAnimation!!.onStartCalls += {
                 finishMove(move)
             }
         }
@@ -371,11 +371,11 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         if (animation.nextAnimation != null) {
-            animation.nextAnimation!!.onFinishCalls += {
+            animation.nextAnimation!!.onStartCalls += {
                 onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
             }
         } else {
-            animation.onFinishCalls += {
+            animation.onStartCalls += {
                 onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
             }
         }

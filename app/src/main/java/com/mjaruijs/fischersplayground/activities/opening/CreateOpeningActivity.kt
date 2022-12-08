@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.activities.opening
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -22,6 +23,7 @@ import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
+import com.mjaruijs.fischersplayground.dialogs.PracticeSettingsDialog
 import com.mjaruijs.fischersplayground.fragments.OpeningMovePagerFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment.Companion.BACKGROUND_COLOR
 import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
@@ -35,6 +37,7 @@ class CreateOpeningActivity : GameActivity() {
     override var activityName = "create_opening_activity"
 
     override var isSinglePlayer = true
+    private var hasUnsavedChanges = false
 
     private var selectedLine: OpeningLine? = null
 
@@ -44,8 +47,7 @@ class CreateOpeningActivity : GameActivity() {
     private lateinit var opening: Opening
     private lateinit var variation: Variation
 
-    private var hasUnsavedChanges = false
-
+    private lateinit var practiceSettingsDialog: PracticeSettingsDialog
     private lateinit var openingMovesFragment: OpeningMovePagerFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +70,9 @@ class CreateOpeningActivity : GameActivity() {
         isPlayingWhite = openingTeam == Team.WHITE
         game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp())
 
+        practiceSettingsDialog = PracticeSettingsDialog(::onStartPracticing)
+        practiceSettingsDialog.create(this as Activity)
+
         openingMovesFragment = OpeningMovePagerFragment.getInstance(::onLineSelected, ::onLineCleared, ::onMoveClicked, variation.lines)
 
         loadCreatingActionButtons()
@@ -76,7 +81,6 @@ class CreateOpeningActivity : GameActivity() {
         supportActionBar?.setDisplayShowCustomEnabled(true)
         supportActionBar?.setCustomView(R.layout.action_bar_view)
         supportActionBar?.customView?.findViewById<TextView>(R.id.title_view)?.text = "$openingName, $variationName"
-//        supportActionBar?.customView?.findViewById<TextView>(R.id.title_view)?.setAutoSizeTextTypeUniformWithConfiguration(24, 100, 1, TypedValue.COMPLEX_UNIT_SP)
         supportActionBar?.setBackgroundDrawable(ColorDrawable(BACKGROUND_COLOR))
     }
 
@@ -191,16 +195,23 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onStartPracticing() {
+        practiceSettingsDialog.show(applicationContext)
+    }
+
+    private fun onStartPracticing(useShuffle: Boolean) {
         stayingInApp = true
 
         if (hasUnsavedChanges) {
             saveOpening()
         }
 
+        practiceSettingsDialog.dismiss()
+
         val intent = Intent(this, PracticeActivity::class.java)
         intent.putExtra("opening_name", openingName)
         intent.putExtra("opening_team", openingTeam.toString())
         intent.putExtra("resume_session", false)
+        intent.putExtra("use_shuffle", useShuffle)
         intent.putStringArrayListExtra("variation_name", arrayListOf(variationName))
 
         startActivity(intent)

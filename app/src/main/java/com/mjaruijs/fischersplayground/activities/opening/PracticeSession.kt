@@ -4,13 +4,10 @@ import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import java.util.LinkedList
 
-class PracticeSession(val openingName: String, val team: Team, val currentLine: OpeningLine?, val nextLine: OpeningLine?, val lines: LinkedList<OpeningLine>) {
+class PracticeSession(val openingName: String, val team: Team, val currentLineIndex: Int, val totalLineCount: Int, val currentLine: OpeningLine?, val nextLine: OpeningLine?, val lines: LinkedList<OpeningLine>) {
 
     override fun toString(): String {
-        var content = "$openingName\n"
-        content += "$team\n"
-        content += "$currentLine\n"
-        content += "$nextLine\n"
+        var content = "$openingName^$team^$currentLineIndex^$totalLineCount^$currentLine^$nextLine\n"
 
         for (line in lines) {
             content += "$line\n"
@@ -24,25 +21,29 @@ class PracticeSession(val openingName: String, val team: Team, val currentLine: 
         fun fromString(content: String): PracticeSession {
             val fileLines = content.split("\n")
 
-            var lineIndex = 0
+            val data = fileLines[0].split("^")
+            val openingName = data[0]
+            val team = Team.fromString(data[1])
+            val currentLineIndex = data[2].toInt()
+            val maxLineIndex = data[3].toInt()
+            val currentLine = OpeningLine.fromString(data[4])
+            val nextLineString = data[5]
 
-            val openingName = fileLines[lineIndex++]
-            val team = Team.fromString(fileLines[lineIndex++])
-            val currentLine = OpeningLine.fromString(fileLines[lineIndex++])
-
-            val nextFileLine = fileLines[lineIndex++]
-            if (nextFileLine == "null") {
-                return PracticeSession(openingName, team, currentLine, null, LinkedList())
+            if (nextLineString == "null") {
+                return PracticeSession(openingName, team, currentLineIndex, maxLineIndex, currentLine, null, LinkedList())
             }
 
-            val nextLine = OpeningLine.fromString(nextFileLine)
+            val nextLine = OpeningLine.fromString(nextLineString)
 
             val lines = LinkedList<OpeningLine>()
-            for (i in lineIndex until fileLines.size) {
-                lines += OpeningLine.fromString(fileLines[i])
+            for (i in 1 until fileLines.size) {
+                val fileLine = fileLines[i]
+                if (fileLine.isNotBlank()) {
+                    lines += OpeningLine.fromString(fileLine)
+                }
             }
 
-            return PracticeSession(openingName, team, currentLine, nextLine, lines)
+            return PracticeSession(openingName, team, currentLineIndex, maxLineIndex, currentLine, nextLine, lines)
         }
 
     }

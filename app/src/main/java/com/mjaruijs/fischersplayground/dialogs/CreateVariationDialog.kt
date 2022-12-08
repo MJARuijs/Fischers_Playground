@@ -18,7 +18,7 @@ class CreateVariationDialog(private val onConfirmClicked: (String) -> Unit) {
 
     fun create(activity: Activity) {
         dialog = Dialog(activity)
-        dialog.setContentView(R.layout.create_variation_dialog)
+        dialog.setContentView(R.layout.dialog_create_variation)
         dialog.show()
         dialog.dismiss()
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))

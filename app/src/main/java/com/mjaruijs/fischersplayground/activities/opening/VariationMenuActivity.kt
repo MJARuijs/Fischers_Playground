@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.activities.opening
 
+import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -18,6 +19,7 @@ import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
 import com.mjaruijs.fischersplayground.adapters.variationadapter.VariationAdapter
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.CreateVariationDialog
+import com.mjaruijs.fischersplayground.dialogs.PracticeSettingsDialog
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment
 import com.mjaruijs.fischersplayground.userinterface.PopupBar
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
@@ -30,6 +32,7 @@ class VariationMenuActivity : ClientActivity() {
     private lateinit var createVariationDialog: CreateVariationDialog
     private lateinit var variationAdapter: VariationAdapter
     private lateinit var popupBar: PopupBar
+    private lateinit var practiceSettingsDialog: PracticeSettingsDialog
 
     private lateinit var addVariationButton: UIButton2
 
@@ -50,6 +53,8 @@ class VariationMenuActivity : ClientActivity() {
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
 
         opening = dataManager.getOpening(openingName, openingTeam)
+        practiceSettingsDialog = PracticeSettingsDialog(::onStartPracticing)
+        practiceSettingsDialog.create(this as Activity)
 
         initComponents()
 
@@ -87,7 +92,7 @@ class VariationMenuActivity : ClientActivity() {
         Logger.debug(activityName, "HasSession: $hasSession")
         if (hasSession) {
             Thread {
-                Thread.sleep(500)
+                Thread.sleep(250)
                 runOnUiThread {
                     popupBar.show()
                 }
@@ -140,15 +145,7 @@ class VariationMenuActivity : ClientActivity() {
         addVariationButton
             .setIcon(R.drawable.next_arrow_icon)
             .setOnClickListener {
-                stayingInApp = true
-
-                val intent = Intent(this, PracticeActivity::class.java)
-                intent.putExtra("opening_name", openingName)
-                intent.putExtra("opening_team", openingTeam.toString())
-                intent.putExtra("resume_session", false)
-                intent.putStringArrayListExtra("variation_name", selectedVariations)
-
-                startActivity(intent)
+                practiceSettingsDialog.show(applicationContext)
             }
     }
 
@@ -158,6 +155,21 @@ class VariationMenuActivity : ClientActivity() {
             .setOnClickListener {
                 createVariationDialog.show()
             }
+    }
+
+    private fun onStartPracticing(useShuffle: Boolean) {
+        stayingInApp = true
+
+        practiceSettingsDialog.dismiss()
+
+        val intent = Intent(this, PracticeActivity::class.java)
+        intent.putExtra("opening_name", openingName)
+        intent.putExtra("opening_team", openingTeam.toString())
+        intent.putExtra("resume_session", false)
+        intent.putExtra("use_shuffle", useShuffle)
+        intent.putStringArrayListExtra("variation_name", selectedVariations)
+
+        startActivity(intent)
     }
 
     private fun hideActivityDecorations() {
@@ -209,7 +221,5 @@ class VariationMenuActivity : ClientActivity() {
 
                 popupBar.hide()
             }
-
-
     }
 }

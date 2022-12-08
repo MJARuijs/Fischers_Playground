@@ -7,7 +7,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import com.mjaruijs.fischersplayground.R
 
@@ -21,7 +20,7 @@ class CrashReportDialog(private val context: Context) {
 
     fun create(context: Activity) {
         dialog = Dialog(context)
-        dialog.setContentView(R.layout.crash_report_dialog)
+        dialog.setContentView(R.layout.dialog_crash_report)
     }
 
     fun setLayout() {

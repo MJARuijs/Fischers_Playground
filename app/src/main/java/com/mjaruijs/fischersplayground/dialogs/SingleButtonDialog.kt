@@ -25,7 +25,7 @@ class SingleButtonDialog(parent: Activity, title: String, message: String, butto
     private val button: UIButton
 
     init {
-        dialog.setContentView(R.layout.single_button_dialog)
+        dialog.setContentView(R.layout.dialog_single_button)
         dialog.show()
         dialog.dismiss()
         dialog.setCancelable(false)

@@ -22,7 +22,7 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
 
     fun create(context: Activity) {
         dialog = Dialog(context)
-        dialog.setContentView(R.layout.piece_picker_dialog)
+        dialog.setContentView(R.layout.dialog_piece_picker)
         dialog.show()
         dialog.dismiss()
         dialog.setCancelable(false)

@@ -25,7 +25,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
 
     fun create(id: String, context: Activity, networkManager: NetworkManager) {
         dialog = Dialog(context)
-        dialog.setContentView(R.layout.create_game_dialog)
+        dialog.setContentView(R.layout.dialog_create_game)
 
         val searchBar = dialog.findViewById<SearchView>(R.id.search_bar) ?: return
 

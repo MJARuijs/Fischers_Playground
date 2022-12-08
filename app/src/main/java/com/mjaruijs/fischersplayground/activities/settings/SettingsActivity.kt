@@ -433,6 +433,7 @@ class SettingsActivity : ClientActivity() {
     companion object {
         const val GRAPHICS_PREFERENCES_KEY = "graphics_preferences"
         const val GAME_PREFERENCES_KEY = "game_preferences"
+        const val PRACTICE_PREFERENCES_KEY = "practice_preferences"
 
         const val GRAPHICS_3D_KEY = "3D_graphics_enabled"
         const val CAMERA_ROTATION_KEY = "camera_rotation"

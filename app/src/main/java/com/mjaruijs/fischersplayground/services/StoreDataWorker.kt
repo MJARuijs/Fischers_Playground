@@ -31,6 +31,7 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 
 class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(context, workParams) {
 
@@ -263,6 +264,11 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
                     if (serverFile.isBlank()) {
                         continue
                     }
+
+                    if (serverFile.startsWith(".") && serverFile.endsWith(".txt.swp")) {
+                        continue
+                    }
+
                     if (!openingFiles.contains(serverFile)) {
                         missingOpeningsString += "$serverFile%"
                     }

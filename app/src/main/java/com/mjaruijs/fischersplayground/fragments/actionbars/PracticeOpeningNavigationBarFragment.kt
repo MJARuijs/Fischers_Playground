@@ -7,17 +7,19 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
-class PracticeOpeningActionButtonsFragment : GameBarFragment() {
+class PracticeOpeningNavigationBarFragment : GameBarFragment() {
 
     private lateinit var onHintClicked: () -> Unit
     private lateinit var onSolutionClicked: () -> Unit
     private lateinit var onRetryClicked: () -> Unit
     private lateinit var onNextClicked: () -> Unit
+    private lateinit var onExitClicked: () -> Unit
 
     private lateinit var hintButton: UIButton2
     private lateinit var solutionButton: UIButton2
     private lateinit var retryButton: UIButton2
     private lateinit var nextButton: UIButton2
+    private lateinit var exitButton: UIButton2
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -26,8 +28,8 @@ class PracticeOpeningActionButtonsFragment : GameBarFragment() {
         hintButton
             .setText("Hint")
             .setIcon(R.drawable.hint_icon)
-            .setColor(BACKGROUND_COLOR)
             .setIconPadding(0, 4, 0, 0)
+            .setColor(BACKGROUND_COLOR)
             .setTextSize(TEXT_SIZE)
             .setOnClickListener {
                 showSolutionButton()
@@ -69,15 +71,27 @@ class PracticeOpeningActionButtonsFragment : GameBarFragment() {
                 onNextClicked()
             }
 
+        exitButton = UIButton2(requireContext())
+        exitButton
+            .setText("Exit")
+            .setIcon(R.drawable.exit_icon)
+            .setTextSize(TEXT_SIZE)
+            .setColorResource(R.color.accent_color)
+            .setOnClickListener {
+                onExitClicked()
+            }
+
         addButtons(hintButton)
         addButtons(solutionButton)
         addButtons(retryButton)
         addButtons(nextButton)
+        addButtons(exitButton)
 
         hintButton.show()
         solutionButton.hide()
         retryButton.hide()
         nextButton.hide()
+        exitButton.hide()
 
         backButton.hide()
         forwardButton.hide()
@@ -111,15 +125,24 @@ class PracticeOpeningActionButtonsFragment : GameBarFragment() {
         nextButton.show()
     }
 
-     companion object {
+    fun showExitButton() {
+        retryButton.hide()
+        solutionButton.hide()
+        hintButton.hide()
+        nextButton.hide()
+        exitButton.show()
+    }
 
-         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit): PracticeOpeningActionButtonsFragment {
-             val fragment = PracticeOpeningActionButtonsFragment()
+    companion object {
+
+         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit, onExitClicked: () -> Unit): PracticeOpeningNavigationBarFragment {
+             val fragment = PracticeOpeningNavigationBarFragment()
              fragment.init(game, evaluateNavigationButtons)
              fragment.onHintClicked = onHintClicked
              fragment.onSolutionClicked = onSolutionClicked
              fragment.onRetryClicked = onRetryClicked
              fragment.onNextClicked = onNextClicked
+             fragment.onExitClicked = onExitClicked
              return fragment
          }
 

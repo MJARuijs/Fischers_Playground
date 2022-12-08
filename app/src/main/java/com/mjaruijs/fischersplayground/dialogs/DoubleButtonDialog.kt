@@ -37,7 +37,7 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
     private var numberOfInitializedButtons = 0
 
     init {
-        dialog.setContentView(R.layout.double_button_dialog)
+        dialog.setContentView(R.layout.dialog_double_button)
         dialog.show()
         dialog.dismiss()
         dialog.setCancelable(false)
