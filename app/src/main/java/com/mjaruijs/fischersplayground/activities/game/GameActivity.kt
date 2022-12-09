@@ -87,10 +87,8 @@ abstract class GameActivity : ClientActivity() {
 
     override fun onDestroy() {
         glView.destroy()
-
         super.onDestroy()
     }
-
 
     inline fun <reified T>findFragment(): T? {
         val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: return null
@@ -125,13 +123,9 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun onMoveMade(move: Move) {
-//        val actionBar = getActionBarFragment()
-//        if (actionBar is GameBarFragment) {
         runOnUiThread {
             evaluateNavigationButtons()
         }
-//            actionBar.evaluateNavigationButtons()
-//        }
     }
 
     fun setGameForRenderer() {

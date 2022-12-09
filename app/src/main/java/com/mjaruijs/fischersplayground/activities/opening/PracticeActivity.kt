@@ -139,6 +139,9 @@ class PracticeActivity : GameActivity() {
 
         progressFragment = PracticeProgressFragment.getInstance(practiceProgress, totalLineCount)
 
+        if (isPlayingWhite) {
+            boardOverlay.swapCharactersForBlack()
+        }
         loadPracticeActionButtons()
 
         supportActionBar?.show()
@@ -192,18 +195,6 @@ class PracticeActivity : GameActivity() {
                 checkMoveCorrectness(move)
             }
         }
-    }
-
-    override fun onMoveMade(move: Move) {
-        super.onMoveMade(move)
-
-//        glView.clearHighlightedSquares()
-//
-//        if (move.team == openingTeam) {
-//            runOnUiThread {
-//                checkMoveCorrectness(move)
-//            }
-//        }
     }
 
     override fun onBackPressed() {
@@ -411,10 +402,6 @@ class PracticeActivity : GameActivity() {
                 nextLine = temp
             }
         } else {
-//            if (currentLine == nextLine) {
-//                return true
-//            }
-
             currentLine = nextLine
 
             if (currentLine == null) {
@@ -441,9 +428,6 @@ class PracticeActivity : GameActivity() {
     private fun finishedPracticingOpening() {
         progressFragment.complete()
         practiceNavigationButtons.showExitButton()
-//        supportFragmentManager.commit {
-//            hide(practiceNavigationButtons)
-//        }
 
         dataManager.removePracticeSession(openingName, openingTeam)
         dataManager.savePracticeSessions(applicationContext)

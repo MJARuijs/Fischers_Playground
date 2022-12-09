@@ -11,15 +11,14 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.text.isDigitsOnly
 import androidx.core.view.children
 import androidx.core.view.doOnLayout
+import androidx.core.view.get
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
@@ -45,6 +44,8 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
     private lateinit var finalBitmap: Bitmap
     private var arrowCanvas = Canvas()
+
+    private var isPlayingWhite = true
 
     init {
         val triangleDrawable = ResourcesCompat.getDrawable(resources, R.drawable.triangle, null)
@@ -84,9 +85,18 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         setWillNotDraw(false)
     }
 
-    private fun setCharactersBold(useBold: Boolean) {
+    fun swapCharactersForBlack() {
+        isPlayingWhite = false
+        for (child in layout.children) {
+            if (child is TextView) {
+                child.text = child.tag.toString()
+            }
+        }
+    }
+
+    private fun setCharactersBold(@Suppress("SameParameterValue") useBold: Boolean) {
         if (useBold) {
-            for ((i, child) in layout.children.withIndex()) {
+            for (child in layout.children) {
                 if (child is TextView) {
                     child.typeface = Typeface.DEFAULT_BOLD
                 }
@@ -101,21 +111,20 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
     }
 
     private fun setTextColor() {
-        for ((i, child) in layout.children.withIndex()) {
-            if (child is TextView) {
-                if (child.text.isDigitsOnly()) {
-                    if (child.text.toString().toInt() % 2 == 1) {
-                        child.setTextColor(whiteColor)
-                    } else {
-                        child.setTextColor(darkColor)
-                    }
-                } else {
-                    if (i % 2 == 0) {
-                        child.setTextColor(whiteColor)
-                    } else {
-                        child.setTextColor(darkColor)
-                    }
-                }
+        for (i in 0 until 8) {
+            val child = layout[i] as TextView
+            if (i % 2 == 1) {
+                child.setTextColor(whiteColor)
+            } else {
+                child.setTextColor(darkColor)
+            }
+        }
+        for (i in 8 until 16) {
+            val child = layout[i] as TextView
+            if (i % 2 == 0) {
+                child.setTextColor(whiteColor)
+            } else {
+                child.setTextColor(darkColor)
             }
         }
     }
@@ -332,9 +341,9 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
     companion object {
         private const val TAG = "BoardOverlay"
+
         private val whiteColor = Color.rgb(207, 189, 175)
         private val darkColor = Color.rgb(91, 70, 53)
-
     }
 
 }

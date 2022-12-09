@@ -86,6 +86,9 @@ class CreateOpeningActivity : GameActivity() {
 
         openingMovesFragment = OpeningMovePagerFragment.getInstance(::onLineSelected, ::onLineCleared, ::onMoveClicked, variation.lines)
 
+        if (!isPlayingWhite) {
+            boardOverlay.swapCharactersForBlack()
+        }
         loadCreatingActionButtons()
 
         supportActionBar?.show()
@@ -153,7 +156,6 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     override fun onClick(x: Float, y: Float) {
-        Logger.debug(activityName, "Clicked: $arrowModeEnabled")
         if (arrowModeEnabled) {
             if (arrowStartSquare.x == -1f) {
                 arrowStartSquare = game.determineSelectedSquare(x, y, displayWidth, displayHeight)
@@ -174,7 +176,6 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onMoveAnimationFinished(moveIndex: Int) {
-        Logger.debug(activityName, "OnAnimationFinished! $moveIndex")
         boardOverlay.addArrows(selectedLine!!.arrows[moveIndex] ?: ArrayList())
     }
 
@@ -227,8 +228,6 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onMoveClicked(move: Move) {
         game.goToMove(move)
-        Logger.debug(activityName, "Move Clicked ${game.currentMoveIndex}")
-
         evaluateNavigationButtons()
         openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
     }
@@ -286,14 +285,10 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onBackClicked() {
         openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
-//        boardOverlay.addArrows(selectedLine!!.arrows[game.currentMoveIndex] ?: ArrayList())
-//        requestRender()
     }
 
     private fun onForwardClicked() {
         openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
-//        boardOverlay.addArrows(selectedLine!!.arrows[game.currentMoveIndex] ?: ArrayList())
-//        requestRender()
     }
 
     private fun loadCreatingActionButtons() {
@@ -313,7 +308,7 @@ class CreateOpeningActivity : GameActivity() {
             val line = fragment.getOpeningLine()
             opening.getVariation(variationName)!!.addLine(line)
         }
-//        Logger.debug(activityName, "Going to save new opening with name: $convertedOpeningName")
+
         networkManager.sendMessage(NetworkMessage(Topic.NEW_OPENING, "$userId|$openingName|$openingTeam|$opening"))
         dataManager.setOpening(openingName, openingTeam, opening)
         dataManager.saveOpenings(applicationContext)

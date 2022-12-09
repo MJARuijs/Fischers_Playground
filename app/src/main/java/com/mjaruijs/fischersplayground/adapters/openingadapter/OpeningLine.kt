@@ -42,8 +42,6 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
         content += "~"
 
         for ((i, move) in lineMoves.withIndex()) {
-            val chessNotation = move.toChessNotation()
-//            Logger.debug(TAG, "Adding $chessNotation to string")
             content += move.toChessNotation()
 
             if (i != lineMoves.size - 1) {
@@ -174,10 +172,7 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
 
                     if (secondSeparatorIndex != -1) {
 
-                        var arrowString = content.substring(secondSeparatorIndex + 1)
-                        Logger.debug(TAG, "Got arrow String: $arrowString")
-
-
+                        val arrowString = content.substring(secondSeparatorIndex + 1)
                         var currentIndex = 0
                         while (true) {
                             val listEndIndex = arrowString.indexOf("]", currentIndex + 1)
@@ -186,7 +181,6 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
                             }
 
                             val arrowData = arrowString.substring(currentIndex, listEndIndex)
-                            Logger.debug(TAG, "Got arrow data: $arrowData")
                             val listStartIndex = arrowData.indexOf("[")
                             val moveIndex = arrowData.substring(0, listStartIndex).toInt()
                             val arrowCoordinates = arrowData.substring(listStartIndex + 1).split(",")
@@ -199,8 +193,8 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
                                 val endY = floats[3]
                                 moveArrows += MoveArrow(Vector2(startX, startY), Vector2(endX, endY))
                             }
-                            arrowMap[moveIndex] = moveArrows
 
+                            arrowMap[moveIndex] = moveArrows
                             currentIndex = listEndIndex + 2
                         }
 

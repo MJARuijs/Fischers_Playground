@@ -110,11 +110,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     }
 
     open fun resetMoves() {
-//        for (i in currentMoveIndex  downTo 0) {
-//            val move = moves[i]
-//            undoMove(move, true)
-//        }
-
         state.reset()
 
         currentMoveIndex = -1
@@ -268,7 +263,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 onAnimationFinished(moveIndex)
             }
         }
-        Logger.debug(TAG, "Redoing move: $currentMoveIndex")
 
         if (runInBackground) {
             animation.invokeOnStartCalls()
@@ -344,8 +338,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 onAnimationFinished(moveIndex)
             }
         }
-
-        Logger.debug(TAG, "Undoing move: $currentMoveIndex")
 
         if (runInBackground) {
             animation.invokeOnStartCalls()
@@ -459,7 +451,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         val move = Move(team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, takenPiece?.type, actualTakenPosition, promotedPiece)
-        Logger.debug(TAG, "After ${move.toChessNotation()} isCheck: $isCheck, isCheckMate: $isCheckMate")
 
         lastUpdated = Time.getFullTimeStamp()
 
