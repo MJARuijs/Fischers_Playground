@@ -24,6 +24,7 @@ import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeOpeningNavig
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
 import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
@@ -58,11 +59,13 @@ class PracticeActivity : GameActivity() {
     private lateinit var moveFeedbackIcon: MoveFeedbackIcon
     private lateinit var practiceNavigationButtons: PracticeOpeningNavigationBarFragment
     private lateinit var progressFragment: PracticeProgressFragment
+    private lateinit var boardOverlay: BoardOverlay
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
         findViewById<FragmentContainerView>(R.id.upper_fragment_container).visibility = View.GONE
+        boardOverlay = findViewById(R.id.board_overlay)
 
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
@@ -168,9 +171,21 @@ class PracticeActivity : GameActivity() {
         }
     }
 
-    override fun onMoveMade(move: Move) {
-        super.onMoveMade(move)
+    override fun setGameCallbacks() {
+        super.setGameCallbacks()
+        game.onAnimationStarted = ::onMoveAnimationStarted
+        game.onAnimationFinished = ::onMoveAnimationFinished
+    }
 
+    private fun onMoveAnimationStarted() {
+        boardOverlay.clear()
+    }
+
+    private fun onMoveAnimationFinished(moveIndex: Int) {
+        boardOverlay.addArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
+        requestRender()
+
+        val move = game.getCurrentMove() ?: return
         glView.clearHighlightedSquares()
 
         if (move.team == openingTeam) {
@@ -178,6 +193,18 @@ class PracticeActivity : GameActivity() {
                 checkMoveCorrectness(move)
             }
         }
+    }
+
+    override fun onMoveMade(move: Move) {
+        super.onMoveMade(move)
+
+//        glView.clearHighlightedSquares()
+//
+//        if (move.team == openingTeam) {
+//            runOnUiThread {
+//                checkMoveCorrectness(move)
+//            }
+//        }
     }
 
     override fun onBackPressed() {

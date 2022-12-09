@@ -5,6 +5,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.Menu
@@ -13,6 +15,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
@@ -41,6 +44,8 @@ class CreateOpeningActivity : GameActivity() {
 
     override var isSinglePlayer = true
     private var hasUnsavedChanges = false
+    private var arrowModeEnabled = false
+    private var arrowStartSquare = Vector2(-1, -1)
 
     private var selectedLine: OpeningLine? = null
 
@@ -59,7 +64,6 @@ class CreateOpeningActivity : GameActivity() {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
         findViewById<FragmentContainerView>(R.id.upper_fragment_container).visibility = View.GONE
-
         boardOverlay = findViewById(R.id.board_overlay)
 
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
@@ -75,7 +79,7 @@ class CreateOpeningActivity : GameActivity() {
         }
 
         isPlayingWhite = openingTeam == Team.WHITE
-        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp(), ::onArrowAdded)
+        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp())
 
         practiceSettingsDialog = PracticeSettingsDialog(::onStartPracticing)
         practiceSettingsDialog.create(this as Activity)
@@ -98,6 +102,10 @@ class CreateOpeningActivity : GameActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.toggle_arrow_mode -> {
+                toggleArrowMode(item)
+                return true
+            }
             R.id.delete_line_button -> {
                 openingMovesFragment.deleteCurrentLine()
                 hasUnsavedChanges = true
@@ -125,11 +133,16 @@ class CreateOpeningActivity : GameActivity() {
             constraints.applyTo(gameLayout)
             gameLayout.invalidate()
         }
-
         boardOverlay.invalidate()
 
         setGameCallbacks()
         setGameForRenderer()
+    }
+
+    override fun setGameCallbacks() {
+        super.setGameCallbacks()
+        game.onAnimationStarted = ::onMoveAnimationStarted
+        game.onAnimationFinished = ::onMoveAnimationFinished
     }
 
     override fun onPause() {
@@ -139,11 +152,31 @@ class CreateOpeningActivity : GameActivity() {
         super.onPause()
     }
 
-    override fun onLongClick(x: Float, y: Float) {
-        super.onLongClick(x, y)
+    override fun onClick(x: Float, y: Float) {
+        Logger.debug(activityName, "Clicked: $arrowModeEnabled")
+        if (arrowModeEnabled) {
+            if (arrowStartSquare.x == -1f) {
+                arrowStartSquare = game.determineSelectedSquare(x, y, displayWidth, displayHeight)
+                glView.highlightSquare(arrowStartSquare)
+            } else {
+                val arrowEndSquare = game.determineSelectedSquare(x, y, displayWidth, displayHeight)
+                onArrowToggled(arrowStartSquare, arrowEndSquare)
+                arrowStartSquare = Vector2(-1, -1)
+                glView.clearHighlightedSquares()
+            }
+        } else {
+            super.onClick(x, y)
+        }
+    }
 
-//        glView.highlightSquare(selectedSquare)
-//        glView.requestRender()
+    private fun onMoveAnimationStarted() {
+        boardOverlay.clear()
+    }
+
+    private fun onMoveAnimationFinished(moveIndex: Int) {
+        Logger.debug(activityName, "OnAnimationFinished! $moveIndex")
+        boardOverlay.addArrows(selectedLine!!.arrows[moveIndex] ?: ArrayList())
+        requestRender()
     }
 
     override fun onMoveMade(move: Move) {
@@ -161,6 +194,7 @@ class CreateOpeningActivity : GameActivity() {
     private fun onLineSelected(line: OpeningLine, selectedMoveIndex: Int) {
         selectedLine = line
         game.swapMoves(line.getAllMoves(), selectedMoveIndex)
+        boardOverlay.addArrows(line.arrows[selectedMoveIndex] ?: ArrayList())
 
         evaluateNavigationButtons()
         requestRender()
@@ -188,7 +222,7 @@ class CreateOpeningActivity : GameActivity() {
         if (selectedLine!!.setupMoves.isEmpty()) {
             return
         }
-        findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine!!.setupMoves, selectedLine!!.lineMoves)
+        findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine!!.setupMoves, selectedLine!!.lineMoves, selectedLine!!.arrows)
         requestRender()
     }
 
@@ -198,6 +232,7 @@ class CreateOpeningActivity : GameActivity() {
 
         evaluateNavigationButtons()
         openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
+        boardOverlay.addArrows(selectedLine!!.arrows[game.currentMoveIndex] ?: ArrayList())
     }
 
     private fun onStartRecording() {
@@ -207,11 +242,12 @@ class CreateOpeningActivity : GameActivity() {
         }
     }
 
-    private fun onArrowAdded(startSquare: Vector2, endSquare: Vector2) {
+    private fun onArrowToggled(startSquare: Vector2, endSquare: Vector2) {
         val arrow = MoveArrow(startSquare, endSquare)
         openingMovesFragment.getCurrentOpeningFragment().addArrow(arrow)
         boardOverlay.addArrow(arrow)
         boardOverlay.invalidate()
+        hasUnsavedChanges = true
     }
 
     private fun onStartPracticing() {
@@ -237,12 +273,29 @@ class CreateOpeningActivity : GameActivity() {
         startActivity(intent)
     }
 
+    private fun toggleArrowMode(item: MenuItem) {
+        arrowModeEnabled = !arrowModeEnabled
+        if (arrowModeEnabled) {
+            val enabledColor = ResourcesCompat.getColor(resources, R.color.accent_color, null)
+            item.iconTintList = ColorStateList(arrayOf(intArrayOf(0)), intArrayOf(enabledColor))
+            arrowStartSquare = Vector2(-1, -1)
+            game.clearBoardData()
+            requestRender()
+        } else {
+            item.iconTintList = ColorStateList(arrayOf(intArrayOf(0)), intArrayOf(Color.WHITE))
+        }
+    }
+
     private fun onBackClicked() {
         openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
+//        boardOverlay.addArrows(selectedLine!!.arrows[game.currentMoveIndex] ?: ArrayList())
+//        requestRender()
     }
 
     private fun onForwardClicked() {
         openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
+//        boardOverlay.addArrows(selectedLine!!.arrows[game.currentMoveIndex] ?: ArrayList())
+//        requestRender()
     }
 
     private fun loadCreatingActionButtons() {

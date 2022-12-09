@@ -33,8 +33,8 @@ abstract class GameActivity : ClientActivity() {
 
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
-    private var displayWidth = 0
-    private var displayHeight = 0
+    protected var displayWidth = 0
+    protected var displayHeight = 0
 
     abstract var isSinglePlayer: Boolean
 
@@ -180,9 +180,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun onLongClick(x: Float, y: Float) {
-        game.onLongClick(x, y, displayWidth, displayHeight)
-//        val vibrateOnClick = getSharedPreferences(SettingsActivity.GAME_PREFERENCES_KEY, MODE_PRIVATE).getBoolean(SettingsActivity.VIBRATE_KEY, false)
-        vibrate()
+
     }
 
     private fun vibrate() {

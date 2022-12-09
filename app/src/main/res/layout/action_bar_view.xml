@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView android:layout_width="match_parent"
-    android:layout_height="wrap_content" xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-
     android:id="@+id/title_view"
-    android:autoSizeTextType="uniform"
+    android:layout_width="match_parent"
+
+    android:layout_height="wrap_content"
+    android:maxLines="1"
     android:text="TextView"
     android:textAlignment="center"
+    android:textSize="20sp"
     android:textStyle="bold"
     android:typeface="serif"
-    android:textSize="24sp"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent">
-</TextView>
+    app:layout_constraintTop_toTopOf="parent"></TextView>

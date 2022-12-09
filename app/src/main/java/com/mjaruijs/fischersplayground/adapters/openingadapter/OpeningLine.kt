@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.adapters.openingadapter
 
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>, val arrows: HashMap<Int, ArrayList<MoveArrow>> = HashMap()) {
@@ -42,7 +43,7 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
 
         for ((i, move) in lineMoves.withIndex()) {
             val chessNotation = move.toChessNotation()
-            Logger.debug(TAG, "Adding $chessNotation to string")
+//            Logger.debug(TAG, "Adding $chessNotation to string")
             content += move.toChessNotation()
 
             if (i != lineMoves.size - 1) {
@@ -53,21 +54,26 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
         if (arrows.isNotEmpty()) {
             content += "~"
 
-            // 1[<x, y> <x, y>,<x, y> <x, y>,<x, y> <x, y>],5[<x, y> <x, y>,<x, y> <x, y>]
+            // 1[x y x y,x y x y,x y x y],5[<x, y> <x, y>,<x, y> <x, y>]
 
             for ((i, entry) in arrows.entries.withIndex()) {
 //                content += arrow.toString()
                 var arrowContent = "${entry.key}["
 
-                for (arrow in entry.value) {
-                    arrowContent += "${arrow.startSquare} ${arrow.endSquare}"
+                for ((j, arrow) in entry.value.withIndex()) {
+                    arrowContent += "${arrow.startSquare.x} ${arrow.startSquare.y} ${arrow.endSquare.x} ${arrow.endSquare.y}"
+
+                    if (j != entry.value.size - 1) {
+                        arrowContent += ","
+                    }
                 }
 
                 arrowContent += "]"
 
                 if (i != arrows.size - 1) {
-                    content += ","
+                    arrowContent += ","
                 }
+                content += arrowContent
             }
         }
 
@@ -139,6 +145,7 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
                 } else {
                     val startingMovesString = content.substring(0, firstSeparatorIndex)
                     val secondSeparatorIndex = content.indexOf("~", firstSeparatorIndex + 1)
+
                     val movesString = if (secondSeparatorIndex == -1) {
                         content.substring(firstSeparatorIndex + 1)
                     } else {
@@ -163,8 +170,14 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
                         }
                     }
 
+                    val arrowMap = HashMap<Int, ArrayList<MoveArrow>>()
+
                     if (secondSeparatorIndex != -1) {
+
                         var arrowString = content.substring(secondSeparatorIndex + 1)
+                        Logger.debug(TAG, "Got arrow String: $arrowString")
+
+
                         var currentIndex = 0
                         while (true) {
                             val listEndIndex = arrowString.indexOf("]", currentIndex + 1)
@@ -174,18 +187,29 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
 
                             val arrowData = arrowString.substring(currentIndex, listEndIndex)
                             Logger.debug(TAG, "Got arrow data: $arrowData")
+                            val listStartIndex = arrowData.indexOf("[")
+                            val moveIndex = arrowData.substring(0, listStartIndex).toInt()
+                            val arrowCoordinates = arrowData.substring(listStartIndex + 1).split(",")
+                            val moveArrows = ArrayList<MoveArrow>()
+                            for (arrowCoordinate in arrowCoordinates) {
+                                val floats = arrowCoordinate.split(" ").map { string -> string.toFloat() }
+                                val startX = floats[0]
+                                val startY = floats[1]
+                                val endX = floats[2]
+                                val endY = floats[3]
+                                moveArrows += MoveArrow(Vector2(startX, startY), Vector2(endX, endY))
+                            }
+                            arrowMap[moveIndex] = moveArrows
 
-
-
-                            currentIndex = listEndIndex
+                            currentIndex = listEndIndex + 2
                         }
 
                     }
 
-                    return OpeningLine(startingMoves, moves)
+                    return OpeningLine(startingMoves, moves, arrowMap)
                 }
-
             } catch (e: Exception) {
+                e.printStackTrace()
                 throw IllegalArgumentException("Failed to parse text into openingLine: $content")
             }
 

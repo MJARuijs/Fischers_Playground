@@ -37,6 +37,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     var onPieceTaken: (PieceType, Team) -> Unit = { _, _ -> }
     var onPieceRegained: (PieceType, Team) -> Unit = { _, _ -> }
     var onCheckMate: (Team) -> Unit = {}
+    var onAnimationStarted: () -> Unit = {}
+    var onAnimationFinished: (Int) -> Unit = {}
 
     var queueAnimation: (AnimationData) -> Unit = {
         Log.w(TAG,"Tried to animate move, but function is not set yet")
@@ -240,17 +242,27 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         if (animation.nextAnimation == null) {
             animation.onStartCalls += {
+                onAnimationStarted()
+
                 val isCheck = isPlayerChecked(state, !move.team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
                 updateCheckData(move.team, isCheck, isCheckMate)
             }
+            animation.onFinishCalls += {
+                onAnimationFinished(currentMoveIndex)
+            }
         } else {
             animation.nextAnimation!!.onStartCalls += {
+                onAnimationStarted()
+
                 val isCheck = isPlayerChecked(state, !move.team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
                 updateCheckData(move.team, isCheck, isCheckMate)
+            }
+            animation.nextAnimation!!.onFinishCalls += {
+                onAnimationFinished(currentMoveIndex)
             }
         }
 
@@ -309,11 +321,21 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         if (animation.nextAnimation == null) {
             animation.onStartCalls += {
+                onAnimationStarted()
+
                 finishMove(move)
+            }
+            animation.onFinishCalls += {
+                onAnimationFinished(currentMoveIndex)
             }
         } else {
             animation.nextAnimation!!.onStartCalls += {
+                onAnimationStarted()
+
                 finishMove(move)
+            }
+            animation.nextAnimation!!.onFinishCalls += {
+                onAnimationFinished(currentMoveIndex)
             }
         }
 
@@ -365,7 +387,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val takenPiece = takenPieceData?.first
         val takenPiecePosition = takenPieceData?.second
 
-
         val animation = if (isCastling(currentPositionPiece, fromPosition, toPosition)) {
             performCastle(team, fromPosition, toPosition, animationSpeed)
         } else {
@@ -374,11 +395,21 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         if (animation.nextAnimation != null) {
             animation.nextAnimation!!.onStartCalls += {
+                onAnimationStarted()
+
                 onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
+            }
+            animation.nextAnimation!!.onFinishCalls += {
+                onAnimationFinished(currentMoveIndex)
             }
         } else {
             animation.onStartCalls += {
+                onAnimationStarted()
+
                 onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
+            }
+            animation.onFinishCalls += {
+                onAnimationFinished(currentMoveIndex)
             }
         }
 

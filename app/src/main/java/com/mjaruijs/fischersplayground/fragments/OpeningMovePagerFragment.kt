@@ -12,6 +12,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.game.Move
+import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 
 class OpeningMovePagerFragment : Fragment() {
 
@@ -86,8 +87,8 @@ class OpeningMovePagerFragment : Fragment() {
 
     fun getCurrentOpeningFragment() = pagerAdapter.get(pager.currentItem)
 
-    fun addLine(setupMoves: ArrayList<Move> = arrayListOf(), lineMoves: ArrayList<Move> = arrayListOf()) {
-        pagerAdapter.add(pager.currentItem + 1, setupMoves, lineMoves)
+    fun addLine(setupMoves: ArrayList<Move> = arrayListOf(), lineMoves: ArrayList<Move> = arrayListOf(), arrows: HashMap<Int, ArrayList<MoveArrow>>) {
+        pagerAdapter.add(pager.currentItem + 1, setupMoves, lineMoves, arrows)
 
         if (pagerAdapter.itemCount >= 2) {
             tabIndicator.visibility = View.VISIBLE
@@ -126,15 +127,15 @@ class OpeningMovePagerFragment : Fragment() {
 
         fun add(openingLine: OpeningLine? = null) {
             fragments += if (openingLine != null) {
-                OpeningMovesFragment.getInstance(onMoveClick, openingLine.setupMoves, openingLine.lineMoves)
+                OpeningMovesFragment.getInstance(onMoveClick, openingLine.setupMoves, openingLine.lineMoves, openingLine.arrows)
             } else {
                 OpeningMovesFragment.getInstance(onMoveClick)
             }
             notifyDataSetChanged()
         }
 
-        fun add(index: Int, setupMoves: ArrayList<Move>, lineMoves: ArrayList<Move>) {
-            fragments.add(index, OpeningMovesFragment.getInstance(onMoveClick, setupMoves, lineMoves))
+        fun add(index: Int, setupMoves: ArrayList<Move>, lineMoves: ArrayList<Move>, arrows: HashMap<Int, ArrayList<MoveArrow>>) {
+            fragments.add(index, OpeningMovesFragment.getInstance(onMoveClick, setupMoves, lineMoves, arrows))
             notifyDataSetChanged()
         }
 

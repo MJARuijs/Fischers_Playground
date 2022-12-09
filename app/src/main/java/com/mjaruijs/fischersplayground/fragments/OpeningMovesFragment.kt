@@ -142,10 +142,12 @@ class OpeningMovesFragment : Fragment() {
     }
 
     fun addArrow(arrow: MoveArrow) {
-        if (arrows[currentMoveIndex + 1] == null) {
-            arrows[currentMoveIndex + 1] = arrayListOf(arrow)
+        if (arrows[currentMoveIndex] == null) {
+            arrows[currentMoveIndex] = arrayListOf(arrow)
         } else {
-            arrows[currentMoveIndex + 1]!!.add(arrow)
+            if (!arrows[currentMoveIndex]!!.contains(arrow)) {
+                arrows[currentMoveIndex]!!.add(arrow)
+            }
         }
     }
 
@@ -540,7 +542,7 @@ class OpeningMovesFragment : Fragment() {
         const val SETUP_MOVES_TEXT = "Setup Moves"
         const val LINE_MOVES_TEXT = "Line Moves"
 
-        fun getInstance(onMoveClick: (Move) -> Unit, setupMoves: ArrayList<Move> = ArrayList(), lineMoves: ArrayList<Move> = ArrayList()): OpeningMovesFragment {
+        fun getInstance(onMoveClick: (Move) -> Unit, setupMoves: ArrayList<Move> = ArrayList(), lineMoves: ArrayList<Move> = ArrayList(), arrows: HashMap<Int, ArrayList<MoveArrow>> = HashMap()): OpeningMovesFragment {
             val fragment = OpeningMovesFragment()
 
             fragment.currentMoveIndex = setupMoves.size + lineMoves.size - 1
@@ -551,6 +553,10 @@ class OpeningMovesFragment : Fragment() {
 
             for (move in lineMoves) {
                 fragment.lineMoves += move
+            }
+
+            for (entry in arrows.entries) {
+                fragment.arrows[entry.key] = entry.value
             }
 
             return fragment

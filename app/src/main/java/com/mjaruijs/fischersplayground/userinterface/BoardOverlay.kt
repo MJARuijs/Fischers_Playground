@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.PorterDuff
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.util.AttributeSet
@@ -16,12 +17,12 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.drawable.toDrawable
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.children
 import androidx.core.view.doOnLayout
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -31,37 +32,38 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
     private val layout: ConstraintLayout
 
-    private val arrows = ArrayList<ArrowData>()
+    private val straightArrows = ArrayList<ArrowData>()
     private val knightArrows = ArrayList<KnightArrowData>()
 
-    private lateinit var triangleBitmap: Bitmap
+    private val arrows = ArrayList<MoveArrow>()
+
+    private var triangleBitmap: Bitmap? = null
     private lateinit var knightArrowBitmap: Bitmap
-    private lateinit var paint: Paint
-    private lateinit var paint2: Paint
+    private lateinit var transparentPaint: Paint
+    private lateinit var solidPaint: Paint
     private var squareHeight = -1f
 
     private lateinit var finalBitmap: Bitmap
-    private lateinit var arrowCanvas: Canvas
+    private var arrowCanvas = Canvas()
 
     init {
         val triangleDrawable = ResourcesCompat.getDrawable(resources, R.drawable.triangle, null)
         LayoutInflater.from(context).inflate(R.layout.board_text_layout, this, true)
 
         layout = findViewById(R.id.character_layout)
-        layout.children.forEach { view -> view.visibility = View.INVISIBLE }
         layout.doOnLayout {
             setCharactersBold(true)
             setTextColor()
 
-            paint = Paint()
-            paint.isAntiAlias = true
-            paint.color = ResourcesCompat.getColor(resources, R.color.accent_color, null)
-            paint.alpha = (255 * 0.75f).roundToInt()
+            transparentPaint = Paint()
+            transparentPaint.isAntiAlias = true
+            transparentPaint.color = ResourcesCompat.getColor(resources, R.color.accent_color, null)
+            transparentPaint.alpha = (255 * 0.75f).roundToInt()
 
-            paint2 = Paint()
-            paint2.isAntiAlias = true
-            paint2.color = ResourcesCompat.getColor(resources, R.color.accent_color, null)
-            paint2.alpha = 255
+            solidPaint = Paint()
+            solidPaint.isAntiAlias = true
+            solidPaint.color = ResourcesCompat.getColor(resources, R.color.accent_color, null)
+            solidPaint.alpha = 255
 
             squareHeight = layout.height / 8f
 
@@ -73,18 +75,126 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
             finalBitmap = Bitmap.createBitmap(layout.width, layout.height, Bitmap.Config.ARGB_8888)
             arrowCanvas = Canvas(finalBitmap)
+
+            if (arrows.isNotEmpty()) {
+                addArrows(arrows)
+            }
         }
 
         setWillNotDraw(false)
     }
 
-    fun addArrow(arrow: MoveArrow) {
+    private fun setCharactersBold(useBold: Boolean) {
+        if (useBold) {
+            for ((i, child) in layout.children.withIndex()) {
+                if (child is TextView) {
+                    child.typeface = Typeface.DEFAULT_BOLD
+                }
+            }
+        } else {
+            for (child in layout.children) {
+                if (child is TextView) {
+                    child.typeface = Typeface.DEFAULT
+                }
+            }
+        }
+    }
+
+    private fun setTextColor() {
+        for ((i, child) in layout.children.withIndex()) {
+            if (child is TextView) {
+                if (child.text.isDigitsOnly()) {
+                    if (child.text.toString().toInt() % 2 == 1) {
+                        child.setTextColor(whiteColor)
+                    } else {
+                        child.setTextColor(darkColor)
+                    }
+                } else {
+                    if (i % 2 == 0) {
+                        child.setTextColor(whiteColor)
+                    } else {
+                        child.setTextColor(darkColor)
+                    }
+                }
+            }
+        }
+    }
+
+    fun addArrows(arrows: ArrayList<MoveArrow>) {
+        if (triangleBitmap == null) {
+            this.arrows.addAll(arrows)
+            return
+        }
+
+        clearArrows()
+        for (arrow in arrows) {
+            addArrow(arrow)
+        }
+        invalidate()
+    }
+
+    fun clear() {
+        arrowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+        invalidate()
+    }
+
+    private fun clearArrows() {
+        straightArrows.clear()
+        knightArrows.clear()
+        clear()
+    }
+
+    override fun onDraw(canvas: Canvas?) {
+        super.onDraw(canvas)
+        if (canvas == null) {
+            return
+        }
+
+        canvas.drawBitmap(finalBitmap, 0f, 0f, transparentPaint)
+    }
+
+    private fun drawStraightArrow(arrowData: ArrowData) {
+        if (triangleBitmap == null) {
+            return
+        }
+
+        arrowCanvas.save()
+        arrowCanvas.translate(arrowData.translationX, arrowData.translationY)
+        arrowCanvas.rotate(arrowData.angle, width / 2f, height / 2f)
+        arrowCanvas.drawBitmap(triangleBitmap!!, arrowData.arrowHeadMatrix, null)
+        for (arrowBase in arrowData.arrowBases) {
+            arrowCanvas.drawRect(arrowBase, solidPaint)
+        }
+        arrowCanvas.restore()
+    }
+
+    private fun drawKnightArrow(arrowData: KnightArrowData) {
+        arrowCanvas.save()
+        arrowCanvas.rotate(arrowData.angle, arrowData.pivotX * squareHeight, arrowData.pivotY * squareHeight)
+        arrowCanvas.drawBitmap(knightArrowBitmap, arrowData.matrix, null)
+        arrowCanvas.restore()
+    }
+
+    fun addArrow(moveArrow: MoveArrow) {
+
+        val startSquare = moveArrow.startSquare
+        val endSquare = moveArrow.endSquare
+
+        val removedStraightArrow = straightArrows.removeIf { arrow -> arrow.fromSquare == startSquare && arrow.toSquare == endSquare }
+        val removedKnightArrow = knightArrows.removeIf { arrow -> arrow.fromSquare == startSquare && arrow.toSquare == endSquare }
+
+        if (removedStraightArrow || removedKnightArrow) {
+            arrowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+            Logger.debug(TAG, "Removing arrow!")
+            for (arrow in straightArrows) {
+                drawStraightArrow(arrow)
+            }
+            for (arrow in knightArrows) {
+                drawKnightArrow(arrow)
+            }
+            return
+        }
         Logger.debug(TAG, "Adding arrow!")
-
-//        arrows.clear()
-
-        val startSquare = arrow.startSquare
-        val endSquare = arrow.endSquare
 
         val startX = startSquare.x
         val startY = startSquare.y
@@ -149,18 +259,9 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
             matrix.setTranslate(translationX * squareHeight, translationY * squareHeight)
             matrix.postScale(scaleX, scaleY, pivotX * squareHeight, pivotY * squareHeight)
 
-            val arrowData = KnightArrowData(angle, matrix, pivotX, pivotY)
-
-            arrowCanvas.save()
-            arrowCanvas.rotate(angle, pivotX * squareHeight, pivotY * squareHeight)
-            arrowCanvas.drawBitmap(knightArrowBitmap, matrix, null)
-            arrowCanvas.restore()
-
-//            val finalDrawable = finalBitmap.toDrawable(resources)
-//            finalDrawable.alpha = 255
-
-//            finalBitmap = finalDrawable.toBitmap(finalDrawable.intrinsicWidth, finalDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
-//            knightArrows += arrowData
+            val arrowData = KnightArrowData(startSquare, endSquare, angle, matrix, pivotX, pivotY)
+            knightArrows += arrowData
+            drawKnightArrow(arrowData)
         } else {
             val absXDif = abs(xDif)
             val absYDif = abs(yDif)
@@ -216,87 +317,18 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
                 (4.125f * squareHeight).toInt(),
                 (4.5f * squareHeight).toInt() + ((baseHeight - 1) * squareHeight).toInt()
             )
+
             arrowHeadMatrix.postTranslate(squareHeight * 3.75f, squareHeight * 3.504f)
-            val arrowData = ArrowData(arrowBases, arrowHeadMatrix, angle, translationX * squareHeight, translationY * squareHeight)
-            arrowCanvas.save()
-            arrowCanvas.translate(arrowData.translationX, arrowData.translationY)
-            arrowCanvas.rotate(arrowData.angle, width / 2f, height / 2f)
-            arrowCanvas.drawBitmap(triangleBitmap, arrowData.arrowHeadMatrix, null)
-            for (arrowBase in arrowBases) {
-                arrowCanvas.drawRect(arrowBase, paint2)
-            }
-            arrowCanvas.restore()
-        }
 
-    }
-
-    private fun setCharactersBold(useBold: Boolean) {
-        if (useBold) {
-            for ((i, child) in layout.children.withIndex()) {
-                if (child is TextView) {
-                    child.typeface = Typeface.DEFAULT_BOLD
-                }
-            }
-        } else {
-            for (child in layout.children) {
-                if (child is TextView) {
-                    child.typeface = Typeface.DEFAULT
-                }
-            }
+            val arrowData = ArrowData(startSquare, endSquare, arrowBases, arrowHeadMatrix, angle, translationX * squareHeight, translationY * squareHeight)
+            straightArrows += arrowData
+            drawStraightArrow(arrowData)
         }
     }
 
-    private fun setTextColor() {
-        for ((i, child) in layout.children.withIndex()) {
-            if (child is TextView) {
-                if (child.text.isDigitsOnly()) {
-                    if (child.text.toString().toInt() % 2 == 1) {
-                        child.setTextColor(whiteColor)
-                    } else {
-                        child.setTextColor(darkColor)
-                    }
-                } else {
-                    if (i % 2 == 0) {
-                        child.setTextColor(whiteColor)
-                    } else {
-                        child.setTextColor(darkColor)
-                    }
-                }
-            }
-        }
-    }
+    inner class ArrowData(val fromSquare: Vector2, val toSquare: Vector2, val arrowBases: ArrayList<Rect>, val arrowHeadMatrix: Matrix, val angle: Float, val translationX: Float, val translationY: Float)
 
-    override fun onDraw(canvas: Canvas?) {
-        super.onDraw(canvas)
-        if (canvas == null) {
-            Logger.debug(TAG, "Drawing but canvas is null")
-            return
-        }
-
-        canvas.drawBitmap(finalBitmap, 0f, 0f, paint)
-
-//        for (arrowData in arrows) {
-//            canvas.save()
-//            canvas.translate(arrowData.translationX, arrowData.translationY)
-//            canvas.rotate(arrowData.angle, width / 2f, height / 2f)
-//            canvas.drawBitmap(triangleBitmap, arrowData.arrowHeadMatrix, paint)
-//            for (arrowBase in arrowData.arrowBases) {
-//                canvas.drawRect(arrowBase, paint)
-//            }
-//            canvas.restore()
-//        }
-//
-//        for (knightArrow in knightArrows) {
-//            canvas.save()
-//            canvas.rotate(knightArrow.angle, knightArrow.pivotX * squareHeight, knightArrow.pivotY * squareHeight)
-//            canvas.drawBitmap(knightArrowBitmap, knightArrow.matrix, paint)
-//            canvas.restore()
-//        }
-    }
-
-    inner class ArrowData(val arrowBases: ArrayList<Rect>, val arrowHeadMatrix: Matrix, val angle: Float, val translationX: Float, val translationY: Float)
-
-    inner class KnightArrowData(val angle: Float, val matrix: Matrix, val pivotX: Float, val pivotY: Float)
+    inner class KnightArrowData(val fromSquare: Vector2, val toSquare: Vector2, val angle: Float, val matrix: Matrix, val pivotX: Float, val pivotY: Float)
 
     companion object {
         private const val TAG = "BoardOverlay"

@@ -5,9 +5,8 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
-import com.mjaruijs.fischersplayground.util.Logger
 
-class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, private val onArrowAdded: (Vector2, Vector2) -> Unit = { _, _ ->}) : Game(isPlayingWhite, lastUpdated) {
+class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlayingWhite, lastUpdated) {
 
     private var teamToMove = Team.WHITE
 
@@ -86,9 +85,7 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, private val o
     }
 
     override fun processOnClick(clickedSquare: Vector2) {
-        if (board.isASquareLongClicked()) {
-            onArrowAdded(board.longClickSelectedSquare, clickedSquare)
-        } else if (board.isASquareSelected()) {
+        if (board.isASquareSelected()) {
             val previouslySelectedSquare = board.selectedSquare
 
             if (possibleMoves.contains(clickedSquare)) {
@@ -124,6 +121,10 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, private val o
     }
 
     override fun processOnLongClick(clickedSquare: Vector2) {
-        board.selectSquareLongClick(clickedSquare)
+        if (board.longClickSelectedSquare == clickedSquare) {
+            board.deselectSquareLongClick()
+        } else {
+            board.selectSquareLongClick(clickedSquare)
+        }
     }
 }

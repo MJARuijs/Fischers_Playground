@@ -7,9 +7,9 @@ object Logger {
     private val mutedTags = ArrayList<String>()
 
     init {
-        mute("Move")
-        mute("Variation")
-        mute("OpeningLine")
+//        mute("Move")
+//        mute("Variation")
+//        mute("OpeningLine")
     }
 
     fun mute(tag: String) {

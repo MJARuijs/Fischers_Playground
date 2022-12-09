@@ -60,12 +60,12 @@ class Board(var requestPossibleMoves: (Vector2) -> Unit = {}) {
         }
     }
 
-    fun selectSquareLongClick(square: Vector2) {
-//        if (square == Vector2(-1, -1)) {
+    fun deselectSquareLongClick() {
+        longClickSelectedSquare = Vector2(-1, -1)
+    }
 
-//        } else {
-            longClickSelectedSquare = square
-//        }
+    fun selectSquareLongClick(square: Vector2) {
+        longClickSelectedSquare = square
     }
 
     fun selectSquare(square: Vector2) {

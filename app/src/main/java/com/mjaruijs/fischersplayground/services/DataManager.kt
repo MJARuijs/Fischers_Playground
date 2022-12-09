@@ -317,6 +317,7 @@ class DataManager(context: Context) {
     }
 
     fun loadData(context: Context) {
+        Logger.warn(TAG, "LOADING DATA")
         obtainPracticeSessionLock()
         Thread {
             try {
