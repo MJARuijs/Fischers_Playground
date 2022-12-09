@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector android:height="48dp" android:tint="@color/white"
+<vector android:height="48dp" android:tint="@color/accent_color"
     android:viewportHeight="24" android:viewportWidth="24"
     android:width="48dp" xmlns:android="http://schemas.android.com/apk/res/android">
 

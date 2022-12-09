@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toDrawable
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs

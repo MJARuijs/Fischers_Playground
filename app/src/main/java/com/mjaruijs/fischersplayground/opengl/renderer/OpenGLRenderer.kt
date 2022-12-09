@@ -18,6 +18,7 @@ import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Camera.Companion.DEFAULT_ZOOM
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
 import com.mjaruijs.fischersplayground.opengl.texture.TextureLoader
+import com.mjaruijs.fischersplayground.util.ImageUtils
 import com.mjaruijs.fischersplayground.util.Logger
 import java.nio.ByteBuffer
 import java.util.*
@@ -25,7 +26,7 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.PI
 
-class OpenGLRenderer(context: Context, private val resources: Resources, private var onContextCreated: () -> Unit, private val requestRender: () -> Unit, private var is3D: Boolean) : GLSurfaceView.Renderer {
+class OpenGLRenderer(private val context: Context, private val resources: Resources, private var onContextCreated: () -> Unit, private val requestRender: () -> Unit, private var is3D: Boolean) : GLSurfaceView.Renderer {
 
     private lateinit var board: Board
     private lateinit var game: Game
@@ -167,6 +168,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
                 Logger.debug(TAG, "Cleared buffer!")
 
 //            backgroundRenderer.render2D(aspectRatio)
+
                 boardRenderer.render2D()
                 highlightRenderer.renderSelectedSquares2D(board, displayWidth, displayHeight, aspectRatio)
 //                highlightRenderer.renderLastMoveHighlights(game, displayWidth, displayHeight)
@@ -251,7 +253,7 @@ class OpenGLRenderer(context: Context, private val resources: Resources, private
         val bitmap = Bitmap.createBitmap(displayWidth, displayHeight, Bitmap.Config.ARGB_8888)
         bitmap.copyPixelsFromBuffer(pixelData)
 
-//        ImageUtils.saveBitmapToStorage(context, bitmap, "king_checked.png")
+        ImageUtils.saveBitmapToStorage(context, bitmap, "king_checked.png")
 
         return pixelData
     }

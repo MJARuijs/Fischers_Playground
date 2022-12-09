@@ -1,12 +1,16 @@
 package com.mjaruijs.fischersplayground.activities
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Parcelable
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.set
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -31,6 +35,8 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
 import com.mjaruijs.fischersplayground.userinterface.RippleEffect
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.ImageUtils
+import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 
 class MainActivity : ClientActivity() {
@@ -56,6 +62,31 @@ class MainActivity : ClientActivity() {
 //        loadResources()
 
         initUIComponents()
+//
+//        val knightArrowDrawable = ResourcesCompat.getDrawable(resources, R.drawable.knight_arrow, null)
+//        val bm = knightArrowDrawable!!.toBitmap(knightArrowDrawable!!.intrinsicWidth, knightArrowDrawable!!.intrinsicHeight, Bitmap.Config.ARGB_8888)
+//
+//
+//        for (x in 0 until bm.width) {
+//            for (y in 0 until bm.height) {
+//                val pixel = bm.getPixel(x, y)
+//                val red = Color.red(pixel)
+//                val green = Color.green(pixel)
+//                val blue = Color.blue(pixel)
+//                val alpha = Color.alpha(pixel)
+//                if (alpha != 0) {
+//                    val color = Color.argb(255, red, green, blue)
+//
+//                    Logger.debug(activityName, "Setting alpha ")
+//                    bm[x, y] = color
+//                }
+//            }
+//        }
+//
+//
+//
+//        ImageUtils.saveBitmapToStorage(applicationContext, bm, "knight_arrow_2.png")
+
 //        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
 //            val token = result.token
 //            val currentToken = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!

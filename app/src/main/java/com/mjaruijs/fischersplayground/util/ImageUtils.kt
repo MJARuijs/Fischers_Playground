@@ -9,6 +9,8 @@ import java.io.FileOutputStream
 
 object ImageUtils {
 
+    private const val TAG = "ImageUtils"
+
     fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String) {
         try {
             val root = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
@@ -24,6 +26,7 @@ object ImageUtils {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
             out.flush()
             out.close()
+            Logger.debug(TAG, "Done saving bitmap to image: ${myDir.path}")
         } catch (e: Exception) {
             NetworkManager.getInstance().sendCrashReport("crash_image_utils_save.txt", e.stackTraceToString())
             e.printStackTrace()
