@@ -183,7 +183,6 @@ class PracticeActivity : GameActivity() {
 
     private fun onMoveAnimationFinished(moveIndex: Int) {
         boardOverlay.addArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
-        requestRender()
 
         val move = game.getCurrentMove() ?: return
         glView.clearHighlightedSquares()

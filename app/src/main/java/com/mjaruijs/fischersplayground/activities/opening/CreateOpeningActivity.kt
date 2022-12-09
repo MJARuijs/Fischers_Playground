@@ -176,7 +176,6 @@ class CreateOpeningActivity : GameActivity() {
     private fun onMoveAnimationFinished(moveIndex: Int) {
         Logger.debug(activityName, "OnAnimationFinished! $moveIndex")
         boardOverlay.addArrows(selectedLine!!.arrows[moveIndex] ?: ArrayList())
-        requestRender()
     }
 
     override fun onMoveMade(move: Move) {
@@ -227,12 +226,11 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onMoveClicked(move: Move) {
-        Logger.debug(activityName, "Move Clicked")
         game.goToMove(move)
+        Logger.debug(activityName, "Move Clicked ${game.currentMoveIndex}")
 
         evaluateNavigationButtons()
         openingMovesFragment.getCurrentOpeningFragment().selectMove(game.currentMoveIndex, true)
-        boardOverlay.addArrows(selectedLine!!.arrows[game.currentMoveIndex] ?: ArrayList())
     }
 
     private fun onStartRecording() {

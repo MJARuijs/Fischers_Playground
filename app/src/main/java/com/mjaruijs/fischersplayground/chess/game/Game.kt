@@ -240,6 +240,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             })
         }
 
+        val moveIndex = currentMoveIndex
+
         if (animation.nextAnimation == null) {
             animation.onStartCalls += {
                 onAnimationStarted()
@@ -250,7 +252,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 updateCheckData(move.team, isCheck, isCheckMate)
             }
             animation.onFinishCalls += {
-                onAnimationFinished(currentMoveIndex)
+                onAnimationFinished(moveIndex)
             }
         } else {
             animation.nextAnimation!!.onStartCalls += {
@@ -262,9 +264,11 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 updateCheckData(move.team, isCheck, isCheckMate)
             }
             animation.nextAnimation!!.onFinishCalls += {
-                onAnimationFinished(currentMoveIndex)
+
+                onAnimationFinished(moveIndex)
             }
         }
+        Logger.debug(TAG, "Redoing move: $currentMoveIndex")
 
         if (runInBackground) {
             animation.invokeOnStartCalls()
@@ -319,6 +323,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         decrementMoveCounter()
 
+        val moveIndex = currentMoveIndex
+
         if (animation.nextAnimation == null) {
             animation.onStartCalls += {
                 onAnimationStarted()
@@ -326,7 +332,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 finishMove(move)
             }
             animation.onFinishCalls += {
-                onAnimationFinished(currentMoveIndex)
+                onAnimationFinished(moveIndex)
             }
         } else {
             animation.nextAnimation!!.onStartCalls += {
@@ -335,9 +341,11 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
                 finishMove(move)
             }
             animation.nextAnimation!!.onFinishCalls += {
-                onAnimationFinished(currentMoveIndex)
+                onAnimationFinished(moveIndex)
             }
         }
+
+        Logger.debug(TAG, "Undoing move: $currentMoveIndex")
 
         if (runInBackground) {
             animation.invokeOnStartCalls()
