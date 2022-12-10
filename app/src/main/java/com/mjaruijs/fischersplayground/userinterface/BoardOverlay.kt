@@ -184,8 +184,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         arrowCanvas.restore()
     }
 
-    fun addArrow(moveArrow: MoveArrow) {
-
+    fun addArrow(moveArrow: MoveArrow): Boolean {
         val startSquare = moveArrow.startSquare
         val endSquare = moveArrow.endSquare
 
@@ -194,16 +193,14 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
         if (removedStraightArrow || removedKnightArrow) {
             arrowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-            Logger.debug(TAG, "Removing arrow!")
             for (arrow in straightArrows) {
                 drawStraightArrow(arrow)
             }
             for (arrow in knightArrows) {
                 drawKnightArrow(arrow)
             }
-            return
+            return true
         }
-        Logger.debug(TAG, "Adding arrow!")
 
         val startX = startSquare.x
         val startY = startSquare.y
@@ -213,7 +210,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         val yDif = (endSquare.y - startSquare.y).roundToInt()
 
         if (xDif == 0 && yDif == 0) {
-            return
+            return false
         }
 
         var angle = 0f
@@ -296,7 +293,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
                 translationY = 3 - startY + 0.5f
             } else {
                 if (absXDif != absYDif) {
-                    return
+                    return false
                 } else if (startX < endX && startY < endY) {
                     angle = 45f
                     translationX = startSquare.x - 4 + absYDif
@@ -333,6 +330,8 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
             straightArrows += arrowData
             drawStraightArrow(arrowData)
         }
+
+        return false
     }
 
     inner class ArrowData(val fromSquare: Vector2, val toSquare: Vector2, val arrowBases: ArrayList<Rect>, val arrowHeadMatrix: Matrix, val angle: Float, val translationX: Float, val translationY: Float)

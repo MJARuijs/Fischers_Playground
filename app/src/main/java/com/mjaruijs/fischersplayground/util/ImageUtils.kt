@@ -28,7 +28,7 @@ object ImageUtils {
             out.close()
             Logger.debug(TAG, "Done saving bitmap to image: ${myDir.path}")
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_image_utils_save.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_image_utils_save.txt", e.stackTraceToString(), context)
             e.printStackTrace()
         }
     }

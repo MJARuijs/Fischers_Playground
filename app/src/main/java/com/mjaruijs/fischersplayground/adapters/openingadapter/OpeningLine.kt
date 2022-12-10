@@ -56,6 +56,10 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
 
             for ((i, entry) in arrows.entries.withIndex()) {
 //                content += arrow.toString()
+                if (entry.value.isEmpty()) {
+                    continue
+                }
+
                 var arrowContent = "${entry.key}["
 
                 for ((j, arrow) in entry.value.withIndex()) {

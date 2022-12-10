@@ -6,7 +6,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
 
-class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlayingWhite, lastUpdated) {
+class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayerMoveOpponentPieces: Boolean) : Game(isPlayingWhite, lastUpdated) {
 
     private var teamToMove = Team.WHITE
 
@@ -113,8 +113,14 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long) : Game(isPlay
                 return
             }
 
-            if (pieceAtSquare.team == teamToMove) {
-                board.selectSquare(clickedSquare)
+            if (!canPlayerMoveOpponentPieces) {
+                if (pieceAtSquare.team == teamToMove && ((isPlayingWhite && pieceAtSquare.team == Team.WHITE) || (!isPlayingWhite && pieceAtSquare.team == Team.BLACK))) {
+                    board.selectSquare(clickedSquare)
+                }
+            } else {
+                if (pieceAtSquare.team == teamToMove) {
+                    board.selectSquare(clickedSquare)
+                }
             }
         }
 

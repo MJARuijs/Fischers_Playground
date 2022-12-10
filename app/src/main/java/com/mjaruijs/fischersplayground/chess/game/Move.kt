@@ -298,7 +298,7 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
 
                 return Move(team, Vector2(fromX, fromY), Vector2(toX, toY), movedPiece, isCheckMate, isCheck, takenPiece, takenPiecePosition, promotedPiece)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_move_from_chess_notation.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_move_from_chess_notation.txt", e.stackTraceToString(), null)
                 throw IllegalArgumentException("Failed to parse move from: $moveContent")
             }
         }

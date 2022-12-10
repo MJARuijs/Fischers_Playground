@@ -20,6 +20,7 @@ import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
 import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView
+import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
 class OpeningMovesFragment : Fragment() {
@@ -149,6 +150,10 @@ class OpeningMovesFragment : Fragment() {
                 arrows[currentMoveIndex]!!.add(arrow)
             }
         }
+    }
+
+    fun deleteArrow(arrow: MoveArrow) {
+        arrows[currentMoveIndex]!!.remove(arrow)
     }
 
     fun addMove(move: Move) {
@@ -345,6 +350,7 @@ class OpeningMovesFragment : Fragment() {
             currentMoveIndex = -1
             setupMoves.clear()
             lineMoves.clear()
+            arrows.clear()
             return
         }
 
@@ -388,6 +394,20 @@ class OpeningMovesFragment : Fragment() {
                     (moveTable[moveTable.childCount - 1] as OpeningMovesRowView).hideBlackMove()
                 }
             }
+        }
+
+        val remainingNumberOfMoves = setupMoves.size + lineMoves.size
+
+        val removableEntries = ArrayList<Int>()
+
+        for (entry in arrows.entries) {
+            if (entry.key >= remainingNumberOfMoves) {
+                removableEntries += entry.key
+            }
+        }
+
+        for (entryKey in removableEntries) {
+            arrows.remove(entryKey)
         }
     }
 
@@ -532,7 +552,6 @@ class OpeningMovesFragment : Fragment() {
                 scrollView.fullScroll(View.FOCUS_DOWN)
             }
         }
-
     }
 
     companion object {
@@ -556,7 +575,11 @@ class OpeningMovesFragment : Fragment() {
             }
 
             for (entry in arrows.entries) {
-                fragment.arrows[entry.key] = entry.value
+                val moveArrows = ArrayList<MoveArrow>()
+                for (arrow in entry.value) {
+                    moveArrows += arrow
+                }
+                fragment.arrows[entry.key] = moveArrows
             }
 
             return fragment

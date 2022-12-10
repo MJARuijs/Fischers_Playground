@@ -60,6 +60,8 @@ class CreateOpeningActivity : GameActivity() {
 
     private lateinit var boardOverlay: BoardOverlay
 
+    private lateinit var arrowMenuItem: MenuItem
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
@@ -79,7 +81,7 @@ class CreateOpeningActivity : GameActivity() {
         }
 
         isPlayingWhite = openingTeam == Team.WHITE
-        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp())
+        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp(), true)
 
         practiceSettingsDialog = PracticeSettingsDialog(::onStartPracticing)
         practiceSettingsDialog.create(this as Activity)
@@ -100,6 +102,9 @@ class CreateOpeningActivity : GameActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.create_opening_menu, menu)
+        if (menu != null) {
+            arrowMenuItem = menu.findItem(R.id.toggle_arrow_mode)
+        }
         return true
     }
 
@@ -222,6 +227,10 @@ class CreateOpeningActivity : GameActivity() {
         if (selectedLine!!.setupMoves.isEmpty()) {
             return
         }
+        arrowModeEnabled = false
+        arrowStartSquare = Vector2(-1, -1)
+        arrowMenuItem.iconTintList = ColorStateList(arrayOf(intArrayOf(0)), intArrayOf(Color.WHITE))
+
         findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine!!.setupMoves, selectedLine!!.lineMoves, selectedLine!!.arrows)
         requestRender()
     }
@@ -241,8 +250,13 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onArrowToggled(startSquare: Vector2, endSquare: Vector2) {
         val arrow = MoveArrow(startSquare, endSquare)
-        openingMovesFragment.getCurrentOpeningFragment().addArrow(arrow)
-        boardOverlay.addArrow(arrow)
+        val deletedArrow = boardOverlay.addArrow(arrow)
+        if (deletedArrow) {
+            openingMovesFragment.getCurrentOpeningFragment().deleteArrow(arrow)
+        } else {
+            openingMovesFragment.getCurrentOpeningFragment().addArrow(arrow)
+        }
+
         boardOverlay.invalidate()
         hasUnsavedChanges = true
     }
@@ -279,7 +293,10 @@ class CreateOpeningActivity : GameActivity() {
             game.clearBoardData()
             requestRender()
         } else {
+            glView.clearHighlightedSquares()
+            arrowStartSquare = Vector2(-1, -1)
             item.iconTintList = ColorStateList(arrayOf(intArrayOf(0)), intArrayOf(Color.WHITE))
+            requestRender()
         }
     }
 

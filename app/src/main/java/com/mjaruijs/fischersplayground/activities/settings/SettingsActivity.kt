@@ -96,7 +96,7 @@ class SettingsActivity : ClientActivity() {
         }
 
         glView3D = findViewById(R.id.preview_3d)
-        glView3D.init(::runOnUIThread, ::onContextCreated, ::onCameraRotated, ::saveGraphicsPreference)
+        glView3D.init(::runOnUIThread, ::onContextCreated, ::onCameraRotated, ::saveGraphicsPreference, ::onExceptionThrown)
         glView3D.getRenderer().set3D(true)
 
         defaultGraphicsConstraints.clone(this, R.layout.graphics_settings)
@@ -241,7 +241,7 @@ class SettingsActivity : ClientActivity() {
     private fun onContextCreated() {
         runOnUiThread {
             glView3D.holder.setFixedSize(getDisplayWidth(), getDisplayWidth())
-            game = SinglePlayerGame(true, Time.getFullTimeStamp())
+            game = SinglePlayerGame(true, Time.getFullTimeStamp(), true)
             glView3D.setGame(game)
             restorePreferences()
         }
@@ -370,6 +370,10 @@ class SettingsActivity : ClientActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
             }
         })
+    }
+
+    private fun onExceptionThrown(fileName: String, e: Exception) {
+
     }
 
     private fun getDisplayWidth(): Int {

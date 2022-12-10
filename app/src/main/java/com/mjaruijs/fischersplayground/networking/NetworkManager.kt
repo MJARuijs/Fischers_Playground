@@ -128,7 +128,7 @@ class NetworkManager {
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
-                    sendCrashReport("crash_network_send.txt", e.stackTraceToString())
+                    sendCrashReport("crash_network_send.txt", e.stackTraceToString(), null)
                 } finally {
                     sendingMessage.set(false)
                 }
@@ -171,7 +171,11 @@ class NetworkManager {
         }
     }
 
-    fun sendCrashReport(fileName: String, crashLog: String) {
+    fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {
+        if (context != null) {
+            Looper.prepare()
+            Toast.makeText(context, "A crash occurred!", Toast.LENGTH_SHORT).show()
+        }
         Thread {
             try {
                 val gameFiles = FileManager.listFilesInDirectory()

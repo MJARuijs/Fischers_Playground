@@ -50,6 +50,7 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
     var isPlayerWhite = true
 
     lateinit var runOnUiThread: (() -> Unit) -> Unit
+    lateinit var onExceptionThrown: (String, Exception) -> Unit
     private var onPixelsRead: (ByteBuffer) -> Unit = {}
     var onDisplaySizeChanged: (Int, Int) -> Unit = { _, _ -> }
 
@@ -69,15 +70,14 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
         pieceTextures = PieceTextures(resources)
 
         try {
-            pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame)
+            pieceRenderer = PieceRenderer(resources, isPlayerWhite, ::requestRenderPieces, runOnUiThread, ::getGame, onExceptionThrown)
 
             while (animationQueue.isNotEmpty()) {
                 val animation = animationQueue.poll() ?: break
                 pieceRenderer.queueAnimation(animation)
             }
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_opengl_on_surface_created.txt", e.stackTraceToString())
-            throw e
+            onExceptionThrown("crash_opengl_renderer_on_surface_created.txt", e)
         }
 
         boardRenderer = BoardRenderer(resources)
@@ -185,8 +185,7 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
             }
         } catch (e: Exception) {
 //            e.printStackTrace()
-            NetworkManager.getInstance().sendCrashReport("crash_opengl_render.txt", e.stackTraceToString())
-            throw e
+            onExceptionThrown("crash_opengl_renderer_draw.txt", e)
         }
 
     }

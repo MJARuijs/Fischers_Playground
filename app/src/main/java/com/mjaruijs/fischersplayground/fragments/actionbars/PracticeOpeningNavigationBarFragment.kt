@@ -14,12 +14,14 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
     private lateinit var onRetryClicked: () -> Unit
     private lateinit var onNextClicked: () -> Unit
     private lateinit var onExitClicked: () -> Unit
+    private lateinit var onNextMoveClicked: () -> Unit
 
     private lateinit var hintButton: UIButton2
     private lateinit var solutionButton: UIButton2
     private lateinit var retryButton: UIButton2
     private lateinit var nextButton: UIButton2
     private lateinit var exitButton: UIButton2
+    private lateinit var nextMoveButton: UIButton2
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -81,17 +83,30 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
                 onExitClicked()
             }
 
+        nextMoveButton = UIButton2(requireContext())
+        nextMoveButton
+            .setText("Next Move")
+            .setTextSize(TEXT_SIZE)
+            .setIconPadding(0, 4, 0, 0)
+            .setIcon(R.drawable.arrow_forward)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
+                onNextMoveClicked()
+            }
+
         addButtons(hintButton)
         addButtons(solutionButton)
         addButtons(retryButton)
         addButtons(nextButton)
         addButtons(exitButton)
+        addButtons(nextMoveButton)
 
         hintButton.show()
         solutionButton.hide()
         retryButton.hide()
         nextButton.hide()
         exitButton.hide()
+        nextMoveButton.hide()
 
         backButton.hide()
         forwardButton.hide()
@@ -102,6 +117,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         retryButton.hide()
         nextButton.hide()
         hintButton.show()
+        nextMoveButton.hide()
     }
 
     fun showSolutionButton() {
@@ -109,6 +125,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         retryButton.hide()
         nextButton.hide()
         hintButton.hide()
+        nextMoveButton.hide()
     }
 
     fun showRetryButton() {
@@ -116,6 +133,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         solutionButton.hide()
         hintButton.hide()
         nextButton.hide()
+        nextMoveButton.hide()
     }
 
     fun showNextButton() {
@@ -131,11 +149,21 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         hintButton.hide()
         nextButton.hide()
         exitButton.show()
+        nextMoveButton.hide()
+    }
+
+    fun showNextMoveButton() {
+        retryButton.hide()
+        solutionButton.hide()
+        hintButton.hide()
+        nextButton.hide()
+        exitButton.hide()
+        nextMoveButton.show()
     }
 
     companion object {
 
-         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit, onExitClicked: () -> Unit): PracticeOpeningNavigationBarFragment {
+         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit, onExitClicked: () -> Unit, onNextMoveClicked: () -> Unit): PracticeOpeningNavigationBarFragment {
              val fragment = PracticeOpeningNavigationBarFragment()
              fragment.init(game, evaluateNavigationButtons)
              fragment.onHintClicked = onHintClicked
@@ -143,6 +171,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
              fragment.onRetryClicked = onRetryClicked
              fragment.onNextClicked = onNextClicked
              fragment.onExitClicked = onExitClicked
+             fragment.onNextMoveClicked = onNextMoveClicked
              return fragment
          }
 

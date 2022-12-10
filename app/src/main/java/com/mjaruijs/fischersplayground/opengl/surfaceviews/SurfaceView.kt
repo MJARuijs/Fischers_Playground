@@ -41,7 +41,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
-    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onLongClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean) {
+    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onLongClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean, onExceptionThrown: (String, Exception) -> Unit) {
         this.runOnUiThread = runOnUiThread
         this.onSurfaceCreated = onSurfaceCreated
         this.onClick = onClick
@@ -50,6 +50,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         renderer.runOnUiThread = runOnUiThread
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
         renderer.isPlayerWhite = isPlayerWhite
+        renderer.onExceptionThrown = onExceptionThrown
     }
 
     fun getRenderer() = renderer

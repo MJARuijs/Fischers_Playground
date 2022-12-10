@@ -76,7 +76,7 @@ class FirebaseService : FirebaseMessagingService() {
             notificationBuilder.notify(0, summaryNotification)
 
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_firebase.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_firebase.txt", e.stackTraceToString(), applicationContext)
         }
     }
 

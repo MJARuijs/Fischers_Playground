@@ -12,6 +12,9 @@
         <item name="android:statusBarColor" >@android:color/transparent</item>
     </style>
 
+    <style name="Theme.FischersPlayground.CustomOverflowButton">
+        <item name="android:src">@drawable/options_menu_icon</item>
+    </style>
     <style name="Theme.FischersPlayground.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">false</item>

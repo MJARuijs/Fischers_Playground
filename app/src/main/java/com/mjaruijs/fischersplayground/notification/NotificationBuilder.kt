@@ -48,7 +48,7 @@ class NotificationBuilder(context: Context) {
 
             return notificationBuilder.build()
         } catch (e: Exception){
-            NetworkManager.getInstance().sendCrashReport("crash_notification_builder.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_notification_builder.txt", e.stackTraceToString(), context)
             throw e
         }
     }

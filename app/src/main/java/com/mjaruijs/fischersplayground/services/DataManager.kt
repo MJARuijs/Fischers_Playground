@@ -51,7 +51,7 @@ class DataManager(context: Context) {
 
             loadData(context)
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_data_manager_init.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_data_manager_init.txt", e.stackTraceToString(), context)
         }
     }
 
@@ -324,7 +324,7 @@ class DataManager(context: Context) {
                 savedPracticeSessions.clear()
                 loadPracticeSessions(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_loading_practice_sessions.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_loading_practice_sessions.txt", e.stackTraceToString(), context)
             } finally {
                 unlockPracticeSessions()
             }
@@ -336,7 +336,7 @@ class DataManager(context: Context) {
                 savedOpenings.clear()
                 loadSavedOpenings(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_loading_opening.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_loading_opening.txt", e.stackTraceToString(), context)
             } finally {
                 unlockOpenings()
             }
@@ -348,7 +348,7 @@ class DataManager(context: Context) {
                 savedGames.clear()
                 loadSavedGames(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_games_loading.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_games_loading.txt", e.stackTraceToString(), context)
             } finally {
                 unlockGames()
             }
@@ -360,7 +360,7 @@ class DataManager(context: Context) {
                 savedInvites.clear()
                 loadInvites(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_invites_loading.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_invites_loading.txt", e.stackTraceToString(), context)
             } finally {
                 unlockInvites()
             }
@@ -372,7 +372,7 @@ class DataManager(context: Context) {
                 recentOpponents.clear()
                 loadRecentOpponents(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_opponents_loading.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_opponents_loading.txt", e.stackTraceToString(), context)
             } finally {
                 unlockOpponents()
             }
@@ -384,7 +384,7 @@ class DataManager(context: Context) {
                 handledMessages.clear()
                 loadHandledMessages(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_messages_loading.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_messages_loading.txt", e.stackTraceToString(), context)
             } finally {
                 unlockMessages()
             }
@@ -408,7 +408,7 @@ class DataManager(context: Context) {
             try {
                 saveGames(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_games_saving.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_games_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockGames()
             }
@@ -419,7 +419,7 @@ class DataManager(context: Context) {
             try {
                 saveInvites(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_invites_saving.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_invites_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockInvites()
             }
@@ -430,7 +430,7 @@ class DataManager(context: Context) {
             try {
                 saveRecentOpponents(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_opponents_saving.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_opponents_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockOpponents()
             }
@@ -441,7 +441,7 @@ class DataManager(context: Context) {
             try {
                 saveHandledMessages(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_messages_saving.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_messages_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockMessages()
             }
@@ -636,7 +636,7 @@ class DataManager(context: Context) {
                     FileManager.write(context, "practice_session_${practiceSession.openingName}_${practiceSession.team}.txt", practiceSession.toString())
                 }
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_practice_sessions_saving.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_practice_sessions_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockPracticeSessions()
             }
@@ -652,7 +652,7 @@ class DataManager(context: Context) {
                     FileManager.write(context, "opening_${opening.name}_${opening.team}.txt", opening.toString())
                 }
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_openings_saving.txt", e.stackTraceToString())
+                NetworkManager.getInstance().sendCrashReport("crash_openings_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockOpenings()
             }

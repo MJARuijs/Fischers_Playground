@@ -85,22 +85,19 @@ class PracticeActivity : GameActivity() {
             try {
                 session = dataManager.getPracticeSession(openingName, openingTeam) ?: throw IllegalArgumentException("Tried to resume session with name: $openingName and team $openingTeam, but could not find it..")
                 if (session.currentLine != null) {
-                    Logger.debug(activityName, "Adding currentLine to lines: ${session.currentLine!!}")
                     lines += session.currentLine!!
                 }
                 if (session.nextLine != null) {
-                    Logger.debug(activityName, "Adding nextLine to lines: ${session.nextLine!!}")
                     lines += session.nextLine!!
                 }
                 for (line in session.lines) {
-                    Logger.debug(activityName, "Adding line to lines: $line")
                     lines += line
                 }
 
                 totalLineCount = session.totalLineCount
                 practiceProgress = session.currentLineIndex
             } catch (e: Exception) {
-                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString())
+                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString(), applicationContext)
                 throw e
             }
         } else {
@@ -122,13 +119,13 @@ class PracticeActivity : GameActivity() {
                 totalLineCount = variationLines.size
                 practiceProgress = 0
             } catch (e: Exception) {
-                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString())
+                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString(), applicationContext)
                 throw e
             }
         }
 
         isPlayingWhite = openingTeam == Team.WHITE
-        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp())
+        game = SinglePlayerGame(isPlayingWhite, Time.getFullTimeStamp(), false)
 
         moveFeedbackIcon = findViewById(R.id.move_feedback_icon)
         moveFeedbackIcon.setPosition(Vector2())
@@ -139,7 +136,7 @@ class PracticeActivity : GameActivity() {
 
         progressFragment = PracticeProgressFragment.getInstance(practiceProgress, totalLineCount)
 
-        if (isPlayingWhite) {
+        if (!isPlayingWhite) {
             boardOverlay.swapCharactersForBlack()
         }
         loadPracticeActionButtons()
@@ -185,14 +182,12 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun onMoveAnimationFinished(moveIndex: Int) {
-        boardOverlay.addArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
-
         val move = game.getCurrentMove() ?: return
         glView.clearHighlightedSquares()
 
         if (move.team == openingTeam) {
             runOnUiThread {
-                checkMoveCorrectness(move)
+                checkMoveCorrectness(move, moveIndex)
             }
         }
     }
@@ -236,16 +231,27 @@ class PracticeActivity : GameActivity() {
         finish()
     }
 
-    private fun checkMoveCorrectness(move: Move) {
+    private fun onNextMoveClicked() {
+        (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
+        (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
+    }
+
+    private fun checkMoveCorrectness(move: Move, moveIndex: Int) {
         if (move == currentLine!!.lineMoves[currentMoveIndex]) {
             currentMoveIndex++
+            boardOverlay.addArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
+
             if (isLastMoveInLine(move)) {
                 progressFragment.incrementCurrent()
                 showMoveFeedback(move.getToPosition(openingTeam), true)
                 processLineFinished()
             } else {
-                (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
-                (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
+                if (currentLine!!.arrows.containsKey(game.currentMoveIndex)) {
+                    (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextMoveButton()
+                } else {
+                    (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
+                    (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
+                }
             }
             hintRequested = false
         } else {
@@ -435,7 +441,7 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun loadPracticeActionButtons() {
-        practiceNavigationButtons = PracticeOpeningNavigationBarFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked, ::onExitClicked)
+        practiceNavigationButtons = PracticeOpeningNavigationBarFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked, ::onExitClicked, ::onNextMoveClicked)
         supportFragmentManager.commit {
             setReorderingAllowed(true)
             replace(R.id.action_buttons_fragment, practiceNavigationButtons)

@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.PI
 import kotlin.math.roundToInt
 
-class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game) {
+class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game, private val onExceptionThrown: (String, Exception) -> Unit) {
 //class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val requestGame: () -> Game) {
 
     private val quad = Quad()
@@ -115,24 +115,28 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             takenPieceData = TakenPieceData(currentAnimation.takenPiece, currentAnimation.takenPiecePosition!!, alpha)
         }
 
-        val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
-        animator.addOnFinishCall(
-            { animationRunning.set(false) },
-            {
-                takenPieceData = null
-                requestRender()
-            }
-        )
+        try {
+            val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
+            animator.addOnFinishCall(
+                { animationRunning.set(false) },
+                {
+                    takenPieceData = null
+                    requestRender()
+                }
+            )
 
-        runOnUiThread {
-            val piece = requestGame().state[currentAnimation.piecePosition]
-            if (piece == null) {
-                Logger.error(TAG, "Tried to animate piece from ${currentAnimation.piecePosition} to ${currentAnimation.piecePosition + currentAnimation.translation}, but no piece was found at the starting square..")
-                return@runOnUiThread
-            }
+            runOnUiThread {
+                val piece = requestGame().state[currentAnimation.piecePosition]
+                if (piece == null) {
+                    Logger.error(TAG, "Tried to animate piece from ${currentAnimation.piecePosition} to ${currentAnimation.piecePosition + currentAnimation.translation}, but no piece was found at the starting square..")
+                    return@runOnUiThread
+                }
 
-            Logger.debug(TAG, "Playing animation: moving ${piece.type} from ${vectorToChessSquares(currentAnimation.piecePosition)} to ${vectorToChessSquares(currentAnimation.translation + currentAnimation.piecePosition)}")
-            animator.start()
+                Logger.debug(TAG, "Playing animation: moving ${piece.type} from ${vectorToChessSquares(currentAnimation.piecePosition)} to ${vectorToChessSquares(currentAnimation.translation + currentAnimation.piecePosition)}")
+                animator.start()
+            }
+        } catch (e: Exception) {
+            onExceptionThrown("crash_piece_renderer_start_animation.txt", e)
         }
     }
 

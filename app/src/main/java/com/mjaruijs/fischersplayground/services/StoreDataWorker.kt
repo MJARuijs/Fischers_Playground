@@ -93,7 +93,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             parcelable.writeToParcel(parcel, 0)
             putByteArray(key, parcel.marshall())
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_data_worker_parcelable.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_data_worker_parcelable.txt", e.stackTraceToString(), applicationContext)
         } finally {
             parcel.recycle()
         }
@@ -115,7 +115,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             game.lastUpdated = timeStamp
             dataManager.setGame(gameId, game)
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_data_worker_on_opponent_moved.txt", e.stackTraceToString())
+            NetworkManager.getInstance().sendCrashReport("crash_data_worker_on_opponent_moved.txt", e.stackTraceToString(), applicationContext)
         }
 
         return moveData

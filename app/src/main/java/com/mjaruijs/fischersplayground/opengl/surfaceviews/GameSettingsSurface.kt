@@ -20,6 +20,7 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
     private var onSurfaceCreated: () -> Unit = {}
     private lateinit var onCameraRotated: () -> Unit
     private lateinit var savePreference: (String, Float) -> Unit
+    private lateinit var onExceptionThrown: (String, Exception) -> Unit
 
     private var oldX = 0f
     private var oldY = 0f
@@ -37,11 +38,14 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
-    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onCameraRotated: () -> Unit, savePreference: (String, Float) -> Unit) {
+    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onCameraRotated: () -> Unit, savePreference: (String, Float) -> Unit, onExceptionThrown: (String, Exception) -> Unit) {
         this.onSurfaceCreated = onSurfaceCreated
         this.onCameraRotated = onCameraRotated
         this.savePreference = savePreference
+        this.onExceptionThrown = onExceptionThrown
+
         renderer.runOnUiThread = runOnUiThread
+        renderer.onExceptionThrown = onExceptionThrown
     }
 
     private fun onContextCreated() {
@@ -106,7 +110,7 @@ class GameSettingsSurface(context: Context, attributeSet: AttributeSet?) : GLSur
 
                 requestRender()
             } catch (e: IllegalArgumentException) {
-                NetworkManager.getInstance().sendCrashReport("crash_game_setting_surface_on_touch.txt", e.stackTraceToString())
+                onExceptionThrown("crash_game_setting_surface_on_touch.txt", e)
             }
             return true
         }

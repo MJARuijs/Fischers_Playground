@@ -117,17 +117,23 @@ class HighlightRenderer(resources: Resources) {
         selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
         selectedSquare2DProgram.set("hasGradient", false)
 
-        val instances = if (game.board.longClickSelectedSquare.x != -1.0f) {
-            Logger.debug(TAG, "Not Rendering highlights")
-
-            selectedSquare2DProgram.set("translations[0]", (game.board.longClickSelectedSquare / 8.0f) * 2.0f - 1.0f)
-            selectedSquare2DProgram.set("colors[0]", Color(235f / 255f, 186f / 255f, 145f / 255f))
-            1
-        } else {
+//        val instances = if (game.board.longClickSelectedSquare.x != -1.0f) {
+//            Logger.debug(TAG, "Not Rendering highlights")
+//
+//            selectedSquare2DProgram.set("translations[0]", (game.board.longClickSelectedSquare / 8.0f) * 2.0f - 1.0f)
+//            selectedSquare2DProgram.set("colors[0]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+//            1
+//        } else {
             Logger.debug(TAG, "Rendering highlights")
+        var instances = 0
 
-            var instances = 0
-
+        if (highlightedSquares.isNotEmpty()) {
+            for ((i, square) in highlightedSquares.withIndex()) {
+                selectedSquare2DProgram.set("translations[${instances + i}]", (square / 8.0f) * 2.0f - 1.0f)
+                selectedSquare2DProgram.set("colors[${instances + i}]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+                instances++
+            }
+        } else {
             val lastMove = game.getCurrentMove()
 
             if (lastMove != null) {
@@ -141,13 +147,13 @@ class HighlightRenderer(resources: Resources) {
                 selectedSquare2DProgram.set("translations[1]", (toPosition / 8.0f) * 2.0f - 1.0f)
                 selectedSquare2DProgram.set("colors[1]", Color(235f / 255f, 186f / 255f, 145f / 255f))
             }
-
-            for ((i, square) in highlightedSquares.withIndex()) {
-                selectedSquare2DProgram.set("translations[${instances + i}]", (square / 8.0f) * 2.0f - 1.0f)
-                selectedSquare2DProgram.set("colors[${instances + i}]", Color(235f / 255f, 186f / 255f, 145f / 255f))
-            }
-            instances + highlightedSquares.size
         }
+
+
+
+
+
+//        }
 
 //        val instances = highlightedSquares.size + .
 

@@ -63,7 +63,7 @@ abstract class GameActivity : ClientActivity() {
             userName = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_NAME_KEY, "")!!
 
             glView = findViewById(R.id.opengl_view)
-            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onLongClick, ::onDisplaySizeChanged, isPlayingWhite)
+            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onLongClick, ::onDisplaySizeChanged, isPlayingWhite, ::onExceptionThrown)
         } catch (e: Exception) {
             FileManager.append(this, "game_activity_crash_report.txt", e.stackTraceToString())
         }
@@ -88,6 +88,10 @@ abstract class GameActivity : ClientActivity() {
     override fun onDestroy() {
         glView.destroy()
         super.onDestroy()
+    }
+
+    private fun onExceptionThrown(fileName: String, e: Exception) {
+        networkManager.sendCrashReport(fileName, e.stackTraceToString(), applicationContext)
     }
 
     inline fun <reified T>findFragment(): T? {
@@ -169,7 +173,7 @@ abstract class GameActivity : ClientActivity() {
             }
             game.onClick(x, y, displayWidth, displayHeight)
         } catch (e: Exception) {
-            networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString())
+            networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString(), applicationContext)
         }
     }
 
