@@ -122,7 +122,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun setGameCallbacks() {
-        game.onPawnPromoted = ::onPawnPromoted
+        game.onPawnPromoted = ::onPromotePawn
         game.onMoveMade = ::onMoveMade
     }
 
@@ -245,7 +245,7 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
-    private fun onPawnPromoted(square: Vector2, team: Team): PieceType {
+    private fun onPromotePawn(square: Vector2, team: Team): PieceType {
         runOnUiThread {
             pieceChooserDialog.show(square, team)
         }

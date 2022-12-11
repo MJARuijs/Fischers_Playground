@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.os.Looper
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import com.mjaruijs.fischersplayground.R
@@ -11,6 +12,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.util.Logger
 
 class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team) -> Unit) {
 
@@ -37,6 +39,7 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
     }
 
     fun show(square: Vector2, team: Team) {
+        Logger.debug(TAG, "Showing dialog!")
         if (team == Team.WHITE) {
             knightButton = dialog.findViewById(R.id.knight_button)
             knightButton
@@ -144,6 +147,12 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
         if (this::queenButton.isInitialized) {
             queenButton.destroy()
         }
+    }
+
+    companion object {
+
+        private const val TAG = "PieceChooserDialog"
+
     }
 
 }

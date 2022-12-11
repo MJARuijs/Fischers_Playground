@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.fragments.PlayerCardFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
 class SinglePlayerGameActivity : GameActivity() {
@@ -22,7 +23,10 @@ class SinglePlayerGameActivity : GameActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
-        game = SinglePlayerGame(true, Time.getFullTimeStamp(), true)
+//        Thread {
+            game = SinglePlayerGame(true, Time.getFullTimeStamp(), true)
+            Logger.debug(activityName, "Initting Game on thread ${Thread.currentThread().id}")
+//        }.start()
 
         val playerBundle = Bundle()
         playerBundle.putString("player_name", userName)
