@@ -7,15 +7,34 @@
         android:icon="@drawable/diagonal_arrow_icon"
         app:showAsAction="always"
         android:title="Toggle Arrow Mode" />
-    <item
-        android:id="@+id/delete_line_button"
-        android:icon="@drawable/delete_icon"
-        app:showAsAction="never"
-        android:title="Delete Line" />
 
     <item
-        android:id="@+id/copy_opening_to_clipboard"
-        android:title="Copy To Clipboard"
-        app:showAsAction="never" />
+        android:id="@+id/test"
+        android:icon="@drawable/options_menu_icon"
+        android:title="nose"
+        app:showAsAction="always">
+
+        <menu>
+            <item
+                android:id="@+id/delete_line_button"
+                android:icon="@drawable/delete_icon"
+                app:showAsAction="never"
+                android:title="Delete Line" />
+
+            <item
+                android:id="@+id/copy_opening_to_clipboard"
+                android:icon="@drawable/copy_icon"
+                android:title="Copy To Clipboard"
+                app:showAsAction="never" />
+
+            <item
+                android:id="@+id/rename_variation"
+                android:icon="@drawable/edit_icon"
+                android:title="Rename Variation"
+                app:showAsAction="never" />
+
+        </menu>
+
+    </item>
 
 </menu>

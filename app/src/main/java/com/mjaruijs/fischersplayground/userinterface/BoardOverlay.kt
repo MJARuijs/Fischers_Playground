@@ -22,7 +22,6 @@ import androidx.core.view.get
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -142,15 +141,19 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         invalidate()
     }
 
-    fun clear() {
+    fun hideArrows() {
         arrowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+        invalidate()
+    }
+
+    fun draw() {
         invalidate()
     }
 
     private fun clearArrows() {
         straightArrows.clear()
         knightArrows.clear()
-        clear()
+        hideArrows()
     }
 
     override fun onDraw(canvas: Canvas?) {

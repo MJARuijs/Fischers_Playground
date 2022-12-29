@@ -27,6 +27,7 @@ import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.chess.pieces.Team
+import com.mjaruijs.fischersplayground.dialogs.CreateVariationDialog
 import com.mjaruijs.fischersplayground.dialogs.PracticeSettingsDialog
 import com.mjaruijs.fischersplayground.fragments.OpeningMovePagerFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment.Companion.BACKGROUND_COLOR
@@ -35,7 +36,6 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
-import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
 class CreateOpeningActivity : GameActivity() {
@@ -62,6 +62,8 @@ class CreateOpeningActivity : GameActivity() {
 
     private lateinit var arrowMenuItem: MenuItem
 
+    private lateinit var renameVariationDialog: CreateVariationDialog
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
@@ -87,6 +89,9 @@ class CreateOpeningActivity : GameActivity() {
         practiceSettingsDialog.create(this as Activity)
 
         openingMovesFragment = OpeningMovePagerFragment.getInstance(::onLineSelected, ::onLineCleared, ::onMoveClicked, variation.lines)
+
+        renameVariationDialog = CreateVariationDialog(::onVariationRenamed)
+        renameVariationDialog.create(this as Activity)
 
         if (!isPlayingWhite) {
             boardOverlay.swapCharactersForBlack()
@@ -125,6 +130,10 @@ class CreateOpeningActivity : GameActivity() {
                 val clip = ClipData.newPlainText("Opening", opening.toString())
 
                 clipBoard.setPrimaryClip(clip)
+            }
+            R.id.rename_variation -> {
+                renameVariationDialog.setText(variationName)
+                renameVariationDialog.show()
             }
         }
         return super.onOptionsItemSelected(item)
@@ -177,7 +186,7 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onMoveAnimationStarted() {
-        boardOverlay.clear()
+        boardOverlay.hideArrows()
     }
 
     private fun onMoveAnimationFinished(moveIndex: Int) {
@@ -232,6 +241,7 @@ class CreateOpeningActivity : GameActivity() {
         arrowMenuItem.iconTintList = ColorStateList(arrayOf(intArrayOf(0)), intArrayOf(Color.WHITE))
 
         findFragment<OpeningMovePagerFragment>()?.addLine(selectedLine!!.setupMoves, selectedLine!!.lineMoves, selectedLine!!.arrows)
+
         requestRender()
     }
 
@@ -314,6 +324,14 @@ class CreateOpeningActivity : GameActivity() {
             replace(R.id.action_buttons_fragment, CreateOpeningActionButtonsFragment.getInstance(game, ::evaluateNavigationButtons, ::onStartRecording, ::onLineAdded, ::onStartPracticing, ::onBackClicked, ::onForwardClicked))
             replace(R.id.lower_fragment_container, openingMovesFragment)
         }
+    }
+
+    private fun onVariationRenamed(newName: String) {
+        opening.getVariation(variationName)!!.name = newName
+        variationName = newName
+        supportActionBar?.customView?.findViewById<TextView>(R.id.title_view)?.text = "$openingName, $newName"
+
+        saveOpening()
     }
 
     private fun saveOpening() {

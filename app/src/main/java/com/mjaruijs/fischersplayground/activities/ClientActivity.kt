@@ -208,8 +208,6 @@ abstract class ClientActivity : AppCompatActivity() {
             Topic.USER_STATUS_CHANGED -> ::onUserStatusChanged
             Topic.COMPARE_DATA -> { _ -> }
             Topic.RESTORE_DATA -> { _ -> }
-            Topic.COMPARE_OPENINGS -> { _ -> }
-            Topic.RESTORE_OPENINGS -> { _ -> }
             else -> throw IllegalArgumentException("Failed to handle message with topic: $topic")
         })
     }

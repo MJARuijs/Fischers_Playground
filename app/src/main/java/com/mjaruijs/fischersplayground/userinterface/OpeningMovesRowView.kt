@@ -46,10 +46,7 @@ class OpeningMovesRowView(context: Context, attributes: AttributeSet? = null) : 
         moveNumber = n
     }
 
-    lateinit var whiteMove: Move
-
     fun setWhiteMove(move: Move, onClick: (Move) -> Unit) {
-        whiteMove = move
         whiteMoveView.setOnClick(move, onClick)
         whiteMoveView.visibility = View.VISIBLE
         selectWhiteMove()
@@ -75,14 +72,6 @@ class OpeningMovesRowView(context: Context, attributes: AttributeSet? = null) : 
 
     fun deselectBlackMove() {
         blackMoveView.deselect()
-    }
-
-    fun areBothMovesHidden(): Boolean {
-        return blackMoveView.visibility == View.INVISIBLE && whiteMoveView.visibility == View.INVISIBLE
-    }
-
-    fun isBlackMoveHidden(): Boolean {
-        return blackMoveView.visibility == View.INVISIBLE
     }
 
     fun hideBlackMove() {

@@ -3,7 +3,7 @@ package com.mjaruijs.fischersplayground.adapters.variationadapter
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.util.Logger
 
-class Variation(val name: String, val lines: ArrayList<OpeningLine> = arrayListOf()) {
+class Variation(var name: String, val lines: ArrayList<OpeningLine> = arrayListOf()) {
 
     fun addLine(line: OpeningLine) {
         lines += line
@@ -67,7 +67,6 @@ class Variation(val name: String, val lines: ArrayList<OpeningLine> = arrayListO
                 }
 
                 val openingLine = OpeningLine.fromString(line)
-                Logger.debug(TAG, "Adding opening to variation $name: $openingLine || $line")
                 openingLines += openingLine
             }
 

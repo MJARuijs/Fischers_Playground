@@ -249,7 +249,7 @@ abstract class GameActivity : ClientActivity() {
         runOnUiThread {
             pieceChooserDialog.show(square, team)
         }
-        return PieceType.QUEEN
+        return PieceType.KNIGHT
     }
 
     protected fun dpToPx(@Suppress("SameParameterValue") dp: Int): Int {

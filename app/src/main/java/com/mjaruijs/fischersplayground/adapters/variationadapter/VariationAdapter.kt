@@ -7,6 +7,7 @@ import android.widget.CheckBox
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.Logger
 
 class VariationAdapter(private val onVariationClicked: (String) -> Unit, private val onVariationSelected: (String, Boolean) -> Unit, private val variations: ArrayList<Variation> = arrayListOf()) : RecyclerView.Adapter<VariationAdapter.VariationViewHolder>() {
 
@@ -31,7 +32,7 @@ class VariationAdapter(private val onVariationClicked: (String) -> Unit, private
             onVariationClicked(variation.name)
         }
 
-        holder.checkBox.setOnCheckedChangeListener { buttonView, isChecked ->
+        holder.checkBox.setOnCheckedChangeListener { _, isChecked ->
             onVariationSelected(variation.name, isChecked)
         }
     }
@@ -41,6 +42,10 @@ class VariationAdapter(private val onVariationClicked: (String) -> Unit, private
     inner class VariationViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val variationButton: UIButton2 = view.findViewById(R.id.variation_button)
         val checkBox: CheckBox = view.findViewById(R.id.variation_checkbox)
+    }
+
+    companion object {
+        private const val TAG = "VariationAdapter"
     }
 
 }

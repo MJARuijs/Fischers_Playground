@@ -123,7 +123,6 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayer
                 }
             }
         }
-
     }
 
     override fun processOnLongClick(clickedSquare: Vector2) {

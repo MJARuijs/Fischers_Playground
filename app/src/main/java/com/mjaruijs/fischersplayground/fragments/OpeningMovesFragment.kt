@@ -551,6 +551,8 @@ class OpeningMovesFragment : Fragment() {
             scrollView.post {
                 scrollView.fullScroll(View.FOCUS_DOWN)
             }
+//            val indexOfFirstLineMove = setupMoves.size
+//            selectMove(indexOfFirstLineMove, true)
         }
     }
 

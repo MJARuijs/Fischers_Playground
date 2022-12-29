@@ -98,7 +98,7 @@
                 android:background="@null"
                 android:ems="10"
                 android:hint="Username"
-                android:inputType="textPersonName|textCapSentences|textCapWords|textCapCharacters"
+                android:inputType="textPersonName|textCapWords"
                 android:textAlignment="center"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"

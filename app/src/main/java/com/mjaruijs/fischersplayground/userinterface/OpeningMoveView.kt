@@ -21,9 +21,9 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
 
     private var iconView: ImageView
     private var moveView: TextView
+    private var promotedIconView: ImageView
+    private var promotedPieceText: TextView
     private var cardView: CardView
-
-    private var lineId = 0
 
     private var pieceDrawable: Drawable? = null
     private lateinit var move: Move
@@ -33,51 +33,51 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
 
         iconView = findViewById(R.id.opening_piece_icon)
         moveView = findViewById(R.id.opening_move_notation)
+        promotedIconView = findViewById(R.id.promoted_piece_icon)
+        promotedPieceText = findViewById(R.id.promoted_piece_text)
         cardView = findViewById(R.id.opening_move_card)
         cardView.setCardBackgroundColor(Color.TRANSPARENT)
-        cardView.setOnLongClickListener {
-//            if (deleteModeActive) {
-//                deleteModeActive = false
-//                iconView.setImageDrawable(pieceDrawable!!)
-//                select()
-//            } else {
-//                deleteModeActive = true
-//                iconView.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.delete_icon, null))
-//                cardView.setCardBackgroundColor(Color.RED)
-//            }
-            true
-        }
     }
 
     override fun setBackgroundColor(color: Int) {
         cardView.setCardBackgroundColor(color)
     }
 
-    fun setLineId(lineId: Int): OpeningMoveView {
-        this.lineId = lineId
-        return this
-    }
-
-    fun setMove(move: Move): OpeningMoveView {
+    private fun setMove(move: Move): OpeningMoveView {
         this.move = move
-        moveView.text = move.getSimpleChessNotation().substring(1)
         pieceDrawable = getPieceIcon(resources, move.movedPiece, move.team)
         iconView.setImageDrawable(pieceDrawable)
+
+        val chessNotation = move.getSimpleChessNotation().substring(1)
+
+        if (move.promotedPiece == null) {
+            moveView.text = chessNotation
+            promotedIconView.visibility = View.GONE
+            promotedPieceText.visibility = View.GONE
+        } else {
+            promotedIconView.visibility = View.VISIBLE
+            promotedIconView.setImageDrawable(getPieceIcon(resources, move.promotedPiece, move.team))
+
+            if (move.isCheck || move.isCheckMate) {
+                val checkSymbol = if (move.isCheckMate) "#" else "+"
+                moveView.text = "${move.getSimpleChessNotation().substring(1, chessNotation.length)}="
+                promotedPieceText.text = checkSymbol
+                promotedPieceText.visibility = View.VISIBLE
+            } else {
+                moveView.text = "${move.getSimpleChessNotation().substring(1)}="
+                promotedPieceText.visibility = View.GONE
+            }
+        }
+
         return this
     }
 
     fun setOnClick(move: Move, onClick: (Move) -> Unit): OpeningMoveView {
         setMove(move)
         cardView.setOnClickListener {
-//            if (this::move.isInitialized) {
-                onClick(move)
-//            }
+            onClick(move)
         }
         return this
-    }
-
-    fun getText(): String {
-        return moveView.text.toString()
     }
 
     fun show() {
@@ -117,10 +117,10 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
             }
         }
 
-        val drawable = ResourcesCompat.getDrawable(resources, resourceId, null) ?: throw IllegalArgumentException("Could not find resource with id: $resourceId")
-//        val bitmap = drawable.toBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ALPHA_8)
-//        val outlineBitmap = drawable.toBitmap(drawable.intrinsicWidth + pieceOffset * 2, drawable.intrinsicHeight + pieceOffset * 2, Bitmap.Config.ALPHA_8)
+        return ResourcesCompat.getDrawable(resources, resourceId, null) ?: throw IllegalArgumentException("Could not find resource with id: $resourceId")
+    }
 
-        return drawable
+    companion object {
+        private const val TAG = "OpeningMoveView"
     }
 }

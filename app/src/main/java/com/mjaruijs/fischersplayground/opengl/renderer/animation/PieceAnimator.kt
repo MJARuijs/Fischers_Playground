@@ -20,7 +20,7 @@ class PieceAnimator(state: GameState, piecePosition: Vector2, val translation: V
     private val yAnimator = ValueAnimator.ofFloat(translation.y, 0.0f)
 
     init {
-        piece = state[piecePosition] ?: throw IllegalArgumentException("No piece was found at square: $piecePosition.. Failed to animate..")
+        piece = state[piecePosition] ?: throw IllegalArgumentException("No piece was found at square: $piecePosition.. Failed to animate..\n$state\n")
 
         xAnimator.duration = animationDuration
         xAnimator.addUpdateListener {

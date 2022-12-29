@@ -422,17 +422,17 @@ open class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onDrawOffered(output: Parcelable) {
         val gameId = (output as ParcelableString).value
-        (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
 
         if (gameId == this.gameId) {
+            (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
             opponentOfferedDrawDialog.show()
         }
     }
 
     override fun onDrawAccepted(output: Parcelable) {
         val gameId = (output as ParcelableString).value
-        (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_ACCEPTED_DRAW)
         if (gameId == this.gameId) {
+            (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_ACCEPTED_DRAW)
             (game as MultiPlayerGame).status = GameStatus.GAME_DRAW
             opponentAcceptedDrawDialog.show()
         }

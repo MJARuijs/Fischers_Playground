@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
@@ -13,6 +14,7 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
+import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningMovePagerFragment : Fragment() {
 
@@ -27,6 +29,8 @@ class OpeningMovePagerFragment : Fragment() {
     private lateinit var pagerAdapter: ScreenSlidePagerAdapter
 
     companion object {
+
+        private const val TAG = "OpeningMovePagerFragment"
 
         fun getInstance(onLineSelected: (OpeningLine, Int) -> Unit, onLineCleared: () -> Unit, onMoveClick: (Move) -> Unit, openingLines: ArrayList<OpeningLine> = ArrayList()): OpeningMovePagerFragment {
             val pagerFragment = OpeningMovePagerFragment()
@@ -65,24 +69,31 @@ class OpeningMovePagerFragment : Fragment() {
 
         if (pagerAdapter.itemCount < 2) {
             tabIndicator.visibility = View.INVISIBLE
-
         }
 
         val tabMediator = TabLayoutMediator(tabIndicator, pager) {
                 _, _->
         }
-        tabMediator.detach()
+        tabMediator.attach()
+
+        val tabStrip = tabIndicator.getChildAt(0) as LinearLayout
+        for (i in 0 until tabStrip.childCount) {
+            tabStrip.getChildAt(i).setOnTouchListener { _, _ -> true }
+        }
 
         pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-
             override fun onPageSelected(position: Int) {
-                val selectedFragment = pagerAdapter.get(position)
-
-                val line = selectedFragment.getOpeningLine()
-                val selectedMove = selectedFragment.currentMoveIndex
-                onLineSelected(line, selectedMove)
+                onPageChanged(position)
             }
         })
+    }
+
+    private fun onPageChanged(position: Int) {
+        val selectedFragment = pagerAdapter.get(position)
+
+        val line = selectedFragment.getOpeningLine()
+        val selectedMove = selectedFragment.currentMoveIndex
+        onLineSelected(line, selectedMove)
     }
 
     fun getCurrentOpeningFragment() = pagerAdapter.get(pager.currentItem)
@@ -93,6 +104,9 @@ class OpeningMovePagerFragment : Fragment() {
         if (pagerAdapter.itemCount >= 2) {
             tabIndicator.visibility = View.VISIBLE
         }
+
+        val tabStrip = tabIndicator.getChildAt(0) as LinearLayout
+        tabStrip.getChildAt(pagerAdapter.itemCount - 1).setOnTouchListener { _, _ -> true }
         pager.setCurrentItem(pager.currentItem + 1, true)
     }
 
@@ -104,11 +118,12 @@ class OpeningMovePagerFragment : Fragment() {
             onLineCleared()
         } else {
             pagerAdapter.delete(pager.currentItem)
+            onPageChanged(pager.currentItem)
         }
 
-//        if (pagerAdapter.itemCount < 2) {
-//            tabIndicator.visibility = View.INVISIBLE
-//        }
+        if (pagerAdapter.itemCount < 2) {
+            tabIndicator.visibility = View.INVISIBLE
+        }
     }
 
     inner class ScreenSlidePagerAdapter(private val onMoveClick: (Move) -> Unit, val fragment: OpeningMovePagerFragment, private val fragments: ArrayList<OpeningMovesFragment> = ArrayList()) : FragmentStateAdapter(fragment) {

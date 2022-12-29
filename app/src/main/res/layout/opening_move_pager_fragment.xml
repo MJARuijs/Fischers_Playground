@@ -19,14 +19,14 @@
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_indicator"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="2dp"
         android:background="#00000000"
-        android:visibility="gone"
+        android:clickable="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:tabGravity="center"
+        app:tabGravity="fill"
         app:tabIconTint="@color/accent_color"
         app:tabIndicatorColor="@color/accent_color"
         app:tabIndicatorFullWidth="true"

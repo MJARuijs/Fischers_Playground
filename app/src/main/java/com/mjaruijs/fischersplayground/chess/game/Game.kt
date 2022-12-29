@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.chess.game
 
-import android.util.Log
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
@@ -41,11 +40,11 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     var onAnimationFinished: (Int) -> Unit = {}
 
     var queueAnimation: (AnimationData) -> Unit = {
-        Log.w(TAG,"Tried to animate move, but function is not set yet")
+        Logger.warn(TAG,"Tried to animate move, but function is not set yet")
     }
 
     var onMoveMade: (Move) -> Unit = {
-        Log.w(TAG, "Tried to make a move, but function is not set yet")
+        Logger.warn(TAG, "Tried to make a move, but function is not set yet")
     }
 
     init {
@@ -240,26 +239,23 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         if (animation.nextAnimation == null) {
             animation.onStartCalls += {
                 onAnimationStarted()
-
+            }
+            animation.onFinishCalls += {
                 val isCheck = isPlayerChecked(state, !move.team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
                 updateCheckData(move.team, isCheck, isCheckMate)
-            }
-            animation.onFinishCalls += {
                 onAnimationFinished(moveIndex)
             }
         } else {
             animation.nextAnimation!!.onStartCalls += {
                 onAnimationStarted()
-
+            }
+            animation.nextAnimation!!.onFinishCalls += {
                 val isCheck = isPlayerChecked(state, !move.team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, !move.team) else false
 
                 updateCheckData(move.team, isCheck, isCheckMate)
-            }
-            animation.nextAnimation!!.onFinishCalls += {
-
                 onAnimationFinished(moveIndex)
             }
         }
@@ -322,16 +318,14 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         if (animation.nextAnimation == null) {
             animation.onStartCalls += {
                 onAnimationStarted()
-
-                finishMove(move)
             }
             animation.onFinishCalls += {
+                finishMove(move)
                 onAnimationFinished(moveIndex)
             }
         } else {
             animation.nextAnimation!!.onStartCalls += {
                 onAnimationStarted()
-
                 finishMove(move)
             }
             animation.nextAnimation!!.onFinishCalls += {
@@ -393,22 +387,20 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             createAnimation(animationSpeed, fromPosition, toPosition, false, takenPiece, takenPiecePosition)
         }
 
-        if (animation.nextAnimation != null) {
-            animation.nextAnimation!!.onStartCalls += {
+        if (animation.nextAnimation == null) {
+            animation.onStartCalls += {
                 onAnimationStarted()
-
-                onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
             }
-            animation.nextAnimation!!.onFinishCalls += {
+            animation.onFinishCalls += {
+                onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
                 onAnimationFinished(currentMoveIndex)
             }
         } else {
-            animation.onStartCalls += {
+            animation.nextAnimation!!.onStartCalls += {
                 onAnimationStarted()
-
-                onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
             }
-            animation.onFinishCalls += {
+            animation.nextAnimation!!.onFinishCalls += {
+                onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
                 onAnimationFinished(currentMoveIndex)
             }
         }

@@ -26,7 +26,6 @@ import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
-import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.*
 import kotlin.math.roundToInt
@@ -139,6 +138,7 @@ class PracticeActivity : GameActivity() {
         if (!isPlayingWhite) {
             boardOverlay.swapCharactersForBlack()
         }
+
         loadPracticeActionButtons()
 
         supportActionBar?.show()
@@ -177,8 +177,23 @@ class PracticeActivity : GameActivity() {
         game.onAnimationFinished = ::onMoveAnimationFinished
     }
 
+    override fun onClick(x: Float, y: Float) {
+        super.onClick(x, y)
+
+        if (game.board.isASquareSelected()) {
+            boardOverlay.hideArrows()
+        } else {
+            boardOverlay.draw()
+        }
+    }
+
+    override fun onMoveMade(move: Move) {
+        super.onMoveMade(move)
+
+    }
+
     private fun onMoveAnimationStarted() {
-        boardOverlay.clear()
+        boardOverlay.hideArrows()
     }
 
     private fun onMoveAnimationFinished(moveIndex: Int) {
@@ -189,6 +204,8 @@ class PracticeActivity : GameActivity() {
             runOnUiThread {
                 checkMoveCorrectness(move, moveIndex)
             }
+        } else {
+            boardOverlay.addArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
         }
     }
 
@@ -233,6 +250,8 @@ class PracticeActivity : GameActivity() {
 
     private fun onNextMoveClicked() {
         (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
+        boardOverlay.addArrows(currentLine!!.arrows[currentMoveIndex + currentLine!!.setupMoves.size - 1] ?: ArrayList())
+
         (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
     }
 
@@ -250,6 +269,7 @@ class PracticeActivity : GameActivity() {
                     (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextMoveButton()
                 } else {
                     (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
+
                     (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
                 }
             }

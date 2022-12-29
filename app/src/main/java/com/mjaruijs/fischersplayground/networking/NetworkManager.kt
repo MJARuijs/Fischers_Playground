@@ -3,7 +3,6 @@ package com.mjaruijs.fischersplayground.networking
 import android.content.Context
 import android.content.Intent
 import android.os.Looper
-import android.util.Log
 import android.widget.Toast
 import com.mjaruijs.fischersplayground.networking.client.SecureClient
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
@@ -21,7 +20,7 @@ class NetworkManager {
         private const val TAG = "NetworkManager"
 
         private const val PUBLIC_SERVER_IP = "94.208.124.161"
-//        private const val PUBLIC_SERVER_IP = "217.101.191.23"
+//        private const val PUBLIC_SERVER_IP = "10.248.59.222"
         private const val LOCAL_SERVER_IP = "192.168.178.18"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
@@ -48,18 +47,20 @@ class NetworkManager {
     private val messageQueue = ArrayList<NetworkMessage>()
 
     fun stop() {
-        while (sendingMessage.get()) {
-            Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
-            Thread.sleep(1)
-        }
-        messageQueue.clear()
-        if (clientConnected.get()) {
-            client.close()
-            Log.i(TAG, "Stopping server connection!")
-            clientConnected.set(false)
-        }
-        clientConnecting.set(false)
-        manager.stop()
+        Thread {
+            while (sendingMessage.get()) {
+                Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
+                Thread.sleep(1)
+            }
+
+            messageQueue.clear()
+            if (clientConnected.get()) {
+                client.close()
+                clientConnected.set(false)
+            }
+            clientConnecting.set(false)
+            manager.stop()
+        }.start()
     }
 
     fun isRunning(): Boolean {
@@ -75,27 +76,26 @@ class NetworkManager {
             return
         }
 
-        Log.i(TAG, "Starting networker")
-
         manager = Manager("Client")
         manager.context = context
         manager.setOnClientDisconnect {
-//            Logger.warn(TAG, "Manager disconnected!")
             stop()
         }
 
         Thread {
+            Logger.warn(TAG, "Trying to connect to server..")
+
             try {
                 clientConnecting.set(true)
                 client = SecureClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
-                Looper.prepare()
-                Toast.makeText(context, "Connected to server", Toast.LENGTH_SHORT).show()
+                Logger.warn(TAG, "Connected to server..")
             } catch (e: Exception) {
-                Log.w("Networker", "Failed to connect to server..")
+                Logger.warn(TAG, "Failed to connect to server..")
                 Looper.prepare()
                 Toast.makeText(context, "Failed to connect to server..", Toast.LENGTH_SHORT).show()
                 clientConnected.set(false)
+                sendingMessage.set(false)
             } finally {
                 clientConnecting.set(false)
             }
@@ -113,12 +113,11 @@ class NetworkManager {
     }
 
     fun sendMessage(message: NetworkMessage) {
-        sendingMessage.set(true)
-
         Thread {
             while (clientConnecting.get()) {
                 Thread.sleep(1)
             }
+            sendingMessage.set(true)
 
             if (clientConnected.get()) {
                 try {
@@ -173,7 +172,11 @@ class NetworkManager {
 
     fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {
         if (context != null) {
-            Looper.prepare()
+            try {
+                Looper.prepare()
+            } catch (e: Exception) {
+                Logger.warn(TAG, e.stackTraceToString())
+            }
             Toast.makeText(context, "A crash occurred!", Toast.LENGTH_SHORT).show()
         }
         Thread {

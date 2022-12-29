@@ -8,6 +8,25 @@
     android:background="#333333"
     tools:context=".activities.game.GameActivity">
 
+<!--    <androidx.appcompat.widget.Toolbar-->
+<!--        android:id="@+id/game_toolbar"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:background="@color/background_color"-->
+<!--        android:minHeight="?attr/actionBarSize">-->
+
+<!--        <TextView-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:id="@+id/toolbar_title"-->
+<!--            android:maxLines="1"-->
+<!--            android:textAlignment="center"-->
+<!--            android:textSize="20sp"-->
+<!--            android:textStyle="bold"-->
+<!--            android:typeface="serif" />-->
+
+<!--    </androidx.appcompat.widget.Toolbar>-->
+
     <ImageView
         android:id="@+id/open_chat_button"
         android:layout_width="30dp"

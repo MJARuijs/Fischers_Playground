@@ -72,6 +72,8 @@ class VariationMenuActivity : ClientActivity() {
         super.onResume()
         hideActivityDecorations()
 
+        variationAdapter.notifyDataSetChanged()
+
         Thread {
             while (dataManager.isLocked()) {
                 Thread.sleep(1)
@@ -89,7 +91,6 @@ class VariationMenuActivity : ClientActivity() {
         }.start()
 
         val hasSession = dataManager.getPracticeSession(openingName, openingTeam) != null
-        Logger.debug(activityName, "HasSession: $hasSession")
         if (hasSession) {
             Thread {
                 Thread.sleep(250)

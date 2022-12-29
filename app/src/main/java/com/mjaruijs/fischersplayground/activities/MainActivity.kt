@@ -62,30 +62,6 @@ class MainActivity : ClientActivity() {
 //        loadResources()
 
         initUIComponents()
-//
-//        val knightArrowDrawable = ResourcesCompat.getDrawable(resources, R.drawable.knight_arrow, null)
-//        val bm = knightArrowDrawable!!.toBitmap(knightArrowDrawable!!.intrinsicWidth, knightArrowDrawable!!.intrinsicHeight, Bitmap.Config.ARGB_8888)
-//
-//
-//        for (x in 0 until bm.width) {
-//            for (y in 0 until bm.height) {
-//                val pixel = bm.getPixel(x, y)
-//                val red = Color.red(pixel)
-//                val green = Color.green(pixel)
-//                val blue = Color.blue(pixel)
-//                val alpha = Color.alpha(pixel)
-//                if (alpha != 0) {
-//                    val color = Color.argb(255, red, green, blue)
-//
-//                    Logger.debug(activityName, "Setting alpha ")
-//                    bm[x, y] = color
-//                }
-//            }
-//        }
-//
-//
-//
-//        ImageUtils.saveBitmapToStorage(applicationContext, bm, "knight_arrow_2.png")
 
 //        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
 //            val token = result.token

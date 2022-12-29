@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.Dialog
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Looper
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import com.mjaruijs.fischersplayground.R
@@ -39,7 +38,6 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
     }
 
     fun show(square: Vector2, team: Team) {
-        Logger.debug(TAG, "Showing dialog!")
         if (team == Team.WHITE) {
             knightButton = dialog.findViewById(R.id.knight_button)
             knightButton
@@ -88,7 +86,7 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                 .setCornerRadius(20f)
                 .setOnClick {
                     dialog.dismiss()
-                    onPieceSelected(square, PieceType.QUEEN, team)
+                    onPieceSelected(square, PieceType.KNIGHT, team)
                 }
 
             bishopButton = dialog.findViewById(R.id.bishop_button)
@@ -98,7 +96,7 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                 .setCornerRadius(20f)
                 .setOnClick {
                     dialog.dismiss()
-                    onPieceSelected(square, PieceType.QUEEN, team)
+                    onPieceSelected(square, PieceType.BISHOP, team)
                 }
 
             rookButton = dialog.findViewById(R.id.rook_button)
@@ -108,7 +106,7 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
                 .setCornerRadius(20f)
                 .setOnClick {
                     dialog.dismiss()
-                    onPieceSelected(square, PieceType.QUEEN, team)
+                    onPieceSelected(square, PieceType.ROOK, team)
                 }
 
             queenButton = dialog.findViewById(R.id.queen_button)

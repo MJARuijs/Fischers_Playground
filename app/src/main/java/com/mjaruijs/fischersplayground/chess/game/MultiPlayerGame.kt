@@ -2,6 +2,9 @@ package com.mjaruijs.fischersplayground.chess.game
 
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
+import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
+import com.mjaruijs.fischersplayground.chess.news.IntNews
+import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
@@ -268,6 +271,63 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     }
 
     override fun processOnLongClick(clickedSquare: Vector2) {
+
+    }
+
+    companion object {
+
+        fun parseFromServer(content: String, userId: String): MultiPlayerGame {
+            val data = content.removePrefix("(").removeSuffix(")").split('|')
+            val gameId = data[0]
+            val opponentId = data[1]
+            val opponentName = data[2]
+            val gameStatus = GameStatus.parseFromServer(data[3], userId)
+            val opponentStatus = data[4]
+            val lastUpdated = data[5].toLong()
+            val whitePlayerId = data[6]
+            val moveToBeConfirmed = data[7]
+            val moveList = data[8].removePrefix("[").removeSuffix("]").split('\\')
+            val chatMessages = data[9].removePrefix("[").removeSuffix("]").split('\\')
+            val newsData = data[10].removePrefix("[").removeSuffix("]").split("\\")
+
+            val moves = ArrayList<Move>()
+
+            for (move in moveList) {
+                if (move.isNotBlank()) {
+                    moves += Move.fromChessNotation(move)
+                }
+            }
+
+            val messages = ArrayList<ChatMessage>()
+            for (message in chatMessages) {
+                if (message.isNotBlank()) {
+                    val messageData = message.split('~')
+                    val timeStamp = messageData[0]
+                    val messageContent = messageData[1]
+                    val type = MessageType.fromString(messageData[2])
+
+                    messages += ChatMessage(timeStamp, messageContent, type)
+                }
+            }
+
+            val newsUpdates = ArrayList<News>()
+            for (news in newsData) {
+                if (news.isBlank()) {
+                    continue
+                }
+
+                when (news.count { char -> char == ',' }) {
+                    0 -> newsUpdates += News.fromString(news)
+                    1 -> newsUpdates += IntNews.fromString(news)
+                    else -> newsUpdates += MoveNews.fromString(news)
+                }
+            }
+
+            val isPlayerWhite = whitePlayerId == userId
+            val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
+            newGame.status = gameStatus
+            return newGame
+        }
 
     }
 }

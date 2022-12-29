@@ -16,6 +16,10 @@ class CreateVariationDialog(private val onConfirmClicked: (String) -> Unit) {
     private lateinit var variationNameInput: EditText
     private lateinit var createVariationButton: UIButton2
 
+    fun setText(text: String) {
+        variationNameInput.setText(text.toCharArray(), 0, text.length)
+    }
+
     fun create(activity: Activity) {
         dialog = Dialog(activity)
         dialog.setContentView(R.layout.dialog_create_variation)
@@ -33,6 +37,7 @@ class CreateVariationDialog(private val onConfirmClicked: (String) -> Unit) {
                 val variationName = variationNameInput.text.toString().trim()
                 if (variationName.isNotBlank()) {
                     onConfirmClicked(variationName)
+                    dismiss()
                 }
             }
 

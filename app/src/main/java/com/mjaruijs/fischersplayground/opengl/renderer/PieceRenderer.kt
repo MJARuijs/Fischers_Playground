@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
 import android.content.res.Resources
-import androidx.annotation.NonNull
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -30,7 +29,6 @@ import kotlin.math.PI
 import kotlin.math.roundToInt
 
 class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game, private val onExceptionThrown: (String, Exception) -> Unit) {
-//class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val requestGame: () -> Game) {
 
     private val quad = Quad()
     private val sampler = Sampler(0)

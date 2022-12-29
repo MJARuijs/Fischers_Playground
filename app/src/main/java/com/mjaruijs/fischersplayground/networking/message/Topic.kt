@@ -38,8 +38,6 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     CONFIRM_MESSAGE,
     CRASH_REPORT,
     NEW_OPENING,
-    COMPARE_OPENINGS,
-    RESTORE_OPENINGS,
     DELETE_OPENING,
     NEW_PRACTICE_SESSION,
     DELETE_PRACTICE_SESSION,

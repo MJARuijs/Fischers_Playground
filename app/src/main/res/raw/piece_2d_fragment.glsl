@@ -11,5 +11,10 @@ out vec4 outColor;
 
 void main() {
     vec4 textureColor = texture(textureMaps, vec3(textureCoordinates, int(textureId)));
-    outColor = textureColor;
+    // if (textureColor.a == 0.0) {
+    //    outColor = vec4(1, 0, 0, 1);
+    //} else {
+        outColor = textureColor;
+    //}
+
 }

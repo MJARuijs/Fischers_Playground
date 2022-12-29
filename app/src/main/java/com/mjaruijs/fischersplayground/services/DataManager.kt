@@ -533,6 +533,8 @@ class DataManager(context: Context) {
                 }
             }
 
+//            val isPlayerWhite = whitePlayerId == user
+
             val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
             newGame.status = gameStatus
             savedGames[gameId] = newGame

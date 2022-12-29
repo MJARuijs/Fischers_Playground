@@ -116,13 +116,11 @@ class LoginActivity : ClientActivity() {
         accountAlreadyExistsDialog.show()
     }
 
-
-
     private fun setupUIElements() {
         val createAccountButton = findViewById<UIButton2>(R.id.create_account_button)
         createAccountButton.setText("Create Account")
             .setColor(Color.rgb(57, 57, 57))
-            .setCornerRadius(45f)
+            .setCornerRadius(90f)
             .setTextSize(28f)
             .setTextPadding(16)
             .setOnClickListener {
