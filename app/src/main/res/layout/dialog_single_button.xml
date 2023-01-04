@@ -37,8 +37,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
-        android:id="@+id/left_dialog_button"
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
+        android:id="@+id/single_dialog_button"
         android:layout_width="0dp"
         android:layout_height="60dp"
         android:layout_marginStart="16dp"

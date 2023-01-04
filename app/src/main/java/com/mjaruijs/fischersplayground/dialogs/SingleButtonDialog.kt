@@ -8,57 +8,62 @@ import android.widget.TextView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.userinterface.ScaleType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import kotlin.math.roundToInt
 
-class SingleButtonDialog(parent: Activity, title: String, message: String, buttonIconLocation: Int?, buttonText: String?, private var onButtonClick: () -> Unit = {}) {
+class SingleButtonDialog(parent: Activity, cancelable: Boolean, title: String, message: String, buttonIconLocation: Int?, buttonText: String?, private var onButtonClick: () -> Unit = {}) {
 
-    constructor(parent: Activity, title: String, message: String, buttonLocation: Int, onClick: () -> Unit = {}) : this(parent, title, message, buttonLocation, null, onClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, message: String, buttonLocation: Int, onClick: () -> Unit = {}) : this(parent, cancelable, title, message, buttonLocation, null, onClick)
 
-    constructor(parent: Activity, title: String, message: String, buttonText: String?, onClick: () -> Unit = {}) : this(parent, title, message, null, buttonText, onClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, message: String, buttonText: String?, onClick: () -> Unit = {}) : this(parent, cancelable, title, message, null, buttonText, onClick)
 
-    constructor(parent: Activity, title: String, buttonLocation: Int, onClick: () -> Unit = {}) : this(parent, title, "", buttonLocation, null, onClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, buttonLocation: Int, onClick: () -> Unit = {}) : this(parent, cancelable, title, "", buttonLocation, null, onClick)
 
-    constructor(parent: Activity, title: String, buttonText: String?, onClick: () -> Unit = {}) : this(parent, title, "", null, buttonText, onClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, buttonText: String?, onClick: () -> Unit = {}) : this(parent, cancelable, title, "", null, buttonText, onClick)
 
     private val dialog = Dialog(parent)
     private val messageView: TextView
-    private val button: UIButton
+    private val button: UIButton2
 
     init {
         dialog.setContentView(R.layout.dialog_single_button)
         dialog.show()
         dialog.dismiss()
-        dialog.setCancelable(false)
-        dialog.setCanceledOnTouchOutside(false)
+        dialog.setCancelable(cancelable)
+        dialog.setCanceledOnTouchOutside(cancelable)
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val titleView = dialog.findViewById<TextView>(R.id.dialog_title)
-        button = dialog.findViewById(R.id.left_dialog_button)
+        button = dialog.findViewById(R.id.single_dialog_button)
         messageView = dialog.findViewById(R.id.dialog_message)
         messageView.minWidth = (parent.resources.displayMetrics.widthPixels * 0.5f).roundToInt()
         messageView.text = message
         titleView.text = title
-        button.setIconScaleType(ScaleType.SQUARE)
-            .setColor(235, 186, 145)
+        button.setColor(235, 186, 145)
             .setCornerRadius(20.0f)
-            .setOnClick {
+            .setOnClickListener {
                 onButtonClick()
                 dismiss()
             }
 
         if (buttonIconLocation != null) {
-            button.setColoredDrawable(buttonIconLocation)
+            button.setIcon(buttonIconLocation)
         }
 
         if (buttonText != null) {
             button.setText(buttonText)
-                .setButtonTextColor(Color.WHITE)
-                .setButtonTextSize(50.0f)
+                .setTextSize(BUTTON_TEXT_SIZE)
         }
     }
 
+    fun setCancelable(cancelable: Boolean): SingleButtonDialog {
+        dialog.setCancelable(cancelable)
+        dialog.setCanceledOnTouchOutside(cancelable)
+        return this
+    }
+
     fun setOnClick(onClick: () -> Unit): SingleButtonDialog {
-        button.setOnClick {
+        button.setOnClickListener {
             onClick()
             dismiss()
         }
@@ -90,6 +95,10 @@ class SingleButtonDialog(parent: Activity, title: String, message: String, butto
 
     fun destroy() {
         dismiss()
-        button.destroy()
     }
+
+    companion object {
+        private const val BUTTON_TEXT_SIZE = 24f
+    }
+
 }

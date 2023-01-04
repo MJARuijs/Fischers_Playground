@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
+import com.mjaruijs.fischersplayground.util.Logger
 
 class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", private val savedMoves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated) {
 
@@ -66,6 +67,11 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     override fun getCurrentTeam() = team
 
     override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(team, piece, square, false, state, moves.subList(0, currentMoveIndex + 1), lookingForCheck)
+
+    override fun setMove(move: Move) {
+        super.setMove(move)
+        status = if (move.team == team) GameStatus.OPPONENT_MOVE else GameStatus.PLAYER_MOVE
+    }
 
     fun undoMoves(numberOfMoves: Int) {
         for (i in 0 until numberOfMoves) {
@@ -277,56 +283,63 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     companion object {
 
         fun parseFromServer(content: String, userId: String): MultiPlayerGame {
-            val data = content.removePrefix("(").removeSuffix(")").split('|')
-            val gameId = data[0]
-            val opponentId = data[1]
-            val opponentName = data[2]
-            val gameStatus = GameStatus.parseFromServer(data[3], userId)
-            val opponentStatus = data[4]
-            val lastUpdated = data[5].toLong()
-            val whitePlayerId = data[6]
-            val moveToBeConfirmed = data[7]
-            val moveList = data[8].removePrefix("[").removeSuffix("]").split('\\')
-            val chatMessages = data[9].removePrefix("[").removeSuffix("]").split('\\')
-            val newsData = data[10].removePrefix("[").removeSuffix("]").split("\\")
+            try {
+                val data = content.removePrefix("(").removeSuffix(")").split("@#!")
+                val gameId = data[0]
+                val opponentId = data[1]
+                val opponentName = data[2]
+                val opponentStatus = data[3]
+                val gameStatus = GameStatus.parseFromServer(data[4], userId)
+                val lastUpdated = data[5].toLong()
+                val whitePlayerId = data[6]
+                val moveToBeConfirmed = data[7]
+                val moveList = data[8].removePrefix("[").removeSuffix("]").split('\\')
+                val chatMessages = data[9].removePrefix("[").removeSuffix("]").split('\\')
+                val newsData = data[10].removePrefix("[").removeSuffix("]").split("\\")
+                val moves = ArrayList<Move>()
 
-            val moves = ArrayList<Move>()
-
-            for (move in moveList) {
-                if (move.isNotBlank()) {
-                    moves += Move.fromChessNotation(move)
+                for (move in moveList) {
+                    if (move.isNotBlank()) {
+                        moves += Move.fromChessNotation(move)
+                    }
                 }
+
+                val messages = ArrayList<ChatMessage>()
+                for (message in chatMessages) {
+                    if (message.isNotBlank()) {
+                        val messageData = message.split('~')
+                        val senderId = messageData[0]
+                        val timeStamp = messageData[1]
+                        val messageContent = messageData[2]
+                        val type = if (senderId == userId) MessageType.SENT else MessageType.RECEIVED
+
+                        messages += ChatMessage(timeStamp, messageContent, type)
+                    }
+                }
+
+                val newsUpdates = ArrayList<News>()
+                for (news in newsData) {
+                    if (news.isBlank()) {
+                        continue
+                    }
+
+                    when (news.count { char -> char == ',' }) {
+                        0 -> newsUpdates += News.fromString(news)
+                        1 -> newsUpdates += IntNews.fromString(news)
+                        else -> newsUpdates += MoveNews.fromString(news)
+                    }
+                }
+
+                val isPlayerWhite = whitePlayerId == userId
+                val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
+                newGame.status = gameStatus
+
+                return newGame
+            } catch (e: Exception) {
+                Logger.error(TAG, e.stackTraceToString())
+                throw e
             }
 
-            val messages = ArrayList<ChatMessage>()
-            for (message in chatMessages) {
-                if (message.isNotBlank()) {
-                    val messageData = message.split('~')
-                    val timeStamp = messageData[0]
-                    val messageContent = messageData[1]
-                    val type = MessageType.fromString(messageData[2])
-
-                    messages += ChatMessage(timeStamp, messageContent, type)
-                }
-            }
-
-            val newsUpdates = ArrayList<News>()
-            for (news in newsData) {
-                if (news.isBlank()) {
-                    continue
-                }
-
-                when (news.count { char -> char == ',' }) {
-                    0 -> newsUpdates += News.fromString(news)
-                    1 -> newsUpdates += IntNews.fromString(news)
-                    else -> newsUpdates += MoveNews.fromString(news)
-                }
-            }
-
-            val isPlayerWhite = whitePlayerId == userId
-            val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
-            newGame.status = gameStatus
-            return newGame
         }
 
     }

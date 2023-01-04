@@ -8,40 +8,38 @@ import android.widget.TextView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.userinterface.ScaleType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import kotlin.math.roundToInt
 
-class DoubleButtonDialog(parent: Activity, title: String, message: String, leftButtonIconLocation: Int?, leftButtonText: String?, private var onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int?, rightButtonText: String?, private var onRightButtonClick: () -> Unit, minWidth: Float = 0.5f) {
+class DoubleButtonDialog(parent: Activity, cancelable: Boolean, title: String, message: String, leftButtonIconLocation: Int?, leftButtonText: String?, private var onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int?, rightButtonText: String?, private var onRightButtonClick: () -> Unit, minWidth: Float = 0.5f) {
 
-    constructor(parent: Activity, title: String, message: String, leftButtonIconLocation: Int, onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit) : this(parent, title, message, leftButtonIconLocation, null, onLeftButtonClick, rightButtonIconLocation, null, onRightButtonClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, message: String, leftButtonIconLocation: Int, onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit) : this(parent, cancelable, title, message, leftButtonIconLocation, null, onLeftButtonClick, rightButtonIconLocation, null, onRightButtonClick)
 
-    constructor(parent: Activity, title: String, message: String, leftButtonText: String, onLeftButtonClick: () -> Unit, rightButtonText: String, onRightButtonClick: () -> Unit) : this(parent, title, message, null, leftButtonText, onLeftButtonClick, null, rightButtonText, onRightButtonClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, message: String, leftButtonText: String, onLeftButtonClick: () -> Unit, rightButtonText: String, onRightButtonClick: () -> Unit) : this(parent, cancelable, title, message, null, leftButtonText, onLeftButtonClick, null, rightButtonText, onRightButtonClick)
 
-    constructor(parent: Activity, title: String, leftButtonIconLocation: Int, onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit) : this(parent, title, "", leftButtonIconLocation, null, onLeftButtonClick, rightButtonIconLocation, null, onRightButtonClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, leftButtonIconLocation: Int, onLeftButtonClick: () -> Unit, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit) : this(parent, cancelable, title, "", leftButtonIconLocation, null, onLeftButtonClick, rightButtonIconLocation, null, onRightButtonClick)
 
-    constructor(parent: Activity, title: String, leftButtonText: String, onLeftButtonClick: () -> Unit, rightButtonText: String, onRightButtonClick: () -> Unit, minWidth: Float) : this(parent, title, "", null, leftButtonText, onLeftButtonClick, null, rightButtonText, onRightButtonClick, minWidth)
+    constructor(parent: Activity, cancelable: Boolean, title: String, leftButtonText: String, onLeftButtonClick: () -> Unit, rightButtonText: String, onRightButtonClick: () -> Unit, minWidth: Float) : this(parent, cancelable, title, "", null, leftButtonText, onLeftButtonClick, null, rightButtonText, onRightButtonClick, minWidth)
 
-    constructor(parent: Activity, title: String, leftButtonIconLocation: Int, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit = {}) : this(parent, title, "", leftButtonIconLocation, null, {}, rightButtonIconLocation, null, onRightButtonClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, leftButtonIconLocation: Int, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit = {}) : this(parent, cancelable, title, "", leftButtonIconLocation, null, {}, rightButtonIconLocation, null, onRightButtonClick)
 
-    constructor(parent: Activity, title: String, leftButtonText: String, rightButtonText: String, onRightButtonClick: () -> Unit = {}) : this(parent, title, "", null, leftButtonText, {}, null, rightButtonText, onRightButtonClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, leftButtonText: String, rightButtonText: String, onRightButtonClick: () -> Unit = {}) : this(parent, cancelable, title, "", null, leftButtonText, {}, null, rightButtonText, onRightButtonClick)
 
-    constructor(parent: Activity, title: String, message: String, leftButtonIconLocation: Int, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit = {}) : this(parent, title, message, leftButtonIconLocation, null, {}, rightButtonIconLocation, null, onRightButtonClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, message: String, leftButtonIconLocation: Int, rightButtonIconLocation: Int, onRightButtonClick: () -> Unit = {}) : this(parent, cancelable, title, message, leftButtonIconLocation, null, {}, rightButtonIconLocation, null, onRightButtonClick)
 
-    constructor(parent: Activity, title: String, message: String, leftButtonText: String, rightButtonText: String, onRightButtonClick: () -> Unit = {}) : this(parent, title, message, null, leftButtonText, {}, null, rightButtonText, onRightButtonClick)
+    constructor(parent: Activity, cancelable: Boolean, title: String, message: String, leftButtonText: String, rightButtonText: String, onRightButtonClick: () -> Unit = {}) : this(parent, cancelable, title, message, null, leftButtonText, {}, null, rightButtonText, onRightButtonClick)
 
     private val dialog = Dialog(parent)
     private val messageView: TextView
-    private val leftButton: UIButton
-    private val rightButton: UIButton
-
-    private var maxTextSize = Float.MAX_VALUE
-    private var numberOfInitializedButtons = 0
+    private val leftButton: UIButton2
+    private val rightButton: UIButton2
 
     init {
         dialog.setContentView(R.layout.dialog_double_button)
         dialog.show()
         dialog.dismiss()
-        dialog.setCancelable(false)
-        dialog.setCanceledOnTouchOutside(false)
+        dialog.setCancelable(cancelable)
+        dialog.setCanceledOnTouchOutside(cancelable)
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         val titleView = dialog.findViewById<TextView>(R.id.dialog_title)
@@ -51,60 +49,48 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
         messageView.minWidth = (parent.resources.displayMetrics.widthPixels * minWidth).roundToInt()
         messageView.text = message
         titleView.text = title
-        leftButton.setIconScaleType(ScaleType.SQUARE)
-            .setColor(57, 57, 57)
+
+        leftButton.setColor(57, 57, 57)
             .setCornerRadius(20.0f)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
+            .setOnClickListener {
                 onLeftButtonClick()
                 dismiss()
             }
 
         if (leftButtonIconLocation != null) {
-            leftButton.setColoredDrawable(leftButtonIconLocation)
+            leftButton.setIcon(leftButtonIconLocation)
         }
 
         if (leftButtonText != null) {
             leftButton.setText(leftButtonText)
-                .setButtonTextColor(Color.WHITE)
-                .setButtonTextSize(50.0f)
+                .setTextSize(BUTTON_TEXT_SIZE)
         }
 
-        rightButton.setIconScaleType(ScaleType.SQUARE)
-            .setColor(235, 186, 145)
+        rightButton.setColor(235, 186, 145)
             .setCornerRadius(20.0f)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
+            .setOnClickListener {
                 onRightButtonClick()
                 dismiss()
             }
 
         if (rightButtonIconLocation != null) {
-            rightButton.setColoredDrawable(rightButtonIconLocation)
+            rightButton.setIcon(rightButtonIconLocation)
         }
 
         if (rightButtonText != null) {
             rightButton.setText(rightButtonText)
-                .setButtonTextColor(Color.WHITE)
-                .setButtonTextSize(50.0f)
+                .setTextSize(BUTTON_TEXT_SIZE)
         }
     }
 
-    private fun onButtonInitialized(textSize: Float) {
-        if (textSize < maxTextSize) {
-            maxTextSize = textSize
-        }
-
-        numberOfInitializedButtons++
-
-        if (numberOfInitializedButtons == 2) {
-            leftButton.setFinalTextSize(maxTextSize)
-            rightButton.setFinalTextSize(maxTextSize)
-        }
+    fun setCancelable(cancelable: Boolean): DoubleButtonDialog {
+        dialog.setCancelable(cancelable)
+        dialog.setCanceledOnTouchOutside(cancelable)
+        return this
     }
 
     fun setLeftOnClick(onClick: () -> Unit): DoubleButtonDialog {
-        leftButton.setOnClick {
+        leftButton.setOnClickListener {
             onClick()
             dismiss()
         }
@@ -112,7 +98,7 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
     }
 
     fun setRightOnClick(onClick: () -> Unit): DoubleButtonDialog {
-        rightButton.setOnClick {
+        rightButton.setOnClickListener {
             onClick()
             dismiss()
         }
@@ -139,8 +125,10 @@ class DoubleButtonDialog(parent: Activity, title: String, message: String, leftB
 
     fun destroy() {
         dismiss()
-        leftButton.destroy()
-        rightButton.destroy()
+    }
+
+    companion object {
+        private const val BUTTON_TEXT_SIZE = 24f
     }
 
 }

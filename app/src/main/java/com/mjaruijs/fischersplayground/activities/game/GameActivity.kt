@@ -22,6 +22,7 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
 abstract class GameActivity : ClientActivity() {
@@ -72,7 +73,7 @@ abstract class GameActivity : ClientActivity() {
     override fun onResume() {
         super.onResume()
 
-        checkMateDialog = DoubleButtonDialog(this, "Checkmate!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin, 0.7f)
+        checkMateDialog = DoubleButtonDialog(this, true, "Checkmate!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin, 0.7f)
         stayingInApp = false
 
         pieceChooserDialog.setLayout()
@@ -127,9 +128,15 @@ abstract class GameActivity : ClientActivity() {
     }
 
     open fun onMoveMade(move: Move) {
-        runOnUiThread {
-            evaluateNavigationButtons()
-        }
+        Thread {
+            while (getActionBarFragment() == null) {
+                Thread.sleep(1)
+            }
+
+            runOnUiThread {
+                evaluateNavigationButtons()
+            }
+        }.start()
     }
 
     fun setGameForRenderer() {

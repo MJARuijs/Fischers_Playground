@@ -20,7 +20,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
-import java.util.*
+import java.util.Stack
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -160,9 +160,14 @@ class DataManager(context: Context) {
 
     fun setGame(id: String, game: MultiPlayerGame) {
         obtainGameLock()
-
         savedGames[id] = game
         unlockGames()
+    }
+
+    fun setInvite(id: String, invite: InviteData) {
+        obtainInvitesLock()
+        savedInvites[id] = invite
+        unlockInvites()
     }
 
     fun getSavedInvites(): HashMap<String, InviteData> {
@@ -216,7 +221,6 @@ class DataManager(context: Context) {
 
     private fun obtainOpeningLock() {
         while (areOpeningsLocked()) {
-            Logger.debug(TAG, "Waiting for lock")
             Thread.sleep(1)
         }
 
@@ -570,7 +574,7 @@ class DataManager(context: Context) {
             val data = line.split('|')
             val opponentName = data[0]
             val opponentId = data[1]
-            updateRecentOpponents(context, Pair(opponentName, opponentId))
+            addRecentOpponent(context, Pair(opponentName, opponentId))
         }
     }
 
@@ -586,7 +590,16 @@ class DataManager(context: Context) {
         }
     }
 
-    fun updateRecentOpponents(context: Context, newOpponent: Pair<String, String>?) {
+    fun setRecentOpponents(context: Context, opponents: List<Pair<String, String>>) {
+        recentOpponents.clear()
+        for (opponent in opponents) {
+            recentOpponents.push(opponent)
+        }
+
+        saveRecentOpponents(context)
+    }
+
+    fun addRecentOpponent(context: Context, newOpponent: Pair<String, String>?) {
         if (newOpponent == null) {
             return
         }
@@ -665,7 +678,7 @@ class DataManager(context: Context) {
 
     private fun saveGames(context: Context) {
         var content = ""
-
+        Logger.debug(TAG, "Saving Games")
         for ((gameId, game) in savedGames) {
             var moveData = "["
 
@@ -697,7 +710,9 @@ class DataManager(context: Context) {
             }
             newsContent += "]"
 
-            content += "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
+            val gameContent = "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
+            Logger.debug(TAG, "Adding to games file: $gameContent")
+            content += gameContent
         }
 
         FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
@@ -749,7 +764,7 @@ class DataManager(context: Context) {
         private const val TAG = "DataManager"
 
         const val MULTIPLAYER_GAME_FILE = "mp_games.txt"
-        const val INVITES_FILE = "received_invites.txt"
+        const val INVITES_FILE = "invites.txt"
         const val RECENT_OPPONENTS_FILE = "recent_opponents.txt"
         const val HANDLED_MESSAGES_FILE = "handled_messages.txt"
 

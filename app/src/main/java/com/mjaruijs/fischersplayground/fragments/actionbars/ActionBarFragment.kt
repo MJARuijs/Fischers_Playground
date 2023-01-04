@@ -28,7 +28,7 @@ open class ActionBarFragment : Fragment() {
         layout = view.findViewById(R.id.action_bar_layout)
     }
 
-    fun addButtons(button: UIButton2) {
+    fun addButton(button: UIButton2) {
         button.layoutParams = BUTTON_LAYOUT
         layout.addView(button, BUTTON_LAYOUT)
         childViews.add(button)
@@ -41,7 +41,7 @@ open class ActionBarFragment : Fragment() {
         childViews.add(button)
     }
 
-    fun addButtonsToLeft(button: UIButton2) {
+    fun addButtonToLeft(button: UIButton2) {
         val childCount = 0
         layout.addView(button, childCount, BUTTON_LAYOUT)
         childViews.add(button)

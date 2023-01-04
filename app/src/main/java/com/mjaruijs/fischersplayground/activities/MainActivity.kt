@@ -1,16 +1,12 @@
 package com.mjaruijs.fischersplayground.activities
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Parcelable
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
-import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.set
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -21,7 +17,6 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
-import com.mjaruijs.fischersplayground.activities.game.SinglePlayerGameActivity
 import com.mjaruijs.fischersplayground.activities.opening.OpeningMenuActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
@@ -29,14 +24,13 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.game.MoveData
 import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
+import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
 import com.mjaruijs.fischersplayground.userinterface.RippleEffect
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.ImageUtils
-import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 
 class MainActivity : ClientActivity() {
@@ -128,7 +122,7 @@ class MainActivity : ClientActivity() {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
         dataManager.saveInvite(inviteId, InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING))
         dataManager.saveData(applicationContext)
-        dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
+        dataManager.addRecentOpponent(applicationContext, Pair(opponentName, opponentId))
     }
 
     private fun onGameClicked(gameCard: GameCardItem) {
@@ -153,14 +147,14 @@ class MainActivity : ClientActivity() {
     }
 
     private fun showNewInviteDialog(inviteId: String, opponentName: String) {
-//        incomingInviteDialog.setMessage("$opponentName is inviting you for a game!")
-//        incomingInviteDialog.setRightOnClick {
-//            networkManager.sendMessage(NetworkMessage(Topic.INVITE_ACCEPTED, inviteId))
-//        }
-//        incomingInviteDialog.setLeftOnClick {
-//            networkManager.sendMessage(NetworkMessage(Topic.INVITE_REJECTED, inviteId))
-//        }
-//        incomingInviteDialog.show()
+        incomingInviteDialog.setMessage("$opponentName is inviting you for a game!")
+        incomingInviteDialog.setRightOnClick {
+            networkManager.sendMessage(NetworkMessage(Topic.INVITE_ACCEPTED, inviteId))
+        }
+        incomingInviteDialog.setLeftOnClick {
+            networkManager.sendMessage(NetworkMessage(Topic.INVITE_REJECTED, inviteId))
+        }
+        incomingInviteDialog.show()
     }
 
     override fun onNewGameStarted(output: Parcelable) {
@@ -232,6 +226,11 @@ class MainActivity : ClientActivity() {
         val messageData = output as ChatMessage.Data
         val gameId = messageData.gameId
         gameAdapter.hasUpdate(gameId)
+    }
+
+    override fun onRestoreData(output: Parcelable) {
+        restoreSavedGames(dataManager.getSavedGames())
+        restoreSavedInvites(dataManager.getSavedInvites())
     }
 
     private fun manageGameVisibility() {
@@ -312,9 +311,9 @@ class MainActivity : ClientActivity() {
             .setCornerRadius(45f)
             .setTextSize(28f)
             .setOnClickListener {
-//                createGameDialog.show()
-                stayingInApp = true
-                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
+                createGameDialog.show()
+//                stayingInApp = true
+//                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
             }
     }
 

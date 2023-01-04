@@ -54,23 +54,33 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
     fun getSimpleChessNotation(): String {
         var notation = ""
 
-        val fromPositionColSign = getColSign(fromPosition)
-        val toPositionColSign = getColSign(toPosition)
+        val fromFile = getFileSign(fromPosition)
+        val toFile = getFileSign(toPosition)
 
-        val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
-        notation += movedPieceSign
+        val toRank = getRankSign(toPosition)
 
-        if (movedPiece == PieceType.KING && fromPositionColSign == "e" && toPositionColSign == "g") {
-            notation += "0-0"
-        } else if (movedPiece == PieceType.KING && fromPositionColSign == "e" && toPositionColSign == "c") {
-            notation += "0-0-0"
-        } else {
-            if (pieceTaken != null) {
-                notation += "x"
+        if (movedPiece == PieceType.PAWN) {
+            notation = if (pieceTaken == null) {
+                "${toFile}${toRank}"
+            } else {
+                "${fromFile}x${toFile}${toRank}"
             }
+        } else {
+            val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
+            notation += movedPieceSign
 
-            notation += toPositionColSign
-            notation += getRowSign(toPosition)
+            if (movedPiece == PieceType.KING && fromFile == "e" && toFile == "g") {
+                notation += "0-0"
+            } else if (movedPiece == PieceType.KING && fromFile == "e" && toFile == "c") {
+                notation += "0-0-0"
+            } else {
+                if (pieceTaken != null) {
+                    notation += "x"
+                }
+
+                notation += toFile
+                notation += toRank
+            }
         }
 
         if (isCheckMate) {
@@ -85,8 +95,8 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
     fun toChessNotation(): String {
         var notation = ""
 
-        val fromPositionColSign = getColSign(fromPosition)
-        val toPositionColSign = getColSign(toPosition)
+        val fromPositionColSign = getFileSign(fromPosition)
+        val toPositionColSign = getFileSign(toPosition)
 
         val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
         notation += movedPieceSign
@@ -97,18 +107,18 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
             notation += "0-0-0"
         } else {
             notation += fromPositionColSign
-            notation += getRowSign(fromPosition)
+            notation += getRankSign(fromPosition)
             notation += if (pieceTaken == null) "-" else "x"
 
             if (pieceTaken != null && takenPiecePosition != null) {
                 val takenPieceSign = if (team == Team.BLACK) pieceTaken.sign.uppercase() else pieceTaken.sign.lowercase()
                 notation += takenPieceSign
-                notation += getColSign(takenPiecePosition)
-                notation += getRowSign(takenPiecePosition)
+                notation += getFileSign(takenPiecePosition)
+                notation += getRankSign(takenPiecePosition)
             }
 
             notation += toPositionColSign
-            notation += getRowSign(toPosition)
+            notation += getRankSign(toPosition)
 
             if (promotedPiece != null) {
                 notation += promotedPiece.sign
@@ -124,11 +134,11 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         return notation
     }
 
-    private fun getRowSign(square: Vector2): String {
+    private fun getRankSign(square: Vector2): String {
         return (square.y.toInt() + 1).toString()
     }
 
-    private fun getColSign(square: Vector2): String {
+    private fun getFileSign(square: Vector2): String {
         return when(square.x.toInt()) {
             0 -> "a"
             1 -> "b"

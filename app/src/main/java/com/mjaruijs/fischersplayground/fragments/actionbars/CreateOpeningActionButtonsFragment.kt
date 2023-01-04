@@ -60,9 +60,9 @@ class CreateOpeningActionButtonsFragment : GameBarFragment() {
                 onStartPracticing()
             }
 
-        addButtonsToLeft(startPracticeButton)
-        addButtonsToLeft(recordButton)
-        addButtonsToLeft(addLineButton)
+        addButtonToLeft(startPracticeButton)
+        addButtonToLeft(recordButton)
+        addButtonToLeft(addLineButton)
     }
 
     companion object {

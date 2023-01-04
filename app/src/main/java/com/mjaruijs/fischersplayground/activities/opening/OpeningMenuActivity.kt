@@ -17,6 +17,7 @@ import com.mjaruijs.fischersplayground.dialogs.CreateOpeningDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import com.mjaruijs.fischersplayground.util.FileManager
 
 class OpeningMenuActivity : ClientActivity() {
@@ -29,7 +30,7 @@ class OpeningMenuActivity : ClientActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_practise_setup)
+        setContentView(R.layout.activity_opening_menu)
 
         createOpeningDialog.create(this)
 
@@ -118,13 +119,12 @@ class OpeningMenuActivity : ClientActivity() {
         openingRecyclerView.layoutManager = LinearLayoutManager(this)
         openingRecyclerView.adapter = openingAdapter
 
-        findViewById<UIButton>(R.id.create_new_opening_button)
+        findViewById<UIButton2>(R.id.create_new_opening_button)
             .setText("Create New Opening")
-            .setButtonTextSize(70.0f)
-            .setColor(235, 186, 145)
+            .setColorResource(R.color.accent_color)
+            .setTextSize(28f)
             .setCornerRadius(45.0f)
-            .setChangeTextColorOnHover(false)
-            .setOnClick {
+            .setOnClickListener {
                 stayingInApp = true
                 createOpeningDialog.show()
             }

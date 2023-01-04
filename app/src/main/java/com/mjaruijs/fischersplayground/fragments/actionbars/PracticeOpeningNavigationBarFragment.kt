@@ -94,12 +94,12 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
                 onNextMoveClicked()
             }
 
-        addButtons(hintButton)
-        addButtons(solutionButton)
-        addButtons(retryButton)
-        addButtons(nextButton)
-        addButtons(exitButton)
-        addButtons(nextMoveButton)
+        addButton(hintButton)
+        addButton(solutionButton)
+        addButton(retryButton)
+        addButton(nextButton)
+        addButton(exitButton)
+        addButton(nextMoveButton)
 
         hintButton.show()
         solutionButton.hide()

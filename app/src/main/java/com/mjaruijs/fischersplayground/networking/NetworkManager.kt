@@ -87,7 +87,7 @@ class NetworkManager {
 
             try {
                 clientConnecting.set(true)
-                client = SecureClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
+                client = SecureClient(LOCAL_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
                 Logger.warn(TAG, "Connected to server..")
             } catch (e: Exception) {
@@ -141,7 +141,6 @@ class NetworkManager {
     }
 
     private fun onRead(message: NetworkMessage, context: Context) {
-
         if (message.topic == Topic.HEART_BEAT) {
             sendMessage(NetworkMessage(Topic.HEART_BEAT, ""))
             return

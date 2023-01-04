@@ -26,6 +26,7 @@ import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
+import com.mjaruijs.fischersplayground.parcelable.ParcelableNull
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.util.FileManager
@@ -108,6 +109,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             val game = dataManager.getGame(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
 //            game.moveOpponent(move, true)
             game.addNews(MoveNews(NewsType.OPPONENT_MOVED, moveData))
+            Logger.debug(TAG, "Adding news to game: OPPONENT_MOVED")
             game.lastUpdated = timeStamp
             dataManager.setGame(gameId, game)
         } catch (e: Exception) {
@@ -144,7 +146,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         dataManager.setGame(inviteId, newGame)
         dataManager.removeSavedInvite(inviteId)
 
-        dataManager.updateRecentOpponents(applicationContext, Pair(opponentName, opponentId))
+        dataManager.addRecentOpponent(applicationContext, Pair(opponentName, opponentId))
 
         val hasUpdate = gameStatus == GameStatus.PLAYER_MOVE
 
@@ -223,6 +225,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val messageContent = data[2]
 
         dataManager.getGame(gameId)!!.addMessage(ChatMessage(timeStamp, messageContent, MessageType.RECEIVED))
+        dataManager.getGame(gameId)!!.addNews(NewsType.CHAT_MESSAGE)
 
         return ChatMessage.Data(gameId, timeStamp, messageContent, MessageType.RECEIVED)
     }
@@ -247,7 +250,6 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
 
     private fun onCompareData(data: Array<String>) {
         val localFiles = FileManager.listFilesInDirectory()
-
 
         val missingData = ArrayList<String>()
 
@@ -311,7 +313,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         NetworkManager.getInstance().sendMessage(NetworkMessage(Topic.RESTORE_DATA, "$userId|${missingData.joinToString("|")}"))
     }
 
-    private fun onRestoreData(data: Array<String>) {
+    private fun onRestoreData(data: Array<String>): ParcelableNull {
         for (serverData in data) {
             val separatorIndex = serverData.indexOf(":")
             val dataType = serverData.substring(0, separatorIndex)
@@ -319,9 +321,42 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
                 val gamesData = serverData.substring(separatorIndex + 1).split("%")
 
                 for (gameData in gamesData) {
+                    if (gameData.isBlank()) {
+                        continue
+                    }
+
                     val game = MultiPlayerGame.parseFromServer(gameData, userId)
                     dataManager.setGame(game.gameId, game)
                 }
+                dataManager.saveData(applicationContext)
+            } else if (dataType == "invites") {
+                val invitesData = serverData.substring(separatorIndex + 1).split("%")
+
+                for (inviteData in invitesData) {
+                    if (inviteData.isBlank()) {
+                        continue
+                    }
+
+                    val invite = InviteData.fromString(inviteData)
+                    dataManager.setInvite(invite.inviteId, invite)
+                }
+                dataManager.saveData(applicationContext)
+            } else if (dataType == "recent_opponents") {
+                val opponents = serverData.substring(separatorIndex + 1).split("%")
+
+                val recentOpponents = ArrayList<Pair<String, String>>()
+                for (opponentData in opponents) {
+                    if (opponentData.isBlank()) {
+                        continue
+                    }
+
+                    val opponentSeparatorIndex = opponentData.indexOf("@#!")
+                    val opponentName = opponentData.substring(0, opponentSeparatorIndex)
+                    val opponentId = opponentData.substring(opponentSeparatorIndex + 3)
+                    recentOpponents += Pair(opponentName, opponentId)
+                }
+
+                dataManager.setRecentOpponents(applicationContext, recentOpponents)
             } else {
                 val filesData = serverData.substring(separatorIndex + 1).split("%")
 
@@ -339,42 +374,8 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         }
 
         dataManager.loadData(applicationContext)
+        return ParcelableNull()
     }
-
-//    private fun onCompareOpenings(data: Array<String>) {
-//        var missingOpeningsString = ""
-//        val localFiles = FileManager.listFilesInDirectory()
-//        val openingFiles = localFiles.filter { fileName -> fileName.startsWith("opening_") }.map { openingName -> openingName.removePrefix("opening_") }
-//
-//        for (serverOpening in data) {
-//            if (!openingFiles.contains(serverOpening)) {
-//                missingOpeningsString += "$serverOpening%"
-//            }
-//        }
-//
-//        missingOpeningsString = missingOpeningsString.removeSuffix("%")
-//
-//        if (missingOpeningsString.isNotBlank()) {
-//            NetworkManager.getInstance().sendMessage(NetworkMessage(Topic.RESTORE_OPENINGS, "$userId|$missingOpeningsString"))
-//        }
-//    }
-//
-//    private fun restoreOpenings(data: Array<String>) {
-//        for (openingFileData in data) {
-//            val fileNameSeparator = openingFileData.indexOf("@#!")
-//            val fileName = openingFileData.substring(0, fileNameSeparator)
-//            val fileContent = openingFileData.substring(fileNameSeparator + 3)
-//
-//            val separator = fileName.indexOf("_")
-//            val openingName = fileName.substring(0, separator)
-//            val openingTeam = Team.fromString(fileName.substring(separator + 1))
-//            val opening = Opening(openingName, openingTeam)
-//            opening.addFromString(fileContent)
-//
-//            dataManager.setOpening(openingName, openingTeam, opening)
-//        }
-//        dataManager.saveOpenings(applicationContext)
-//    }
 
     private fun parseServerFiles(serverData: String): List<String> {
         val separatorIndex = serverData.indexOf(':')

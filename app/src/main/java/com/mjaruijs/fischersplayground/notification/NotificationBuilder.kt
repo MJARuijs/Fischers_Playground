@@ -7,6 +7,7 @@ import androidx.core.app.NotificationCompat
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.MainActivity
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
+import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.services.DataManager
@@ -79,9 +80,9 @@ class NotificationBuilder(context: Context) {
             Topic.MOVE -> {
                 val gameId = data[0]
                 val moveNotation = data[1]
-                val move = moveNotation.substring(moveNotation.indexOf(':') + 1)
+                val move = Move.fromChessNotation(moveNotation)
                 val game = dataManager.getGame(gameId)
-                NotificationData("Your move!", "${game!!.opponentName} played $move", MOVE_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
+                NotificationData("Your move!", "${game!!.opponentName} played ${move.getSimpleChessNotation()}", MOVE_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.UNDO_REQUESTED -> {
                 val opponentName = dataManager.getGame(data[0])!!.opponentName
@@ -135,7 +136,7 @@ class NotificationBuilder(context: Context) {
         val stackBuilder = TaskStackBuilder.create(context)
         stackBuilder.addParentStack(MultiplayerGameActivity::class.java)
         stackBuilder.addNextIntent(intent)
-        return stackBuilder.getPendingIntent(System.currentTimeMillis().toInt(), PendingIntent.FLAG_UPDATE_CURRENT)
+        return stackBuilder.getPendingIntent(System.currentTimeMillis().toInt(), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
     companion object {

@@ -5,6 +5,7 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.chess.game.MoveData
+import com.mjaruijs.fischersplayground.parcelable.ParcelableNull
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 
@@ -42,7 +43,7 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     NEW_PRACTICE_SESSION,
     DELETE_PRACTICE_SESSION,
     COMPARE_DATA,
-    RESTORE_DATA;
+    RESTORE_DATA(ParcelableNull);
 
     companion object {
         fun fromString(value: String): Topic {

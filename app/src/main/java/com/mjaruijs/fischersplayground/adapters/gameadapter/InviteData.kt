@@ -25,6 +25,15 @@ class InviteData(val inviteId: String, val opponentName: String, val timeStamp: 
     }
 
     companion object CREATOR : Parcelable.Creator<InviteData> {
+
+        fun fromString(content: String): InviteData {
+            val data = content.split("@#!")
+            if (data.size != 4) {
+                throw IllegalArgumentException("Failed to create InviteData from content: $content")
+            }
+            return InviteData(data[0], data[1], data[2].toLong(), InviteType.fromString(data[3]))
+        }
+
         override fun createFromParcel(parcel: Parcel): InviteData {
             return InviteData(parcel)
         }

@@ -369,6 +369,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         incrementMoveCounter()
         moves += move
+
     }
 
     open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {

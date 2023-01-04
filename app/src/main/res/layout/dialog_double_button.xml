@@ -39,7 +39,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/left_dialog_button"
         android:layout_width="0dp"
         android:layout_height="60dp"
@@ -52,7 +52,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/dialog_message" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/right_dialog_button"
         android:layout_width="0dp"
         android:layout_height="60dp"

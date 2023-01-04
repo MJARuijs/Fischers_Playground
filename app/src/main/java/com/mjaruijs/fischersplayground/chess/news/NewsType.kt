@@ -1,8 +1,11 @@
 package com.mjaruijs.fischersplayground.chess.news
 
-enum class NewsType {
+import android.os.Parcelable
+import com.mjaruijs.fischersplayground.chess.game.MoveData
 
-    OPPONENT_MOVED,
+enum class NewsType(val dataType: Parcelable.Creator<*>? = null) {
+
+    OPPONENT_MOVED(MoveData),
     OPPONENT_RESIGNED,
     OPPONENT_OFFERED_DRAW,
     OPPONENT_ACCEPTED_DRAW,
@@ -10,6 +13,7 @@ enum class NewsType {
     OPPONENT_REQUESTED_UNDO,
     OPPONENT_ACCEPTED_UNDO,
     OPPONENT_REJECTED_UNDO,
+    CHAT_MESSAGE,
     NO_NEWS;
 
     companion object {

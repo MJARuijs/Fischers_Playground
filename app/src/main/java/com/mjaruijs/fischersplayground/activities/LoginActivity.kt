@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.AsyncTask
 import android.os.Bundle
+import android.os.Parcelable
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
@@ -63,8 +64,8 @@ class LoginActivity : ClientActivity() {
 
     override fun onResume() {
         super.onResume()
-        unknownEmailDialog = SingleButtonDialog(this, "Unknown Email", "No account exists with this email", R.drawable.check_mark_icon)
-        accountAlreadyExistsDialog = SingleButtonDialog(this, "Account Already Exists", "There already exists an account for this email address!", R.drawable.check_mark_icon)
+        unknownEmailDialog = SingleButtonDialog(this, false, "Unknown Email", "No account exists with this email", R.drawable.check_mark_icon)
+        accountAlreadyExistsDialog = SingleButtonDialog(this, false,"Account Already Exists", "There already exists an account for this email address!", R.drawable.check_mark_icon)
     }
 
     override fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {

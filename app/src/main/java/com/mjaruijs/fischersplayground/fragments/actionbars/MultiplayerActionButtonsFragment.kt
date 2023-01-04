@@ -4,132 +4,97 @@ import android.animation.ObjectAnimator
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import android.widget.LinearLayout
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
-import com.mjaruijs.fischersplayground.dialogs.SingleButtonDialog
-import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
-import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.userinterface.ScaleType
-import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.chess.game.Game
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
-class MultiplayerActionButtonsFragment(private val gameId: String, private val userId: String, private val opponentName: String, private val isChatOpened: () -> Boolean, private val onOfferDraw: () -> Unit, private val onResign: () -> Unit, private val onCancelMove: () -> Unit, private val onConfirmMove: (String) -> Unit, networkManager: NetworkManager) : ActionButtonsFragment(R.layout.multiplayer_actionbar) {
+class MultiplayerActionButtonsFragment : GameBarFragment() {
 
-    private lateinit var resignButton: UIButton
-    private lateinit var offerDrawButton: UIButton
-    private lateinit var redoButton: UIButton
-    private lateinit var cancelMoveButton: UIButton
-    private lateinit var confirmMoveButton: UIButton
-    private lateinit var extraButtonsLayout: LinearLayout
+    private lateinit var resignButton: UIButton2
+    private lateinit var offerDrawButton: UIButton2
+    private lateinit var redoButton: UIButton2
+    private lateinit var cancelMoveButton: UIButton2
+    private lateinit var confirmMoveButton: UIButton2
+//    private lateinit var extraButtonsLayout: LinearLayout
 
     private lateinit var hideButtonAnimator: ObjectAnimator
     private lateinit var showButtonAnimator: ObjectAnimator
 
-    private lateinit var confirmResignationDialog: DoubleButtonDialog
-    private lateinit var offerDrawDialog: DoubleButtonDialog
-    private lateinit var undoRequestConfirmationDialog: SingleButtonDialog
-
-    var networkManager: NetworkManager
+    private lateinit var onRequestUndo: () -> Unit
+    private lateinit var onOfferDrawClicked: () -> Unit
+    private lateinit var onResignClicked: () -> Unit
+    private lateinit var onCancelMove: () -> Unit
+    private lateinit var onConfirmMove: (String) -> Unit
 
     private var moveNotation: String? = null
 
     private var showingExtraButtons = false
 
-    override var numberOfButtons = 5
-
-    init {
-        this.networkManager = networkManager
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        confirmResignationDialog = DoubleButtonDialog(requireActivity(), "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", onResign)
-        offerDrawDialog = DoubleButtonDialog(requireActivity(), "Offer Draw", "Are you sure you want to offer a draw?", "Cancel", "Yes", onOfferDraw)
-        undoRequestConfirmationDialog = SingleButtonDialog(requireActivity(), "Undo Requested", "You will be notified when $opponentName responds", R.drawable.check_mark_icon)
 
-        val textColor = Color.WHITE
         val buttonBackgroundColor = Color.argb(0.4f, 0.25f, 0.25f, 0.25f)
-        resignButton = view.findViewById(R.id.resign_button)
+        resignButton = UIButton2(requireContext())
         resignButton
             .setText("Resign")
-            .setColoredDrawable(R.drawable.resign)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setColor(buttonBackgroundColor)
-            .setChangeIconColorOnHover(false)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
-                if (isChatOpened()) {
-                    return@setOnClick
-                }
-
-                confirmResignationDialog.show()
+            .setIcon(R.drawable.resign)
+            .setIconPadding(0, 4, 0, 0)
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
+                onResignClicked()
             }
 
-        offerDrawButton = view.findViewById(R.id.offer_draw_button)
+        offerDrawButton = UIButton2(requireContext())
         offerDrawButton
             .setText("Offer Draw")
             .setColor(buttonBackgroundColor)
-            .setColoredDrawable(R.drawable.handshake_2)
-            .setButtonTextSize(50f)
-            .setButtonTextColor(textColor)
-            .setChangeIconColorOnHover(false)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
-                if (isChatOpened()) {
-                    return@setOnClick
-                }
-
-                offerDrawDialog.setRightOnClick {
-                    networkManager.sendMessage(NetworkMessage(Topic.DRAW_OFFERED, "$gameId|$userId"))
-                }
-                offerDrawDialog.show()
+            .setIcon(R.drawable.handshake_2)
+            .setIconPadding(0, 4, 0, 0)
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
+                onOfferDrawClicked()
             }
 
-        redoButton = view.findViewById(R.id.request_redo_button)
+        redoButton = UIButton2(requireContext())
         redoButton
             .setText("Undo")
-            .setColoredDrawable(R.drawable.rewind)
-            .setButtonTextSize(50f)
             .setColor(buttonBackgroundColor)
-            .setButtonTextColor(textColor)
-            .setChangeIconColorOnHover(false)
-            .setCenterVertically(false)
-            .setOnButtonInitialized(::onButtonInitialized)
-            .setOnClick {
-                if (isChatOpened()) {
-                    return@setOnClick
-                }
-
-                undoRequestConfirmationDialog.show()
-                networkManager.sendMessage(NetworkMessage(Topic.UNDO_REQUESTED, "$gameId|$userId"))
+            .setIcon(R.drawable.rewind)
+            .setIconPadding(0, 4, 0, 0)
+            .setTextSize(TEXT_SIZE)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
+                onRequestUndo()
             }
+
+
+        addButtonToLeft(redoButton)
+        addButtonToLeft(offerDrawButton)
+        addButtonToLeft(resignButton)
 
 //        buttons += resignButton
 //        buttons += offerDrawButton
 //        buttons += redoButton
 
-        extraButtonsLayout = view.findViewById(R.id.extra_buttons_layout)
+//        extraButtonsLayout = view.findViewById(R.id.extra_buttons_layout)
 
-        cancelMoveButton = view.findViewById(R.id.cancel_move_button)
+        cancelMoveButton = UIButton2(requireContext())
         cancelMoveButton
-            .setIconScaleType(ScaleType.SQUARE)
-            .setColoredDrawable(R.drawable.close_icon)
-            .setOnClick {
+            .setIcon(R.drawable.close_icon)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
                 hideExtraButtons()
                 onCancelMove()
             }
 
-        confirmMoveButton = view.findViewById(R.id.confirm_move_button)
+        confirmMoveButton = UIButton2(requireContext())
         confirmMoveButton
-            .setIconScaleType(ScaleType.SQUARE)
-            .setColoredDrawable(R.drawable.check_mark_icon)
-            .setColor(235, 186, 145)
-            .setOnClick {
+            .setIcon(R.drawable.check_mark_icon)
+            .setColorResource(R.color.accent_color)
+            .setOnClickListener {
                 hideExtraButtons()
                 if (moveNotation != null) {
                     onConfirmMove(moveNotation!!)
@@ -152,21 +117,21 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
     override fun onPause() {
         super.onPause()
 
-        if (this::offerDrawDialog.isInitialized) {
-            offerDrawDialog.dismiss()
-        }
-        if (this::confirmResignationDialog.isInitialized) {
-            confirmResignationDialog.dismiss()
-        }
+//        if (this::offerDrawDialog.isInitialized) {
+//            offerDrawDialog.dismiss()
+//        }
+//        if (this::confirmResignationDialog.isInitialized) {
+//            confirmResignationDialog.dismiss()
+//        }
     }
 
     fun initializeAnimator(height: Int) {
-        extraButtonsLayout.translationY += height
+//        extraButtonsLayout.translationY += height
 
-        hideButtonAnimator = ObjectAnimator.ofFloat(extraButtonsLayout, "y", 0f)
-        hideButtonAnimator.duration = 250L
+//        hideButtonAnimator = ObjectAnimator.ofFloat(extraButtonsLayout, "y", 0f)
+//        hideButtonAnimator.duration = 250L
 
-        showButtonAnimator = ObjectAnimator.ofFloat(extraButtonsLayout, "y", height.toFloat())
+//        showButtonAnimator = ObjectAnimator.ofFloat(extraButtonsLayout, "y", height.toFloat())
     }
 
     fun showExtraButtons(moveNotation: String, duration: Long = 250L) {
@@ -184,13 +149,23 @@ class MultiplayerActionButtonsFragment(private val gameId: String, private val u
 
     override fun onDestroy() {
         super.onDestroy()
-        resignButton.destroy()
-        offerDrawButton.destroy()
-        redoButton.destroy()
-        cancelMoveButton.destroy()
-        confirmMoveButton.destroy()
-        confirmResignationDialog.destroy()
-        offerDrawDialog.destroy()
+//        confirmResignationDialog.destroy()
+//        offerDrawDialog.destroy()
+    }
+
+    companion object {
+
+        fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onRequestUndo: () -> Unit, onOfferDrawClicked: () -> Unit, onResignClicked: () -> Unit, onCancelMove: () -> Unit, onConfirmMove: (String) -> Unit): MultiplayerActionButtonsFragment {
+            val fragment = MultiplayerActionButtonsFragment()
+            fragment.init(game, evaluateNavigationButtons)
+            fragment.onRequestUndo = onRequestUndo
+            fragment.onOfferDrawClicked = onOfferDrawClicked
+            fragment.onResignClicked = onResignClicked
+            fragment.onCancelMove = onCancelMove
+            fragment.onConfirmMove = onConfirmMove
+            return fragment
+        }
+
     }
 
 }

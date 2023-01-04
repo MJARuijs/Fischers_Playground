@@ -37,7 +37,7 @@ abstract class ClientActivity : AppCompatActivity() {
     protected lateinit var dataManager: DataManager
     protected lateinit var vibrator: Vibrator
 
-    private lateinit var incomingInviteDialog: DoubleButtonDialog
+    protected lateinit var incomingInviteDialog: DoubleButtonDialog
 
     protected var stayingInApp = false
 
@@ -119,7 +119,7 @@ abstract class ClientActivity : AppCompatActivity() {
             getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
 
-        incomingInviteDialog = DoubleButtonDialog(this, "New Invite", "Decline", "Accept")
+        incomingInviteDialog = DoubleButtonDialog(this, true,"New Invite", "Decline", "Accept")
 
         val networkRequest = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -207,7 +207,7 @@ abstract class ClientActivity : AppCompatActivity() {
             Topic.CHAT_MESSAGE -> ::onChatMessageReceived
             Topic.USER_STATUS_CHANGED -> ::onUserStatusChanged
             Topic.COMPARE_DATA -> { _ -> }
-            Topic.RESTORE_DATA -> { _ -> }
+            Topic.RESTORE_DATA -> ::onRestoreData
             else -> throw IllegalArgumentException("Failed to handle message with topic: $topic")
         })
     }
@@ -217,7 +217,7 @@ abstract class ClientActivity : AppCompatActivity() {
         val underscoreIndex = gameCard.id.indexOf('_')
         val opponentId = gameCard.id.substring(0, underscoreIndex)
 
-        dataManager.updateRecentOpponents(applicationContext, Pair(gameCard.opponentName, opponentId))
+        dataManager.addRecentOpponent(applicationContext, Pair(gameCard.opponentName, opponentId))
     }
 
     open fun onOpponentMoved(output: Parcelable) {
@@ -263,6 +263,8 @@ abstract class ClientActivity : AppCompatActivity() {
     open fun onUserStatusChanged(output: Parcelable) {
         // TODO: show popup
     }
+
+    open fun onRestoreData(output: Parcelable) {}
 
     open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 

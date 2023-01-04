@@ -57,8 +57,8 @@ open class GameBarFragment : ActionBarFragment() {
                 }
             }
 
-        addButtons(backButton)
-        addButtons(forwardButton)
+        addButton(backButton)
+        addButton(forwardButton)
     }
 
     fun enableBackButton() {
