@@ -13,7 +13,6 @@ import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.opengl.texture.PieceTextures
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.opengl.Camera
 import com.mjaruijs.fischersplayground.opengl.Camera.Companion.DEFAULT_ZOOM
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData

@@ -1,11 +1,27 @@
 package com.mjaruijs.fischersplayground.adapters.openingadapter
 
+import android.annotation.SuppressLint
+import android.os.Build.VERSION_CODES.TIRAMISU
+import android.os.Parcel
+import android.os.Parcelable
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.Logger
 
-class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move>, val arrows: HashMap<Int, ArrayList<MoveArrow>> = HashMap()) {
+class OpeningLine(val setupMoves: ArrayList<Move> = arrayListOf(), val lineMoves: ArrayList<Move> = arrayListOf(), val arrows: HashMap<Int, ArrayList<MoveArrow>> = HashMap()) : Parcelable {
+
+    constructor(parcel: Parcel) : this() {
+        if (android.os.Build.VERSION.SDK_INT < TIRAMISU) {
+            parcel.readList(setupMoves, Move::class.java.classLoader)
+            parcel.readList(lineMoves, Move::class.java.classLoader)
+            parcel.readMap(arrows, MoveArrow::class.java.classLoader)
+        } else {
+            parcel.readList(setupMoves, Move::class.java.classLoader, Move::class.java)
+            parcel.readList(lineMoves, Move::class.java.classLoader, Move::class.java)
+            parcel.readMap(arrows, MoveArrow::class.java.classLoader, Int::class.java, ArrayList<MoveArrow>()::class.java)
+        }
+    }
 
     fun getAllMoves(): ArrayList<Move> {
         val moves = ArrayList<Move>()
@@ -125,7 +141,15 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
         return result
     }
 
-    companion object {
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<OpeningLine> {
 
         private const val TAG = "OpeningLine"
 
@@ -213,6 +237,13 @@ class OpeningLine(val setupMoves: ArrayList<Move>, val lineMoves: ArrayList<Move
 
         }
 
+        override fun createFromParcel(parcel: Parcel): OpeningLine {
+            return OpeningLine(parcel)
+        }
+
+        override fun newArray(size: Int): Array<OpeningLine?> {
+            return arrayOfNulls(size)
+        }
     }
 
 }

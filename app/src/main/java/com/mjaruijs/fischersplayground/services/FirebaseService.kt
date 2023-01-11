@@ -8,8 +8,6 @@ import com.google.firebase.messaging.RemoteMessage
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.FIRE_BASE_PREFERENCE_FILE
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_ID_KEY
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_PREFERENCE_FILE
-import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder.Companion.GROUP_CHANNEL_ID
@@ -25,8 +23,8 @@ class FirebaseService : FirebaseMessagingService() {
         val userId = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, "")!!
 
         if (userId.isNotBlank()) {
-            val networkManager = NetworkManager.getInstance()
-            networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$userId|$token"))
+//            val networkManager = NetworkManager.getInstance()
+//            networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$userId|$token"))
         }
     }
 
@@ -42,10 +40,10 @@ class FirebaseService : FirebaseMessagingService() {
 
             val contentList = content.split('|').toTypedArray()
 
-            val dataManager = DataManager.getInstance(applicationContext)
-            if (dataManager.isMessageHandled(messageId)) {
-                return
-            }
+//            val dataManager = DataManager.getInstance(applicationContext)
+//            if (dataManager.isMessageHandled(messageId)) {
+//                return
+//            }
 
             val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
                 .setInputData(workDataOf(
@@ -74,9 +72,8 @@ class FirebaseService : FirebaseMessagingService() {
 
             val summaryNotification = notificationBuilder.build(applicationContext, true, "Title??", "Message!", GROUP_CHANNEL_ID, null)
             notificationBuilder.notify(0, summaryNotification)
-
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_firebase.txt", e.stackTraceToString(), applicationContext)
+            NetworkService.sendCrashReport("crash_firebase.txt", e.stackTraceToString(), applicationContext)
         }
     }
 

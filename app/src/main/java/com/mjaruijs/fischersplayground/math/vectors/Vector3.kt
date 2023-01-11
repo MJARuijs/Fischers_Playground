@@ -1,8 +1,16 @@
 package com.mjaruijs.fischersplayground.math.vectors
 
+import android.os.Parcel
+import android.os.Parcelable
 import kotlin.math.abs
 
 data class Vector3(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f): Vector<Vector3> {
+
+    constructor(parcel: Parcel) : this(
+        parcel.readFloat(),
+        parcel.readFloat(),
+        parcel.readFloat()
+    )
 
     constructor(x: Int, y: Int, z: Int): this(x.toFloat(), y.toFloat(), z.toFloat())
 
@@ -80,8 +88,17 @@ data class Vector3(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f
 
     override fun toArray() = floatArrayOf(x, y, z)
 
-    companion object {
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeFloat(x)
+        parcel.writeFloat(y)
+        parcel.writeFloat(z)
+    }
 
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<Vector3> {
         fun fromString(string: String): Vector3 {
             val values = string.removePrefix("<").removeSuffix(">").replace(",", "").split(' ')
             val x = values[0].toFloat()
@@ -90,6 +107,13 @@ data class Vector3(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f
             return Vector3(x, y, z)
         }
 
+        override fun createFromParcel(parcel: Parcel): Vector3 {
+            return Vector3(parcel)
+        }
+
+        override fun newArray(size: Int): Array<Vector3?> {
+            return arrayOfNulls(size)
+        }
     }
 
 }

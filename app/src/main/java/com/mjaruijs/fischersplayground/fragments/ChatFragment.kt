@@ -26,6 +26,7 @@ import com.mjaruijs.fischersplayground.util.Time
 
 class ChatFragment : Fragment() {
 
+    lateinit var gameId: String
     lateinit var onMessageSent: (ChatMessage) -> Unit
     lateinit var close: () -> Unit
 
@@ -130,7 +131,7 @@ class ChatFragment : Fragment() {
         }
 
         val timeStamp = Time.getSimpleTimeStamp()
-        val message = ChatMessage(timeStamp, content, MessageType.SENT)
+        val message = ChatMessage(gameId, timeStamp, content, MessageType.SENT)
 
         chatAdapter += message
         chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)

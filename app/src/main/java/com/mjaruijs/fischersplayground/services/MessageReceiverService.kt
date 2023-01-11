@@ -9,7 +9,6 @@ import android.os.Message
 import android.os.Messenger
 import android.widget.Toast
 import com.mjaruijs.fischersplayground.activities.MessageReceiver
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import java.lang.ref.WeakReference
@@ -23,10 +22,7 @@ class MessageReceiverService : Service() {
     private val networkReceiver = MessageReceiver(::onMessageReceived)
     private val intentFilter = IntentFilter("mjaruijs.fischers_playground")
 
-    private lateinit var networkManager: NetworkManager
-    private lateinit var dataManager: DataManager
-
-    var currentClient: Messenger? = null
+    private var currentClient: Messenger? = null
 
     private lateinit var serviceMessenger: Messenger
 
@@ -34,9 +30,6 @@ class MessageReceiverService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        dataManager = DataManager.getInstance(applicationContext)
-        networkManager = NetworkManager.getInstance()
-
         registerReceiver(networkReceiver, intentFilter)
     }
 
@@ -57,7 +50,6 @@ class MessageReceiverService : Service() {
     private fun sendMessage(data: Any?) {
         if (currentClient == null) {
             messageCache += data as NetworkMessage
-//            Logger.warn(TAG, "No client connected to service!")
             return
         }
         currentClient!!.send(Message.obtain(null, 0, data))

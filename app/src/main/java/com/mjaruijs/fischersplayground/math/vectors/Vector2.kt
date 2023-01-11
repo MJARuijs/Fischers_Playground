@@ -1,10 +1,17 @@
 package com.mjaruijs.fischersplayground.math.vectors
 
-import com.mjaruijs.fischersplayground.networking.NetworkManager
+import android.os.Parcel
+import android.os.Parcelable
+import com.mjaruijs.fischersplayground.services.NetworkService
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import kotlin.math.abs
 
 data class Vector2(var x: Float = 0.0f, var y: Float = 0.0f): Vector<Vector2> {
+
+    constructor(parcel: Parcel) : this(
+        parcel.readFloat(),
+        parcel.readFloat()
+    )
 
     constructor(vector2: Vector2) : this(vector2.x, vector2.y)
     
@@ -99,7 +106,23 @@ data class Vector2(var x: Float = 0.0f, var y: Float = 0.0f): Vector<Vector2> {
         return result
     }
 
-    companion object {
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeFloat(x)
+        parcel.writeFloat(y)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<Vector2> {
+        override fun createFromParcel(parcel: Parcel): Vector2 {
+            return Vector2(parcel)
+        }
+
+        override fun newArray(size: Int): Array<Vector2?> {
+            return arrayOfNulls(size)
+        }
 
         fun fromString(content: String): Vector2 {
             try {
@@ -111,7 +134,7 @@ data class Vector2(var x: Float = 0.0f, var y: Float = 0.0f): Vector<Vector2> {
                 val y = content.substring(separatorIndex + 2, endIndex).toFloat()
                 return Vector2(x, y)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_vec_from_string.txt", e.stackTraceToString(), null)
+                NetworkService.sendCrashReport("crash_vec_from_string.txt", e.stackTraceToString(), null)
                 throw IllegalArgumentException("Failed to parse the following string into a Vector2: $content")
             }
 

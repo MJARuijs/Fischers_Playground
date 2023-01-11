@@ -33,7 +33,7 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     DRAW_OFFERED(ParcelableString),
     DRAW_ACCEPTED(ParcelableString),
     DRAW_REJECTED(ParcelableString),
-    CHAT_MESSAGE(ChatMessage.Data),
+    CHAT_MESSAGE(ChatMessage),
     USER_STATUS_CHANGED(ParcelableString),
     HEART_BEAT,
     CONFIRM_MESSAGE,
@@ -42,7 +42,7 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     DELETE_OPENING,
     NEW_PRACTICE_SESSION,
     DELETE_PRACTICE_SESSION,
-    COMPARE_DATA,
+    COMPARE_DATA(ParcelableString),
     RESTORE_DATA(ParcelableNull);
 
     companion object {

@@ -1,5 +1,8 @@
 package com.mjaruijs.fischersplayground.chess.game
 
+import android.os.Build
+import android.os.Parcel
+import android.os.Parcelable
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
@@ -13,7 +16,29 @@ import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import com.mjaruijs.fischersplayground.util.Logger
 
-class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", private val savedMoves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated) {
+class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", private val savedMoves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated), Parcelable {
+
+    constructor(parcel: Parcel) : this(
+        parcel.readString()!!,
+        parcel.readString()!!,
+        parcel.readString()!!,
+        GameStatus.fromString(parcel.readString()!!),
+        parcel.readString()!!,
+        parcel.readLong(),
+        parcel.readBoolean(),
+        parcel.readString()!!
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            parcel.readList(savedMoves, Move::class.java.classLoader)
+            parcel.readList(chatMessages, ChatMessage::class.java.classLoader)
+            parcel.readList(newsUpdates, News::class.java.classLoader)
+        } else {
+            parcel.readList(savedMoves, Move::class.java.classLoader, Move::class.java)
+            parcel.readList(chatMessages, ChatMessage::class.java.classLoader, ChatMessage::class.java)
+            parcel.readList(newsUpdates, News::class.java.classLoader, News::class.java)
+
+        }
+    }
 
     init {
         status = if (savedMoves.isEmpty()) {
@@ -280,7 +305,32 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
     }
 
-    companion object {
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(gameId)
+        parcel.writeString(opponentId)
+        parcel.writeString(opponentName)
+        parcel.writeString(status.toString())
+        parcel.writeString(opponentStatus)
+        parcel.writeLong(lastUpdated)
+        parcel.writeBoolean(isPlayingWhite)
+        parcel.writeString(moveToBeConfirmed)
+        parcel.writeList(savedMoves)
+        parcel.writeList(chatMessages)
+        parcel.writeList(newsUpdates)
+    }
+
+    companion object CREATOR : Parcelable.Creator<MultiPlayerGame> {
+        override fun createFromParcel(parcel: Parcel): MultiPlayerGame {
+            return MultiPlayerGame(parcel)
+        }
+
+        override fun newArray(size: Int): Array<MultiPlayerGame?> {
+            return arrayOfNulls(size)
+        }
 
         fun parseFromServer(content: String, userId: String): MultiPlayerGame {
             try {
@@ -313,7 +363,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
                         val messageContent = messageData[2]
                         val type = if (senderId == userId) MessageType.SENT else MessageType.RECEIVED
 
-                        messages += ChatMessage(timeStamp, messageContent, type)
+                        messages += ChatMessage(gameId, timeStamp, messageContent, type)
                     }
                 }
 
@@ -341,6 +391,6 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
 
         }
-
     }
+
 }

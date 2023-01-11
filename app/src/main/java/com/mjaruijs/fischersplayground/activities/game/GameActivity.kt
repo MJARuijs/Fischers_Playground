@@ -92,7 +92,7 @@ abstract class GameActivity : ClientActivity() {
     }
 
     private fun onExceptionThrown(fileName: String, e: Exception) {
-        networkManager.sendCrashReport(fileName, e.stackTraceToString(), applicationContext)
+//        networkManager.sendCrashReport(fileName, e.stackTraceToString(), applicationContext)
     }
 
     inline fun <reified T>findFragment(): T? {
@@ -180,7 +180,7 @@ abstract class GameActivity : ClientActivity() {
             }
             game.onClick(x, y, displayWidth, displayHeight)
         } catch (e: Exception) {
-            networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString(), applicationContext)
+//            networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString(), applicationContext)
         }
     }
 

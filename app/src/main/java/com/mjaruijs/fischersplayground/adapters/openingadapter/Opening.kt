@@ -1,9 +1,31 @@
 package com.mjaruijs.fischersplayground.adapters.openingadapter
 
+import android.os.Parcel
+import android.os.Parcelable
 import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 
-class Opening(val name: String, val team: Team, val variations: ArrayList<Variation> = arrayListOf()) {
+class Opening(val name: String, val team: Team, val variations: ArrayList<Variation> = arrayListOf()) : Parcelable {
+
+    constructor(parcel: Parcel) : this(
+        parcel.readString()!!,
+        Team.fromString(parcel.readString()!!)
+    ) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+            parcel.readList(variations, Variation::class.java.classLoader)
+        } else {
+            parcel.readList(variations, Variation::class.java.classLoader, Variation::class.java)
+        }
+
+    }
+
+    override fun describeContents() = 0
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(name)
+        parcel.writeString(team.toString())
+        parcel.writeList(variations)
+    }
 
     fun addVariation(variation: Variation) {
         variations += variation
@@ -47,6 +69,7 @@ class Opening(val name: String, val team: Team, val variations: ArrayList<Variat
         return content
     }
 
+
     override fun equals(other: Any?): Boolean {
         if (other == null) {
             return false
@@ -76,6 +99,16 @@ class Opening(val name: String, val team: Team, val variations: ArrayList<Variat
         result = 31 * result + team.hashCode()
         result = 31 * result + variations.hashCode()
         return result
+    }
+
+    companion object CREATOR : Parcelable.Creator<Opening> {
+        override fun createFromParcel(parcel: Parcel): Opening {
+            return Opening(parcel)
+        }
+
+        override fun newArray(size: Int): Array<Opening?> {
+            return arrayOfNulls(size)
+        }
     }
 
 }

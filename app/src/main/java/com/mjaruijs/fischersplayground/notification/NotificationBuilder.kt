@@ -8,13 +8,12 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.MainActivity
 import com.mjaruijs.fischersplayground.activities.game.MultiplayerGameActivity
 import com.mjaruijs.fischersplayground.chess.game.Move
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.services.DataManager
+import com.mjaruijs.fischersplayground.services.NetworkService
+import com.mjaruijs.fischersplayground.util.Logger
 
 class NotificationBuilder(context: Context) {
 
-    private val dataManager = DataManager.getInstance(context)
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     init {
@@ -49,7 +48,7 @@ class NotificationBuilder(context: Context) {
 
             return notificationBuilder.build()
         } catch (e: Exception){
-            NetworkManager.getInstance().sendCrashReport("crash_notification_builder.txt", e.stackTraceToString(), context)
+            NetworkService.sendCrashReport("crash_notification_builder.txt", e.stackTraceToString(), context)
             throw e
         }
     }
@@ -65,7 +64,6 @@ class NotificationBuilder(context: Context) {
     }
 
     fun createNotificationData(context: Context, topic: Topic, data: Array<String>): NotificationData? {
-        dataManager.loadData(context)
         return when (topic) {
             Topic.INVITE -> {
                 val opponentName = data[0]
@@ -78,43 +76,43 @@ class NotificationBuilder(context: Context) {
                 NotificationData("New game started!", "You're playing $color against $opponentName!", NEW_GAME_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.MOVE -> {
-                val gameId = data[0]
                 val moveNotation = data[1]
+                val opponentName = data[2]
                 val move = Move.fromChessNotation(moveNotation)
-                val game = dataManager.getGame(gameId)
-                NotificationData("Your move!", "${game!!.opponentName} played ${move.getSimpleChessNotation()}", MOVE_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
+
+                NotificationData("Your move!", "$opponentName played ${move.getSimpleChessNotation()}", MOVE_CHANNEL_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.UNDO_REQUESTED -> {
-                val opponentName = dataManager.getGame(data[0])!!.opponentName
+                val opponentName = data[1]
                 NotificationData("Undo requested!", "$opponentName has requested to undo their move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.UNDO_ACCEPTED -> {
-                val opponentName = dataManager.getGame(data[0])!!.opponentName
+                val opponentName = data[2]
                 NotificationData("Move reversed!", "$opponentName has accepted your request to undo your move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.UNDO_REJECTED -> {
-                val opponentName = dataManager.getGame(data[0])!!.opponentName
+                val opponentName = data[1]
                 NotificationData("Rejection!", "$opponentName has rejected your request to undo your move!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.RESIGN -> {
-                val opponentName = dataManager.getGame(data[0])!!.opponentName
+                val opponentName = data[1]
                 NotificationData("Game over!", "$opponentName has resigned. You won!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.DRAW_OFFERED -> {
-                val opponentName = dataManager.getGame(data[0])!!.opponentName
+                val opponentName = data[1]
                 NotificationData("Draw offer!", "$opponentName has offered a draw!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.DRAW_ACCEPTED -> {
-                val opponentName = dataManager.getGame(data[0])!!.opponentName
+                val opponentName = data[1]
                 NotificationData("It's a draw!", "$opponentName has accepted your draw offer!", MISCELLANEOUS_ID, createMainActivityIntent(context, data))
             }
             Topic.DRAW_REJECTED -> {
-                val opponentName = dataManager.getGame(data[0])!!.opponentName
+                val opponentName = data[1]
                 NotificationData("The show must go on!", "$opponentName has rejected your draw offer!", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.CHAT_MESSAGE -> {
-                val opponentName = dataManager.getGame(data[0])!!.opponentName
                 val message = data[2]
+                val opponentName = data[3]
                 NotificationData("New message!", "$opponentName: $message", MISCELLANEOUS_ID, createMultiplayerActivityIntent(context, data))
             }
             Topic.USER_STATUS_CHANGED -> null
@@ -126,7 +124,7 @@ class NotificationBuilder(context: Context) {
         val intent = Intent(context, MainActivity::class.java)
         intent.putExtra("opponent_name", data[0])
         intent.putExtra("invite_id", data[1])
-        return PendingIntent.getActivity(context, System.currentTimeMillis().toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        return PendingIntent.getActivity(context, System.currentTimeMillis().toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
     private fun createMultiplayerActivityIntent(context: Context, data: Array<String>): PendingIntent {
@@ -140,6 +138,8 @@ class NotificationBuilder(context: Context) {
     }
 
     companion object {
+
+        private const val TAG = "NotificationBuilder"
 
         const val GROUP_CHANNEL_ID = "Group channel"
         const val MOVE_CHANNEL_ID = "Move updates"

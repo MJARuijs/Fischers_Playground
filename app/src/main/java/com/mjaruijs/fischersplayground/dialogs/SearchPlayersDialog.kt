@@ -9,12 +9,11 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerAdapter
 import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerCardItem
 import com.mjaruijs.fischersplayground.listeners.OnSearchViewChangedListener
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import java.util.*
 
-class CreateGameDialog(private val onInvite: (String, Long, String, String) -> Unit) {
+class SearchPlayersDialog(private val onInvite: (String, Long, String, String) -> Unit) {
 
     private lateinit var dialog: Dialog
     private lateinit var playerCardList: PlayerAdapter
@@ -23,7 +22,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
 
     private var initialized = false
 
-    fun create(id: String, context: Activity, networkManager: NetworkManager) {
+    fun create(id: String, context: Activity, sendMessage: (NetworkMessage) -> Unit) {
         dialog = Dialog(context)
         dialog.setContentView(R.layout.dialog_create_game)
 
@@ -36,7 +35,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
 
         searchBar.setOnQueryTextListener(OnSearchViewChangedListener {
             if (searchBar.query.isNotBlank()) {
-                networkManager.sendMessage(NetworkMessage(Topic.SEARCH_PLAYERS, "${searchBar.query}"))
+                sendMessage(NetworkMessage(Topic.SEARCH_PLAYERS, "${searchBar.query}"))
             } else {
                 context.runOnUiThread {
                     loadRecentPlayers()
@@ -44,7 +43,7 @@ class CreateGameDialog(private val onInvite: (String, Long, String, String) -> U
             }
         })
 
-        playerCardList = PlayerAdapter(id, ::onPlayerClicked, networkManager)
+        playerCardList = PlayerAdapter(id, ::onPlayerClicked, sendMessage)
 
         val recyclerView = dialog.findViewById<RecyclerView>(R.id.available_players_list) ?: return
         recyclerView.adapter = playerCardList

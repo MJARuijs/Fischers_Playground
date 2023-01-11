@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.chess.game
 
+import android.os.Parcelable
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType

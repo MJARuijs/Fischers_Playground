@@ -1,7 +1,7 @@
 package com.mjaruijs.fischersplayground.util
 
 import android.content.Context
-import com.mjaruijs.fischersplayground.networking.NetworkManager
+import com.mjaruijs.fischersplayground.services.NetworkService
 import java.io.*
 
 object FileManager {
@@ -22,7 +22,7 @@ object FileManager {
             val newContent = "$currentContent\n$content"
             return write(context, fileName, newContent)
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_file_manager_append.txt", e.stackTraceToString(), context)
+            NetworkService.sendCrashReport("crash_file_manager_append.txt", e.stackTraceToString(), context)
             e.printStackTrace()
             false
         }
@@ -64,7 +64,7 @@ object FileManager {
             writer.close()
             true
         } catch (e: IOException) {
-            NetworkManager.getInstance().sendCrashReport("crash_file_manager_write.txt", e.stackTraceToString(), context)
+            NetworkService.sendCrashReport("crash_file_manager_write.txt", e.stackTraceToString(), context)
             return false
         }
     }

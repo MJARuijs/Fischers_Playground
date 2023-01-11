@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-feature
+        android:glEsVersion="0x00030001"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="false"
         android:fullBackupContent="false"
@@ -9,6 +19,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FischersPlayground">
+
+
         <activity
             android:name=".activities.settings.SettingsActivity"
             android:exported="true" />
@@ -24,14 +36,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-
         <activity
             android:name=".activities.MainActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustNothing">
-
-        </activity>
+            android:windowSoftInputMode="adjustNothing"></activity>
         <activity
             android:name=".activities.game.MultiplayerGameActivity"
             android:parentActivityName=".activities.MainActivity"
@@ -43,7 +51,6 @@
         <activity android:name=".activities.CrashReportActivity" />
         <activity android:name=".activities.opening.OpeningMenuActivity" />
         <activity android:name=".activities.opening.CreateOpeningActivity" />
-
         <activity
             android:name=".activities.GoogleLoginActivity"
             android:exported="true">
@@ -53,9 +60,15 @@
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
-        <activity android:name="com.mjaruijs.fischersplayground.activities.opening.VariationMenuActivity" />
-        <activity android:name="com.mjaruijs.fischersplayground.activities.opening.PracticeActivity" />
+<!--        <activity-->
+<!--            android:name="com.mjaruijs.fischersplayground.activities.parcelable.ParcelableActivity"-->
+<!--            android:exported="true">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
 
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
+<!--        </activity>-->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-5541201046009046~4593561256" />
@@ -70,16 +83,8 @@
             </intent-filter>
         </service>
         <service android:name="com.mjaruijs.fischersplayground.services.MessageReceiverService" />
+        <service android:name="com.mjaruijs.fischersplayground.services.NetworkService" />
+        <service android:name="com.mjaruijs.fischersplayground.services.DataManagerService" />
     </application>
-
-    <uses-feature
-        android:glEsVersion="0x00030001"
-        android:required="true" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-
-    <uses-permission android:name="android.permission.INTERNET" />
 
 </manifest>

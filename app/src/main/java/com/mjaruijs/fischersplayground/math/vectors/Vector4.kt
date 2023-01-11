@@ -1,9 +1,17 @@
 package com.mjaruijs.fischersplayground.math.vectors
 
+import android.os.Parcel
+import android.os.Parcelable
 import kotlin.math.abs
 
-data class Vector4(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f, var w: Float = 0.0f):
-    Vector<Vector4> {
+data class Vector4(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f, var w: Float = 0.0f): Vector<Vector4> {
+
+    constructor(parcel: Parcel) : this(
+        parcel.readFloat(),
+        parcel.readFloat(),
+        parcel.readFloat(),
+        parcel.readFloat()
+    )
 
     constructor(x: Int, y: Int, z: Int, w: Int): this(x.toFloat(), y.toFloat(), z.toFloat(), w.toFloat())
 
@@ -75,9 +83,29 @@ data class Vector4(var x: Float = 0.0f, var y: Float = 0.0f, var z: Float = 0.0f
 
     override fun toArray() = floatArrayOf(x, y, z, w)
 
-    fun fromString(string: String, delimiter: String = ","): Vector4 {
-        val values = string.split(delimiter)
-        return Vector4(values[0].toFloat(), values[1].toFloat(), values[2].toFloat(), values[3].toFloat())
+    override fun describeContents() = 0
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeFloat(x)
+        parcel.writeFloat(y)
+        parcel.writeFloat(z)
+        parcel.writeFloat(w)
+    }
+
+    companion object CREATOR : Parcelable.Creator<Vector4> {
+
+        fun fromString(string: String, delimiter: String = ","): Vector4 {
+            val values = string.split(delimiter)
+            return Vector4(values[0].toFloat(), values[1].toFloat(), values[2].toFloat(), values[3].toFloat())
+        }
+
+        override fun createFromParcel(parcel: Parcel): Vector4 {
+            return Vector4(parcel)
+        }
+
+        override fun newArray(size: Int): Array<Vector4?> {
+            return arrayOfNulls(size)
+        }
     }
 
 }

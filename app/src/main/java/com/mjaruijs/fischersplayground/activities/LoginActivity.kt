@@ -2,9 +2,7 @@ package com.mjaruijs.fischersplayground.activities
 
 import android.content.Intent
 import android.graphics.Color
-import android.os.AsyncTask
 import android.os.Bundle
-import android.os.Parcelable
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
@@ -17,10 +15,8 @@ import com.mjaruijs.fischersplayground.dialogs.CreateAccountDialog
 import com.mjaruijs.fischersplayground.dialogs.SingleButtonDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.opengl.OBJLoader
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.Logger
 
 class LoginActivity : ClientActivity() {
 
@@ -86,7 +82,8 @@ class LoginActivity : ClientActivity() {
         savePreference(USER_ID_KEY, id)
 
         val token = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
-        networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
+        sendNetworkMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
+//        networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
 
         stayingInApp = true
         startActivity(Intent(this, MainActivity::class.java))
@@ -103,7 +100,7 @@ class LoginActivity : ClientActivity() {
         savePreference(USER_NAME_KEY, userName)
 
         val token = getPreference(FIRE_BASE_PREFERENCE_FILE).getString("token", "")!!
-        networkManager.sendMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
+        sendNetworkMessage(NetworkMessage(Topic.FIRE_BASE_TOKEN, "$id|$token"))
 
         stayingInApp = true
         startActivity(Intent(this, MainActivity::class.java))
@@ -130,7 +127,7 @@ class LoginActivity : ClientActivity() {
                     savePreference(USER_EMAIL_KEY, email)
                     savePreference(USER_NAME_KEY, userName)
 
-                    networkManager.sendMessage(NetworkMessage(Topic.CREATE_ACCOUNT, "$email|$userName"))
+                    sendNetworkMessage(NetworkMessage(Topic.CREATE_ACCOUNT, "$email|$userName"))
                 }
             }
 
@@ -143,7 +140,7 @@ class LoginActivity : ClientActivity() {
 
         val loginButton = findViewById<CardView>(R.id.login_button)
         loginButton.setOnClickListener {
-            networkManager.sendMessage(NetworkMessage(Topic.EMAIL_LOGIN, emailInputBox.text.toString()))
+            sendNetworkMessage(NetworkMessage(Topic.EMAIL_LOGIN, emailInputBox.text.toString()))
         }
     }
 

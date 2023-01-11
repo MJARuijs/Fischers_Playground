@@ -73,7 +73,7 @@ class PracticeActivity : GameActivity() {
             throw IllegalArgumentException("Missing essential information for starting PracticeActivity: resume_session")
         }
 
-        opening = dataManager.getOpening(openingName, openingTeam)
+//        opening = dataManager.getOpening(openingName, openingTeam)
 
         resumeSession = intent.getBooleanExtra("resume_session", false)
 
@@ -82,7 +82,7 @@ class PracticeActivity : GameActivity() {
 
         if (resumeSession) {
             try {
-                session = dataManager.getPracticeSession(openingName, openingTeam) ?: throw IllegalArgumentException("Tried to resume session with name: $openingName and team $openingTeam, but could not find it..")
+//                session = dataManager.getPracticeSession(openingName, openingTeam) ?: throw IllegalArgumentException("Tried to resume session with name: $openingName and team $openingTeam, but could not find it..")
                 if (session.currentLine != null) {
                     lines += session.currentLine!!
                 }
@@ -96,7 +96,7 @@ class PracticeActivity : GameActivity() {
                 totalLineCount = session.totalLineCount
                 practiceProgress = session.currentLineIndex
             } catch (e: Exception) {
-                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString(), applicationContext)
+//                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString(), applicationContext)
                 throw e
             }
         } else {
@@ -118,7 +118,7 @@ class PracticeActivity : GameActivity() {
                 totalLineCount = variationLines.size
                 practiceProgress = 0
             } catch (e: Exception) {
-                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString(), applicationContext)
+//                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString(), applicationContext)
                 throw e
             }
         }
@@ -455,9 +455,9 @@ class PracticeActivity : GameActivity() {
         progressFragment.complete()
         practiceNavigationButtons.showExitButton()
 
-        dataManager.removePracticeSession(openingName, openingTeam)
-        dataManager.savePracticeSessions(applicationContext)
-        networkManager.sendMessage(NetworkMessage(Topic.DELETE_PRACTICE_SESSION, "$userId|$openingName|$openingTeam"))
+//        dataManager.removePracticeSession(openingName, openingTeam)
+//        dataManager.savePracticeSessions(applicationContext)
+        sendNetworkMessage(NetworkMessage(Topic.DELETE_PRACTICE_SESSION, "$userId|$openingName|$openingTeam"))
     }
 
     private fun loadPracticeActionButtons() {
@@ -477,8 +477,8 @@ class PracticeActivity : GameActivity() {
 
     private fun saveSession() {
         val practiceSession = PracticeSession(openingName, openingTeam, progressFragment.currentValue, progressFragment.maxValue, currentLine, nextLine, lines)
-        dataManager.setPracticeSession(openingName, practiceSession)
-        dataManager.savePracticeSessions(applicationContext)
-        networkManager.sendMessage(NetworkMessage(Topic.NEW_PRACTICE_SESSION, "$userId|$openingName|$openingTeam|$practiceSession"))
+//        dataManager.setPracticeSession(openingName, practiceSession)
+//        dataManager.savePracticeSessions(applicationContext)
+        sendNetworkMessage(NetworkMessage(Topic.NEW_PRACTICE_SESSION, "$userId|$openingName|$openingTeam|$practiceSession"))
     }
 }

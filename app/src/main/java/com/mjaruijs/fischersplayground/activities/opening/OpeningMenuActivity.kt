@@ -16,7 +16,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.CreateOpeningDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.userinterface.UIButton
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import com.mjaruijs.fischersplayground.util.FileManager
 
@@ -42,11 +41,11 @@ class OpeningMenuActivity : ClientActivity() {
         hideActivityDecorations()
 
         Thread {
-            while (dataManager.isLocked()) {
-                Thread.sleep(1)
-            }
+//            while (dataManager.isLocked()) {
+//                Thread.sleep(1)
+//            }
             runOnUiThread {
-                restoreSavedOpenings(dataManager.getSavedOpenings())
+//                restoreSavedOpenings(dataManager.getSavedOpenings())
             }
         }.start()
     }
@@ -109,7 +108,7 @@ class OpeningMenuActivity : ClientActivity() {
     private fun onDeleteOpening(opening: Opening) {
         openingAdapter.deleteOpening(opening)
         FileManager.delete("opening_${opening.name}_${opening.team}.txt")
-        networkManager.sendMessage(NetworkMessage(Topic.DELETE_OPENING, "$userId|${opening.name}|${opening.team}"))
+        sendNetworkMessage(NetworkMessage(Topic.DELETE_OPENING, "$userId|${opening.name}|${opening.team}"))
     }
 
     private fun initUIComponents() {

@@ -2,11 +2,11 @@ package com.mjaruijs.fischersplayground.services
 
 import android.app.Service
 import android.content.Context
+import android.content.Intent
+import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.work.Data
-import androidx.work.Worker
-import androidx.work.WorkerParameters
+import androidx.work.*
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_PREFERENCE_FILE
@@ -22,8 +22,6 @@ import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MoveData
-import com.mjaruijs.fischersplayground.networking.NetworkManager
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.parcelable.ParcelableNull
@@ -90,11 +88,28 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             parcelable.writeToParcel(parcel, 0)
             putByteArray(key, parcel.marshall())
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_data_worker_parcelable.txt", e.stackTraceToString(), applicationContext)
+            NetworkService.sendCrashReport("crash_data_worker_parcelable.txt", e.stackTraceToString(), applicationContext)
         } finally {
             parcel.recycle()
         }
         return this
+    }
+
+    private fun sendToDataManager(request: DataManagerService.Request, vararg extraData: Pair<String, *>) {
+        val dataBundle = Bundle()
+        for (data in extraData) {
+            if (data.second is String) {
+                dataBundle.putString(data.first, data.second as String)
+            } else if (data.second is Parcelable) {
+                dataBundle.putParcelable(data.first, data.second as Parcelable)
+            }
+        }
+
+        val intent = Intent(applicationContext, DataManagerService::class.java)
+            .putExtra("request", request.toString())
+            .putExtra("data", dataBundle)
+
+        applicationContext.startService(intent)
     }
 
     private fun onOpponentMoved(data: Array<String>): Parcelable {
@@ -113,7 +128,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             game.lastUpdated = timeStamp
             dataManager.setGame(gameId, game)
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_data_worker_on_opponent_moved.txt", e.stackTraceToString(), applicationContext)
+            NetworkService.sendCrashReport("crash_data_worker_on_opponent_moved.txt", e.stackTraceToString(), applicationContext)
         }
 
         return moveData
@@ -125,7 +140,8 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val timeStamp = data[2].toLong()
 
         val inviteData = InviteData(inviteId, opponentName, timeStamp, InviteType.RECEIVED)
-        dataManager.saveInvite(inviteId, inviteData)
+
+//        dataManager.setInvite(inviteId, inviteData)
 
         return InviteData(inviteId, opponentName, timeStamp, InviteType.RECEIVED)
     }
@@ -219,15 +235,15 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         return ParcelableString(gameId)
     }
 
-    private fun onChatMessageReceived(data: Array<String>): ChatMessage.Data {
+    private fun onChatMessageReceived(data: Array<String>): ChatMessage {
         val gameId = data[0]
         val timeStamp = data[1]
         val messageContent = data[2]
 
-        dataManager.getGame(gameId)!!.addMessage(ChatMessage(timeStamp, messageContent, MessageType.RECEIVED))
+        dataManager.getGame(gameId)!!.addMessage(ChatMessage(gameId, timeStamp, messageContent, MessageType.RECEIVED))
         dataManager.getGame(gameId)!!.addNews(NewsType.CHAT_MESSAGE)
 
-        return ChatMessage.Data(gameId, timeStamp, messageContent, MessageType.RECEIVED)
+        return ChatMessage(gameId, timeStamp, messageContent, MessageType.RECEIVED)
     }
 
     private fun onUserStatusChanged(data: Array<String>): ParcelableString {
@@ -248,7 +264,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         return ParcelableString(opponentStatus)
     }
 
-    private fun onCompareData(data: Array<String>) {
+    private fun onCompareData(data: Array<String>): ParcelableString {
         val localFiles = FileManager.listFilesInDirectory()
 
         val missingData = ArrayList<String>()
@@ -310,7 +326,8 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
             }
         }
 
-        NetworkManager.getInstance().sendMessage(NetworkMessage(Topic.RESTORE_DATA, "$userId|${missingData.joinToString("|")}"))
+        return ParcelableString("$userId|${missingData.joinToString("|")}")
+//        NetworkManager.getInstance().sendMessage(NetworkMessage(Topic.RESTORE_DATA, "$userId|${missingData.joinToString("|")}"))
     }
 
     private fun onRestoreData(data: Array<String>): ParcelableNull {
@@ -328,7 +345,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
                     val game = MultiPlayerGame.parseFromServer(gameData, userId)
                     dataManager.setGame(game.gameId, game)
                 }
-                dataManager.saveData(applicationContext)
+                dataManager.saveGames(applicationContext)
             } else if (dataType == "invites") {
                 val invitesData = serverData.substring(separatorIndex + 1).split("%")
 
@@ -340,7 +357,7 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
                     val invite = InviteData.fromString(inviteData)
                     dataManager.setInvite(invite.inviteId, invite)
                 }
-                dataManager.saveData(applicationContext)
+                dataManager.saveInvites(applicationContext)
             } else if (dataType == "recent_opponents") {
                 val opponents = serverData.substring(separatorIndex + 1).split("%")
 
@@ -353,10 +370,11 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
                     val opponentSeparatorIndex = opponentData.indexOf("@#!")
                     val opponentName = opponentData.substring(0, opponentSeparatorIndex)
                     val opponentId = opponentData.substring(opponentSeparatorIndex + 3)
-                    recentOpponents += Pair(opponentName, opponentId)
+//                    recentOpponents +=
+                    dataManager.addRecentOpponent(applicationContext, Pair(opponentName, opponentId))
                 }
 
-                dataManager.setRecentOpponents(applicationContext, recentOpponents)
+//                dataManager.setRecentOpponents(applicationContext, recentOpponents)
             } else {
                 val filesData = serverData.substring(separatorIndex + 1).split("%")
 
@@ -382,6 +400,19 @@ class StoreDataWorker(context: Context, workParams: WorkerParameters) : Worker(c
         val filesString = serverData.substring(separatorIndex + 1)
 
         return filesString.split("%").toList()
+    }
+
+    private fun Data.getParcelable(type: Parcelable.Creator<*>?, key: String): Parcelable? {
+        val parcel = Parcel.obtain()
+        try {
+            val bytes = getByteArray(key) ?: return null
+            parcel.unmarshall(bytes, 0, bytes.size)
+            parcel.setDataPosition(0)
+
+            return type?.createFromParcel(parcel) as Parcelable?
+        } finally {
+            parcel.recycle()
+        }
     }
 
     companion object {

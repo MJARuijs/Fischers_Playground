@@ -23,15 +23,19 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.game.MoveData
-import com.mjaruijs.fischersplayground.dialogs.CreateGameDialog
+import com.mjaruijs.fischersplayground.dialogs.SearchPlayersDialog
+import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
+import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
+import com.mjaruijs.fischersplayground.services.NetworkService
 import com.mjaruijs.fischersplayground.userinterface.RippleEffect
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import java.util.*
+import com.mjaruijs.fischersplayground.util.Logger
+import java.util.Stack
 
 class MainActivity : ClientActivity() {
 
@@ -39,7 +43,7 @@ class MainActivity : ClientActivity() {
 
     override val stayInAppOnBackPress = false
 
-    private val createGameDialog = CreateGameDialog(::onInvite)
+    private val searchPlayersDialog = SearchPlayersDialog(::onInvite)
 
     private lateinit var gameAdapter: GameAdapter
 
@@ -56,6 +60,8 @@ class MainActivity : ClientActivity() {
 //        loadResources()
 
         initUIComponents()
+
+
 
 //        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
 //            val token = result.token
@@ -78,22 +84,34 @@ class MainActivity : ClientActivity() {
         hideActivityDecorations()
         manageGameVisibility()
 
-        Thread {
-            while (dataManager.isLocked()) {
-                Thread.sleep(1)
-            }
-            runOnUiThread {
-                restoreSavedGames(dataManager.getSavedGames())
-                restoreSavedInvites(dataManager.getSavedInvites())
-                updateRecentOpponents(dataManager.getRecentOpponents())
-            }
-        }.start()
+//        Thread {
+//            while (dataManager.isLocked()) {
+//                Thread.sleep(1)
+//            }
+//            runOnUiThread {
+
+        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES, ::restoreSavedGames)
+        sendToDataManager<ArrayList<InviteData>>(DataManagerService.Request.GET_SAVED_INVITES, ::restoreSavedInvites)
+
+//        getData(DataManagerWorker.Request.GET_SAVED_GAMES, {
+//            restoreSavedGames(it)
+//        })
+//
+//        getData(DataManagerWorker.Request.GET_SAVED_INVITES, {
+//            restoreSavedInvites(it)
+//        })
+
+//                restoreSavedGames(dataManager.getSavedGames())
+//                restoreSavedInvites(dataManager.getSavedInvites())
+//                updateRecentOpponents(dataManager.getRecentOpponents())
+//            }
+//        }.start()
 
         stayingInApp = false
     }
 
     override fun onDestroy() {
-        createGameDialog.dismiss()
+        searchPlayersDialog.dismiss()
         super.onDestroy()
     }
 
@@ -105,7 +123,7 @@ class MainActivity : ClientActivity() {
     }
 
     private fun onPlayersReceived(content: Array<String>) {
-        createGameDialog.clearPlayers()
+        searchPlayersDialog.clearPlayers()
         for (playerData in content) {
             if (playerData.isBlank()) {
                 continue
@@ -114,15 +132,16 @@ class MainActivity : ClientActivity() {
             val data = playerData.removePrefix("(").removeSuffix(")").split(',')
             val name = data[0]
             val id = data[1]
-            createGameDialog.addPlayers(name, id)
+            searchPlayersDialog.addPlayers(name, id)
         }
     }
 
     private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
-        dataManager.saveInvite(inviteId, InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING))
-        dataManager.saveData(applicationContext)
-        dataManager.addRecentOpponent(applicationContext, Pair(opponentName, opponentId))
+        sendToDataManager(DataManagerService.Request.SET_INVITE, Pair("invite", InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING)))
+
+//        dataManager.setInvite(inviteId, InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING))
+//        dataManager.saveData(applicationContext)
     }
 
     private fun onGameClicked(gameCard: GameCardItem) {
@@ -149,10 +168,10 @@ class MainActivity : ClientActivity() {
     private fun showNewInviteDialog(inviteId: String, opponentName: String) {
         incomingInviteDialog.setMessage("$opponentName is inviting you for a game!")
         incomingInviteDialog.setRightOnClick {
-            networkManager.sendMessage(NetworkMessage(Topic.INVITE_ACCEPTED, inviteId))
+            sendNetworkMessage(NetworkMessage(Topic.INVITE_ACCEPTED, inviteId))
         }
         incomingInviteDialog.setLeftOnClick {
-            networkManager.sendMessage(NetworkMessage(Topic.INVITE_REJECTED, inviteId))
+            sendNetworkMessage(NetworkMessage(Topic.INVITE_REJECTED, inviteId))
         }
         incomingInviteDialog.show()
     }
@@ -166,9 +185,11 @@ class MainActivity : ClientActivity() {
     }
 
     private fun onGameDeleted(gameId: String) {
-        dataManager.removeGame(gameId)
-        dataManager.removeSavedInvite(gameId)
-        dataManager.saveData(applicationContext)
+        sendToDataManager(DataManagerService.Request.REMOVE_GAME, Pair("game_id", gameId))
+        sendToDataManager(DataManagerService.Request.REMOVE_INVITE, Pair("invite_id", gameId))
+//        dataManager.removeGame(gameId)
+//        dataManager.removeSavedInvite(gameId)
+//        dataManager.saveData(applicationContext)
     }
 
     override fun onIncomingInvite(output: Parcelable) {
@@ -223,14 +244,18 @@ class MainActivity : ClientActivity() {
     }
 
     override fun onChatMessageReceived(output: Parcelable) {
-        val messageData = output as ChatMessage.Data
+        val messageData = output as ChatMessage
         val gameId = messageData.gameId
         gameAdapter.hasUpdate(gameId)
     }
 
     override fun onRestoreData(output: Parcelable) {
-        restoreSavedGames(dataManager.getSavedGames())
-        restoreSavedInvites(dataManager.getSavedInvites())
+        super.onRestoreData(output)
+
+        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES, ::restoreSavedGames)
+        sendToDataManager<ArrayList<InviteData>>(DataManagerService.Request.GET_SAVED_INVITES, ::restoreSavedInvites)
+//        restoreSavedGames(dataManager.getSavedGames())
+//        restoreSavedInvites(dataManager.getSavedInvites())
     }
 
     private fun manageGameVisibility() {
@@ -265,7 +290,7 @@ class MainActivity : ClientActivity() {
         gameRecyclerView.layoutManager = LinearLayoutManager(this)
         gameRecyclerView.adapter = gameAdapter
 
-        createGameDialog.create(userId, this, networkManager)
+        searchPlayersDialog.create(userId, this, ::sendNetworkMessage)
 
         findViewById<TextView>(R.id.welcome_text_view)
             .setOnClickListener { textView ->
@@ -311,29 +336,42 @@ class MainActivity : ClientActivity() {
             .setCornerRadius(45f)
             .setTextSize(28f)
             .setOnClickListener {
-                createGameDialog.show()
+                searchPlayersDialog.show()
 //                stayingInApp = true
 //                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
             }
     }
 
-    private fun restoreSavedGames(games: HashMap<String, MultiPlayerGame>?) {
-        for ((gameId, game) in games ?: return) {
+    private fun restoreSavedGames(games: ArrayList<MultiPlayerGame>?) {
+        if (games == null) {
+            Logger.debug(activityName, "Tried to restore games but was null")
+            return
+        }
+
+        Logger.debug(activityName, "Number of saved games: ${games.size}")
+        for (game in games) {
             if (!showFinishedGames && game.isFinished()) {
                 continue
             }
 
-            val doesCardExist = gameAdapter.updateGameCard(gameId, game.status, game.lastUpdated, game.isPlayingWhite, false)
+            val doesCardExist = gameAdapter.updateGameCard(game.gameId, game.status, game.lastUpdated, game.isPlayingWhite, false)
 
             if (!doesCardExist) {
-                gameAdapter += GameCardItem(gameId, game.lastUpdated, game.opponentName, game.status, game.isPlayingWhite, false)
+                gameAdapter += GameCardItem(game.gameId, game.lastUpdated, game.opponentName, game.status, game.isPlayingWhite, false)
             }
         }
     }
 
-    private fun restoreSavedInvites(invites: HashMap<String, InviteData>?) {
-        for ((inviteId, inviteData) in invites ?: return) {
-            if (gameAdapter.containsCard(inviteId)) {
+    private fun restoreSavedInvites(invites: ArrayList<InviteData>?) {
+        if (invites == null) {
+            Logger.debug(activityName, "Tried to restore invites but was null")
+            return
+        }
+
+        Logger.debug(activityName, "Number of saved invites: ${invites.size}")
+
+        for (inviteData in invites) {
+            if (gameAdapter.containsCard(inviteData.inviteId)) {
                 continue
             }
 
@@ -347,12 +385,12 @@ class MainActivity : ClientActivity() {
                 InviteType.RECEIVED -> true
             }
 
-            gameAdapter += GameCardItem(inviteId, inviteData.timeStamp, inviteData.opponentName, status, hasUpdate = hasUpdate)
+            gameAdapter += GameCardItem(inviteData.inviteId, inviteData.timeStamp, inviteData.opponentName, status, hasUpdate = hasUpdate)
         }
     }
 
     override fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {
-        createGameDialog.setRecentOpponents(opponents ?: return)
+        searchPlayersDialog.setRecentOpponents(opponents ?: return)
     }
 
     private fun loadResources() {

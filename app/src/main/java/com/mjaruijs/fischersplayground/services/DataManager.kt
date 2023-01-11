@@ -17,7 +17,6 @@ import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 import java.util.Stack
@@ -49,155 +48,11 @@ class DataManager(context: Context) {
             val preferences = context.getSharedPreferences("user_data", MODE_PRIVATE)
             userId = preferences.getString(ClientActivity.USER_ID_KEY, "") ?: DEFAULT_USER_ID
 
-            loadData(context)
+//            loadData(context)
         } catch (e: Exception) {
-            NetworkManager.getInstance().sendCrashReport("crash_data_manager_init.txt", e.stackTraceToString(), context)
+//            NetworkManager.getInstance().sendCrashReport("crash_data_manager_init.txt", e.stackTraceToString(), context)
         }
     }
-
-    fun getSavedOpenings(): ArrayList<Opening> {
-        obtainOpeningLock()
-
-        val openings = savedOpenings
-        unlockOpenings()
-
-        return openings
-    }
-
-    fun removeOpening(name: String) {
-        obtainOpeningLock()
-
-        savedOpenings.removeIf { opening -> opening.name == name }
-
-        unlockOpenings()
-    }
-
-    fun setPracticeSession(name: String, practiceSession: PracticeSession) {
-        obtainPracticeSessionLock()
-
-        savedPracticeSessions.removeIf { session ->
-            session.openingName == name
-        }
-
-        savedPracticeSessions += practiceSession
-        unlockPracticeSessions()
-    }
-
-
-    fun removePracticeSession(name: String, team: Team) {
-        obtainPracticeSessionLock()
-        savedPracticeSessions.removeIf { session ->
-            session.openingName == name && session.team == team
-        }
-        FileManager.delete("practice_session_${name}_$team.txt")
-        unlockPracticeSessions()
-    }
-
-    fun setOpening(name: String, team: Team, opening: Opening) {
-        obtainOpeningLock()
-
-        savedOpenings.removeIf { storedOpening ->
-            storedOpening.name == name && storedOpening.team == team
-        }
-
-        savedOpenings += opening
-        unlockOpenings()
-    }
-
-    fun getOpening(name: String, team: Team): Opening {
-        obtainOpeningLock()
-
-        val opening = savedOpenings.find { opening -> opening.name == name && opening.team == team }
-        if (opening == null) {
-            val newOpening = Opening(name, team)
-
-            savedOpenings.add(newOpening)
-            unlockOpenings()
-            return newOpening
-        }
-
-        unlockOpenings()
-        return opening
-    }
-
-    fun getPracticeSession(name: String, team: Team): PracticeSession? {
-        obtainPracticeSessionLock()
-
-        val session = savedPracticeSessions.find { session -> session.openingName == name && session.team == team }
-        unlockPracticeSessions()
-        return session
-    }
-
-    fun addOpening(opening: Opening) {
-        obtainOpeningLock()
-        savedOpenings += opening
-        unlockOpenings()
-    }
-
-    fun getSavedGames(): HashMap<String, MultiPlayerGame> {
-        obtainGameLock()
-
-        val games = savedGames
-        unlockGames()
-
-        return games
-    }
-
-    fun removeGame(id: String) {
-        obtainGameLock()
-
-        savedGames.remove(id)
-        unlockGames()
-    }
-
-    fun getGame(id: String): MultiPlayerGame? {
-        obtainGameLock()
-
-        val game = savedGames[id]
-        unlockGames()
-        return game
-    }
-
-    fun setGame(id: String, game: MultiPlayerGame) {
-        obtainGameLock()
-        savedGames[id] = game
-        unlockGames()
-    }
-
-    fun setInvite(id: String, invite: InviteData) {
-        obtainInvitesLock()
-        savedInvites[id] = invite
-        unlockInvites()
-    }
-
-    fun getSavedInvites(): HashMap<String, InviteData> {
-        obtainInvitesLock()
-
-        val invites = savedInvites
-        unlockInvites()
-        return invites
-    }
-
-    fun saveInvite(id: String, inviteData: InviteData) {
-        obtainInvitesLock()
-        savedInvites[id] = inviteData
-        unlockInvites()
-    }
-
-    fun removeSavedInvite(id: String) {
-        obtainInvitesLock()
-        savedInvites.remove(id)
-        unlockInvites()
-    }
-
-    fun getRecentOpponents(): Stack<Pair<String, String>> {
-        obtainOpponentsLock()
-        val opponents = recentOpponents
-        unlockOpponents()
-        return opponents
-    }
-
-    fun isLocked() = areGamesLocked() || areInvitesLocked() || areOpponentsLocked() || areOpeningsLocked() || arePracticeSessionsLocked()
 
     private fun arePracticeSessionsLocked() = practiceLock.get()
 
@@ -307,6 +162,143 @@ class DataManager(context: Context) {
         messageLock.set(false)
     }
 
+    fun getSavedOpenings(): ArrayList<Opening> {
+        obtainOpeningLock()
+
+        val openings = savedOpenings
+        unlockOpenings()
+
+        return openings
+    }
+
+    fun removeOpening(name: String) {
+        obtainOpeningLock()
+
+        savedOpenings.removeIf { opening -> opening.name == name }
+
+        unlockOpenings()
+    }
+
+    fun setPracticeSession(name: String, practiceSession: PracticeSession) {
+        obtainPracticeSessionLock()
+
+        savedPracticeSessions.removeIf { session ->
+            session.openingName == name
+        }
+
+        savedPracticeSessions += practiceSession
+        unlockPracticeSessions()
+    }
+
+    fun removePracticeSession(name: String, team: Team) {
+        obtainPracticeSessionLock()
+        savedPracticeSessions.removeIf { session ->
+            session.openingName == name && session.team == team
+        }
+        FileManager.delete("practice_session_${name}_$team.txt")
+        unlockPracticeSessions()
+    }
+
+    fun setOpening(name: String, team: Team, opening: Opening) {
+        obtainOpeningLock()
+
+        savedOpenings.removeIf { storedOpening ->
+            storedOpening.name == name && storedOpening.team == team
+        }
+
+        savedOpenings += opening
+        unlockOpenings()
+    }
+
+    fun getOpening(name: String, team: Team): Opening {
+        obtainOpeningLock()
+
+        val opening = savedOpenings.find { opening -> opening.name == name && opening.team == team }
+        if (opening == null) {
+            val newOpening = Opening(name, team)
+
+            savedOpenings.add(newOpening)
+            unlockOpenings()
+            return newOpening
+        }
+
+        unlockOpenings()
+        return opening
+    }
+
+    fun getPracticeSession(name: String, team: Team): PracticeSession? {
+        obtainPracticeSessionLock()
+
+        val session = savedPracticeSessions.find { session -> session.openingName == name && session.team == team }
+        unlockPracticeSessions()
+        return session
+    }
+
+    fun addOpening(opening: Opening) {
+        obtainOpeningLock()
+        savedOpenings += opening
+        unlockOpenings()
+    }
+
+    fun getSavedGames(): HashMap<String, MultiPlayerGame> {
+        obtainGameLock()
+
+        val games = savedGames
+        unlockGames()
+
+        return games
+    }
+
+    fun removeGame(id: String) {
+        obtainGameLock()
+
+        savedGames.remove(id)
+        unlockGames()
+    }
+
+    fun getGame(id: String): MultiPlayerGame? {
+        obtainGameLock()
+
+        val game = savedGames[id]
+        unlockGames()
+        return game
+    }
+
+    fun setGame(id: String, game: MultiPlayerGame) {
+        obtainGameLock()
+        savedGames[id] = game
+        unlockGames()
+    }
+
+    fun getSavedInvites(): HashMap<String, InviteData> {
+        obtainInvitesLock()
+
+        val invites = savedInvites
+        unlockInvites()
+        return invites
+    }
+
+    fun setInvite(id: String, inviteData: InviteData) {
+        obtainInvitesLock()
+        savedInvites[id] = inviteData
+        unlockInvites()
+    }
+
+    fun removeSavedInvite(id: String) {
+        obtainInvitesLock()
+        savedInvites.remove(id)
+        unlockInvites()
+    }
+
+    fun getRecentOpponents(): Stack<Pair<String, String>> {
+        obtainOpponentsLock()
+        val opponents = recentOpponents
+        unlockOpponents()
+        return opponents
+    }
+
+    fun isLocked() = areGamesLocked() || areInvitesLocked() || areOpponentsLocked() || areOpeningsLocked() || arePracticeSessionsLocked()
+
     fun handledMessage(id: Long) {
         obtainMessageLock()
         handledMessages += id
@@ -328,7 +320,7 @@ class DataManager(context: Context) {
                 savedPracticeSessions.clear()
                 loadPracticeSessions(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_loading_practice_sessions.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_loading_practice_sessions.txt", e.stackTraceToString(), context)
             } finally {
                 unlockPracticeSessions()
             }
@@ -340,7 +332,7 @@ class DataManager(context: Context) {
                 savedOpenings.clear()
                 loadSavedOpenings(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_loading_opening.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_loading_opening.txt", e.stackTraceToString(), context)
             } finally {
                 unlockOpenings()
             }
@@ -352,7 +344,7 @@ class DataManager(context: Context) {
                 savedGames.clear()
                 loadSavedGames(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_games_loading.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_games_loading.txt", e.stackTraceToString(), context)
             } finally {
                 unlockGames()
             }
@@ -364,7 +356,7 @@ class DataManager(context: Context) {
                 savedInvites.clear()
                 loadInvites(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_invites_loading.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_invites_loading.txt", e.stackTraceToString(), context)
             } finally {
                 unlockInvites()
             }
@@ -376,7 +368,7 @@ class DataManager(context: Context) {
                 recentOpponents.clear()
                 loadRecentOpponents(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_opponents_loading.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_opponents_loading.txt", e.stackTraceToString(), context)
             } finally {
                 unlockOpponents()
             }
@@ -388,7 +380,7 @@ class DataManager(context: Context) {
                 handledMessages.clear()
                 loadHandledMessages(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_messages_loading.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_messages_loading.txt", e.stackTraceToString(), context)
             } finally {
                 unlockMessages()
             }
@@ -407,34 +399,36 @@ class DataManager(context: Context) {
 //            }
 //        }.start()
 
-        obtainGameLock()
-        Thread {
-            try {
-                saveGames(context)
-            } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_games_saving.txt", e.stackTraceToString(), context)
-            } finally {
-                unlockGames()
-            }
-        }.start()
+//        obtainGameLock()
+//        Thread {
+//            try {
+//                saveGames(context)
+//            } catch (e: Exception) {
+//                NetworkManager.getInstance().sendCrashReport("crash_games_saving.txt", e.stackTraceToString(), context)
+//            } finally {
+//                unlockGames()
+//            }
+//        }.start()
+        saveGames(context)
 
-        obtainInvitesLock()
-        Thread {
-            try {
-                saveInvites(context)
-            } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_invites_saving.txt", e.stackTraceToString(), context)
-            } finally {
-                unlockInvites()
-            }
-        }.start()
+//        obtainInvitesLock()
+//        Thread {
+//            try {
+//                saveInvites(context)
+//            } catch (e: Exception) {
+//                NetworkManager.getInstance().sendCrashReport("crash_invites_saving.txt", e.stackTraceToString(), context)
+//            } finally {
+//                unlockInvites()
+//            }
+//        }.start()
+        saveInvites(context)
 
         obtainOpponentsLock()
         Thread {
             try {
                 saveRecentOpponents(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_opponents_saving.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_opponents_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockOpponents()
             }
@@ -445,7 +439,7 @@ class DataManager(context: Context) {
             try {
                 saveHandledMessages(context)
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_messages_saving.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_messages_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockMessages()
             }
@@ -520,7 +514,7 @@ class DataManager(context: Context) {
                     val messageContent = messageData[1]
                     val type = MessageType.fromString(messageData[2])
 
-                    messages += ChatMessage(timeStamp, messageContent, type)
+                    messages += ChatMessage(gameId, timeStamp, messageContent, type)
                 }
             }
 
@@ -651,7 +645,7 @@ class DataManager(context: Context) {
                     FileManager.write(context, "practice_session_${practiceSession.openingName}_${practiceSession.team}.txt", practiceSession.toString())
                 }
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_practice_sessions_saving.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_practice_sessions_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockPracticeSessions()
             }
@@ -667,7 +661,7 @@ class DataManager(context: Context) {
                     FileManager.write(context, "opening_${opening.name}_${opening.team}.txt", opening.toString())
                 }
             } catch (e: Exception) {
-                NetworkManager.getInstance().sendCrashReport("crash_openings_saving.txt", e.stackTraceToString(), context)
+//                NetworkManager.getInstance().sendCrashReport("crash_openings_saving.txt", e.stackTraceToString(), context)
             } finally {
                 unlockOpenings()
             }
@@ -676,56 +670,75 @@ class DataManager(context: Context) {
 
     }
 
-    private fun saveGames(context: Context) {
-        var content = ""
-        Logger.debug(TAG, "Saving Games")
-        for ((gameId, game) in savedGames) {
-            var moveData = "["
+    fun saveGames(context: Context) {
 
-            for ((i, move) in game.moves.withIndex()) {
-                moveData += move.toChessNotation()
-                if (i != game.moves.size - 1) {
-                    moveData += "\\"
+        obtainGameLock()
+        Thread {
+            try {
+                var content = ""
+                for ((gameId, game) in savedGames) {
+                    var moveData = "["
+
+                    for ((i, move) in game.moves.withIndex()) {
+                        moveData += move.toChessNotation()
+                        if (i != game.moves.size - 1) {
+                            moveData += "\\"
+                        }
+                    }
+                    moveData += "]"
+
+                    var chatData = "["
+
+                    for ((i, message) in game.chatMessages.withIndex()) {
+                        chatData += message.toString()
+                        if (i != game.chatMessages.size - 1) {
+                            chatData += "\\"
+                        }
+                    }
+                    chatData += "]"
+
+                    var newsContent = "["
+
+                    for ((i, news) in game.newsUpdates.withIndex()) {
+                        newsContent += news.toString()
+                        if (i != game.newsUpdates.size - 1) {
+                            newsContent += "\\"
+                        }
+                    }
+                    newsContent += "]"
+
+                    val gameContent = "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
+                    content += gameContent
                 }
+
+                FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
+            } catch (e: Exception) {
+//                NetworkManager.getInstance().sendCrashReport("crash_games_saving.txt", e.stackTraceToString(), context)
+            } finally {
+                unlockGames()
             }
-            moveData += "]"
-
-            var chatData = "["
-
-            for ((i, message) in game.chatMessages.withIndex()) {
-                chatData += message.toString()
-                if (i != game.chatMessages.size - 1) {
-                    chatData += "\\"
-                }
-            }
-            chatData += "]"
-
-            var newsContent = "["
-
-            for ((i, news) in game.newsUpdates.withIndex()) {
-                newsContent += news.toString()
-                if (i != game.newsUpdates.size - 1) {
-                    newsContent += "\\"
-                }
-            }
-            newsContent += "]"
-
-            val gameContent = "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
-            Logger.debug(TAG, "Adding to games file: $gameContent")
-            content += gameContent
-        }
-
-        FileManager.write(context, MULTIPLAYER_GAME_FILE, content)
+        }.start()
     }
 
-    private fun saveInvites(context: Context) {
-        var content = ""
+    fun saveInvites(context: Context) {
+        obtainInvitesLock()
+        Thread {
+            try {
+                var content = ""
 
-        for ((inviteId, invite) in savedInvites) {
-            content += "$inviteId|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
-        }
+                for ((inviteId, invite) in savedInvites) {
+                    content += "$inviteId|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
+                }
 
-        FileManager.write(context, INVITES_FILE, content)
+                Logger.debug(TAG, "Saving invites: ${savedInvites.size}")
+
+                FileManager.write(context, INVITES_FILE, content)
+            } catch (e: Exception) {
+//                NetworkManager.getInstance().sendCrashReport("crash_invites_saving.txt", e.stackTraceToString(), context)
+            } finally {
+                unlockInvites()
+            }
+        }.start()
     }
 
     private fun saveRecentOpponents(context: Context) {
@@ -752,6 +765,7 @@ class DataManager(context: Context) {
         for (messageId in handledMessages) {
             data += "$messageId\n"
         }
+
         try {
             FileManager.write(context, HANDLED_MESSAGES_FILE, data)
         } finally {

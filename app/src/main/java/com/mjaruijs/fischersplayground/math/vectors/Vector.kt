@@ -2,9 +2,10 @@
 
 package com.mjaruijs.fischersplayground.math.vectors
 
+import android.os.Parcelable
 import kotlin.math.sqrt
 
-internal interface Vector<T: Vector<T>> {
+internal interface Vector<T: Vector<T>> : Parcelable {
 
     /**
      * Get the value from the component at provided index in the vector.
