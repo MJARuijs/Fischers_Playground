@@ -20,11 +20,10 @@ import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.NetworkService
-import com.mjaruijs.fischersplayground.services.StoreDataWorker
+import com.mjaruijs.fischersplayground.services.ProcessIncomingDataWorker
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 import java.lang.ref.WeakReference
-import java.util.Stack
 
 abstract class ClientActivity : AppCompatActivity() {
 
@@ -49,8 +48,8 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open val saveGamesOnPause = true
 
-    var networkMessengerClient = Messenger(NetworkMessageHandler(this))
-    var dataMessengerClient = Messenger(DataManagerHandler(this))
+    var networkMessengerClient = Messenger(NetworkMessageHandler(::onMessageReceived))
+    var dataMessengerClient = Messenger(DataManagerHandler())
 
     var networkServiceMessenger: Messenger? = null
     var dataServiceMessenger: Messenger? = null
@@ -82,10 +81,10 @@ abstract class ClientActivity : AppCompatActivity() {
 
             dataServiceMessenger = Messenger(service)
 
-            val registrationMessage = Message.obtain()
-            registrationMessage.what = 0
-            registrationMessage.replyTo = dataMessengerClient
-            dataServiceMessenger!!.send(registrationMessage)
+//            val registrationMessage = Message.obtain()
+//            registrationMessage.what = 0
+//            registrationMessage.replyTo = dataMessengerClient
+//            dataServiceMessenger!!.send(registrationMessage)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -192,6 +191,29 @@ abstract class ClientActivity : AppCompatActivity() {
         networkServiceMessenger!!.send(message)
     }
 
+    protected inline fun <reified T>sendToDataManager(request: DataManagerService.Request, noinline onResult: (T) -> Unit = {}) {
+        val message = Message.obtain()
+
+        message.data.putString("request", request.toString())
+        message.obj = Pair(T::class.java, onResult)
+        message.what = 1
+        message.replyTo = dataMessengerClient
+
+        if (dataServiceMessenger != null) {
+            dataServiceMessenger!!.send(message)
+        } else {
+            Thread {
+                while (dataServiceMessenger == null) {
+                    Thread.sleep(10)
+                }
+
+                runOnUiThread {
+                    dataServiceMessenger!!.send(message)
+                }
+            }.start()
+        }
+    }
+
     protected fun sendToDataManager(request: DataManagerService.Request, vararg extraData: Pair<String, *>) {
         val message = Message.obtain()
         message.data.putString("request", request.toString())
@@ -208,15 +230,13 @@ abstract class ClientActivity : AppCompatActivity() {
                 }
 
                 runOnUiThread {
-                    Logger.debug(activityName, "2 SENDING DATA TO MESSENGER: ${request.toString()}")
-
                     dataServiceMessenger!!.send(message)
                 }
             }.start()
         }
     }
 
-    protected inline fun <reified T>sendToDataManager(request: DataManagerService.Request, noinline onResult: (T) -> Unit = {}, vararg extraData: Pair<String, *>) {
+    protected inline fun <reified T>sendToDataManager(request: DataManagerService.Request, vararg extraData: Pair<String, *>, noinline onResult: (T) -> Unit = {}) {
         val message = Message.obtain()
 
         message.data.putString("request", request.toString())
@@ -234,7 +254,6 @@ abstract class ClientActivity : AppCompatActivity() {
                 }
 
                 runOnUiThread {
-                    Logger.debug(activityName, "1 SENDING DATA TO MESSENGER: ${request.toString()}")
                     dataServiceMessenger!!.send(message)
                 }
             }.start()
@@ -242,13 +261,15 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     protected fun addDataToMessage(message: Message, vararg extraData: Pair<String, *>) {
+        val dataBundle = Bundle()
         for (data in extraData) {
             if (data.second is String) {
-                message.data.putString(data.first, data.second as String)
+                dataBundle.putString(data.first, data.second as String)
             } else if (data.second is Parcelable) {
-                message.data.putParcelable(data.first, data.second as Parcelable)
+                dataBundle.putParcelable(data.first, data.second as Parcelable)
             }
         }
+        message.data.putBundle("data", dataBundle)
     }
 
     private fun onNetworkAvailable() {
@@ -278,6 +299,7 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
+        Logger.debug(activityName, "Got message: $topic")
         sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite
             Topic.NEW_GAME -> ::onNewGameStarted
@@ -351,19 +373,32 @@ abstract class ClientActivity : AppCompatActivity() {
 
     private fun onCompareData(output: Parcelable) {
         val missingData = (output as ParcelableString).value
-        sendNetworkMessage(NetworkMessage(Topic.RESTORE_DATA, missingData))
+        if (missingData.isNotBlank()) {
+            sendNetworkMessage(NetworkMessage(Topic.RESTORE_DATA, "$userId|$missingData"))
+        }
     }
 
     open fun onRestoreData(output: Parcelable) {
         Logger.debug("client_activity", "RECEIVED ONRESTOREDATA MESSAGE: $activityName")
     }
 
-    open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
+//    open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 
-    private fun sendDataToWorker(topic: Topic, data: Array<String>, messageId: Long, onResult: (Parcelable) -> Unit) {
+    protected fun sendDataToWorker(topic: Topic, data: Array<String>, messageId: Long, onResult: (Parcelable) -> Unit) {
         Logger.debug("client_activity", "SENDING DATA TO WORKER: $topic $activityName")
 
-        val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
+//        val workerData = Bundle()
+//        workerData.putString("topic", topic.toString())
+//        workerData.putStringArray("content", data)
+//        workerData.putLong("messageId", messageId)
+//
+//        DataWorker(applicationContext, workerData) {
+//            runOnUiThread {
+//                onResult(it)
+//            }
+//        }.start()
+
+        val worker = OneTimeWorkRequestBuilder<ProcessIncomingDataWorker>()
             .setInputData(
                 workDataOf(
                     Pair("topic", topic.toString()),
@@ -372,7 +407,7 @@ abstract class ClientActivity : AppCompatActivity() {
                 )
             )
             .build()
-
+//
         val workManager = WorkManager.getInstance(applicationContext)
         workManager.enqueue(worker)
 
@@ -420,27 +455,23 @@ abstract class ClientActivity : AppCompatActivity() {
         const val DEFAULT_USER_ID = "default_user_id"
         const val DEFAULT_USER_NAME = "default_user_name"
 
-        class NetworkMessageHandler(activity: ClientActivity): Handler() {
+        class NetworkMessageHandler(val onMessageReceived: (Topic, Array<String>, Long) -> Unit): Handler() {
 
-            private val activityReference = WeakReference(activity)
+//            private val activityReference = WeakReference(activity)
 
             override fun handleMessage(msg: Message) {
-                val activity = activityReference.get()
+//                val activity = activityReference.get()
 
                 val message = msg.obj as NetworkMessage
                 val content = message.content.split('|').toTypedArray()
 
-                activity?.onMessageReceived(message.topic, content, message.id)
+                onMessageReceived(message.topic, content, message.id)
             }
         }
 
-        class DataManagerHandler(activity: ClientActivity) : Handler() {
-
-            private val activityReference = WeakReference(activity)
+        class DataManagerHandler : Handler() {
 
             override fun handleMessage(msg: Message) {
-                val activity = activityReference.get()!!
-
                 val pair = (msg.obj as Pair<Any, (Any?) -> Unit>)
 
                 if (msg.what == 1) {

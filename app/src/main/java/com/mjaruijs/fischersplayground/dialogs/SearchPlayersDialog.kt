@@ -8,17 +8,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerAdapter
 import com.mjaruijs.fischersplayground.adapters.playeradapter.PlayerCardItem
+import com.mjaruijs.fischersplayground.chess.game.OpponentData
 import com.mjaruijs.fischersplayground.listeners.OnSearchViewChangedListener
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import java.util.*
+import kotlin.collections.ArrayList
 
-class SearchPlayersDialog(private val onInvite: (String, Long, String, String) -> Unit) {
+class SearchPlayersDialog(private val onSearchForPlayers: (String) -> Unit, private val onInvite: (String, Long, String, String) -> Unit) {
 
     private lateinit var dialog: Dialog
     private lateinit var playerCardList: PlayerAdapter
 
-    private var recentOpponents = Stack<Pair<String, String>>()
+//    private var recentOpponents = Stack<Pair<String, String>>()
 
     private var initialized = false
 
@@ -35,7 +37,7 @@ class SearchPlayersDialog(private val onInvite: (String, Long, String, String) -
 
         searchBar.setOnQueryTextListener(OnSearchViewChangedListener {
             if (searchBar.query.isNotBlank()) {
-                sendMessage(NetworkMessage(Topic.SEARCH_PLAYERS, "${searchBar.query}"))
+                onSearchForPlayers(searchBar.query.toString())
             } else {
                 context.runOnUiThread {
                     loadRecentPlayers()
@@ -56,12 +58,12 @@ class SearchPlayersDialog(private val onInvite: (String, Long, String, String) -
         playerCardList.id = id
     }
 
-    fun setRecentOpponents(opponents: Stack<Pair<String, String>>) {
-        recentOpponents = opponents
+    fun setRecentOpponents(opponents: ArrayList<OpponentData>) {
+//        recentOpponents = opponents
 
         playerCardList.clear()
         for (opponent in opponents.reversed()) {
-            playerCardList += PlayerCardItem(opponent.first, opponent.second)
+            playerCardList += PlayerCardItem(opponent.opponentName, opponent.opponentId)
         }
     }
 
@@ -71,10 +73,10 @@ class SearchPlayersDialog(private val onInvite: (String, Long, String, String) -
     }
 
     private fun loadRecentPlayers() {
-        playerCardList.clear()
-        for (opponent in recentOpponents.reversed()) {
-            playerCardList += PlayerCardItem(opponent.first, opponent.second)
-        }
+//        playerCardList.clear()
+//        for (opponent in recentOpponents.reversed()) {
+//            playerCardList += PlayerCardItem(opponent.first, opponent.second)
+//        }
     }
 
     fun show() {

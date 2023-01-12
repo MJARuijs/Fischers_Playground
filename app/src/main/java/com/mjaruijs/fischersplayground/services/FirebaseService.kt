@@ -12,6 +12,7 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder.Companion.GROUP_CHANNEL_ID
 import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 
 class FirebaseService : FirebaseMessagingService() {
 
@@ -30,6 +31,9 @@ class FirebaseService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         try {
+//            Looper.prepare()
+//            Toast.makeText(applicationContext, "Got message!", Toast.LENGTH_SHORT).show()
+
             FileManager.init(applicationContext)
 
             val notificationBuilder = NotificationBuilder.getInstance(this)
@@ -45,36 +49,36 @@ class FirebaseService : FirebaseMessagingService() {
 //                return
 //            }
 
-            val worker = OneTimeWorkRequestBuilder<StoreDataWorker>()
-                .setInputData(workDataOf(
-                    Pair("topic", topic.toString()),
-                    Pair("content", contentList),
-                    Pair("run_in_background", true),
-                    Pair("messageId", messageId)
-                ))
-                .build()
+            Logger.debug(TAG, "Got message about $topic")
 
-            val workManager = WorkManager.getInstance(applicationContext)
-            workManager.enqueue(worker)
+            FileManager.createIfAbsent("notifications.txt")
+            FileManager.append(applicationContext, "notifications.txt", "$topic;$content;$messageId")
+
+//            val worker = OneTimeWorkRequestBuilder<ProcessIncomingDataWorker>()
+//                .setInputData(workDataOf(
+//                    Pair("topic", topic.toString()),
+//                    Pair("content", contentList),
+//                    Pair("messageId", messageId)
+//                ))
+//                .build()
 //
-//            applicationContext.run {
-//                workManager.getWorkInfoByIdLiveData(worker.id)
-//                    .observe() {
-//                        if (it != null && it.state.isFinished) {
-//
-//                        }
-//                    }
-//            }
+//            val workManager = WorkManager.getInstance(applicationContext)
+//            workManager.enqueue(worker)
 
             val notificationData = notificationBuilder.createNotificationData(applicationContext, topic, contentList) ?: return
             val notification = notificationBuilder.build(applicationContext, false, notificationData)
             notificationBuilder.notify(notification)
 
-            val summaryNotification = notificationBuilder.build(applicationContext, true, "Title??", "Message!", GROUP_CHANNEL_ID, null)
-            notificationBuilder.notify(0, summaryNotification)
+//            val summaryNotification = notificationBuilder.build(applicationContext, true, "Title??", "Message!", GROUP_CHANNEL_ID, null)
+//            notificationBuilder.notify(0, summaryNotification)
         } catch (e: Exception) {
+            FileManager.write(applicationContext, "crash.txt", e.stackTraceToString())
             NetworkService.sendCrashReport("crash_firebase.txt", e.stackTraceToString(), applicationContext)
         }
+    }
+
+    companion object {
+        private const val TAG = "FirebaseService"
     }
 
 }

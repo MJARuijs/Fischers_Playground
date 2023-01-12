@@ -7,13 +7,8 @@ import android.os.Parcelable
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.chess.game.Move
-import com.mjaruijs.fischersplayground.chess.game.MoveArrow
-import com.mjaruijs.fischersplayground.services.StoreDataWorker
 import com.mjaruijs.fischersplayground.util.Logger
-import java.util.LinkedList
 
 class ParcelableActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

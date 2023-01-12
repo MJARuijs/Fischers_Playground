@@ -23,15 +23,14 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.game.MoveData
+import com.mjaruijs.fischersplayground.chess.game.OpponentData
 import com.mjaruijs.fischersplayground.dialogs.SearchPlayersDialog
-import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
-import com.mjaruijs.fischersplayground.services.NetworkService
 import com.mjaruijs.fischersplayground.userinterface.RippleEffect
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import com.mjaruijs.fischersplayground.util.Logger
@@ -43,7 +42,7 @@ class MainActivity : ClientActivity() {
 
     override val stayInAppOnBackPress = false
 
-    private val searchPlayersDialog = SearchPlayersDialog(::onInvite)
+    private val searchPlayersDialog = SearchPlayersDialog(::onSearchForPlayers, ::onPlayerInvited)
 
     private lateinit var gameAdapter: GameAdapter
 
@@ -62,6 +61,9 @@ class MainActivity : ClientActivity() {
         initUIComponents()
 
 
+//        sendDataToWorker(Topic.DEBUG, arrayOf(""), 1) {
+//
+//        }
 
 //        FirebaseInstanceId.getInstance().instanceId.addOnSuccessListener { result ->
 //            val token = result.token
@@ -90,6 +92,7 @@ class MainActivity : ClientActivity() {
 //            }
 //            runOnUiThread {
 
+//        TODO uncomment these 2 lines
         sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES, ::restoreSavedGames)
         sendToDataManager<ArrayList<InviteData>>(DataManagerService.Request.GET_SAVED_INVITES, ::restoreSavedInvites)
 
@@ -136,10 +139,14 @@ class MainActivity : ClientActivity() {
         }
     }
 
-    private fun onInvite(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
+    private fun onSearchForPlayers(query: String) {
+        sendNetworkMessage(NetworkMessage(Topic.SEARCH_PLAYERS, "$userId|$query"))
+    }
+
+    private fun onPlayerInvited(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
         sendToDataManager(DataManagerService.Request.SET_INVITE, Pair("invite", InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING)))
-
+        sendToDataManager(DataManagerService.Request.ADD_RECENT_OPPONENT, Pair("opponent_data", OpponentData(opponentName, opponentId)))
 //        dataManager.setInvite(inviteId, InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING))
 //        dataManager.saveData(applicationContext)
     }
@@ -187,6 +194,8 @@ class MainActivity : ClientActivity() {
     private fun onGameDeleted(gameId: String) {
         sendToDataManager(DataManagerService.Request.REMOVE_GAME, Pair("game_id", gameId))
         sendToDataManager(DataManagerService.Request.REMOVE_INVITE, Pair("invite_id", gameId))
+
+        sendNetworkMessage(NetworkMessage(Topic.DELETE, "$userId|$gameId"))
 //        dataManager.removeGame(gameId)
 //        dataManager.removeSavedInvite(gameId)
 //        dataManager.saveData(applicationContext)
@@ -194,6 +203,8 @@ class MainActivity : ClientActivity() {
 
     override fun onIncomingInvite(output: Parcelable) {
         val inviteData = output as InviteData
+
+        Logger.debug(activityName, "OnIncoming invite")
 
         gameAdapter += GameCardItem(inviteData.inviteId, inviteData.timeStamp, inviteData.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
 
@@ -336,6 +347,10 @@ class MainActivity : ClientActivity() {
             .setCornerRadius(45f)
             .setTextSize(28f)
             .setOnClickListener {
+                sendToDataManager<ArrayList<OpponentData>>(DataManagerService.Request.GET_RECENT_OPPONENTS, {
+                    searchPlayersDialog.setRecentOpponents(it)
+                })
+
                 searchPlayersDialog.show()
 //                stayingInApp = true
 //                startActivity(Intent(this, SinglePlayerGameActivity::class.java))
@@ -389,9 +404,9 @@ class MainActivity : ClientActivity() {
         }
     }
 
-    override fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {
-        searchPlayersDialog.setRecentOpponents(opponents ?: return)
-    }
+//    override fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {
+//        searchPlayersDialog.setRecentOpponents(opponents ?: return)
+//    }
 
     private fun loadResources() {
         val textures = arrayOf(

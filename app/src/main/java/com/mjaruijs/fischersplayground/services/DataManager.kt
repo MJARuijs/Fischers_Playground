@@ -29,8 +29,8 @@ class DataManager(context: Context) {
 
     private val savedPracticeSessions = ArrayList<PracticeSession>()
     private val savedOpenings = ArrayList<Opening>()
-    private val savedGames = HashMap<String, MultiPlayerGame>()
-    private val savedInvites = HashMap<String, InviteData>()
+    private val savedGames = ArrayList<MultiPlayerGame>()
+    private val savedInvites = ArrayList<InviteData>()
     private val recentOpponents = Stack<Pair<String, String>>()
     private val handledMessages = HashSet<Long>()
 
@@ -240,7 +240,7 @@ class DataManager(context: Context) {
         unlockOpenings()
     }
 
-    fun getSavedGames(): HashMap<String, MultiPlayerGame> {
+    fun getSavedGames(): ArrayList<MultiPlayerGame> {
         obtainGameLock()
 
         val games = savedGames
@@ -252,25 +252,27 @@ class DataManager(context: Context) {
     fun removeGame(id: String) {
         obtainGameLock()
 
-        savedGames.remove(id)
+        savedGames.removeIf { game -> game.gameId == id }
         unlockGames()
     }
 
     fun getGame(id: String): MultiPlayerGame? {
         obtainGameLock()
 
-        val game = savedGames[id]
+        val game = savedGames.find { game -> game.gameId == id }
         unlockGames()
         return game
     }
 
     fun setGame(id: String, game: MultiPlayerGame) {
         obtainGameLock()
-        savedGames[id] = game
+        savedGames.removeIf { oldGame -> oldGame.gameId == id }
+        savedGames += game
+
         unlockGames()
     }
 
-    fun getSavedInvites(): HashMap<String, InviteData> {
+    fun getSavedInvites(): ArrayList<InviteData> {
         obtainInvitesLock()
 
         val invites = savedInvites
@@ -280,13 +282,14 @@ class DataManager(context: Context) {
 
     fun setInvite(id: String, inviteData: InviteData) {
         obtainInvitesLock()
-        savedInvites[id] = inviteData
+        savedInvites.removeIf { oldInvite -> oldInvite.inviteId == id }
+        savedInvites += inviteData
         unlockInvites()
     }
 
     fun removeSavedInvite(id: String) {
         obtainInvitesLock()
-        savedInvites.remove(id)
+        savedInvites.removeIf { oldInvite -> oldInvite.inviteId == id }
         unlockInvites()
     }
 
@@ -535,7 +538,7 @@ class DataManager(context: Context) {
 
             val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
             newGame.status = gameStatus
-            savedGames[gameId] = newGame
+            savedGames += newGame
         }
     }
 
@@ -553,7 +556,7 @@ class DataManager(context: Context) {
             val timeStamp = data[2].toLong()
             val type = InviteType.fromString(data[3])
 
-            savedInvites[inviteId] = InviteData(inviteId, opponentName, timeStamp, type)
+            savedInvites += InviteData(inviteId, opponentName, timeStamp, type)
         }
     }
 
@@ -676,7 +679,7 @@ class DataManager(context: Context) {
         Thread {
             try {
                 var content = ""
-                for ((gameId, game) in savedGames) {
+                for (game in savedGames) {
                     var moveData = "["
 
                     for ((i, move) in game.moves.withIndex()) {
@@ -707,7 +710,7 @@ class DataManager(context: Context) {
                     }
                     newsContent += "]"
 
-                    val gameContent = "$gameId|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
+                    val gameContent = "${game.gameId}|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
                     content += gameContent
                 }
 
@@ -726,11 +729,11 @@ class DataManager(context: Context) {
             try {
                 var content = ""
 
-                for ((inviteId, invite) in savedInvites) {
-                    content += "$inviteId|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
+                for (invite in savedInvites) {
+                    content += "${invite.inviteId}|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
                 }
 
-                Logger.debug(TAG, "Saving invites: ${savedInvites.size}")
+//                Logger.debug(TAG, "Saving invites: ${savedInvites.size}")
 
                 FileManager.write(context, INVITES_FILE, content)
             } catch (e: Exception) {

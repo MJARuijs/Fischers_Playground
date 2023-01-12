@@ -66,7 +66,7 @@ abstract class GameActivity : ClientActivity() {
             glView = findViewById(R.id.opengl_view)
             glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onLongClick, ::onDisplaySizeChanged, isPlayingWhite, ::onExceptionThrown)
         } catch (e: Exception) {
-            FileManager.append(this, "game_activity_crash_report.txt", e.stackTraceToString())
+
         }
     }
 

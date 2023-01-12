@@ -152,11 +152,11 @@ class NetworkManager {
             Logger.info(TAG, "Received message: $message")
         }
 
-        val dataManager = DataManager.getInstance(context)
+//        val dataManager = DataManager.getInstance(context)
 
-        if (!dataManager.isMessageHandled(message.id)) {
-            dataManager.handledMessage(message.id)
-            dataManager.lockAndSaveHandledMessages(context)
+//        if (!dataManager.isMessageHandled(message.id)) {
+//            dataManager.handledMessage(message.id)
+//            dataManager.lockAndSaveHandledMessages(context)
 
             val intent = Intent("mjaruijs.fischers_playground")
                 .putExtra("topic", message.topic.toString())
@@ -164,9 +164,9 @@ class NetworkManager {
                 .putExtra("messageId", message.id)
 
             context.sendBroadcast(intent)
-        } else {
+//        } else {
 //            Logger.debug(TAG, "Message already handled: ${message.id} ${message.topic}")
-        }
+//        }
     }
 
     fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {

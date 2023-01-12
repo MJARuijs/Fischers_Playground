@@ -20,8 +20,8 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MoveData
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.chess.news.IntNews
-import com.mjaruijs.fischersplayground.chess.news.MoveNews
+//import com.mjaruijs.fischersplayground.chess.news.IntNews
+//import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.chess.pieces.*
 import com.mjaruijs.fischersplayground.dialogs.*
@@ -35,6 +35,7 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
+import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.util.Logger
 
 class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
@@ -76,17 +77,11 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         try {
             gameId = intent.getStringExtra("game_id") ?: throw IllegalArgumentException("Missing essential information: game_id")
 //            game = dataManager.getGame(gameId)!!
-            opponentName = (game as MultiPlayerGame).opponentName
-            isPlayingWhite = game.isPlayingWhite
+//            opponentName = (game as MultiPlayerGame).opponentName
+//            isPlayingWhite = game.isPlayingWhite
 
-            initChatBox()
-
-            undoRequestConfirmationDialog = SingleButtonDialog(this, true, "Undo Requested", "You will be notified when $opponentName responds", R.drawable.check_mark_icon)
-            confirmResignationDialog = DoubleButtonDialog(this, true, "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", ::onResignConfirmed)
-            offerDrawDialog = DoubleButtonDialog(this, true, "Offer Draw", "Are you sure you want to offer a draw?", "Cancel", "Yes", ::onOfferDraw)
 
             val lowerFragment = findViewById<FragmentContainerView>(R.id.lower_fragment_container)
-
             val layoutParams = Constraints.LayoutParams(Constraints.LayoutParams.MATCH_CONSTRAINT, Constraints.LayoutParams.WRAP_CONTENT)
             lowerFragment.layoutParams = layoutParams
 
@@ -107,36 +102,43 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 }.run()
             }
         } catch (e: Exception) {
-            FileManager.append(this,  "mp_game_activity_on_create_crash.txt", e.stackTraceToString())
+
         }
     }
 
     override fun onResume() {
         super.onResume()
         try {
-//            game = dataManager.getGame(gameId)!!
+            sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) {
+                game = it
+                opponentName = (game as MultiPlayerGame).opponentName
+                isPlayingWhite = game.isPlayingWhite
 
-            opponentName = (game as MultiPlayerGame).opponentName
-            isPlayingWhite = game.isPlayingWhite
+                initializeFragments()
+                setGameCallbacks()
+                setGameForRenderer()
 
-            initializeFragments()
-            setGameCallbacks()
-            setGameForRenderer()
+                initChatBox()
 
-            if (contextCreated && (game as MultiPlayerGame).newsUpdates.none { news -> news.newsType == NewsType.OPPONENT_MOVED }) {
-                redoLastMove()
+                if (contextCreated && (game as MultiPlayerGame).newsUpdates.none { news -> news.newsType == NewsType.OPPONENT_MOVED }) {
+                    redoLastMove()
+                }
+
+                undoRequestConfirmationDialog = SingleButtonDialog(this, true, "Undo Requested", "You will be notified when $opponentName responds", R.drawable.check_mark_icon)
+                confirmResignationDialog = DoubleButtonDialog(this, true, "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", ::onResignConfirmed)
+                offerDrawDialog = DoubleButtonDialog(this, true, "Offer Draw", "Are you sure you want to offer a draw?", "Cancel", "Yes", ::onOfferDraw)
+
+                resignDialog = DoubleButtonDialog(this, true, "$opponentName won!", "You lost by resignation", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsLoss)
+                drawAcceptedDialog = DoubleButtonDialog(this, true, "It's A Draw!", "You accepted $opponentName's draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
+                undoRequestedDialog = DoubleButtonDialog(this, false, "Undo Requested", "$opponentName is requesting to undo their last move!", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest)
+                undoAcceptedDialog = SingleButtonDialog(this, false, "Move Reversed", "Your undo request has been accepted!", "Continue")
+                undoRejectedDialog = SingleButtonDialog(this, false, "Undo Rejected", "Your undo request was rejected!", "Continue")
+
+                opponentAcceptedDrawDialog = DoubleButtonDialog(this, false, "It's A Draw!", "$opponentName has accepted your draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
+                opponentRejectedDrawDialog = SingleButtonDialog(this, false, "Game Must Go On", "$opponentName has rejected your draw offer", "Play on")
+                opponentOfferedDrawDialog = DoubleButtonDialog(this, false, "Draw Offered", "$opponentName has offered a draw!", "Decline", ::rejectDrawOffer, "Accept", ::acceptDrawOffer)
+                opponentResignedDialog = DoubleButtonDialog(this, false, "You Won!", "$opponentName has resigned!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin)
             }
-
-            resignDialog = DoubleButtonDialog(this, true, "$opponentName won!", "You lost by resignation", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsLoss)
-            drawAcceptedDialog = DoubleButtonDialog(this, true, "It's A Draw!", "You accepted $opponentName's draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
-            undoRequestedDialog = DoubleButtonDialog(this, false, "Undo Requested", "$opponentName is requesting to undo their last move!", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest)
-            undoAcceptedDialog = SingleButtonDialog(this, false, "Move Reversed", "Your undo request has been accepted!", "Continue")
-            undoRejectedDialog = SingleButtonDialog(this, false, "Undo Rejected", "Your undo request was rejected!", "Continue")
-
-            opponentAcceptedDrawDialog = DoubleButtonDialog(this, false, "It's A Draw!", "$opponentName has accepted your draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
-            opponentRejectedDrawDialog = SingleButtonDialog(this, false, "Game Must Go On", "$opponentName has rejected your draw offer", "Play on")
-            opponentOfferedDrawDialog = DoubleButtonDialog(this, false, "Draw Offered", "$opponentName has offered a draw!", "Decline", ::rejectDrawOffer, "Accept", ::acceptDrawOffer)
-            opponentResignedDialog = DoubleButtonDialog(this, false, "You Won!", "$opponentName has resigned!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin)
 
             keyboardHeightProvider.observer = this
         } catch (e: Exception) {
@@ -294,6 +296,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             (game as MultiPlayerGame).moveToBeConfirmed = positionUpdateMessage
             sendMoveData(positionUpdateMessage)
         }
+
+        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
     }
@@ -301,12 +305,14 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun confirmMove(moveNotation: String) {
         sendNetworkMessage(NetworkMessage(Topic.MOVE, "$gameId|$userId|$moveNotation|${game.lastUpdated}"))
         (game as MultiPlayerGame).confirmMove()
+        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
     }
 
     private fun cancelMove() {
         (game as MultiPlayerGame).cancelMove()
+        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
     }
@@ -322,9 +328,11 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         for (news in (game as MultiPlayerGame).newsUpdates) {
             when (news.newsType) {
                 NewsType.OPPONENT_MOVED -> {
-                    if ((news as MoveNews).moveData.gameId == gameId) {
-                        val move = news.moveData.move
+                    val moveData = news.getData<MoveData>()
+                    if (moveData.gameId == gameId) {
+                        val move = moveData.move
                         (game as MultiPlayerGame).moveOpponent(move)
+                        saveGame()
 //                        dataManager.setGame(gameId, game as MultiPlayerGame)
                     }
                 }
@@ -344,7 +352,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 }
                 NewsType.OPPONENT_ACCEPTED_UNDO -> {
                     undoAcceptedDialog.show {
-                        (game as MultiPlayerGame).undoMoves((news as IntNews).data)
+                        (game as MultiPlayerGame).undoMoves(news.getData())
                         (game as MultiPlayerGame).status = GameStatus.PLAYER_MOVE
                         requestRender()
                     }
@@ -525,6 +533,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private fun rejectUndoRequest() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_REQUESTED_UNDO)
+        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
         sendNetworkMessage(NetworkMessage(Topic.UNDO_REJECTED, "$gameId|$userId"))
@@ -543,7 +552,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             (getActionBarFragment() as MultiplayerActionButtonsFragment?)?.disableBackButton()
         }
         requestRender()
-
+        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
         sendNetworkMessage(NetworkMessage(Topic.UNDO_ACCEPTED, "$gameId|$userId"))
@@ -551,6 +560,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private fun rejectDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
+        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
         sendNetworkMessage(NetworkMessage(Topic.DRAW_REJECTED, "$gameId|$userId"))
@@ -559,6 +569,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun acceptDrawOffer() {
         (game as MultiPlayerGame).clearNews(NewsType.OPPONENT_OFFERED_DRAW)
         (game as MultiPlayerGame).status = GameStatus.GAME_DRAW
+        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
         sendNetworkMessage(NetworkMessage(Topic.DRAW_ACCEPTED, "$gameId|$userId"))
@@ -572,6 +583,10 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         } else {
             super.onBackPressed()
         }
+    }
+
+    private fun saveGame() {
+        sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
     }
 
     override fun sendResumeStatusToServer() {
@@ -595,14 +610,22 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
             chatInitialized = true
 
-            val buttonHeight = getActionBarFragment()!!.requireView().measuredHeight
-            (getActionBarFragment() as MultiplayerActionButtonsFragment).initializeAnimator(buttonHeight)
-
-            if ((game as MultiPlayerGame).hasPendingMove()) {
-                runOnUiThread {
-                    (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons((game as MultiPlayerGame).moveToBeConfirmed, 0L)
+            Thread {
+                while (getActionBarFragment() == null) {
+                    Thread.sleep(10)
                 }
-            }
+
+                runOnUiThread {
+                    val buttonHeight = getActionBarFragment()!!.requireView().measuredHeight
+                    (getActionBarFragment() as MultiplayerActionButtonsFragment).initializeAnimator(buttonHeight)
+
+                    if ((game as MultiPlayerGame).hasPendingMove()) {
+                        runOnUiThread {
+                            (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons((game as MultiPlayerGame).moveToBeConfirmed, 0L)
+                        }
+                    }
+                }
+            }.start()
         }
     }
 
@@ -617,6 +640,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun onChatMessageSent(message: ChatMessage) {
         sendNetworkMessage(NetworkMessage(Topic.CHAT_MESSAGE, "$gameId|$userId|${message.timeStamp}|${message.message}"))
         (game as MultiPlayerGame).addMessage(message)
+        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
     }

@@ -4,7 +4,9 @@ import android.app.Service
 import android.content.Intent
 import android.os.*
 import android.os.Build.VERSION_CODES.TIRAMISU
-import com.mjaruijs.fischersplayground.activities.ClientActivity
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_ID_KEY
 import com.mjaruijs.fischersplayground.activities.opening.PracticeSession
@@ -16,34 +18,29 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.chess.news.IntNews
-import com.mjaruijs.fischersplayground.chess.news.MoveNews
+import com.mjaruijs.fischersplayground.chess.game.OpponentData
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.parcelable.ParcelableNull
-import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
-import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 import java.lang.ref.WeakReference
-import java.util.Stack
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
 
 class DataManagerService : Service() {
 
-    private lateinit var serviceMessenger: Messenger
-    private var currentClient: Messenger? = null
-
     private val savedPracticeSessions = ArrayList<PracticeSession>()
     private val savedOpenings = ArrayList<Opening>()
     private val savedGames = ArrayList<MultiPlayerGame>()
     private val savedInvites = ArrayList<InviteData>()
-    private val recentOpponents = Stack<Pair<String, String>>()
+    private val recentOpponents = Stack<OpponentData>()
     private val handledMessages = HashSet<Long>()
 
     private var userId = DEFAULT_USER_ID
 
+    private val initialized = AtomicBoolean(false)
     private val practiceLock = AtomicBoolean(false)
     private val openingLock = AtomicBoolean(false)
     private val gamesLock = AtomicBoolean(false)
@@ -52,8 +49,6 @@ class DataManagerService : Service() {
     private val messageLock = AtomicBoolean(false)
 
     override fun onBind(intent: Intent?): IBinder? {
-        serviceMessenger = Messenger(IncomingHandler(this))
-
         if (intent != null) {
             val request = intent.getStringExtra("request")
             if (request != null) {
@@ -62,17 +57,66 @@ class DataManagerService : Service() {
             }
         }
 
-        return serviceMessenger.binder
+        return Messenger(IncomingHandler(this)).binder
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Logger.debug(TAG, "Starting service. Number of invites: ${savedInvites.size}")
+//        Looper.prepare()
+//        Toast.makeText(applicationContext, "Started service!", Toast.LENGTH_SHORT).show()
+        if (intent != null) {
+            val request = intent.getStringExtra("request")
+            if (request != null) {
+                val data = intent.getBundleExtra("data") ?: Bundle()
+                processRequest(Request.fromString(request), data)
+            }
+        }
+        return START_NOT_STICKY
     }
 
     override fun onCreate() {
         super.onCreate()
+        Logger.debug(TAG, "Creating service")
         userId = getSharedPreferences("user_data", MODE_PRIVATE).getString(USER_ID_KEY, "") ?: DEFAULT_USER_ID
 
         loadData()
+
+        // TODO: Reimplement this
+        val missedNotifications = FileManager.readLines(applicationContext, "notifications.txt") ?: ArrayList()
+        for (notification in missedNotifications) {
+            if (notification.isBlank()) {
+                continue
+            }
+
+            val data = notification.split(";")
+            val topic = data[0]
+            val contentList = data[1].split('|').toTypedArray()
+            val messageId = data[2].toLong()
+            Logger.debug(TAG, "Start worker for notification: $topic")
+            val worker = OneTimeWorkRequestBuilder<ProcessIncomingDataWorker>()
+                .setInputData(workDataOf(
+                    Pair("topic", topic),
+                    Pair("content", contentList),
+                    Pair("messageId", messageId)
+                ))
+                .build()
+
+            val workManager = WorkManager.getInstance(applicationContext)
+            workManager.enqueue(worker)
+        }
+
+        FileManager.write(applicationContext, "notifications.txt", "")
+        initialized.set(true)
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        Logger.debug(TAG, "Unbinding service")
+        saveData()
+        return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
+        Logger.debug(TAG, "Destroying service")
         saveData()
         super.onDestroy()
     }
@@ -81,7 +125,7 @@ class DataManagerService : Service() {
         return data.getString(key) ?: throw IllegalArgumentException("Tried to get string from bundle but was missing: $key")
     }
 
-    private fun getInputLong(data: Bundle, key: String): Long {
+    private fun getInputLong(data: Bundle, @Suppress("SameParameterValue") key: String): Long {
         if (!data.containsKey(key)) {
             throw IllegalArgumentException("Tried to get long from bundle but was missing: $key")
         }
@@ -90,9 +134,19 @@ class DataManagerService : Service() {
 
     private inline fun <reified T : Parcelable>getInputParcelable(data: Bundle, key: String): T {
         return if (Build.VERSION.SDK_INT < TIRAMISU) {
+            @Suppress("DEPRECATION")
             data.getParcelable(key)!!
         } else {
             data.getParcelable(key, T::class.java)!!
+        }
+    }
+
+    private inline fun <reified T : Parcelable>getInputParcelebleList(data: Bundle, key: String): ArrayList<T> {
+        return if (Build.VERSION.SDK_INT < TIRAMISU) {
+            @Suppress("DEPRECATION")
+            data.getParcelableArrayList(key)!!
+        } else {
+            data.getParcelableArrayList(key, T::class.java)!!
         }
     }
 
@@ -113,6 +167,8 @@ class DataManagerService : Service() {
         savedOpenings.removeIf { opening -> opening.name == name }
 
         unlockOpenings()
+
+        saveOpenings()
     }
 
     private fun setOpening(data: Bundle) {
@@ -128,6 +184,8 @@ class DataManagerService : Service() {
 
         savedOpenings += opening
         unlockOpenings()
+
+        saveOpenings()
     }
 
     private fun addOpening(data: Bundle) {
@@ -136,6 +194,8 @@ class DataManagerService : Service() {
         obtainOpeningLock()
         savedOpenings += opening
         unlockOpenings()
+
+        saveOpenings()
     }
 
     private fun getOpening(data: Bundle): Parcelable {
@@ -185,6 +245,8 @@ class DataManagerService : Service() {
 
         savedPracticeSessions += practiceSession
         unlockPracticeSessions()
+
+        savePracticeSessions()
     }
 
     private fun removePracticeSession(data: Bundle) {
@@ -197,6 +259,8 @@ class DataManagerService : Service() {
         }
         FileManager.delete("practice_session_${name}_$team.txt")
         unlockPracticeSessions()
+
+        savePracticeSessions()
     }
 
     private fun getSavedGames(): ArrayList<MultiPlayerGame> {
@@ -204,8 +268,6 @@ class DataManagerService : Service() {
 
         val games = savedGames
         unlockGames()
-
-        Logger.debug(TAG,"Number of games at the moment the request came in: ${savedGames.size}")
 
         return games
     }
@@ -217,6 +279,8 @@ class DataManagerService : Service() {
 
         savedGames.removeIf { game -> game.gameId == id }
         unlockGames()
+
+        saveGames()
     }
 
     private fun getGame(data: Bundle): Parcelable {
@@ -228,6 +292,7 @@ class DataManagerService : Service() {
         unlockGames()
 
         if (game == null) {
+            Logger.debug(TAG, "No game with id $id could be found..")
             return ParcelableNull()
         }
 
@@ -242,6 +307,8 @@ class DataManagerService : Service() {
         savedGames.removeIf { oldGame -> oldGame.gameId == id }
         savedGames += game
         unlockGames()
+
+        saveGames()
     }
 
     private fun getSavedInvites(): ArrayList<InviteData> {
@@ -259,6 +326,8 @@ class DataManagerService : Service() {
         savedInvites.removeIf { oldInvite -> oldInvite.inviteId == invite.inviteId }
         savedInvites += invite
         unlockInvites()
+
+        saveInvites()
     }
 
     private fun removeSavedInvite(data: Bundle) {
@@ -267,16 +336,28 @@ class DataManagerService : Service() {
         obtainInvitesLock()
         savedInvites.removeIf { oldInvite -> oldInvite.inviteId == id }
         unlockInvites()
+
+        saveInvites()
     }
 
-    private fun getRecentOpponents(): Stack<Pair<String, String>> {
+    private fun getRecentOpponents(): ArrayList<OpponentData> {
+//        Logger.debug(TAG, "Getting recent opponents")
         obtainOpponentsLock()
-        val opponents = recentOpponents
+
+        val opponents = ArrayList<OpponentData>()
+
+        for (opponent in recentOpponents) {
+            opponents += opponent
+        }
+
+//        Logger.debug(TAG, "Releasing lock in get()")
         unlockOpponents()
         return opponents
     }
 
-    fun setRecentOpponents(opponents: List<Pair<String, String>>) {
+    private fun setRecentOpponents(data: Bundle) {
+        val opponents = getInputParcelebleList<OpponentData>(data, "opponents")
+
         recentOpponents.clear()
         for (opponent in opponents) {
             recentOpponents.push(opponent)
@@ -285,17 +366,18 @@ class DataManagerService : Service() {
     }
 
     private fun addRecentOpponent(data: Bundle) {
-        val pair = getInputParcelable<ParcelablePair<ParcelableString, ParcelableString>>(data, "new_opponent")
-        addRecentOpponent(Pair(pair.first.value, pair.second.value))
+        val opponentData = getInputParcelable<OpponentData>(data, "opponent_data")
+        addRecentOpponent(opponentData)
+        saveRecentOpponents()
     }
 
-    private fun addRecentOpponent(newOpponent: Pair<String, String>) {
-        val userId = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE).getString(ClientActivity.USER_ID_KEY, "") ?: DEFAULT_USER_ID
-        if (newOpponent.second == userId) {
+    private fun addRecentOpponent(newOpponent: OpponentData) {
+        val userId = applicationContext.getSharedPreferences("user_data", MODE_PRIVATE).getString(USER_ID_KEY, "") ?: DEFAULT_USER_ID
+        if (newOpponent.opponentId == userId) {
             return
         }
 
-        val temp = Stack<Pair<String, String>>()
+        val temp = Stack<OpponentData>()
 
         while (temp.size < 2 && recentOpponents.isNotEmpty()) {
             val opponent = recentOpponents.pop()
@@ -366,6 +448,7 @@ class DataManagerService : Service() {
 
     private fun obtainOpponentsLock() {
         while (areOpponentsLocked()) {
+//            Logger.debug(TAG, "Waiting for opponents lock")
             Thread.sleep(1)
         }
 
@@ -434,6 +517,8 @@ class DataManagerService : Service() {
         obtainMessageLock()
         handledMessages += id
         unlockMessages()
+
+        saveHandledMessages()
     }
 
     private fun isMessageHandled(data: Bundle): Boolean {
@@ -445,7 +530,7 @@ class DataManagerService : Service() {
         return isHandled
     }
 
-    fun loadData() {
+    private fun loadData() {
         Logger.warn(TAG, "LOADING DATA")
         loadPracticeSessions()
         loadSavedOpenings()
@@ -455,7 +540,7 @@ class DataManagerService : Service() {
         loadHandledMessages()
     }
 
-    fun saveData() {
+    private fun saveData() {
         saveOpenings()
         saveGames()
         saveInvites()
@@ -568,12 +653,12 @@ class DataManagerService : Service() {
                         if (news.isBlank()) {
                             continue
                         }
-
-                        when (news.count { char -> char == ',' }) {
-                            0 -> newsUpdates += News.fromString(news)
-                            1 -> newsUpdates += IntNews.fromString(news)
-                            else -> newsUpdates += MoveNews.fromString(news)
-                        }
+                        newsUpdates += News.fromString(news)
+//                        when (news.count { char -> char == ',' }) {
+//                            0 -> newsUpdates += News.fromString(news)
+//                            1 -> newsUpdates += IntNews.fromString(news)
+//                            else -> newsUpdates += MoveNews.fromString(news)
+//                        }
                     }
 
                     val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
@@ -584,7 +669,6 @@ class DataManagerService : Service() {
                 NetworkService.sendCrashReport("crash_games_loading.txt", e.stackTraceToString(), applicationContext)
             } finally {
                 unlockGames()
-                Logger.debug(TAG, "Number of games loaded: ${savedGames.size}")
             }
         }.start()
     }
@@ -596,7 +680,10 @@ class DataManagerService : Service() {
                 savedInvites.clear()
                 val lines = FileManager.readLines(applicationContext, INVITES_FILE) ?: ArrayList()
 
+//                Logger.debug(TAG, "Going to read ${lines.size} lines from invites.txt")
+
                 for (line in lines) {
+//                    Logger.debug(TAG, "Reading line from invites.txt: $line")
                     if (line.isBlank()) {
                         continue
                     }
@@ -613,11 +700,13 @@ class DataManagerService : Service() {
                 NetworkService.sendCrashReport("crash_invites_loading.txt", e.stackTraceToString(), applicationContext)
             } finally {
                 unlockInvites()
+//                Logger.debug(TAG, "Number of invites loaded: ${savedInvites.size}")
             }
         }.start()
     }
 
     private fun loadRecentOpponents() {
+//        Logger.debug(TAG, "Loading recent opponents")
         obtainOpponentsLock()
         Thread {
             try {
@@ -632,11 +721,13 @@ class DataManagerService : Service() {
                     val data = line.split('|')
                     val opponentName = data[0]
                     val opponentId = data[1]
-                    addRecentOpponent(Pair(opponentName, opponentId))
+                    addRecentOpponent(OpponentData(opponentName, opponentId))
                 }
             } catch (e: Exception) {
+                Logger.error(TAG, e.stackTraceToString())
                 NetworkService.sendCrashReport("crash_opponents_loading.txt", e.stackTraceToString(), applicationContext)
             } finally {
+//                Logger.debug(TAG, "Releasing lock in load()")
                 unlockOpponents()
             }
         }.start()
@@ -675,12 +766,11 @@ class DataManagerService : Service() {
 //        unlockOpenings()
 //    }
 
-    fun savePracticeSessions() {
+    private fun savePracticeSessions() {
         obtainPracticeSessionLock()
         Thread {
             try {
                 for (practiceSession in savedPracticeSessions) {
-                    Logger.debug(TAG, "Saving session: $practiceSession")
                     FileManager.write(applicationContext, "practice_session_${practiceSession.openingName}_${practiceSession.team}.txt", practiceSession.toString())
                 }
             } catch (e: Exception) {
@@ -691,12 +781,11 @@ class DataManagerService : Service() {
         }.start()
     }
 
-    fun saveOpenings() {
+    private fun saveOpenings() {
         obtainOpeningLock()
         Thread {
             try {
                 for (opening in savedOpenings) {
-                    Logger.debug(TAG, "Saving opening with name: opening_${opening.name}_${opening.team}.txt")
                     FileManager.write(applicationContext, "opening_${opening.name}_${opening.team}.txt", opening.toString())
                 }
             } catch (e: Exception) {
@@ -708,7 +797,7 @@ class DataManagerService : Service() {
         }.start()
     }
 
-    fun saveGames() {
+    private fun saveGames() {
         obtainGameLock()
         Thread {
             try {
@@ -757,7 +846,7 @@ class DataManagerService : Service() {
         }.start()
     }
 
-    fun saveInvites() {
+    private fun saveInvites() {
         obtainInvitesLock()
         Thread {
             try {
@@ -767,10 +856,14 @@ class DataManagerService : Service() {
                     content += "${invite.inviteId}|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
                 }
 
-                Logger.debug(TAG, "Saving invites: ${savedInvites.size}")
+                val writeSuccessful = FileManager.write(applicationContext, INVITES_FILE, content)
 
-                FileManager.write(applicationContext, INVITES_FILE, content)
+                Logger.debug(TAG, "Saving invites: $writeSuccessful: $content")
+
+                val fileContent = FileManager.readText(applicationContext, INVITES_FILE)
+                Logger.debug(TAG, "Wrote content: ${fileContent}")
             } catch (e: Exception) {
+                Logger.error(TAG, e.stackTraceToString())
                 NetworkService.sendCrashReport("crash_invites_saving.txt", e.stackTraceToString(), applicationContext)
             } finally {
                 unlockInvites()
@@ -779,17 +872,21 @@ class DataManagerService : Service() {
     }
 
     private fun saveRecentOpponents() {
+//        Logger.debug(TAG, "Saving opponents")
         obtainOpponentsLock()
         Thread {
             try {
                 var data = ""
                 for (recentOpponent in recentOpponents) {
-                    data += "${recentOpponent.first}|${recentOpponent.second}\n"
+                    data += "${recentOpponent.opponentName}|${recentOpponent.opponentId}\n"
                 }
+                Logger.debug(TAG, "Saving recent opponents: $data")
                 FileManager.write(applicationContext, RECENT_OPPONENTS_FILE, data)
             } catch (e: Exception) {
+                Logger.error(TAG, e.stackTraceToString())
                 NetworkService.sendCrashReport("crash_opponents_saving.txt", e.stackTraceToString(), applicationContext)
             } finally {
+//                Logger.debug(TAG, "Releasing lock in save()")
                 unlockOpponents()
             }
         }.start()
@@ -814,6 +911,11 @@ class DataManagerService : Service() {
     }
 
     private fun processRequest(request: Request, data: Bundle): Any {
+        while (!initialized.get()) {
+            Logger.debug(TAG, "WAITING FOR DATAMANAGER TO INITIALIZE")
+            Thread.sleep(500)
+        }
+
         return when (request) {
             Request.LOAD_DATA -> loadData()
             Request.SAVE_DATA -> saveData()
@@ -833,12 +935,20 @@ class DataManagerService : Service() {
             Request.SET_INVITE -> setInvite(data)
             Request.REMOVE_INVITE -> removeSavedInvite(data)
             Request.GET_RECENT_OPPONENTS -> getRecentOpponents()
-            //            Request.SET_RECENT_OPPONENTS -> service.setRecentOpponents()
+            Request.SET_RECENT_OPPONENTS -> setRecentOpponents(data)
             Request.ADD_RECENT_OPPONENT -> addRecentOpponent(data)
             Request.SET_MESSAGE_HANDLED -> setMessageHandled(data)
             Request.IS_MESSAGE_HANDLED -> isMessageHandled(data)
+            Request.SAVE_GAMES -> saveGames()
+            Request.SAVE_INVITES -> saveInvites()
+            Request.SAVE_HANDLED_MESSAGES -> saveHandledMessages()
+            Request.SAVE_OPENINGS -> saveOpenings()
+            Request.SAVE_SESSIONS -> savePracticeSessions()
+            Request.SAVE_RECENT_OPPONENTS -> saveRecentOpponents()
         }
     }
+
+//    var currentClient: Messenger? = null
 
     class IncomingHandler(service: DataManagerService): Handler() {
 
@@ -846,37 +956,36 @@ class DataManagerService : Service() {
 
         override fun handleMessage(msg: Message) {
             val service = serviceReference.get()!!
-            service.currentClient = msg.replyTo
 
-//            if (service.messageCache.isNotEmpty()) {
-//                for (message in service.messageCache) {
-//                    msg.replyTo.send(Message.obtain(null, 0, message))
-//                }
-//                service.messageCache.clear()
+//            if (msg.what == 0) {
+//                service.currentClient = msg.replyTo
+//                return
 //            }
-
-            if (msg.what == 0) {
-                return
-            }
 
             val request = Request.fromString(msg.data.getString("request")!!)
             val data = msg.data.getBundle("data") ?: Bundle()
 
+
             val output = service.processRequest(request, data)
+            Logger.debug(TAG, "Processing request: $request ${output::class.java} ${output is Parcelable} ${output is ArrayList<*>}")
 
             if (output is Parcelable) {
                 val reply = Message.obtain()
                 reply.obj = msg.obj
                 reply.what = 1
                 reply.data.putParcelable("output", output)
+                Logger.debug(TAG, "Sending reply to $request")
                 msg.replyTo.send(reply)
+//                service.currentClient!!.send(reply)
             } else if (output is ArrayList<*>) {
-                if (output.isNotEmpty() && output.first() is Parcelable) {
+                if (output.isEmpty() || (output.isNotEmpty() && output.first() is Parcelable)) {
                     val reply = Message.obtain()
                     reply.obj = msg.obj
                     reply.what = 2
                     reply.data.putParcelableArrayList("output", output as ArrayList<out Parcelable>)
+                    Logger.debug(TAG, "Sending reply to $request")
                     msg.replyTo.send(reply)
+//                    service.currentClient!!.send(reply)
                 }
             }
         }
@@ -911,9 +1020,15 @@ class DataManagerService : Service() {
         REMOVE_INVITE,
         ADD_RECENT_OPPONENT,
         GET_RECENT_OPPONENTS,
-        //        SET_RECENT_OPPONENTS,
+        SET_RECENT_OPPONENTS,
         SET_MESSAGE_HANDLED,
-        IS_MESSAGE_HANDLED;
+        IS_MESSAGE_HANDLED,
+        SAVE_GAMES,
+        SAVE_INVITES,
+        SAVE_RECENT_OPPONENTS,
+        SAVE_HANDLED_MESSAGES,
+        SAVE_OPENINGS,
+        SAVE_SESSIONS;
 
         companion object {
 

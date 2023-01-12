@@ -24,7 +24,7 @@ class NetworkService : Service() {
 
         const val PUBLIC_SERVER_IP = "94.208.124.161"
         //        private const val PUBLIC_SERVER_IP = "10.248.59.222"
-        const val LOCAL_SERVER_IP = "192.168.178.18"
+        const val LOCAL_SERVER_IP = "145.89.4.144"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
         const val SERVER_PORT = 4500
@@ -187,11 +187,13 @@ class NetworkService : Service() {
             Logger.info(TAG, "Received message: $message")
         }
 
-        val dataManager = DataManager.getInstance(applicationContext)
+//        val dataManager = DataManager.getInstance(applicationContext)
 
-        if (!dataManager.isMessageHandled(message.id)) {
-            dataManager.handledMessage(message.id)
-            dataManager.lockAndSaveHandledMessages(applicationContext)
+//        val intent = Intent(context, DataManagerService::class.java)
+
+//        if (!dataManager.isMessageHandled(message.id)) {
+//            dataManager.handledMessage(message.id)
+//            dataManager.lockAndSaveHandledMessages(applicationContext)
 
             sendMessageToSystem(message)
 //            val intent = Intent("mjaruijs.fischers_playground")
@@ -200,9 +202,7 @@ class NetworkService : Service() {
 //                .putExtra("messageId", message.id)
 //
 //            context.sendBroadcast(intent)
-        } else {
-//            Logger.debug(TAG, "Message already handled: ${message.id} ${message.topic}")
-        }
+//        }
     }
 
     private fun stop() {

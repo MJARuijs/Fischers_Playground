@@ -6,8 +6,6 @@ import android.os.Parcelable
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
-import com.mjaruijs.fischersplayground.chess.news.IntNews
-import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
@@ -372,12 +370,12 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
                     if (news.isBlank()) {
                         continue
                     }
-
-                    when (news.count { char -> char == ',' }) {
-                        0 -> newsUpdates += News.fromString(news)
-                        1 -> newsUpdates += IntNews.fromString(news)
-                        else -> newsUpdates += MoveNews.fromString(news)
-                    }
+                    newsUpdates += News.fromString(news)
+//                    when (news.count { char -> char == '~' }) {
+//                        0 -> newsUpdates += News.fromString(news)
+//                        1 -> newsUpdates += IntNews.fromString(news)
+//                        else -> newsUpdates += MoveNews.fromString(news)
+//                    }
                 }
 
                 val isPlayerWhite = whitePlayerId == userId
