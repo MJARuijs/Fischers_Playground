@@ -4,6 +4,8 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.*
+import android.os.Build.VERSION_CODES.TIRAMISU
+import android.util.Log
 import android.widget.Toast
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
@@ -24,34 +26,35 @@ class NetworkService : Service() {
 
         const val PUBLIC_SERVER_IP = "94.208.124.161"
         //        private const val PUBLIC_SERVER_IP = "10.248.59.222"
-        const val LOCAL_SERVER_IP = "145.89.4.144"
+        const val LOCAL_SERVER_IP = "192.168.178.18"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
         const val SERVER_PORT = 4500
 
-        private var instance: NetworkService? = null
-
-        fun sendMessage(message: NetworkMessage) {
-            if (instance == null) {
-                instance = NetworkService()
-            }
-
-            if (instance!!.isRunning()) {
-                instance!!.sendMessageToServer(message)
-            }
-        }
-
+//        private var instance: NetworkService? = null
+//
+//        fun sendMessage(message: NetworkMessage) {
+//            if (instance == null) {
+//                instance = NetworkService()
+//            }
+//
+//            if (instance!!.isRunning()) {
+//                instance!!.sendMessageToServer(message)
+//            }
+//        }
+//
         fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {
-            if (instance == null) {
-                instance = NetworkService()
-            }
-
-            if (instance!!.isRunning()) {
-                Logger.debug(TAG, "Trying to send crash report")
-                instance!!.sendCrashReport(fileName, crashLog, context)
-            } else {
-                Logger.debug(TAG, "Trying to send crash report but instance is not running")
-            }
+            Logger.error("ERROR_HANDLER", crashLog)
+//            if (instance == null) {
+//                instance = NetworkService()
+//            }
+//
+//            if (instance!!.isRunning()) {
+//                Logger.debug(TAG, "Trying to send crash report")
+//                instance!!.sendCrashReport(fileName, crashLog, context)
+//            } else {
+//                Logger.debug(TAG, "Trying to send crash report but instance is not running")
+//            }
         }
     }
 
@@ -74,7 +77,7 @@ class NetworkService : Service() {
         Logger.debug(TAG, "Creating NetworkService")
         run(applicationContext)
 
-        instance = this
+//        instance = this
 
         val userId = getSharedPreferences(ClientActivity.USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, ClientActivity.DEFAULT_USER_ID)!!
         if (userId != DEFAULT_USER_ID) {
@@ -83,14 +86,32 @@ class NetworkService : Service() {
 //        networkManager = NetworkManager.getInstance()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stop()
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent != null) {
+            val message = if (Build.VERSION.SDK_INT < TIRAMISU) {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra<NetworkMessage>("message")
+            } else {
+                intent.getParcelableExtra("message", NetworkMessage::class.java)
+            }
+
+            if (message != null) {
+                sendMessageToServer(message)
+            }
+        }
+
+        return START_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? {
         serviceMessenger = Messenger(IncomingHandler(this))
         return serviceMessenger.binder
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stop()
+        Logger.warn(TAG, "Destroying NetworkService")
     }
 
     fun isRunning(): Boolean {
@@ -154,7 +175,7 @@ class NetworkService : Service() {
             }
             sendingMessage.set(true)
 
-            if (clientConnected.get()) {
+//            if (clientConnected.get()) {
                 try {
                     if (message.topic != Topic.CONFIRM_MESSAGE && message.topic != Topic.CRASH_REPORT) {
                         Logger.info(TAG, "Sending message: $message")
@@ -162,14 +183,16 @@ class NetworkService : Service() {
                     client.write(message.toString())
                     messageQueue.remove(message)
                 } catch (e: Exception) {
+                    Logger.error(TAG, e.stackTraceToString())
+                    Logger.warn(TAG, "Client not connected; ${message.topic} message added to queue")
+                    messageQueue += message
 //                    sendCrashReport("crash_network_send.txt", e.stackTraceToString(), null)
                 } finally {
                     sendingMessage.set(false)
                 }
-            } else {
-                Logger.warn(TAG, "Client not connected; ${message.topic} message added to queue")
-                messageQueue += message
-            }
+//            } else {
+
+//            }
 
             sendingMessage.set(false)
         }.start()
@@ -222,46 +245,46 @@ class NetworkService : Service() {
         }.start()
     }
 
-    fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {
-        if (context != null) {
-            try {
-                Looper.prepare()
-            } catch (e: Exception) {
-                Logger.warn(TAG, e.stackTraceToString())
-            }
-            Toast.makeText(context, "A crash occurred!", Toast.LENGTH_SHORT).show()
-        }
-
-//        Thread {
-            try {
-                val gameFiles = FileManager.listFilesInDirectory()
-                var allData = ""
-                val crashContent = trimCrashReport(crashLog)
-
-                allData += "$fileName|$crashContent\\\n"
-
-                for (gameFile in gameFiles) {
-                    val file = FileManager.getFile(gameFile)
-                    if (file.exists()) {
-                        val fileContent = file.readText()
-                        allData += if (gameFile.startsWith("crash_")) {
-                            val compressedContent = trimCrashReport(fileContent)
-                            "$gameFile|$compressedContent\\\n"
-                        } else {
-                            "$gameFile|$fileContent\\\n"
-                        }
-                    }
-                }
-
-                sendMessage(NetworkMessage(Topic.CRASH_REPORT, allData))
-            } catch (e: Exception) {
-                throw e
-            } finally {
-                val crashFile = FileManager.getFile(fileName)
-                crashFile.writeText(crashLog)
-            }
-//        }.start()
-    }
+//    fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {
+//        if (context != null) {
+//            try {
+//                Looper.prepare()
+//            } catch (e: Exception) {
+//                Logger.warn(TAG, e.stackTraceToString())
+//            }
+//            Toast.makeText(context, "A crash occurred!", Toast.LENGTH_SHORT).show()
+//        }
+//
+////        Thread {
+//            try {
+//                val gameFiles = FileManager.listFilesInDirectory()
+//                var allData = ""
+//                val crashContent = trimCrashReport(crashLog)
+//
+//                allData += "$fileName|$crashContent\\\n"
+//
+//                for (gameFile in gameFiles) {
+//                    val file = FileManager.getFile(gameFile)
+//                    if (file.exists()) {
+//                        val fileContent = file.readText()
+//                        allData += if (gameFile.startsWith("crash_")) {
+//                            val compressedContent = trimCrashReport(fileContent)
+//                            "$gameFile|$compressedContent\\\n"
+//                        } else {
+//                            "$gameFile|$fileContent\\\n"
+//                        }
+//                    }
+//                }
+//
+//                sendMessage(NetworkMessage(Topic.CRASH_REPORT, allData))
+//            } catch (e: Exception) {
+//                throw e
+//            } finally {
+//                val crashFile = FileManager.getFile(fileName)
+//                crashFile.writeText(crashLog)
+//            }
+////        }.start()
+//    }
 
     private fun trimCrashReport(crashLog: String): String {
         var crashContent = ""

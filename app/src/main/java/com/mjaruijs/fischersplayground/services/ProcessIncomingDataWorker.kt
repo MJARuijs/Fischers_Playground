@@ -182,7 +182,7 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
                 game.addNews(News(NewsType.OPPONENT_MOVED, moveData))
                 game.lastUpdated = timeStamp
 //                try {
-                    sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
+                sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
 //                } catch (e: Exception) {
 //                    Logger.error(TAG, e.stackTraceToString())
 //                } finally {
@@ -345,6 +345,7 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         val messageContent = data[2]
 
         sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+
             game.addMessage(ChatMessage(gameId, timeStamp, messageContent, MessageType.RECEIVED))
             game.addNews(NewsType.CHAT_MESSAGE)
             sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
@@ -517,19 +518,6 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         val filesString = serverData.substring(separatorIndex + 1)
 
         return filesString.split("%").toList()
-    }
-
-    private fun Data.getParcelable(type: Parcelable.Creator<*>?, key: String): Parcelable? {
-        val parcel = Parcel.obtain()
-        try {
-            val bytes = getByteArray(key) ?: return null
-            parcel.unmarshall(bytes, 0, bytes.size)
-            parcel.setDataPosition(0)
-
-            return type?.createFromParcel(parcel) as Parcelable?
-        } finally {
-            parcel.recycle()
-        }
     }
 
     class DataManagerHandler : Handler(Looper.getMainLooper()!!) {

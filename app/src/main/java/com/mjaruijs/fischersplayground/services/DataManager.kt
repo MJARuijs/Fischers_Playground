@@ -12,8 +12,6 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteData
 import com.mjaruijs.fischersplayground.adapters.gameadapter.InviteType
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
-import com.mjaruijs.fischersplayground.chess.news.IntNews
-import com.mjaruijs.fischersplayground.chess.news.MoveNews
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.pieces.Team
@@ -526,12 +524,8 @@ class DataManager(context: Context) {
                 if (news.isBlank()) {
                     continue
                 }
+                newsUpdates += News.fromString(news)
 
-                when (news.count { char -> char == ',' }) {
-                    0 -> newsUpdates += News.fromString(news)
-                    1 -> newsUpdates += IntNews.fromString(news)
-                    else -> newsUpdates += MoveNews.fromString(news)
-                }
             }
 
 //            val isPlayerWhite = whitePlayerId == user

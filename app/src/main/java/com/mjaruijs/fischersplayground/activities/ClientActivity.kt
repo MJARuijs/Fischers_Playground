@@ -46,8 +46,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
     open var activityName: String = ""
 
-    open val saveGamesOnPause = true
-
     var networkMessengerClient = Messenger(NetworkMessageHandler(::onMessageReceived))
     var dataMessengerClient = Messenger(DataManagerHandler())
 
@@ -102,7 +100,6 @@ abstract class ClientActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Logger.debug(activityName, "Targetting: ${Build.VERSION.SDK_INT}")
         FileManager.init(applicationContext)
 
         val preferences = getPreference(USER_PREFERENCE_FILE)
@@ -139,6 +136,8 @@ abstract class ClientActivity : AppCompatActivity() {
 
         incomingInviteDialog = DoubleButtonDialog(this, true,"New Invite", "Decline", "Accept")
 
+        sendResumeStatusToServer()
+
         val networkRequest = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -159,10 +158,6 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        if (saveGamesOnPause) {
-//            dataManager.saveData(applicationContext)
-        }
-
         if (!stayingInApp) {
             leftApp = true
 //            networkManager.stop()
@@ -188,7 +183,23 @@ abstract class ClientActivity : AppCompatActivity() {
         message.what = 1
         message.replyTo = networkMessengerClient
         message.obj = networkMessage
-        networkServiceMessenger!!.send(message)
+
+        if (networkServiceMessenger != null) {
+            Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
+            networkServiceMessenger!!.send(message)
+        } else {
+            Thread {
+                while (networkServiceMessenger == null) {
+                    Thread.sleep(10)
+                    Logger.debug(activityName, "Waiting for networkService to send ${networkMessage.topic}")
+                }
+
+                runOnUiThread {
+                    Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
+                    networkServiceMessenger!!.send(message)
+                }
+            }.start()
+        }
     }
 
     protected inline fun <reified T>sendToDataManager(request: DataManagerService.Request, noinline onResult: (T) -> Unit = {}) {
@@ -291,7 +302,7 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun sendResumeStatusToServer() {
-//        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
+        sendNetworkMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|online"))
     }
 
     private fun sendAwayStatusToServer() {
@@ -299,7 +310,6 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
-        Logger.debug(activityName, "Got message: $topic")
         sendDataToWorker(topic, content, messageId, when (topic) {
             Topic.INVITE -> ::onIncomingInvite
             Topic.NEW_GAME -> ::onNewGameStarted
@@ -379,13 +389,11 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     open fun onRestoreData(output: Parcelable) {
-        Logger.debug("client_activity", "RECEIVED ONRESTOREDATA MESSAGE: $activityName")
     }
 
 //    open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 
     protected fun sendDataToWorker(topic: Topic, data: Array<String>, messageId: Long, onResult: (Parcelable) -> Unit) {
-        Logger.debug("client_activity", "SENDING DATA TO WORKER: $topic $activityName")
 
 //        val workerData = Bundle()
 //        workerData.putString("topic", topic.toString())

@@ -77,7 +77,7 @@ class NotificationBuilder(context: Context) {
             }
             Topic.MOVE -> {
                 val moveNotation = data[1]
-                val opponentName = data[2]
+                val opponentName = data[3]
                 val move = Move.fromChessNotation(moveNotation)
 
                 NotificationData("Your move!", "$opponentName played ${move.getSimpleChessNotation()}", MOVE_CHANNEL_ID, createMultiplayerActivityIntent(context, data))

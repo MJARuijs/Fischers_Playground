@@ -283,7 +283,7 @@ class DataManagerService : Service() {
         saveGames()
     }
 
-    private fun getGame(data: Bundle): Parcelable {
+    private fun getGame(data: Bundle): Parcelable? {
         val id = getInputString(data, "game_id")
 
         obtainGameLock()
@@ -293,7 +293,7 @@ class DataManagerService : Service() {
 
         if (game == null) {
             Logger.debug(TAG, "No game with id $id could be found..")
-            return ParcelableNull()
+            return null
         }
 
         return game
@@ -654,11 +654,6 @@ class DataManagerService : Service() {
                             continue
                         }
                         newsUpdates += News.fromString(news)
-//                        when (news.count { char -> char == ',' }) {
-//                            0 -> newsUpdates += News.fromString(news)
-//                            1 -> newsUpdates += IntNews.fromString(news)
-//                            else -> newsUpdates += MoveNews.fromString(news)
-//                        }
                     }
 
                     val newGame = MultiPlayerGame(gameId, opponentId, opponentName, gameStatus, opponentStatus, lastUpdated, isPlayerWhite, moveToBeConfirmed, moves, messages, newsUpdates)
@@ -839,6 +834,7 @@ class DataManagerService : Service() {
 
                 FileManager.write(applicationContext, MULTIPLAYER_GAME_FILE, content)
             } catch (e: Exception) {
+                Logger.error(TAG, e.stackTraceToString())
                 NetworkService.sendCrashReport("crash_games_saving.txt", e.stackTraceToString(), applicationContext)
             } finally {
                 unlockGames()
@@ -856,12 +852,7 @@ class DataManagerService : Service() {
                     content += "${invite.inviteId}|${invite.opponentName}|${invite.timeStamp}|${invite.type}\n"
                 }
 
-                val writeSuccessful = FileManager.write(applicationContext, INVITES_FILE, content)
-
-                Logger.debug(TAG, "Saving invites: $writeSuccessful: $content")
-
-                val fileContent = FileManager.readText(applicationContext, INVITES_FILE)
-                Logger.debug(TAG, "Wrote content: ${fileContent}")
+                FileManager.write(applicationContext, INVITES_FILE, content)
             } catch (e: Exception) {
                 Logger.error(TAG, e.stackTraceToString())
                 NetworkService.sendCrashReport("crash_invites_saving.txt", e.stackTraceToString(), applicationContext)
@@ -872,7 +863,6 @@ class DataManagerService : Service() {
     }
 
     private fun saveRecentOpponents() {
-//        Logger.debug(TAG, "Saving opponents")
         obtainOpponentsLock()
         Thread {
             try {
@@ -880,13 +870,11 @@ class DataManagerService : Service() {
                 for (recentOpponent in recentOpponents) {
                     data += "${recentOpponent.opponentName}|${recentOpponent.opponentId}\n"
                 }
-                Logger.debug(TAG, "Saving recent opponents: $data")
                 FileManager.write(applicationContext, RECENT_OPPONENTS_FILE, data)
             } catch (e: Exception) {
                 Logger.error(TAG, e.stackTraceToString())
                 NetworkService.sendCrashReport("crash_opponents_saving.txt", e.stackTraceToString(), applicationContext)
             } finally {
-//                Logger.debug(TAG, "Releasing lock in save()")
                 unlockOpponents()
             }
         }.start()
@@ -910,9 +898,8 @@ class DataManagerService : Service() {
         }.start()
     }
 
-    private fun processRequest(request: Request, data: Bundle): Any {
+    private fun processRequest(request: Request, data: Bundle): Any? {
         while (!initialized.get()) {
-            Logger.debug(TAG, "WAITING FOR DATAMANAGER TO INITIALIZE")
             Thread.sleep(500)
         }
 
@@ -948,8 +935,6 @@ class DataManagerService : Service() {
         }
     }
 
-//    var currentClient: Messenger? = null
-
     class IncomingHandler(service: DataManagerService): Handler() {
 
         private val serviceReference = WeakReference(service)
@@ -957,35 +942,24 @@ class DataManagerService : Service() {
         override fun handleMessage(msg: Message) {
             val service = serviceReference.get()!!
 
-//            if (msg.what == 0) {
-//                service.currentClient = msg.replyTo
-//                return
-//            }
-
             val request = Request.fromString(msg.data.getString("request")!!)
             val data = msg.data.getBundle("data") ?: Bundle()
 
-
             val output = service.processRequest(request, data)
-            Logger.debug(TAG, "Processing request: $request ${output::class.java} ${output is Parcelable} ${output is ArrayList<*>}")
 
             if (output is Parcelable) {
                 val reply = Message.obtain()
                 reply.obj = msg.obj
                 reply.what = 1
                 reply.data.putParcelable("output", output)
-                Logger.debug(TAG, "Sending reply to $request")
                 msg.replyTo.send(reply)
-//                service.currentClient!!.send(reply)
             } else if (output is ArrayList<*>) {
                 if (output.isEmpty() || (output.isNotEmpty() && output.first() is Parcelable)) {
                     val reply = Message.obtain()
                     reply.obj = msg.obj
                     reply.what = 2
                     reply.data.putParcelableArrayList("output", output as ArrayList<out Parcelable>)
-                    Logger.debug(TAG, "Sending reply to $request")
                     msg.replyTo.send(reply)
-//                    service.currentClient!!.send(reply)
                 }
             }
         }

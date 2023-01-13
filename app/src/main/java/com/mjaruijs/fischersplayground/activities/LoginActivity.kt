@@ -64,6 +64,10 @@ class LoginActivity : ClientActivity() {
         accountAlreadyExistsDialog = SingleButtonDialog(this, false,"Account Already Exists", "There already exists an account for this email address!", R.drawable.check_mark_icon)
     }
 
+    override fun sendResumeStatusToServer() {
+
+    }
+
     override fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
         when (topic) {
             Topic.SET_ID -> onIdReceived(content)

@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.chess.news
 
-import android.os.Parcelable
 import com.mjaruijs.fischersplayground.chess.game.MoveData
 
 enum class NewsType(val dataType: Any? = null) {

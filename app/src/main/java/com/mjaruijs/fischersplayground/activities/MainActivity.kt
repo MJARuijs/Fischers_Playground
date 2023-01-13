@@ -204,8 +204,6 @@ class MainActivity : ClientActivity() {
     override fun onIncomingInvite(output: Parcelable) {
         val inviteData = output as InviteData
 
-        Logger.debug(activityName, "OnIncoming invite")
-
         gameAdapter += GameCardItem(inviteData.inviteId, inviteData.timeStamp, inviteData.opponentName, GameStatus.INVITE_RECEIVED, hasUpdate = true)
 
         showNewInviteDialog(inviteData.inviteId, inviteData.opponentName)
@@ -347,9 +345,9 @@ class MainActivity : ClientActivity() {
             .setCornerRadius(45f)
             .setTextSize(28f)
             .setOnClickListener {
-                sendToDataManager<ArrayList<OpponentData>>(DataManagerService.Request.GET_RECENT_OPPONENTS, {
+                sendToDataManager<ArrayList<OpponentData>>(DataManagerService.Request.GET_RECENT_OPPONENTS) {
                     searchPlayersDialog.setRecentOpponents(it)
-                })
+                }
 
                 searchPlayersDialog.show()
 //                stayingInApp = true
@@ -359,11 +357,9 @@ class MainActivity : ClientActivity() {
 
     private fun restoreSavedGames(games: ArrayList<MultiPlayerGame>?) {
         if (games == null) {
-            Logger.debug(activityName, "Tried to restore games but was null")
             return
         }
 
-        Logger.debug(activityName, "Number of saved games: ${games.size}")
         for (game in games) {
             if (!showFinishedGames && game.isFinished()) {
                 continue
@@ -379,11 +375,8 @@ class MainActivity : ClientActivity() {
 
     private fun restoreSavedInvites(invites: ArrayList<InviteData>?) {
         if (invites == null) {
-            Logger.debug(activityName, "Tried to restore invites but was null")
             return
         }
-
-        Logger.debug(activityName, "Number of saved invites: ${invites.size}")
 
         for (inviteData in invites) {
             if (gameAdapter.containsCard(inviteData.inviteId)) {

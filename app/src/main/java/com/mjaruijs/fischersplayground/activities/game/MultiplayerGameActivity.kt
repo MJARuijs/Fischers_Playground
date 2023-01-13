@@ -590,7 +590,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun sendResumeStatusToServer() {
-//        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|$gameId"))
+        sendNetworkMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|$gameId"))
     }
 
     override fun onDisplaySizeChanged(width: Int, height: Int) {

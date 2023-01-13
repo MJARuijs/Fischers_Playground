@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.nio.NonBlockingClient
+import com.mjaruijs.fischersplayground.services.NetworkService
+import com.mjaruijs.fischersplayground.util.Logger
 import java.net.InetSocketAddress
 import java.nio.Buffer
 import java.nio.ByteBuffer
@@ -26,7 +28,7 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
             (buffer as Buffer).rewind()
             channel.write(buffer)
         } catch (e: ClosedChannelException) {
-
+            throw e
         } catch (e: Exception) {
             throw ClientException("Invalid write! Tried to send ${String(bytes)}")
         }

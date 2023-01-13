@@ -19,8 +19,6 @@ class CrashReportActivity : ClientActivity() {
 
     private lateinit var crashDialog: CrashReportDialog
 
-    override val saveGamesOnPause = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_crash_report)

@@ -25,7 +25,6 @@ class SinglePlayerGameActivity : GameActivity() {
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
 //        Thread {
             game = SinglePlayerGame(true, Time.getFullTimeStamp(), true)
-            Logger.debug(activityName, "Initting Game on thread ${Thread.currentThread().id}")
 //        }.start()
 
         val playerBundle = Bundle()

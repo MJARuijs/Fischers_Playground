@@ -5,6 +5,8 @@ import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
+import com.mjaruijs.fischersplayground.chess.game.MoveData
+import com.mjaruijs.fischersplayground.util.Logger
 
 open class News(val newsType: NewsType, val data: Bundle = Bundle()) : Parcelable {
 
@@ -16,9 +18,7 @@ open class News(val newsType: NewsType, val data: Bundle = Bundle()) : Parcelabl
         data.putParcelable("data", extra)
     }
 
-    constructor(parcel: Parcel) : this(
-        NewsType.fromString(parcel.readString()!!)
-    ) {
+    constructor(parcel: Parcel) : this(NewsType.fromString(parcel.readString()!!)) {
         if (newsType.dataType != null) {
             parcel.readBundle(newsType.dataType::class.java.classLoader)
         }
@@ -27,16 +27,16 @@ open class News(val newsType: NewsType, val data: Bundle = Bundle()) : Parcelabl
     inline fun <reified T : Any> getData(): T {
         if (T::class.java == Int::class) {
             return data.getInt("data") as T
-        }
-        if (T::class.java == Parcelable::class) {
+        } else if (T::class.java == MoveData::class.java) {
             return if (Build.VERSION.SDK_INT < TIRAMISU) {
                 @Suppress("DEPRECATION")
                 data.getParcelable<Parcelable>("data")!! as T
             } else {
                 data.getParcelable("data", Parcelable::class.java) as T
             }
+        } else {
+            throw IllegalArgumentException("Could not find extra data of type ${T::class.java} in news..")
         }
-        throw IllegalArgumentException("Could not find extra data of type ${T::class.java} in news..")
     }
 
     override fun toString(): String {
@@ -45,8 +45,12 @@ open class News(val newsType: NewsType, val data: Bundle = Bundle()) : Parcelabl
         if (newsType.dataType == null) {
             return content
         }
-        if (newsType.dataType == Int) {
 
+        if (newsType.dataType == Int) {
+            content += "~${data.getInt("data")}"
+        }
+        if (newsType.dataType == MoveData) {
+            content += "~${getData<MoveData>()}"
         }
         return content
     }
@@ -61,6 +65,9 @@ open class News(val newsType: NewsType, val data: Bundle = Bundle()) : Parcelabl
     }
 
     companion object CREATOR : Parcelable.Creator<News> {
+
+        const val TAG = "News"
+
         override fun createFromParcel(parcel: Parcel): News {
             return News(parcel)
         }
@@ -70,7 +77,24 @@ open class News(val newsType: NewsType, val data: Bundle = Bundle()) : Parcelabl
         }
 
         fun fromString(content: String): News {
-            return News(NewsType.fromString(content))
+            val separatorIndex = content.indexOf("~")
+            if (separatorIndex == -1) {
+                val newsType = NewsType.fromString(content)
+                return News(newsType)
+            }
+
+            val newsType = NewsType.fromString(content.substring(0, separatorIndex))
+            val dataString = content.substring(separatorIndex + 1)
+            val data = Bundle()
+            if (newsType.dataType == Int) {
+                data.putInt("data", dataString.toInt())
+            }
+
+            if (newsType.dataType == MoveData) {
+                data.putParcelable("data", MoveData.fromString(dataString))
+            }
+
+            return News(newsType, data)
         }
     }
 
