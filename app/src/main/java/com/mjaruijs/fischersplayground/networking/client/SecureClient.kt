@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.networking.client
 import android.content.Context
 import android.util.Log
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
+import com.mjaruijs.fischersplayground.util.Logger
 import java.net.InetSocketAddress
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets.UTF_8
@@ -62,7 +63,7 @@ class SecureClient(channel: SocketChannel, callback: (NetworkMessage, Context) -
             val decryptedKey = decryptor.doFinal(key)
 
             val secretKey = SecretKeySpec(decryptedKey, 0, decryptedKey.size, "AES")
-            val cipher = Cipher.getInstance("AES")
+            val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
             cipher.init(Cipher.DECRYPT_MODE, secretKey)
 
             val decryptedMessage = cipher.doFinal(message)
@@ -74,13 +75,19 @@ class SecureClient(channel: SocketChannel, callback: (NetworkMessage, Context) -
     }
 
     override fun write(message: String) {
-        val cipher = Cipher.getInstance("AES")
+        val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
         cipher.init(Cipher.ENCRYPT_MODE, symmetricKey)
 
         val messageBytes = cipher.doFinal(message.toByteArray(UTF_8))
         val keyBytes = encryptor.doFinal(symmetricKey.encoded)
 
+//        Logger.debug("SecureClient", "Writing message: ${String(messageBytes)}")
+//        Logger.debug("SecureClient", "Writing key: ${String(keyBytes)}")
+
+//        Logger.debug("SecureClient", "Writing message bytes")
         write(messageBytes)
+
+//        Logger.debug("SecureClient", "Writing key bytes")
         write(keyBytes)
     }
 }

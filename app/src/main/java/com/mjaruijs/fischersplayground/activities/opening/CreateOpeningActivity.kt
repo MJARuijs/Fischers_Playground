@@ -75,7 +75,7 @@ class CreateOpeningActivity : GameActivity() {
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create CreateOpeningActivity. Missing essential information: opening_team.."))
         variationName = intent.getStringExtra("variation_name") ?: "default_variation_name"
 
-//        opening = dataManager.getOpening(openingName, openingTeam)
+        opening = dataManager.getOpening(openingName, openingTeam)
         variation = opening.getVariation(variationName) ?: throw IllegalArgumentException("Could not find variation with name: $variationName in opening with name: $openingName")
 
         if (variation.lines.isNotEmpty()) {
@@ -345,8 +345,8 @@ class CreateOpeningActivity : GameActivity() {
         }
 
         sendNetworkMessage(NetworkMessage(Topic.NEW_OPENING, "$userId|$openingName|$openingTeam|$opening"))
-//        dataManager.setOpening(openingName, openingTeam, opening)
-//        dataManager.saveOpenings(applicationContext)
+        dataManager.setOpening(openingName, openingTeam, opening, applicationContext)
+        dataManager.saveOpenings(applicationContext)
         hasUnsavedChanges = false
     }
 

@@ -86,12 +86,17 @@ open class News(val newsType: NewsType, val data: Bundle = Bundle()) : Parcelabl
             val newsType = NewsType.fromString(content.substring(0, separatorIndex))
             val dataString = content.substring(separatorIndex + 1)
             val data = Bundle()
-            if (newsType.dataType == Int) {
-                data.putInt("data", dataString.toInt())
-            }
 
-            if (newsType.dataType == MoveData) {
-                data.putParcelable("data", MoveData.fromString(dataString))
+            try {
+                if (newsType.dataType == Int) {
+                    data.putInt("data", dataString.toInt())
+                }
+
+                if (newsType.dataType == MoveData) {
+                    data.putParcelable("data", MoveData.fromString(dataString))
+                }
+            } catch (e: Exception) {
+                Logger.error(TAG, "Failed to parse string into News: $content. Errormessage=${e.stackTraceToString()}")
             }
 
             return News(newsType, data)

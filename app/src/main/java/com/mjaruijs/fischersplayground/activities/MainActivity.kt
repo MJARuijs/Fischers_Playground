@@ -24,6 +24,7 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.game.MoveData
 import com.mjaruijs.fischersplayground.chess.game.OpponentData
+import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.dialogs.SearchPlayersDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
@@ -93,8 +94,8 @@ class MainActivity : ClientActivity() {
 //            runOnUiThread {
 
 //        TODO uncomment these 2 lines
-        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES, ::restoreSavedGames)
-        sendToDataManager<ArrayList<InviteData>>(DataManagerService.Request.GET_SAVED_INVITES, ::restoreSavedInvites)
+//        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES, ::restoreSavedGames)
+//        sendToDataManager<ArrayList<InviteData>>(DataManagerService.Request.GET_SAVED_INVITES, ::restoreSavedInvites)
 
 //        getData(DataManagerWorker.Request.GET_SAVED_GAMES, {
 //            restoreSavedGames(it)
@@ -104,8 +105,8 @@ class MainActivity : ClientActivity() {
 //            restoreSavedInvites(it)
 //        })
 
-//                restoreSavedGames(dataManager.getSavedGames())
-//                restoreSavedInvites(dataManager.getSavedInvites())
+                restoreSavedGames(dataManager.getSavedGames())
+                restoreSavedInvites(dataManager.getSavedInvites())
 //                updateRecentOpponents(dataManager.getRecentOpponents())
 //            }
 //        }.start()
@@ -145,10 +146,9 @@ class MainActivity : ClientActivity() {
 
     private fun onPlayerInvited(inviteId: String, timeStamp: Long, opponentName: String, opponentId: String) {
         gameAdapter += GameCardItem(inviteId, timeStamp, opponentName, GameStatus.INVITE_PENDING, hasUpdate = false)
-        sendToDataManager(DataManagerService.Request.SET_INVITE, Pair("invite", InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING)))
-        sendToDataManager(DataManagerService.Request.ADD_RECENT_OPPONENT, Pair("opponent_data", OpponentData(opponentName, opponentId)))
-//        dataManager.setInvite(inviteId, InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING))
-//        dataManager.saveData(applicationContext)
+//        sendToDataManager(DataManagerService.Request.SET_INVITE, Pair("invite", InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING)))
+//        sendToDataManager(DataManagerService.Request.ADD_RECENT_OPPONENT, Pair("opponent_data", OpponentData(opponentName, opponentId)))
+        dataManager.setInvite(inviteId, InviteData(inviteId, opponentName, timeStamp, InviteType.PENDING), applicationContext)
     }
 
     private fun onGameClicked(gameCard: GameCardItem) {
@@ -192,12 +192,12 @@ class MainActivity : ClientActivity() {
     }
 
     private fun onGameDeleted(gameId: String) {
-        sendToDataManager(DataManagerService.Request.REMOVE_GAME, Pair("game_id", gameId))
-        sendToDataManager(DataManagerService.Request.REMOVE_INVITE, Pair("invite_id", gameId))
+//        sendToDataManager(DataManagerService.Request.REMOVE_GAME, Pair("game_id", gameId))
+//        sendToDataManager(DataManagerService.Request.REMOVE_INVITE, Pair("invite_id", gameId))
 
         sendNetworkMessage(NetworkMessage(Topic.DELETE, "$userId|$gameId"))
-//        dataManager.removeGame(gameId)
-//        dataManager.removeSavedInvite(gameId)
+        dataManager.removeGame(gameId, applicationContext)
+        dataManager.removeSavedInvite(gameId, applicationContext)
 //        dataManager.saveData(applicationContext)
     }
 
@@ -261,10 +261,10 @@ class MainActivity : ClientActivity() {
     override fun onRestoreData(output: Parcelable) {
         super.onRestoreData(output)
 
-        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES, ::restoreSavedGames)
-        sendToDataManager<ArrayList<InviteData>>(DataManagerService.Request.GET_SAVED_INVITES, ::restoreSavedInvites)
-//        restoreSavedGames(dataManager.getSavedGames())
-//        restoreSavedInvites(dataManager.getSavedInvites())
+//        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES, ::restoreSavedGames)
+//        sendToDataManager<ArrayList<InviteData>>(DataManagerService.Request.GET_SAVED_INVITES, ::restoreSavedInvites)
+        restoreSavedGames(dataManager.getSavedGames())
+        restoreSavedInvites(dataManager.getSavedInvites())
     }
 
     private fun manageGameVisibility() {
@@ -345,9 +345,10 @@ class MainActivity : ClientActivity() {
             .setCornerRadius(45f)
             .setTextSize(28f)
             .setOnClickListener {
-                sendToDataManager<ArrayList<OpponentData>>(DataManagerService.Request.GET_RECENT_OPPONENTS) {
-                    searchPlayersDialog.setRecentOpponents(it)
-                }
+//                sendToDataManager<ArrayList<OpponentData>>(DataManagerService.Request.GET_RECENT_OPPONENTS) {
+//                    searchPlayersDialog.setRecentOpponents(it)
+//                }
+                searchPlayersDialog.setRecentOpponents(dataManager.getRecentOpponents())
 
                 searchPlayersDialog.show()
 //                stayingInApp = true
@@ -369,6 +370,14 @@ class MainActivity : ClientActivity() {
 
             if (!doesCardExist) {
                 gameAdapter += GameCardItem(game.gameId, game.lastUpdated, game.opponentName, game.status, game.isPlayingWhite, false)
+            }
+
+            if (game.newsUpdates.isNotEmpty()) {
+                gameAdapter.hasUpdate(game.gameId)
+            }
+
+            if (game.hasNews(NewsType.OPPONENT_MOVED)) {
+                gameAdapter.updateCardStatus(game.gameId, GameStatus.PLAYER_MOVE)
             }
         }
     }

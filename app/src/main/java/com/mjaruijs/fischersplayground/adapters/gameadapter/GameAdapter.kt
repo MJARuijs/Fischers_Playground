@@ -17,16 +17,15 @@ import com.mjaruijs.fischersplayground.util.Time
 
 class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val onGameDeleted: (String) -> Unit) : RecyclerView.Adapter<GameAdapter.GameViewHolder>() {
 
-    private val games = ArrayList<GameCardItem>()
+    private val gameCards = ArrayList<GameCardItem>()
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateGameCard(gameId: String, newStatus: GameStatus, lastUpdated: Long, isPlayerWhite: Boolean? = null, hasUpdate: Boolean): Boolean {
-        val game = games.find { game -> game.id == gameId } ?: return false
+        val gameCard = gameCards.find { game -> game.id == gameId } ?: return false
 
-        game.lastUpdated = lastUpdated
-        game.gameStatus = newStatus
-        game.isPlayingWhite = isPlayerWhite
-
+        gameCard.lastUpdated = lastUpdated
+        gameCard.gameStatus = newStatus
+        gameCard.isPlayingWhite = isPlayerWhite
 
         if (hasUpdate) {
             hasUpdate(gameId)
@@ -40,15 +39,15 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
     }
 
     fun containsCard(id: String): Boolean {
-        return games.any { gameCard -> gameCard.id == id }
+        return gameCards.any { gameCard -> gameCard.id == id }
     }
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateCardStatus(id: String, newStatus: GameStatus, timeStamp: Long) {
-        val game = games.find { game -> game.id == id } ?: throw IllegalArgumentException("Could not update game card with id: $id, since it does not exist..")
-        game.gameStatus = newStatus
-        game.hasUpdate = true
-        game.lastUpdated = timeStamp
+        val gameCard = gameCards.find { game -> game.id == id } ?: throw IllegalArgumentException("Could not update game card with id: $id, since it does not exist..")
+        gameCard.gameStatus = newStatus
+        gameCard.hasUpdate = true
+        gameCard.lastUpdated = timeStamp
 
         sort()
         notifyDataSetChanged()
@@ -58,36 +57,38 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
 
     @SuppressLint("NotifyDataSetChanged")
     operator fun plusAssign(gameCardItem: GameCardItem) {
-        games += gameCardItem
+        gameCards += gameCardItem
+
+//        if ()
 
         sort()
         notifyDataSetChanged()
     }
 
     fun hasUpdate(gameId: String) {
-        val game = games.find { game -> game.id == gameId } ?: throw IllegalArgumentException("Could not set update-light for game with id: $gameId, since it does not exist..")
-        val gameIndex = games.indexOf(game)
+        val gameCard = gameCards.find { game -> game.id == gameId } ?: throw IllegalArgumentException("Could not set update-light for game with id: $gameId, since it does not exist..")
+        val gameIndex = gameCards.indexOf(gameCard)
 
-        games[gameIndex].hasUpdate = true
+        gameCards[gameIndex].hasUpdate = true
         notifyItemChanged(gameIndex)
     }
 
     fun clearUpdate(gameCardItem: GameCardItem) {
         gameCardItem.hasUpdate = false
-        val gameIndex = games.indexOf(gameCardItem)
+        val gameIndex = gameCards.indexOf(gameCardItem)
         notifyItemChanged(gameIndex)
     }
 
     private fun clearUpdate(gameId: String) {
-        val game = games.find { game -> game.id == gameId } ?: throw IllegalArgumentException("Could not set update-light for game with id: $gameId, since it does not exist..")
-        val gameIndex = games.indexOf(game)
+        val gameCard = gameCards.find { game -> game.id == gameId } ?: throw IllegalArgumentException("Could not set update-light for game with id: $gameId, since it does not exist..")
+        val gameIndex = gameCards.indexOf(gameCard)
 
-        games[gameIndex].hasUpdate = false
+        gameCards[gameIndex].hasUpdate = false
         notifyItemChanged(gameIndex)
     }
 
     private fun sort() {
-        games.sortWith { gameCard1: GameCardItem, gameCard2: GameCardItem ->
+        gameCards.sortWith { gameCard1: GameCardItem, gameCard2: GameCardItem ->
             if (gameCard1.gameStatus.sortingValue > gameCard2.gameStatus.sortingValue) {
                 -1
             } else if (gameCard1.gameStatus.sortingValue == gameCard2.gameStatus.sortingValue) {
@@ -99,7 +100,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
     }
 
     fun removeFinishedGames() {
-        games.removeIf { gameCard ->
+        gameCards.removeIf { gameCard ->
             gameCard.gameStatus == GameStatus.GAME_WON || gameCard.gameStatus == GameStatus.GAME_DRAW || gameCard.gameStatus == GameStatus.GAME_LOST
         }
         notifyDataSetChanged()
@@ -110,7 +111,7 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
     }
 
     override fun onBindViewHolder(holder: GameViewHolder, position: Int) {
-        val gameCard = games[position]
+        val gameCard = gameCards[position]
 
         holder.gameStatusView.setBackgroundColor(gameCard.gameStatus.color)
         holder.opponentNameView.text = gameCard.opponentName
@@ -119,13 +120,13 @@ class GameAdapter(private val onGameClicked: (GameCardItem) -> Unit, private val
             onGameClicked(gameCard)
         }
         holder.deleteButton.setOnClickListener {
-            games.removeIf { card -> gameCard.id == card.id }
+            gameCards.removeIf { card -> gameCard.id == card.id }
             onGameDeleted(gameCard.id)
             notifyDataSetChanged()
         }
     }
 
-    override fun getItemCount() = games.size
+    override fun getItemCount() = gameCards.size
 
     inner class GameViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val gameCard: CardView = view.findViewById(R.id.game_card)

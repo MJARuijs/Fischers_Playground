@@ -77,6 +77,10 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         return newsUpdates.any { news -> news.newsType == topic }
     }
 
+    fun getNews(topic: NewsType): News? {
+        return newsUpdates.find { news -> news.newsType == topic }
+    }
+
     fun clearNews(newsType: NewsType) {
         newsUpdates.removeIf { news ->
             news.newsType == newsType

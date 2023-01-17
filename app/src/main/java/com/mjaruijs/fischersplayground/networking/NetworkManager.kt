@@ -11,7 +11,10 @@ import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
+import com.mjaruijs.fischersplayground.util.MyTimerTask
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.ArrayList
 
 class NetworkManager {
 
@@ -21,10 +24,10 @@ class NetworkManager {
 
         const val PUBLIC_SERVER_IP = "94.208.124.161"
 //        private const val PUBLIC_SERVER_IP = "10.248.59.222"
-        const val LOCAL_SERVER_IP = "192.168.178.18"
+        const val LOCAL_SERVER_IP = "192.168.178.103"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
-        const val SERVER_PORT = 4500
+        const val SERVER_PORT = 4502
 
         private var instance: NetworkManager? = null
 
@@ -40,18 +43,46 @@ class NetworkManager {
     private val clientConnecting = AtomicBoolean(false)
     private val clientConnected = AtomicBoolean(false)
     private val sendingMessage = AtomicBoolean(false)
+    private val stopping = AtomicBoolean(false)
 
     private lateinit var manager: Manager
     private lateinit var client: SecureClient
 
     private val messageQueue = ArrayList<NetworkMessage>()
+    private val messageLock = AtomicBoolean(false)
+
+    private fun acquireMessageLock() {
+        while (areMessagesLocked()) {
+            Thread.sleep(1)
+        }
+        messageLock.set(true)
+    }
+
+    private fun areMessagesLocked() = messageLock.get()
+
+    private fun getMessages(): Iterator<NetworkMessage> {
+        acquireMessageLock()
+        val messages = messageQueue.iterator()
+        messageLock.set(false)
+        return messages
+    }
+
+    private fun addMessage(message: NetworkMessage) {
+        acquireMessageLock()
+        messageQueue += message
+        messageLock.set(false)
+    }
 
     fun stop() {
+        stopping.set(true)
         Thread {
-            while (sendingMessage.get()) {
-                Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
-                Thread.sleep(1)
+            if (stopping.get()) {
+                return@Thread
             }
+//            while (sendingMessage.get()) {
+//                Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
+//                Thread.sleep(1)
+//            }
 
             messageQueue.clear()
             if (clientConnected.get()) {
@@ -60,11 +91,12 @@ class NetworkManager {
             }
             clientConnecting.set(false)
             manager.stop()
+            Logger.debug(TAG, "Stopped networker")
         }.start()
     }
 
     fun isRunning(): Boolean {
-        return clientConnected.get() || clientConnecting.get()
+        return (clientConnected.get() || clientConnecting.get()) && !stopping.get()
     }
 
     fun isConnected(): Boolean {
@@ -72,9 +104,12 @@ class NetworkManager {
     }
 
     fun run(context: Context) {
-        if (clientConnected.get() || clientConnecting.get()) {
+        if (isRunning()) {
+            Logger.debug(TAG, "run() was called, but returned because: clientConnected=${clientConnected.get()}, clientConnecting=${clientConnecting.get()}")
             return
         }
+
+        stopping.set(false)
 
         manager = Manager("Client")
         manager.context = context
@@ -87,11 +122,11 @@ class NetworkManager {
 
             try {
                 clientConnecting.set(true)
-                client = SecureClient(LOCAL_SERVER_IP, SERVER_PORT, ::onRead)
+                client = SecureClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
                 Logger.warn(TAG, "Connected to server..")
             } catch (e: Exception) {
-                Logger.warn(TAG, "Failed to connect to server..")
+                Logger.warn(TAG, "Failed to connect to server.. ${e.stackTraceToString()}")
                 Looper.prepare()
                 Toast.makeText(context, "Failed to connect to server..", Toast.LENGTH_SHORT).show()
                 clientConnected.set(false)
@@ -104,8 +139,11 @@ class NetworkManager {
                 Thread(manager).start()
                 manager.register(client)
 
+//                Logger.debug(TAG, "Number of cached messages: ${messageQueue.size}")
+
                 for (message in messageQueue) {
                     sendMessage(message)
+                    Thread.sleep(10)
                 }
                 messageQueue.clear()
             }
@@ -114,30 +152,39 @@ class NetworkManager {
 
     fun sendMessage(message: NetworkMessage) {
         Thread {
-            while (clientConnecting.get()) {
+//            Logger.debug(TAG, "Checking locks ${message.topic} ${Thread.currentThread().id} ${sendingMessage.get()}")
+            while (clientConnecting.get() || sendingMessage.get()) {
+//                Logger.debug(TAG, "Trying to send message about ${message.topic} but shit is locked ${clientConnecting.get()} ${sendingMessage.get()}")
                 Thread.sleep(1)
             }
-            sendingMessage.set(true)
 
             if (clientConnected.get()) {
                 try {
+//                    Logger.debug(TAG, "Setting message lock ${message.topic}")
+                    sendingMessage.set(true)
+
+                    client.write(message.toString())
                     if (message.topic != Topic.CONFIRM_MESSAGE && message.topic != Topic.CRASH_REPORT) {
                         Logger.info(TAG, "Sending message: $message")
                     }
-                    client.write(message.toString())
-                    messageQueue.remove(message)
+
+                    val timerTask = MyTimerTask {
+                        sendingMessage.set(false)
+                        Logger.debug(TAG, "Releasing lock ${message.topic}")
+                    }
+
+                    val timer = Timer()
+                    timer.schedule(timerTask, 150)
                 } catch (e: Exception) {
                     sendCrashReport("crash_network_send.txt", e.stackTraceToString(), null)
-                } finally {
-                    sendingMessage.set(false)
                 }
             } else {
                 Logger.warn(TAG, "Client not connected; ${message.topic} message added to queue")
-                messageQueue += message
+                addMessage(message)
             }
 
-            sendingMessage.set(false)
         }.start()
+
     }
 
     private fun onRead(message: NetworkMessage, context: Context) {
@@ -146,17 +193,16 @@ class NetworkManager {
             return
         }
 
-        sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
-
         if (message.topic != Topic.CONFIRM_MESSAGE) {
             Logger.info(TAG, "Received message: $message")
         }
 
-//        val dataManager = DataManager.getInstance(context)
+        sendMessage(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
-//        if (!dataManager.isMessageHandled(message.id)) {
-//            dataManager.handledMessage(message.id)
-//            dataManager.lockAndSaveHandledMessages(context)
+        val dataManager = DataManager.getInstance(context)
+
+        if (!dataManager.isMessageHandled(message.id)) {
+            dataManager.setMessageHandled(message.id, context)
 
             val intent = Intent("mjaruijs.fischers_playground")
                 .putExtra("topic", message.topic.toString())
@@ -164,9 +210,9 @@ class NetworkManager {
                 .putExtra("messageId", message.id)
 
             context.sendBroadcast(intent)
-//        } else {
+        } else {
 //            Logger.debug(TAG, "Message already handled: ${message.id} ${message.topic}")
-//        }
+        }
     }
 
     fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {

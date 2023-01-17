@@ -1,11 +1,9 @@
 package com.mjaruijs.fischersplayground.services
 
 import android.app.Service
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.*
+import android.widget.Toast
 import androidx.work.*
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
@@ -28,32 +26,33 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
-import java.util.concurrent.atomic.AtomicBoolean
 
 class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) : Worker(context, workParams) {
 
     private lateinit var userId: String
 
-    private lateinit var dataMessengerClient: Messenger
-    var dataServiceMessenger: Messenger? = null
+//    private lateinit var dataMessengerClient: Messenger
+//    var dataServiceMessenger: Messenger? = null
 
-    private val dataMessengerConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            if (service == null) {
-                return
-            }
+    private lateinit var dataManager: DataManager
 
-            dataServiceMessenger = Messenger(service)
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            dataServiceMessenger = null
-        }
-    }
+//    private val dataMessengerConnection = object : ServiceConnection {
+//        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+//            if (service == null) {
+//                return
+//            }
+//
+//            dataServiceMessenger = Messenger(service)
+//        }
+//
+//        override fun onServiceDisconnected(name: ComponentName?) {
+//            dataServiceMessenger = null
+//        }
+//    }
 
     override fun doWork(): Result {
         try {
-            dataMessengerClient = Messenger(DataManagerHandler())
+//            dataMessengerClient = Messenger(DataManagerHandler())
         } catch (e: Exception) {
             Logger.error(TAG, e.stackTraceToString())
         }
@@ -61,7 +60,8 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         val preferences = applicationContext.getSharedPreferences(USER_PREFERENCE_FILE, Service.MODE_PRIVATE)
         userId = preferences.getString(ClientActivity.USER_ID_KEY, DEFAULT_USER_ID)!!
 
-        applicationContext.bindService(Intent(applicationContext, DataManagerService::class.java), dataMessengerConnection, Context.BIND_AUTO_CREATE)
+        dataManager = DataManager.getInstance(applicationContext)
+//        applicationContext.bindService(Intent(applicationContext, DataManagerService::class.java), dataMessengerConnection, Context.BIND_AUTO_CREATE)
 
         val topic = Topic.fromString(inputData.getString("topic")!!)
         val content = inputData.getStringArray("content")!!
@@ -92,10 +92,10 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         }
         Logger.debug(TAG, "Finished work on topic: $topic")
 
-//        dataManager.handledMessage(messageId)
-//        dataManager.saveData(applicationContext)
+        dataManager.setMessageHandled(messageId, applicationContext)
+        dataManager.saveData(applicationContext)
 
-        applicationContext.unbindService(dataMessengerConnection)
+//        applicationContext.unbindService(dataMessengerConnection)
 
         return if (output is Parcelable) {
             val dataBuilder = Data.Builder().putParcelable("output", output)
@@ -118,55 +118,55 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         return this
     }
 
-    private inline fun <reified T>sendToDataManager(request: DataManagerService.Request, vararg extraData: Pair<String, *>, noinline onResult: (T) -> Unit) {
-        val message = Message.obtain()
-        message.data.putString("request", request.toString())
-        message.obj = Pair(T::class.java, onResult)
-        message.replyTo = dataMessengerClient
-        addDataToMessage(message, *extraData)
-
-        sendToDataManager(message)
-    }
-
-    private fun sendToDataManager(request: DataManagerService.Request, vararg extraData: Pair<String, *>) {
-        val message = Message.obtain()
-        message.what = 1
-        message.data.putString("request", request.toString())
-        message.replyTo = dataMessengerClient
-        addDataToMessage(message, *extraData)
-
-        sendToDataManager(message)
-    }
-
-    private fun sendToDataManager(message: Message) {
-        if (dataServiceMessenger != null) {
-            Logger.debug(TAG, "Sending message to dataService: ${message.data.getString("request")}")
-
-            dataServiceMessenger!!.send(message)
-        } else {
-            while (dataServiceMessenger == null) {
-                Thread.sleep(10)
-                Logger.debug(TAG, "Waiting for dataMessenger on thread ${Thread.currentThread().id}")
-            }
-
-            Logger.debug(TAG, "Sending message to dataService: ${message.data.getString("request")}")
-            dataServiceMessenger!!.send(message)
-        }
-    }
-
-    private fun addDataToMessage(message: Message, vararg extraData: Pair<String, *>) {
-        val dataBundle = Bundle()
-        for (data in extraData) {
-            if (data.second is String) {
-                dataBundle.putString(data.first, data.second as String)
-            } else if (data.second is Parcelable) {
-                dataBundle.putParcelable(data.first, data.second as Parcelable)
-            } else if (data.second is ArrayList<*> && (data.second as ArrayList<*>).all { item -> item is Parcelable }) {
-                dataBundle.putParcelableArrayList(data.first, data.second as ArrayList<out Parcelable>)
-            }
-        }
-        message.data.putBundle("data", dataBundle)
-    }
+//    private inline fun <reified T>sendToDataManager(request: DataManagerService.Request, vararg extraData: Pair<String, *>, noinline onResult: (T) -> Unit) {
+//        val message = Message.obtain()
+//        message.data.putString("request", request.toString())
+//        message.obj = Pair(T::class.java, onResult)
+//        message.replyTo = dataMessengerClient
+//        addDataToMessage(message, *extraData)
+//
+//        sendToDataManager(message)
+//    }
+//
+//    private fun sendToDataManager(request: DataManagerService.Request, vararg extraData: Pair<String, *>) {
+//        val message = Message.obtain()
+//        message.what = 1
+//        message.data.putString("request", request.toString())
+//        message.replyTo = dataMessengerClient
+//        addDataToMessage(message, *extraData)
+//
+//        sendToDataManager(message)
+//    }
+//
+//    private fun sendToDataManager(message: Message) {
+//        if (dataServiceMessenger != null) {
+//            Logger.debug(TAG, "Sending message to dataService: ${message.data.getString("request")}")
+//
+//            dataServiceMessenger!!.send(message)
+//        } else {
+//            while (dataServiceMessenger == null) {
+//                Thread.sleep(10)
+//                Logger.debug(TAG, "Waiting for dataMessenger on thread ${Thread.currentThread().id}")
+//            }
+//
+//            Logger.debug(TAG, "Sending message to dataService: ${message.data.getString("request")}")
+//            dataServiceMessenger!!.send(message)
+//        }
+//    }
+//
+//    private fun addDataToMessage(message: Message, vararg extraData: Pair<String, *>) {
+//        val dataBundle = Bundle()
+//        for (data in extraData) {
+//            if (data.second is String) {
+//                dataBundle.putString(data.first, data.second as String)
+//            } else if (data.second is Parcelable) {
+//                dataBundle.putParcelable(data.first, data.second as Parcelable)
+//            } else if (data.second is ArrayList<*> && (data.second as ArrayList<*>).all { item -> item is Parcelable }) {
+//                dataBundle.putParcelableArrayList(data.first, data.second as ArrayList<out Parcelable>)
+//            }
+//        }
+//        message.data.putBundle("data", dataBundle)
+//    }
 
     private fun onOpponentMoved(data: Array<String>): Parcelable {
         val gameId = data[0]
@@ -177,26 +177,19 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         val moveData = MoveData(gameId, GameStatus.PLAYER_MOVE, timeStamp, move)
 
         try {
-            sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
-                Logger.debug(TAG, "Adding news to game: OPPONENT_MOVED")
-                game.addNews(News(NewsType.OPPONENT_MOVED, moveData))
-                game.lastUpdated = timeStamp
-//                try {
-                sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
-//                } catch (e: Exception) {
-//                    Logger.error(TAG, e.stackTraceToString())
-//                } finally {
-//                    isFinished.set(true)
-//                }
-//                dataManager.setGame(gameId, game)
-            }
+//            sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//                Logger.debug(TAG, "Adding news to game: OPPONENT_MOVED")
+//                game.addNews(News(NewsType.OPPONENT_MOVED, moveData))
+//                game.lastUpdated = timeStamp
+//                sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
+//            }
 
-//            val game = dataManager.getGame(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
-////            game.moveOpponent(move, true)
-//            game.addNews(MoveNews(NewsType.OPPONENT_MOVED, moveData))
+            val game = dataManager.getGame(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+//            game.moveOpponent(move, true)
+            game.addNews(News(NewsType.OPPONENT_MOVED, moveData))
 //            Logger.debug(TAG, "Adding news to game: OPPONENT_MOVED")
-//            game.lastUpdated = timeStamp
-//            dataManager.setGame(gameId, game)
+            game.lastUpdated = timeStamp
+            dataManager.setGame(gameId, game, applicationContext)
         } catch (e: Exception) {
             Logger.error(TAG, e.stackTraceToString())
             NetworkService.sendCrashReport("crash_data_worker_on_opponent_moved.txt", e.stackTraceToString(), applicationContext)
@@ -212,8 +205,8 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
 
         val inviteData = InviteData(inviteId, opponentName, timeStamp, InviteType.RECEIVED)
 
-        sendToDataManager(DataManagerService.Request.SET_INVITE, Pair("invite", inviteData))
-//        dataManager.setInvite(inviteId, inviteData)
+//        sendToDataManager(DataManagerService.Request.SET_INVITE, Pair("invite", inviteData))
+        dataManager.setInvite(inviteId, inviteData, applicationContext)
 
         return InviteData(inviteId, opponentName, timeStamp, InviteType.RECEIVED)
     }
@@ -231,12 +224,12 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         val newGame = MultiPlayerGame(inviteId, opponentId, opponentName, gameStatus, opponentStatus, timeStamp, playingWhite)
         newGame.lastUpdated = timeStamp
 
-        sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", inviteId), Pair("game", newGame))
-        sendToDataManager(DataManagerService.Request.REMOVE_INVITE, Pair("invite_id", inviteId))
-        sendToDataManager(DataManagerService.Request.ADD_RECENT_OPPONENT, Pair("opponent_data", OpponentData(opponentName, opponentId)))
-//        dataManager.setGame(inviteId, newGame)
-//        dataManager.removeSavedInvite(inviteId)
-//        dataManager.addRecentOpponent(applicationContext, Pair(opponentName, opponentId))
+//        sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", inviteId), Pair("game", newGame))
+//        sendToDataManager(DataManagerService.Request.REMOVE_INVITE, Pair("invite_id", inviteId))
+//        sendToDataManager(DataManagerService.Request.ADD_RECENT_OPPONENT, Pair("opponent_data", OpponentData(opponentName, opponentId)))
+        dataManager.setGame(inviteId, newGame, applicationContext)
+        dataManager.removeSavedInvite(inviteId, applicationContext)
+        dataManager.addRecentOpponent(applicationContext, OpponentData(opponentName, opponentId))
 
         val hasUpdate = gameStatus == GameStatus.PLAYER_MOVE
 
@@ -246,14 +239,14 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
     private fun onUndoRequested(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
-            game.addNews(NewsType.OPPONENT_REQUESTED_UNDO)
-            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
-        }
+//        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//            game.addNews(NewsType.OPPONENT_REQUESTED_UNDO)
+//            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
+//        }
 
-//        val game = dataManager.getGame(gameId)!!
-//        game.addNews(NewsType.OPPONENT_REQUESTED_UNDO)
-//        dataManager.setGame(gameId, game)
+        val game = dataManager.getGame(gameId)!!
+        game.addNews(NewsType.OPPONENT_REQUESTED_UNDO)
+        dataManager.setGame(gameId, game, applicationContext)
 
         return ParcelableString(gameId)
     }
@@ -262,15 +255,15 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         val gameId = data[0]
         val numberOfReversedMoves = data[1].toInt()
 
-        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
-            game.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfReversedMoves))
-            game.status = GameStatus.PLAYER_MOVE
-            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
-        }
-//        val game = dataManager.getGame(gameId)!!
+//        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//            game.addNews(News(NewsType.OPPONENT_ACCEPTED_UNDO, numberOfReversedMoves))
+//            game.status = GameStatus.PLAYER_MOVE
+//            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
+//        }
 
-
-//        dataManager.setGame(gameId, game)
+        val game = dataManager.getGame(gameId)!!
+        game.status = GameStatus.PLAYER_MOVE
+        dataManager.setGame(gameId, game, applicationContext)
 
         return ParcelablePair(ParcelableString(gameId), ParcelableInt(numberOfReversedMoves))
     }
@@ -278,11 +271,12 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
     private fun onUndoRejected(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
-            game.addNews(NewsType.OPPONENT_REJECTED_UNDO)
-            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
-        }
-//        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_REJECTED_UNDO)
+//        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//            game.addNews(NewsType.OPPONENT_REJECTED_UNDO)
+//            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
+//        }
+
+        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_REJECTED_UNDO)
 
         return ParcelableString(gameId)
     }
@@ -290,11 +284,11 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
     private fun onOpponentResigned(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
-            game.addNews(NewsType.OPPONENT_RESIGNED)
-            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
-        }
-//        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_RESIGNED)
+//        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//            game.addNews(NewsType.OPPONENT_RESIGNED)
+//            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
+//        }
+        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_RESIGNED)
 
         return ParcelableString(gameId)
     }
@@ -302,11 +296,11 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
     private fun onDrawOffered(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
-            game.addNews(NewsType.OPPONENT_OFFERED_DRAW)
-            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
-        }
-//        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_OFFERED_DRAW)
+//        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//            game.addNews(NewsType.OPPONENT_OFFERED_DRAW)
+//            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
+//        }
+        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_OFFERED_DRAW)
 
         return ParcelableString(gameId)
     }
@@ -314,14 +308,16 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
     private fun onDrawAccepted(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
-            game.status = GameStatus.GAME_DRAW
-            game.addNews(NewsType.OPPONENT_ACCEPTED_DRAW)
-            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
-        }
+//        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//            game.status = GameStatus.GAME_DRAW
+//            game.addNews(NewsType.OPPONENT_ACCEPTED_DRAW)
+//            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
+//        }
 
-//        val game = dataManager.getGame(gameId)!!
-//        dataManager.setGame(gameId, game)
+        val game = dataManager.getGame(gameId)!!
+        game.status = GameStatus.GAME_DRAW
+        game.addNews(NewsType.OPPONENT_ACCEPTED_DRAW)
+        dataManager.setGame(gameId, game, applicationContext)
 
         return ParcelableString(gameId)
     }
@@ -329,12 +325,12 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
     private fun onDrawRejected(data: Array<String>): ParcelableString {
         val gameId = data[0]
 
-        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
-            game.addNews(NewsType.OPPONENT_REJECTED_DRAW)
-            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
-        }
+//        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//            game.addNews(NewsType.OPPONENT_REJECTED_DRAW)
+//            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
+//        }
 
-//        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_REJECTED_DRAW)
+        dataManager.getGame(gameId)!!.addNews(NewsType.OPPONENT_REJECTED_DRAW)
 
         return ParcelableString(gameId)
     }
@@ -344,15 +340,14 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         val timeStamp = data[1]
         val messageContent = data[2]
 
-        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//        sendToDataManager<MultiPlayerGame>(DataManagerService.Request.GET_GAME, Pair("game_id", gameId)) { game ->
+//            game.addMessage(ChatMessage(gameId, timeStamp, messageContent, MessageType.RECEIVED))
+//            game.addNews(NewsType.CHAT_MESSAGE)
+//            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
+//        }
 
-            game.addMessage(ChatMessage(gameId, timeStamp, messageContent, MessageType.RECEIVED))
-            game.addNews(NewsType.CHAT_MESSAGE)
-            sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
-        }
-
-//        dataManager.getGame(gameId)!!.addMessage()
-//        dataManager.getGame(gameId)!!.addNews(NewsType.CHAT_MESSAGE)
+        dataManager.getGame(gameId)!!.addMessage(ChatMessage(gameId, timeStamp, messageContent, MessageType.RECEIVED))
+        dataManager.getGame(gameId)!!.addNews(NewsType.CHAT_MESSAGE)
 
         return ChatMessage(gameId, timeStamp, messageContent, MessageType.RECEIVED)
     }
@@ -361,18 +356,29 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
         val opponentId = data[0]
         val opponentStatus = data[1]
 
-        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES) { games ->
-            for (game in games) {
-                if (game.opponentId == opponentId) {
-                    game.opponentStatus = opponentStatus
-                    sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
-//                    dataManager.getGame(game.gameId)!!.opponentStatus = opponentStatus
+//        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES) { games ->
+//            for (game in games) {
+//                if (game.opponentId == opponentId) {
+//                    game.opponentStatus = opponentStatus
+//                    sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
+////
+//                }
+//            }
+//        }
+
+        for (game in dataManager.getSavedGames()) {
+            if (game.opponentId == opponentId) {
+                dataManager.getGame(game.gameId)!!.opponentStatus = opponentStatus
+                dataManager.setGame(game.gameId, game, applicationContext)
 //                game.opponentStatus = opponentStatus
-//                dataManager[gameId] = game
-                }
+//                sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
+//
             }
         }
 
+//        dataManager.getGame(game.gameId)!!.opponentStatus = opponentStatus
+//                game.opponentStatus = opponentStatus
+//                dataManager[gameId] = game
         return ParcelableString(opponentStatus)
     }
 
@@ -456,8 +462,8 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
                     }
 
                     val game = MultiPlayerGame.parseFromServer(gameData, userId)
-                    sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
-//                    dataManager.setGame(game.gameId, game)
+//                    sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", game.gameId), Pair("game", game))
+                    dataManager.setGame(game.gameId, game, applicationContext)
                 }
 
 //                dataManager.saveGames(applicationContext)
@@ -469,8 +475,10 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
                         continue
                     }
 
-                    sendToDataManager(DataManagerService.Request.SET_INVITE, Pair("invite", InviteData.fromString(inviteData)))
-//                    dataManager.setInvite(invite.inviteId, invite)
+                    val invite = InviteData.fromString(inviteData)
+
+//                    sendToDataManager(DataManagerService.Request.SET_INVITE, Pair("invite", InviteData.fromString(inviteData)))
+                    dataManager.setInvite(invite.inviteId, invite, applicationContext)
                 }
 //                dataManager.saveInvites(applicationContext)
             } else if (dataType == "recent_opponents") {
@@ -490,8 +498,8 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
 //                    dataManager.addRecentOpponent(applicationContext, Pair(opponentName, opponentId))
                 }
 
-                sendToDataManager(DataManagerService.Request.SET_RECENT_OPPONENTS, Pair("opponents", recentOpponents))
-//                dataManager.setRecentOpponents(applicationContext, recentOpponents)
+//                sendToDataManager(DataManagerService.Request.SET_RECENT_OPPONENTS, Pair("opponents", recentOpponents))
+                dataManager.setRecentOpponents(applicationContext, recentOpponents)
             } else {
                 val filesData = serverData.substring(separatorIndex + 1).split("%")
 
@@ -508,9 +516,9 @@ class ProcessIncomingDataWorker(context: Context, workParams: WorkerParameters) 
             }
         }
 
-        sendToDataManager(DataManagerService.Request.LOAD_DATA)
+//        sendToDataManager(DataManagerService.Request.LOAD_DATA)
 
-//        dataManager.loadData(applicationContext)
+        dataManager.loadData(applicationContext)
     }
 
     private fun parseServerFiles(serverData: String): List<String> {

@@ -26,6 +26,8 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
             buffer.put(encodedSize.copyOf(NUMBER_OF_SIZE_BYTES))
             buffer.put(encodedBytes)
             (buffer as Buffer).rewind()
+//            Logger.debug("SecureClient", "${String(encodedBytes)}")
+
             channel.write(buffer)
         } catch (e: ClosedChannelException) {
             throw e

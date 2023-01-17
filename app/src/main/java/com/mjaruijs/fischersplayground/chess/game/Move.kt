@@ -67,13 +67,13 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
             }
         } else {
             val movedPieceSign = if (team == Team.WHITE) movedPiece.sign.uppercase() else movedPiece.sign.lowercase()
-            notation += movedPieceSign
 
             if (movedPiece == PieceType.KING && fromFile == "e" && toFile == "g") {
                 notation += "0-0"
             } else if (movedPiece == PieceType.KING && fromFile == "e" && toFile == "c") {
                 notation += "0-0-0"
             } else {
+                notation += movedPieceSign
                 if (pieceTaken != null) {
                     notation += "x"
                 }

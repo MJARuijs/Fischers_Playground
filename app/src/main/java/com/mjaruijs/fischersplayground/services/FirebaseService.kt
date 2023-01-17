@@ -1,5 +1,7 @@
 package com.mjaruijs.fischersplayground.services
 
+import android.os.Looper
+import android.widget.Toast
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -51,19 +53,22 @@ class FirebaseService : FirebaseMessagingService() {
 
             Logger.debug(TAG, "Got message about $topic")
 
-            FileManager.createIfAbsent("notifications.txt")
-            FileManager.append(applicationContext, "notifications.txt", "$topic;$content;$messageId")
+//            FileManager.createIfAbsent("notifications.txt")
+//            FileManager.append(applicationContext, "notifications.txt", "$topic;$content;$messageId")
 
-//            val worker = OneTimeWorkRequestBuilder<ProcessIncomingDataWorker>()
-//                .setInputData(workDataOf(
-//                    Pair("topic", topic.toString()),
-//                    Pair("content", contentList),
-//                    Pair("messageId", messageId)
-//                ))
-//                .build()
-//
-//            val workManager = WorkManager.getInstance(applicationContext)
-//            workManager.enqueue(worker)
+            val worker = OneTimeWorkRequestBuilder<ProcessIncomingDataWorker>()
+                .setInputData(workDataOf(
+                    Pair("topic", topic.toString()),
+                    Pair("content", contentList),
+                    Pair("messageId", messageId)
+                ))
+                .build()
+
+            val workManager = WorkManager.getInstance(applicationContext)
+            workManager.enqueue(worker)
+
+//            Looper.prepare()
+//            Toast.makeText(applicationContext, "Processing move!", Toast.LENGTH_SHORT).show()
 
             val notificationData = notificationBuilder.createNotificationData(applicationContext, topic, contentList) ?: return
             val notification = notificationBuilder.build(applicationContext, false, notificationData)
