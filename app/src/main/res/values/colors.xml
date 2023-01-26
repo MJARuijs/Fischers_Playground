@@ -9,7 +9,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="white_transparent">#6E808080</color>
     <color name="background_color">#FF424242</color>
-    <color name="accent_color">#EBBA91</color>
+    <color name="accent_color">#E6B382</color>
+<!--    <color name="accent_color">#F0B58A</color>-->
+<!--    <color name="accent_color">#FD9575</color>-->
+    <color name="accent_color_2">#EBBA91</color>
     <color name="dialog_background">#312D2A</color>
-
 </resources>

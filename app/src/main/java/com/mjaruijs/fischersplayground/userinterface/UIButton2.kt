@@ -50,9 +50,14 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         buttonText.visibility = View.GONE
         buttonCard.foreground = ResourcesCompat.getDrawable(resources, R.drawable.ripple_rectangle, null)
 
+        buttonText.setTextColor(Color.WHITE)
         textAlignment = View.TEXT_ALIGNMENT_CENTER
 
         buttonCard.setOnLongClickListener {
+            if (!buttonEnabled) {
+                return@setOnLongClickListener true
+            }
+
             if (shouldRepeatOnHold) {
                 holding.set(true)
                 handler.post(RepetitiveClicker())
@@ -61,6 +66,11 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
             return@setOnLongClickListener true
         }
         buttonCard.setOnTouchListener { _, event ->
+            if (!buttonEnabled) {
+
+                return@setOnTouchListener false
+            }
+
             if (event.action == MotionEvent.ACTION_UP) {
                 holding.set(false)
             }
@@ -98,7 +108,11 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
     override fun setOnClickListener(l: OnClickListener?) {
         super.setOnClickListener(l)
-        buttonCard.setOnClickListener(l)
+        buttonCard.setOnClickListener {
+            if (buttonEnabled) {
+                l!!.onClick(it)
+            }
+        }
     }
 
     fun enable(): UIButton2 {
@@ -108,10 +122,13 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         return this
     }
 
-    fun disable(): UIButton2 {
+    fun disable(changeColors: Boolean = true): UIButton2 {
         buttonEnabled = false
-        buttonIcon.setColorFilter(Color.GRAY)
-        buttonText.setTextColor(Color.GRAY)
+        if (changeColors) {
+            buttonIcon.setColorFilter(Color.GRAY)
+            buttonText.setTextColor(Color.GRAY)
+        }
+
         return this
     }
 
@@ -132,7 +149,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         return this
     }
 
-    fun setIcon(resourceId: Int, color: Int = Color.WHITE, mirroredX: Boolean = false, mirroredY: Boolean = false): UIButton2 {
+    fun setIcon(resourceId: Int, color: Int = Color.TRANSPARENT, mirroredX: Boolean = false, mirroredY: Boolean = false): UIButton2 {
         this.mirroredX = mirroredX
         this.mirroredY = mirroredY
 
@@ -254,7 +271,6 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
                 handler.postDelayed(RepetitiveClicker(), Game.FAST_ANIMATION_SPEED)
             }
         }
-
     }
 
     companion object {

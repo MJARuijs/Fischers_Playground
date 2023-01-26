@@ -1,6 +1,9 @@
 package com.mjaruijs.fischersplayground.fragments
 
 import android.content.Context
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -9,9 +12,11 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageView
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,7 +27,9 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatAdapter
 import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.chatadapter.MessageType
 import com.mjaruijs.fischersplayground.listeners.OnSwipeTouchListener
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
+import kotlin.math.abs
 
 class ChatFragment : Fragment() {
 
@@ -40,6 +47,7 @@ class ChatFragment : Fragment() {
 
     private lateinit var sendButton: CardView
     private var keyboardHeight = -1
+    private var keyboardOffset = 0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.chat_fragment, container, false)
@@ -58,9 +66,15 @@ class ChatFragment : Fragment() {
         chatRecycler.addItemDecoration(MarginItemDecoration(resources.getDimensionPixelSize(R.dimen.chat_padding)))
 
         inputCard = view.findViewById(R.id.chat_input_card)
+        inputCard.setOnClickListener {
+            inputBox.requestFocus()
+            showKeyboard()
+        }
+
         val defaultCardRadius = inputCard.radius
 
         inputBox = view.findViewById(R.id.chat_input_box)
+        inputBox.showSoftInputOnFocus = true
         inputBox.doOnTextChanged { _, _, _, _ ->
             inputCard.radius = defaultCardRadius / inputBox.lineCount
             chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
@@ -101,13 +115,18 @@ class ChatFragment : Fragment() {
         close()
     }
 
+    private fun showKeyboard() {
+        val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(inputBox, 0)
+    }
+
     private fun closeKeyboard() {
         val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(requireView().windowToken, 0)
     }
 
     private fun toggle() {
-        val offset = if (keyboardHeight == 0) 32 else keyboardHeight + 32
+        val offset = if (keyboardHeight <= 0) 32 else keyboardHeight + 32 + keyboardOffset
         val constraints = ConstraintSet()
         constraints.clone(chatLayout)
         constraints.connect(R.id.chat_input_card, ConstraintSet.BOTTOM, R.id.chat_item_layout, ConstraintSet.BOTTOM, offset)
@@ -117,6 +136,11 @@ class ChatFragment : Fragment() {
 
     fun translate(distance: Int) {
         keyboardHeight = distance
+
+        if (keyboardHeight < 0) {
+            keyboardOffset = abs(keyboardHeight)
+        }
+
         toggle()
     }
 
@@ -148,7 +172,6 @@ class ChatFragment : Fragment() {
     fun addMessages(messages: ArrayList<ChatMessage>) {
         for (message in messages) {
             chatAdapter += message
-            Log.i("ChatFragment", "Adding ${message.message}: ${message.type}")
         }
 
         chatRecycler.scrollToPosition(chatAdapter.itemCount - 1)
@@ -157,6 +180,10 @@ class ChatFragment : Fragment() {
 
     fun clearMessages() {
         chatAdapter.clear()
+    }
+
+    companion object {
+        private const val TAG = "ChatFragment"
     }
 
 }

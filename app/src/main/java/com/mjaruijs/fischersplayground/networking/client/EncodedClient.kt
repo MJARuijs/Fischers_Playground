@@ -11,6 +11,7 @@ import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.SocketChannel
+import java.nio.charset.StandardCharsets.UTF_8
 import java.util.*
 
 open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, Context) -> Unit) : NonBlockingClient(channel) {
@@ -20,7 +21,7 @@ open class EncodedClient(channel: SocketChannel, val callback: (NetworkMessage, 
     final override fun write(bytes: ByteArray) {
         try {
             val encodedBytes = Base64.getEncoder().encode(bytes)
-            val bufferSize = encodedBytes.size.toString().toByteArray()
+            val bufferSize = encodedBytes.size.toString().toByteArray(UTF_8)
             val encodedSize = Base64.getEncoder().encode(bufferSize)
             val buffer = ByteBuffer.allocate(NUMBER_OF_SIZE_BYTES + encodedBytes.size )
             buffer.put(encodedSize.copyOf(NUMBER_OF_SIZE_BYTES))

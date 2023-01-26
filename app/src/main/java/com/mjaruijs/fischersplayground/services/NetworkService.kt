@@ -30,40 +30,41 @@ class NetworkService : Service() {
     companion object {
         private const val TAG = "NetworkService"
 
-//        const val PUBLIC_SERVER_IP = "94.208.124.161"
-        private const val PUBLIC_SERVER_IP = "145.89.4.144"
-        const val LOCAL_SERVER_IP = "192.168.178.103"
+        private const val PUBLIC_SERVER_IP = "94.208.124.161"
+//        private const val PUBLIC_SERVER_IP = "145.89.4.144"
+        private const val LOCAL_SERVER_IP = "192.168.178.103"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
-        const val SERVER_PORT = 4502
+        private const val SERVER_PORT = 4500
 
         private var instance: NetworkService? = null
 
         fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {
             Logger.error("ERROR_HANDLER", crashLog)
-            val crashFile = FileManager.getFile(fileName)
-            crashFile.writeText(crashLog)
-            if (instance == null) {
-                instance = NetworkService()
-            }
-
-            if (instance!!.isRunning()) {
-                Logger.debug(TAG, "Trying to send crash report")
-                instance!!.sendCrashReport(fileName, crashLog, context)
-            } else {
-                Logger.debug(TAG, "Trying to send crash report but instance is not running")
-            }
+//            val crashFile = FileManager.getFile(fileName)
+//            crashFile.writeText(crashLog)
+//            if (instance == null) {
+//                instance = NetworkService()
+//            }
+//
+//            if (instance!!.isRunning()) {
+//                Logger.debug(TAG, "Trying to send crash report")
+//                instance!!.sendCrashReport(fileName, crashLog, context)
+//            } else {
+//                Logger.debug(TAG, "Trying to send crash report but instance is not running")
+//            }
         }
     }
 
     private var currentClient: Messenger? = null
     private val serverMessageCache = ArrayList<NetworkMessage>()
     private val systemMessageCache = ArrayList<NetworkMessage>()
+    private val backupMessages = ArrayList<NetworkMessage>()
 
     private val clientConnecting = AtomicBoolean(false)
     private val clientConnected = AtomicBoolean(false)
     private val sendingMessage = AtomicBoolean(false)
-    private val clientStopping = AtomicBoolean(false)
+//    private val clientStopping = AtomicBoolean(false)
 
     private lateinit var manager: Manager
     private lateinit var client: SecureClient
@@ -71,6 +72,8 @@ class NetworkService : Service() {
 
     private lateinit var connectivityManager: ConnectivityManager
     private lateinit var connectivityCallback: ConnectivityCallback
+
+    private var userId = DEFAULT_USER_ID
 
     private val messageLock = AtomicBoolean(false)
 
@@ -82,7 +85,6 @@ class NetworkService : Service() {
     }
 
     private fun areMessagesLocked() = messageLock.get()
-
 
     private fun addMessage(message: NetworkMessage) {
         acquireMessageLock()
@@ -97,6 +99,8 @@ class NetworkService : Service() {
     override fun onCreate() {
         super.onCreate()
         Logger.debug(TAG, "Creating NetworkService")
+
+        userId = getSharedPreferences(ClientActivity.USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, DEFAULT_USER_ID)!!
 
         val networkRequest = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -142,7 +146,6 @@ class NetworkService : Service() {
         if (!isRunning()) {
             run()
 
-            val userId = getSharedPreferences(ClientActivity.USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, DEFAULT_USER_ID)!!
             if (userId != DEFAULT_USER_ID) {
                 sendMessageToServer(NetworkMessage(Topic.ID_LOGIN, userId))
             }
@@ -181,7 +184,7 @@ class NetworkService : Service() {
             return
         }
 
-        clientStopping.set(false)
+//        clientStopping.set(false)
 
         manager = Manager("Client")
         manager.context = applicationContext
@@ -222,36 +225,37 @@ class NetworkService : Service() {
     }
 
     private fun sendMessageToServer(message: NetworkMessage) {
-        Thread {
-            while (clientConnecting.get() || sendingMessage.get()) {
-                Thread.sleep(1)
-            }
+        while (clientConnecting.get() || sendingMessage.get()) {
+            Thread.sleep(1)
+        }
 
-            if (clientConnected.get()) {
+        if (clientConnected.get()) {
+            sendingMessage.set(true)
+
+            Thread {
                 try {
-                    sendingMessage.set(true)
-                    client.write(message.toString())
+                    backupMessages += message
+                    client.write(message)
 
                     if (message.topic != Topic.CONFIRM_MESSAGE && message.topic != Topic.CRASH_REPORT) {
                         Logger.info(TAG, "Sending message: $message")
                     }
-
+                } catch (e: Exception) {
+                    Logger.error(TAG, e.stackTraceToString())
+                } finally {
                     val timerTask = MyTimerTask {
                         sendingMessage.set(false)
 //                        Logger.debug(TAG, "Releasing lock ${message.topic}")
                     }
 
                     val timer = Timer()
-                    timer.schedule(timerTask, 10)
-                } catch (e: Exception) {
-                    Logger.error(TAG, e.stackTraceToString())
+                    timer.schedule(timerTask, 150)
                 }
-            } else {
-                Logger.warn(TAG, "Client not connected to server; ${message.topic} message added to queue")
-                addMessage(message)
-            }
-
-        }.start()
+            }.start()
+        } else {
+            Logger.warn(TAG, "Client not connected to server; ${message.topic} message added to queue")
+            addMessage(message)
+        }
     }
 
     private fun onRead(message: NetworkMessage, context: Context) {
@@ -262,8 +266,17 @@ class NetworkService : Service() {
 
         sendMessageToServer(NetworkMessage(Topic.CONFIRM_MESSAGE, "", message.id))
 
-        if (message.topic != Topic.CONFIRM_MESSAGE) {
-            Logger.info(TAG, "Received message: $message")
+        if (message.topic == Topic.CONFIRM_MESSAGE) {
+            val messageId = message.content
+            backupMessages.removeIf { backupMessage -> backupMessage.id.toString() == messageId }
+            return
+        } else if (message.topic == Topic.RESEND_MESSAGE) {
+            val messageId = message.content
+            val backupMessage = backupMessages.find { msg -> msg.id.toString() == messageId }
+            if (backupMessage != null) {
+                sendMessageToServer(backupMessage)
+            }
+            return
         }
 
         val dataManager = DataManager.getInstance(applicationContext)
@@ -279,23 +292,24 @@ class NetworkService : Service() {
     }
 
     private fun stop() {
-//        Thread {
-        if (clientStopping.get()) {
-//            return
-        }
-        clientStopping.set(true)
+        sendMessageToServer(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
 
-//        while (sendingMessage.get()) {
-//            Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
-//            Thread.sleep(1)
+//        Thread {
+//        if (clientStopping.get()) {
+//            return
 //        }
+//        clientStopping.set(true)
+
+        while (sendingMessage.get()) {
+            Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
+            Thread.sleep(500)
+        }
 
         serverMessageCache.clear()
-//        if (clientConnected.get()) {
+        if (clientConnected.get()) {
             client.close()
             clientConnected.set(false)
-//        }
-        clientConnecting.set(false)
+        }
         manager.stop()
         Logger.warn(TAG, "Network connection stopped")
     }

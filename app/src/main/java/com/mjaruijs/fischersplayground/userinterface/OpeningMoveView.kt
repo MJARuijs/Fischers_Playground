@@ -48,23 +48,28 @@ class OpeningMoveView(context: Context, attributes: AttributeSet? = null) : Line
         pieceDrawable = getPieceIcon(resources, move.movedPiece, move.team)
         iconView.setImageDrawable(pieceDrawable)
 
-        val chessNotation = move.getSimpleChessNotation().substring(1)
+        val chessNotation = move.getSimpleChessNotation()
 
+        val notationStartIndex = if (move.movedPiece == PieceType.PAWN || move.isCastleMove()) {
+            0
+        } else {
+            1
+        }
         if (move.promotedPiece == null) {
-            moveView.text = chessNotation
+            moveView.text = chessNotation.substring(notationStartIndex)
             promotedIconView.visibility = View.GONE
             promotedPieceText.visibility = View.GONE
         } else {
             promotedIconView.visibility = View.VISIBLE
             promotedIconView.setImageDrawable(getPieceIcon(resources, move.promotedPiece, move.team))
-
+            
             if (move.isCheck || move.isCheckMate) {
                 val checkSymbol = if (move.isCheckMate) "#" else "+"
-                moveView.text = "${move.getSimpleChessNotation().substring(1, chessNotation.length)}="
+                moveView.text = "${move.getSimpleChessNotation().substring(notationStartIndex, chessNotation.length - 1)}="
                 promotedPieceText.text = checkSymbol
                 promotedPieceText.visibility = View.VISIBLE
             } else {
-                moveView.text = "${move.getSimpleChessNotation().substring(1)}="
+                moveView.text = "${move.getSimpleChessNotation().substring(notationStartIndex)}="
                 promotedPieceText.visibility = View.GONE
             }
         }

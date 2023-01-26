@@ -73,7 +73,7 @@ class PracticeActivity : GameActivity() {
             throw IllegalArgumentException("Missing essential information for starting PracticeActivity: resume_session")
         }
 
-//        opening = dataManager.getOpening(openingName, openingTeam)
+        opening = dataManager.getOpening(openingName, openingTeam)
 
         resumeSession = intent.getBooleanExtra("resume_session", false)
 
@@ -82,7 +82,7 @@ class PracticeActivity : GameActivity() {
 
         if (resumeSession) {
             try {
-//                session = dataManager.getPracticeSession(openingName, openingTeam) ?: throw IllegalArgumentException("Tried to resume session with name: $openingName and team $openingTeam, but could not find it..")
+                session = dataManager.getPracticeSession(openingName, openingTeam) ?: throw IllegalArgumentException("Tried to resume session with name: $openingName and team $openingTeam, but could not find it..")
                 if (session.currentLine != null) {
                     lines += session.currentLine!!
                 }
@@ -455,8 +455,7 @@ class PracticeActivity : GameActivity() {
         progressFragment.complete()
         practiceNavigationButtons.showExitButton()
 
-//        dataManager.removePracticeSession(openingName, openingTeam)
-//        dataManager.savePracticeSessions(applicationContext)
+        dataManager.removePracticeSession(openingName, openingTeam, applicationContext)
         sendNetworkMessage(NetworkMessage(Topic.DELETE_PRACTICE_SESSION, "$userId|$openingName|$openingTeam"))
     }
 
@@ -477,8 +476,7 @@ class PracticeActivity : GameActivity() {
 
     private fun saveSession() {
         val practiceSession = PracticeSession(openingName, openingTeam, progressFragment.currentValue, progressFragment.maxValue, currentLine, nextLine, lines)
-//        dataManager.setPracticeSession(openingName, practiceSession)
-//        dataManager.savePracticeSessions(applicationContext)
+        dataManager.setPracticeSession(openingName, practiceSession, applicationContext)
         sendNetworkMessage(NetworkMessage(Topic.NEW_PRACTICE_SESSION, "$userId|$openingName|$openingTeam|$practiceSession"))
     }
 }

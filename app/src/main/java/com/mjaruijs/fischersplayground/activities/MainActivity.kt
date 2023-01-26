@@ -1,15 +1,16 @@
 package com.mjaruijs.fischersplayground.activities
 
 import android.content.Intent
-import android.graphics.Color
+import android.graphics.*
 import android.os.Bundle
 import android.os.Parcelable
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.OneTimeWorkRequestBuilder
@@ -23,19 +24,15 @@ import com.mjaruijs.fischersplayground.adapters.chatadapter.ChatMessage
 import com.mjaruijs.fischersplayground.adapters.gameadapter.*
 import com.mjaruijs.fischersplayground.chess.game.MultiPlayerGame
 import com.mjaruijs.fischersplayground.chess.game.MoveData
-import com.mjaruijs.fischersplayground.chess.game.OpponentData
 import com.mjaruijs.fischersplayground.chess.news.NewsType
 import com.mjaruijs.fischersplayground.dialogs.SearchPlayersDialog
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
-import com.mjaruijs.fischersplayground.services.DataManagerService
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
 import com.mjaruijs.fischersplayground.userinterface.RippleEffect
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.Logger
-import java.util.Stack
 
 class MainActivity : ClientActivity() {
 
@@ -299,6 +296,12 @@ class MainActivity : ClientActivity() {
         gameRecyclerView.layoutManager = LinearLayoutManager(this)
         gameRecyclerView.adapter = gameAdapter
 
+        val backgroundImage = findViewById<ImageView>(R.id.background_image)
+
+        val drawable = ResourcesCompat.getDrawable(resources, R.drawable.chess_background, null)!!
+        drawable.colorFilter = BlendModeColorFilter(Color.rgb(0.5f, 0.4f, 0.35f), BlendMode.SOFT_LIGHT)
+        backgroundImage.setImageDrawable(drawable)
+        drawable.clearColorFilter()
         searchPlayersDialog.create(userId, this, ::sendNetworkMessage)
 
         findViewById<TextView>(R.id.welcome_text_view)
@@ -331,7 +334,7 @@ class MainActivity : ClientActivity() {
 
         findViewById<UIButton2>(R.id.practice_button)
             .setText("Practice Mode")
-            .setColor(Color.rgb(235, 186, 145))
+            .setColorResource(R.color.accent_color)
             .setCornerRadius(45.0f)
             .setTextSize(28f)
             .setOnClickListener {
@@ -341,7 +344,7 @@ class MainActivity : ClientActivity() {
 
         findViewById<UIButton2>(R.id.start_new_game_button)
             .setText("Start new game")
-            .setColor(Color.rgb(235, 186, 145))
+            .setColorResource(R.color.accent_color)
             .setCornerRadius(45f)
             .setTextSize(28f)
             .setOnClickListener {

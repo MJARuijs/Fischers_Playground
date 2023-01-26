@@ -53,7 +53,7 @@ class CreateOpeningActionButtonsFragment : GameBarFragment() {
         startPracticeButton
             .setText("Practice")
             .setTextSize(TEXT_SIZE)
-            .setIcon(R.drawable.student_icon)
+            .setIcon(R.drawable.student_icon, Color.WHITE)
             .setIconPadding(0, 0, 0, 0)
             .setColor(Color.rgb(235, 186, 145))
             .setOnClickListener {

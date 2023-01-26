@@ -11,7 +11,7 @@ class NetworkMessage(val topic: Topic, val content: String, val id: Long = Syste
         parcel.readLong()
     )
 
-    override fun toString() = "[$topic;$content;$id]"
+    override fun toString() = "[$id;$topic;$content]"
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(content)
@@ -33,10 +33,9 @@ class NetworkMessage(val topic: Topic, val content: String, val id: Long = Syste
 
         fun fromString(input: String): NetworkMessage {
             val data = input.removePrefix("[").removeSuffix("]").split(';')
-
-            val topic = Topic.fromString(data[0])
-            val content = data[1]
-            val id = data[2].toLong()
+            val id = data[0].toLong()
+            val topic = Topic.fromString(data[1])
+            val content = data[2]
 
             return NetworkMessage(topic, content, id)
         }

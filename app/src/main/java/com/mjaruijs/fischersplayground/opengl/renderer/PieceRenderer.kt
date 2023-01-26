@@ -116,7 +116,10 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         try {
             val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
             animator.addOnFinishCall(
-                { animationRunning.set(false) },
+                {
+                    animationRunning.set(false)
+                    Logger.debug(TAG, "Finished animating ${requestGame().state[currentAnimation.piecePosition]?.type}")
+                },
                 {
                     takenPieceData = null
                     requestRender()

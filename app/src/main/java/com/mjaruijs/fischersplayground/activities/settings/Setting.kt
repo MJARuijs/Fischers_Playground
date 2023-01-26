@@ -42,11 +42,11 @@ class Setting(context: Context, text: String, category: String, private val key:
         textView.text = text
         textView.textSize = 20f
         textView.typeface = Typeface.DEFAULT_BOLD
-        textView.setTextColor(Color.rgb(235, 186, 145))
+        textView.setTextColor(context.resources.getColor(R.color.accent_color, null))
 
         val checkBox = CheckBox(context)
         checkBox.id = View.generateViewId()
-        checkBox.buttonTintList = ColorStateList.valueOf(Color.rgb(235, 186, 145))
+        checkBox.buttonTintList = ColorStateList.valueOf(context.resources.getColor(R.color.accent_color, null))
         checkBox.isChecked = enabled
 
         cardView.setOnClickListener {

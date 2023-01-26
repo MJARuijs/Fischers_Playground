@@ -51,6 +51,14 @@ class Move(val team: Team, private val fromPosition: Vector2, private val toPosi
         return if (perspectiveOf == Team.WHITE) takenPiecePosition else Vector2(7, 7) - takenPiecePosition
     }
 
+    fun isCastleMove(): Boolean {
+        if (movedPiece != PieceType.KING) {
+            return false
+        }
+
+        return getSimpleChessNotation().startsWith("0-0")
+    }
+
     fun getSimpleChessNotation(): String {
         var notation = ""
 

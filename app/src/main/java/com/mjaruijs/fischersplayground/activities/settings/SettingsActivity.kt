@@ -282,11 +282,11 @@ class SettingsActivity : ClientActivity() {
     private fun selectGraphicsType() {
         if (is3D) {
             card2D.setCardBackgroundColor(Color.argb(1.0f, 0.25f, 0.25f, 0.25f))
-            card3D.setCardBackgroundColor(Color.rgb(235, 186, 145))
+            card3D.setCardBackgroundColor(resources.getColor(R.color.accent_color, null))
             graphicsSettingsButton.visibility = View.VISIBLE
             collapseCardButton.visibility = View.VISIBLE
         } else {
-            card2D.setCardBackgroundColor(Color.rgb(235, 186, 145))
+            card2D.setCardBackgroundColor(resources.getColor(R.color.accent_color, null))
             card3D.setCardBackgroundColor(Color.argb(1.0f, 0.25f, 0.25f, 0.25f))
             graphicsSettingsButton.visibility = View.GONE
             collapseCardButton.visibility = View.GONE

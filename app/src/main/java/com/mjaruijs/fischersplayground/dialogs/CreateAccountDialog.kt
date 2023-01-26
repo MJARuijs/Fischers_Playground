@@ -2,11 +2,14 @@ package com.mjaruijs.fischersplayground.dialogs
 
 import android.app.Activity
 import android.app.Dialog
+import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.cardview.widget.CardView
+import androidx.core.content.getSystemService
 import com.mjaruijs.fischersplayground.R
 
 class CreateAccountDialog {
@@ -38,7 +41,24 @@ class CreateAccountDialog {
             dismiss()
         }
 
+        val emailCard = dialog.findViewById<CardView>(R.id.email_input_card)
+        emailCard.setOnClickListener {
+            emailInputField.requestFocus()
+            showKeyboard(emailInputField)
+        }
+
+        val usernameCard = dialog.findViewById<CardView>(R.id.username_input_card)
+        usernameCard.setOnClickListener {
+            usernameInputField.requestFocus()
+            showKeyboard(usernameInputField)
+        }
+
         dialog.show()
+    }
+
+    private fun showKeyboard(inputBox: EditText) {
+        val imm = dialog.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(inputBox, 0)
     }
 
     fun dismiss() {

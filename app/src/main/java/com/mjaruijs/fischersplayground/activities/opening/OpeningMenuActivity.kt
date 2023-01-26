@@ -40,14 +40,17 @@ class OpeningMenuActivity : ClientActivity() {
         super.onResume()
         hideActivityDecorations()
 
-        Thread {
+//        Thread {
 //            while (dataManager.isLocked()) {
 //                Thread.sleep(1)
 //            }
-            runOnUiThread {
+//            runOnUiThread {
 //                restoreSavedOpenings(dataManager.getSavedOpenings())
-            }
-        }.start()
+//            }
+//        }.start()
+
+        restoreSavedOpenings(dataManager.getSavedOpenings())
+
     }
 
     override fun onDestroy() {
@@ -106,8 +109,8 @@ class OpeningMenuActivity : ClientActivity() {
     }
 
     private fun onDeleteOpening(opening: Opening) {
+        dataManager.deleteOpening(opening.name, opening.team, applicationContext)
         openingAdapter.deleteOpening(opening)
-        FileManager.delete("opening_${opening.name}_${opening.team}.txt")
         sendNetworkMessage(NetworkMessage(Topic.DELETE_OPENING, "$userId|${opening.name}|${opening.team}"))
     }
 

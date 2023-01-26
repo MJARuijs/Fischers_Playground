@@ -29,7 +29,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         hintButton = UIButton2(requireContext())
         hintButton
             .setText("Hint")
-            .setIcon(R.drawable.hint_icon)
+            .setIcon(R.drawable.hint_icon, Color.WHITE)
             .setIconPadding(0, 4, 0, 0)
             .setColor(BACKGROUND_COLOR)
             .setTextSize(TEXT_SIZE)
@@ -41,7 +41,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         solutionButton = UIButton2(requireContext())
         solutionButton
             .setText("Solution")
-            .setIcon(R.drawable.solution_icon)
+            .setIcon(R.drawable.solution_icon, Color.WHITE)
             .setIconPadding(0, 4, 0, 0)
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)

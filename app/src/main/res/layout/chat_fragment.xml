@@ -8,7 +8,7 @@
     android:background="#808080">
 
     <ImageView
-        android:id="@+id/imageView3"
+        android:id="@+id/chat_fragment_background"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:foreground="@drawable/chess_background"

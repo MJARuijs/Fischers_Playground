@@ -124,13 +124,15 @@ class HighlightRenderer(resources: Resources) {
 //            selectedSquare2DProgram.set("colors[0]", Color(235f / 255f, 186f / 255f, 145f / 255f))
 //            1
 //        } else {
-            Logger.debug(TAG, "Rendering highlights")
         var instances = 0
+
+        val color = Color(251f / 255f, 159f / 255f, 110f / 255f)
 
         if (highlightedSquares.isNotEmpty()) {
             for ((i, square) in highlightedSquares.withIndex()) {
                 selectedSquare2DProgram.set("translations[${instances + i}]", (square / 8.0f) * 2.0f - 1.0f)
-                selectedSquare2DProgram.set("colors[${instances + i}]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+                selectedSquare2DProgram.set("colors[${instances + i}]", color)
+//                selectedSquare2DProgram.set("colors[${instances + i}]", Color(235f / 255f, 186f / 255f, 145f / 255f))
                 instances++
             }
         } else {
@@ -142,10 +144,10 @@ class HighlightRenderer(resources: Resources) {
                 val toPosition = lastMove.getToPosition(game.team)
 
                 selectedSquare2DProgram.set("translations[0]", (fromPosition / 8.0f) * 2.0f - 1.0f)
-                selectedSquare2DProgram.set("colors[0]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+                selectedSquare2DProgram.set("colors[0]", color)
 
                 selectedSquare2DProgram.set("translations[1]", (toPosition / 8.0f) * 2.0f - 1.0f)
-                selectedSquare2DProgram.set("colors[1]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+                selectedSquare2DProgram.set("colors[1]", color)
             }
         }
 

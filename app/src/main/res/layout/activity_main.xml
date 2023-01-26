@@ -8,7 +8,7 @@
     tools:context=".activities.MainActivity">
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/background_image"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:scaleType="centerCrop"
@@ -16,8 +16,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"
-        app:srcCompat="@drawable/chess_background" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <TextView
         android:id="@+id/welcome_text_view"

@@ -45,7 +45,8 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     COMPARE_DATA(ParcelableString),
     RESTORE_DATA(ParcelableNull),
     DELETE,
-    DEBUG;
+    DEBUG,
+    RESEND_MESSAGE;
 
     companion object {
         fun fromString(value: String): Topic {

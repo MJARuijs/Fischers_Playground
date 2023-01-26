@@ -82,8 +82,8 @@ abstract class GameActivity : ClientActivity() {
     override fun onStop() {
         super.onStop()
 
-        checkMateDialog.destroy()
-        pieceChooserDialog.destroy()
+        checkMateDialog.dismiss()
+        pieceChooserDialog.dismiss()
     }
 
     override fun onDestroy() {
@@ -130,7 +130,8 @@ abstract class GameActivity : ClientActivity() {
     open fun onMoveMade(move: Move) {
         Thread {
             while (getActionBarFragment() == null) {
-                Thread.sleep(1)
+                Thread.sleep(1000)
+                Logger.debug(activityName, "onMoveMade() waiting for actionBarFragment")
             }
 
             runOnUiThread {

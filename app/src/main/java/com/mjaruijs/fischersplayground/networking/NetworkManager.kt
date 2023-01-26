@@ -22,12 +22,12 @@ class NetworkManager {
 
         private const val TAG = "NetworkManager"
 
-        const val PUBLIC_SERVER_IP = "94.208.124.161"
+        const val PUBLIC_SERVER_IP = "80.114.20.54"
 //        private const val PUBLIC_SERVER_IP = "10.248.59.222"
-        const val LOCAL_SERVER_IP = "192.168.178.103"
+        const val LOCAL_SERVER_IP = "192.168.178.101"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
-        const val SERVER_PORT = 4502
+        const val SERVER_PORT = 4500
 
         private var instance: NetworkManager? = null
 
@@ -43,7 +43,7 @@ class NetworkManager {
     private val clientConnecting = AtomicBoolean(false)
     private val clientConnected = AtomicBoolean(false)
     private val sendingMessage = AtomicBoolean(false)
-    private val stopping = AtomicBoolean(false)
+//    private val stopping = AtomicBoolean(false)
 
     private lateinit var manager: Manager
     private lateinit var client: SecureClient
@@ -74,15 +74,16 @@ class NetworkManager {
     }
 
     fun stop() {
-        stopping.set(true)
-        Thread {
-            if (stopping.get()) {
-                return@Thread
-            }
-//            while (sendingMessage.get()) {
-//                Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
-//                Thread.sleep(1)
+//        Thread {
+//            if (stopping.get()) {
+//                return@Thread
 //            }
+//            stopping.set(true)
+
+            while (sendingMessage.get()) {
+                Logger.warn(TAG, "Trying to stop but waiting for SendMessage")
+                Thread.sleep(1)
+            }
 
             messageQueue.clear()
             if (clientConnected.get()) {
@@ -92,11 +93,12 @@ class NetworkManager {
             clientConnecting.set(false)
             manager.stop()
             Logger.debug(TAG, "Stopped networker")
-        }.start()
+//        }.start()
     }
 
     fun isRunning(): Boolean {
-        return (clientConnected.get() || clientConnecting.get()) && !stopping.get()
+//        return (clientConnected.get() || clientConnecting.get()) && !stopping.get()
+        return (clientConnected.get() || clientConnecting.get())
     }
 
     fun isConnected(): Boolean {
@@ -109,7 +111,7 @@ class NetworkManager {
             return
         }
 
-        stopping.set(false)
+//        stopping.set(false)
 
         manager = Manager("Client")
         manager.context = context
@@ -163,7 +165,7 @@ class NetworkManager {
 //                    Logger.debug(TAG, "Setting message lock ${message.topic}")
                     sendingMessage.set(true)
 
-                    client.write(message.toString())
+                    client.write(message)
                     if (message.topic != Topic.CONFIRM_MESSAGE && message.topic != Topic.CRASH_REPORT) {
                         Logger.info(TAG, "Sending message: $message")
                     }

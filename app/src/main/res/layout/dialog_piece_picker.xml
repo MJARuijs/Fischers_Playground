@@ -4,9 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_margin="16dp"
     android:background="@drawable/dialog_background">
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/knight_button"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -21,7 +22,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/bishop_button"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -36,7 +37,7 @@
         app:layout_constraintStart_toEndOf="@id/knight_button"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/rook_button"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -51,7 +52,7 @@
         app:layout_constraintStart_toEndOf="@id/bishop_button"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.mjaruijs.fischersplayground.userinterface.UIButton
+    <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/queen_button"
         android:layout_width="0dp"
         android:layout_height="0dp"

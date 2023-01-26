@@ -5,6 +5,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
+import com.mjaruijs.fischersplayground.util.Logger
 
 class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayerMoveOpponentPieces: Boolean) : Game(isPlayingWhite, lastUpdated) {
 
@@ -59,6 +60,7 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayer
 
     override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long) {
         if (!isShowingCurrentMove()) {
+            Logger.debug(TAG, "Game is not showing current move..")
             val moveCount = moves.size
             for (i in currentMoveIndex + 1 until moveCount) {
                 if (i == -1) {
@@ -89,6 +91,7 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayer
             val previouslySelectedSquare = board.selectedSquare
 
             if (possibleMoves.contains(clickedSquare)) {
+                Logger.debug(TAG, "A square was already selected, so performing move")
                 Thread {
                     move(teamToMove, previouslySelectedSquare, clickedSquare)
                 }.start()
@@ -126,6 +129,7 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayer
     }
 
     override fun processOnLongClick(clickedSquare: Vector2) {
+        Logger.debug(TAG, "Processing long-click")
         if (board.longClickSelectedSquare == clickedSquare) {
             board.deselectSquareLongClick()
         } else {

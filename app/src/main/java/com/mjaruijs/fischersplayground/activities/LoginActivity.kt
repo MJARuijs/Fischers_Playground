@@ -1,8 +1,10 @@
 package com.mjaruijs.fischersplayground.activities
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
@@ -24,6 +26,7 @@ class LoginActivity : ClientActivity() {
 
     private val createAccountDialog = CreateAccountDialog()
 
+    private lateinit var emailInputBox: EditText
     private lateinit var unknownEmailDialog: SingleButtonDialog
     private lateinit var accountAlreadyExistsDialog: SingleButtonDialog
 
@@ -135,17 +138,28 @@ class LoginActivity : ClientActivity() {
                 }
             }
 
-        val emailInputBox = findViewById<EditText>(R.id.email_input_box)
+        emailInputBox = findViewById(R.id.email_input_box)
         emailInputBox.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 stayingInApp = true
             }
         }
 
+        val emailInputCard = findViewById<CardView>(R.id.email_input_card)
+        emailInputCard.setOnClickListener {
+            emailInputBox.requestFocus()
+            showKeyboard()
+        }
+
         val loginButton = findViewById<CardView>(R.id.login_button)
         loginButton.setOnClickListener {
             sendNetworkMessage(NetworkMessage(Topic.EMAIL_LOGIN, emailInputBox.text.toString()))
         }
+    }
+
+    private fun showKeyboard() {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(emailInputBox, 0)
     }
 
     private fun savePreference(key: String, value: String) {

@@ -66,7 +66,7 @@ class DoubleButtonDialog(parent: Activity, cancelable: Boolean, title: String, m
                 .setTextSize(BUTTON_TEXT_SIZE)
         }
 
-        rightButton.setColor(235, 186, 145)
+        rightButton.setColorResource(R.color.accent_color)
             .setCornerRadius(20.0f)
             .setOnClickListener {
                 onRightButtonClick()
@@ -121,10 +121,6 @@ class DoubleButtonDialog(parent: Activity, cancelable: Boolean, title: String, m
 
     fun dismiss() {
         dialog.dismiss()
-    }
-
-    fun destroy() {
-        dismiss()
     }
 
     companion object {

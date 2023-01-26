@@ -55,7 +55,7 @@ class CreateVariationDialog(private val onConfirmClicked: (String) -> Unit) {
                 if (editText.isEmpty()) {
                     createVariationButton.setColor(Color.GRAY)
                 } else {
-                    createVariationButton.setColor(235, 186, 145)
+                    createVariationButton.setColorResource(R.color.accent_color)
                 }
             }
         })

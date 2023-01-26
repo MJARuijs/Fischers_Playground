@@ -5,13 +5,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.*
-import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Parcelable.Creator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.chess.game.MoveData
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
@@ -24,7 +20,6 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.*
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
-import java.lang.ref.WeakReference
 
 abstract class ClientActivity : AppCompatActivity() {
 
@@ -33,7 +28,7 @@ abstract class ClientActivity : AppCompatActivity() {
     protected var userId: String = DEFAULT_USER_ID
     protected var userName = DEFAULT_USER_NAME
 
-//    protected lateinit var networkManager: NetworkManager
+    protected lateinit var networkManager: NetworkManager
     protected lateinit var dataManager: DataManager
     protected lateinit var vibrator: Vibrator
 
@@ -96,25 +91,6 @@ abstract class ClientActivity : AppCompatActivity() {
         }
     }
 
-//    private val dataMessengerConnection = object : ServiceConnection {
-//        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-//            if (service == null) {
-//                return
-//            }
-//
-//            dataServiceMessenger = Messenger(service)
-//
-////            val registrationMessage = Message.obtain()
-////            registrationMessage.what = 0
-////            registrationMessage.replyTo = dataMessengerClient
-////            dataServiceMessenger!!.send(registrationMessage)
-//        }
-//
-//        override fun onServiceDisconnected(name: ComponentName?) {
-//            dataServiceMessenger = null
-//        }
-//    }
-
     private fun isUserRegisteredAtServer(): Boolean {
         return getPreference(USER_PREFERENCE_FILE).contains(USER_ID_KEY)
     }
@@ -131,14 +107,14 @@ abstract class ClientActivity : AppCompatActivity() {
         userId = preferences.getString(USER_ID_KEY, DEFAULT_USER_ID)!!
         userName = preferences.getString(USER_NAME_KEY, DEFAULT_USER_NAME)!!
 
-//        networkManager = NetworkManager.getInstance()
+        networkManager = NetworkManager.getInstance()
         dataManager = DataManager.getInstance(this)
     }
 
     override fun onStart() {
         super.onStart()
-//        bindService(Intent(this, MessageReceiverService::class.java), connection, Context.BIND_AUTO_CREATE)
-        bindService(Intent(this, NetworkService::class.java), networkMessengerConnection, Context.BIND_AUTO_CREATE)
+        bindService(Intent(this, MessageReceiverService::class.java), connection, Context.BIND_AUTO_CREATE)
+//        bindService(Intent(this, NetworkService::class.java), networkMessengerConnection, Context.BIND_AUTO_CREATE)
     }
 
     override fun onResume() {
@@ -169,33 +145,33 @@ abstract class ClientActivity : AppCompatActivity() {
             .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
             .build()
 
-//        connectionCallback = ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost)
-//        connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
-//
-//        if (!networkManager.isConnected()) {
-//            connectivityManager.requestNetwork(networkRequest, connectionCallback)
-//        }
+        connectionCallback = ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost)
+        connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
+
+        if (!networkManager.isConnected()) {
+            connectivityManager.requestNetwork(networkRequest, connectionCallback)
+        }
     }
 
     override fun onStop() {
         super.onStop()
 
-//        unbindService(connection)
         try {
-//            connectivityManager.unregisterNetworkCallback(connectionCallback)
+            connectivityManager.unregisterNetworkCallback(connectionCallback)
         } catch (e: Exception) {
 
         }
-        unbindService(networkMessengerConnection)
+//        unbindService(networkMessengerConnection)
     }
 
     override fun onPause() {
         if (!stayingInApp) {
             leftApp = true
-//            networkManager.stop()
+            Logger.debug(activityName, "Not staying in app!")
+            networkManager.stop()
         }
 
-        incomingInviteDialog.destroy()
+        incomingInviteDialog.dismiss()
         super.onPause()
     }
 
@@ -210,50 +186,50 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     protected fun sendNetworkMessage(networkMessage: NetworkMessage) {
-//        networkManager.sendMessage(networkMessage)
+        networkManager.sendMessage(networkMessage)
 
-        val message = Message.obtain()
-
-        message.what = 1
-        message.replyTo = networkMessengerClient
-        message.obj = networkMessage
-
-        if (networkServiceMessenger != null) {
-            Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
-            networkServiceMessenger!!.send(message)
-        } else {
-            Thread {
-                while (networkServiceMessenger == null) {
-                    Thread.sleep(10)
-//                    Logger.debug(activityName, "Waiting for networkService to send ${networkMessage.topic}")
-                }
-
-                runOnUiThread {
-                    Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
-                    networkServiceMessenger!!.send(message)
-                }
-            }.start()
-        }
+//        val message = Message.obtain()
+//
+//        message.what = 1
+//        message.replyTo = networkMessengerClient
+//        message.obj = networkMessage
+//
+//        if (networkServiceMessenger != null) {
+//            Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
+//            networkServiceMessenger!!.send(message)
+//        } else {
+//            Thread {
+//                while (networkServiceMessenger == null) {
+//                    Thread.sleep(10)
+////                    Logger.debug(activityName, "Waiting for networkService to send ${networkMessage.topic}")
+//                }
+//
+//                runOnUiThread {
+//                    Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
+//                    networkServiceMessenger!!.send(message)
+//                }
+//            }.start()
+//        }
     }
 
     private fun onNetworkAvailable() {
-//        Logger.debug(activityName, "Network available ${leftApp} ${networkManager.isRunning()}")
-//        if (!leftApp) {
-//            if (!networkManager.isRunning()) {
-//                networkManager.run(applicationContext)
-//                if (userId != DEFAULT_USER_ID) {
-//                    networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
-//                }
-//            }
-//        }
+        Logger.debug(activityName, "Network available ${leftApp} ${networkManager.isRunning()}")
+        if (!leftApp) {
+            if (!networkManager.isRunning()) {
+                networkManager.run(applicationContext)
+                if (userId != DEFAULT_USER_ID) {
+                    networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
+                }
+            }
+        }
     }
 
     private fun onNetworkLost() {
-//        if (!leftApp) {
-//            Logger.warn(activityName, "Network Lost")
-//            networkManager.stop()
-//            connectivityManager.unregisterNetworkCallback(connectionCallback)
-//        }
+        if (!leftApp) {
+            Logger.warn(activityName, "Network Lost")
+            networkManager.stop()
+            connectivityManager.unregisterNetworkCallback(connectionCallback)
+        }
     }
 
     open fun sendResumeStatusToServer() {
@@ -261,7 +237,7 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     private fun sendAwayStatusToServer() {
-//        networkManager.sendMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
+        sendNetworkMessage(NetworkMessage(Topic.USER_STATUS_CHANGED, "$userId|away"))
     }
 
     open fun onMessageReceived(topic: Topic, content: Array<String>, messageId: Long) {
@@ -343,44 +319,21 @@ abstract class ClientActivity : AppCompatActivity() {
         }
     }
 
-    open fun onRestoreData(output: Parcelable) {
-    }
+    open fun onRestoreData(output: Parcelable) {}
 
 //    open fun updateRecentOpponents(opponents: Stack<Pair<String, String>>?) {}
 
-    protected fun sendDataToWorker(topic: Topic, data: Array<String>, messageId: Long, onResult: (Parcelable) -> Unit) {
+    private fun sendDataToWorker(topic: Topic, data: Array<String>, messageId: Long, onResult: (Parcelable) -> Unit) {
+        val workerData = Bundle()
+        workerData.putString("topic", topic.toString())
+        workerData.putStringArray("content", data)
+        workerData.putLong("messageId", messageId)
 
-//        val workerData = Bundle()
-//        workerData.putString("topic", topic.toString())
-//        workerData.putStringArray("content", data)
-//        workerData.putLong("messageId", messageId)
-//
-//        DataWorker(applicationContext, workerData) {
-//            runOnUiThread {
-//                onResult(it)
-//            }
-//        }.start()
-
-        val worker = OneTimeWorkRequestBuilder<ProcessIncomingDataWorker>()
-            .setInputData(
-                workDataOf(
-                    Pair("topic", topic.toString()),
-                    Pair("content", data),
-                    Pair("messageId", messageId)
-                )
-            )
-            .build()
-//
-        val workManager = WorkManager.getInstance(applicationContext)
-        workManager.enqueue(worker)
-
-        workManager.getWorkInfoByIdLiveData(worker.id)
-            .observe(this) {
-                if (it != null && it.state.isFinished) {
-                    val result = it.outputData.getParcelable(topic.dataType, "output") ?: return@observe
-                    onResult(result)
-                }
+        DataWorker(applicationContext, workerData) {
+            runOnUiThread {
+                onResult(it)
             }
+        }.start()
     }
 
     private fun Data.getParcelable(type: Creator<*>?, key: String): Parcelable? {

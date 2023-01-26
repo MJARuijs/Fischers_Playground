@@ -164,8 +164,6 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
             } else {
                 glClear(GL_COLOR_BUFFER_BIT)
 
-                Logger.debug(TAG, "Cleared buffer!")
-
 //            backgroundRenderer.render2D(aspectRatio)
 
                 boardRenderer.render2D()

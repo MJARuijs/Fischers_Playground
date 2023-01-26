@@ -52,7 +52,7 @@ class VariationMenuActivity : ClientActivity() {
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
 
-//        opening = dataManager.getOpening(openingName, openingTeam)
+        opening = dataManager.getOpening(openingName, openingTeam)
         practiceSettingsDialog = PracticeSettingsDialog(::onStartPracticing)
         practiceSettingsDialog.create(this as Activity)
 
@@ -75,12 +75,12 @@ class VariationMenuActivity : ClientActivity() {
         variationAdapter.notifyDataSetChanged()
 
         Thread {
-//            while (dataManager.isLocked()) {
-//                Thread.sleep(1)
-//            }
+            while (dataManager.isLocked()) {
+                Thread.sleep(1)
+            }
 
             runOnUiThread {
-//                opening = dataManager.getOpening(openingName, openingTeam)
+                opening = dataManager.getOpening(openingName, openingTeam)
 
                 for (variation in opening.variations) {
                     if (!variationAdapter.contains(variation)) {
@@ -90,22 +90,21 @@ class VariationMenuActivity : ClientActivity() {
             }
         }.start()
 
-//        val hasSession = dataManager.getPracticeSession(openingName, openingTeam) != null
-//        if (hasSession) {
-//            Thread {
-//                Thread.sleep(250)
-//                runOnUiThread {
-//                    popupBar.show()
-//                }
-//            }.start()
-//        }
+        val hasSession = dataManager.getPracticeSession(openingName, openingTeam) != null
+        if (hasSession) {
+            Thread {
+                Thread.sleep(250)
+                runOnUiThread {
+                    popupBar.show()
+                }
+            }.start()
+        }
     }
 
     private fun onVariationCreated(variationName: String) {
         stayingInApp = true
         opening.addVariation(Variation(variationName))
-//        dataManager.setOpening(openingName, openingTeam, opening)
-//        dataManager.saveOpenings(applicationContext)
+        dataManager.setOpening(openingName, openingTeam, opening, applicationContext)
 
         createVariationDialog.dismiss()
 
@@ -199,7 +198,7 @@ class VariationMenuActivity : ClientActivity() {
         addVariationButton.setIcon(R.drawable.add_icon)
             .setColorResource(R.color.accent_color)
             .setIconPadding(8, 8, 8, 8)
-            .setCornerRadius(90.0f)
+            .setCornerRadius(180.0f)
             .hideText()
             .setOnClickListener {
                 createVariationDialog.show()

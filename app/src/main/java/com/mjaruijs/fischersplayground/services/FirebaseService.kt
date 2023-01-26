@@ -1,5 +1,6 @@
 package com.mjaruijs.fischersplayground.services
 
+import android.os.Bundle
 import android.os.Looper
 import android.widget.Toast
 import androidx.work.OneTimeWorkRequestBuilder
@@ -33,9 +34,6 @@ class FirebaseService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         try {
-//            Looper.prepare()
-//            Toast.makeText(applicationContext, "Got message!", Toast.LENGTH_SHORT).show()
-
             FileManager.init(applicationContext)
 
             val notificationBuilder = NotificationBuilder.getInstance(this)
@@ -46,29 +44,20 @@ class FirebaseService : FirebaseMessagingService() {
 
             val contentList = content.split('|').toTypedArray()
 
-//            val dataManager = DataManager.getInstance(applicationContext)
-//            if (dataManager.isMessageHandled(messageId)) {
-//                return
-//            }
+            val dataManager = DataManager.getInstance(applicationContext)
+            if (dataManager.isMessageHandled(messageId)) {
+                Logger.debug(TAG, "Got message about $topic but was already handled!")
+                return
+            }
 
             Logger.debug(TAG, "Got message about $topic")
 
-//            FileManager.createIfAbsent("notifications.txt")
-//            FileManager.append(applicationContext, "notifications.txt", "$topic;$content;$messageId")
+            val workerData = Bundle()
+            workerData.putString("topic", topic.toString())
+            workerData.putStringArray("content", contentList)
+            workerData.putLong("messageId", messageId)
 
-            val worker = OneTimeWorkRequestBuilder<ProcessIncomingDataWorker>()
-                .setInputData(workDataOf(
-                    Pair("topic", topic.toString()),
-                    Pair("content", contentList),
-                    Pair("messageId", messageId)
-                ))
-                .build()
-
-            val workManager = WorkManager.getInstance(applicationContext)
-            workManager.enqueue(worker)
-
-//            Looper.prepare()
-//            Toast.makeText(applicationContext, "Processing move!", Toast.LENGTH_SHORT).show()
+            DataWorker(applicationContext, workerData).start()
 
             val notificationData = notificationBuilder.createNotificationData(applicationContext, topic, contentList) ?: return
             val notification = notificationBuilder.build(applicationContext, false, notificationData)

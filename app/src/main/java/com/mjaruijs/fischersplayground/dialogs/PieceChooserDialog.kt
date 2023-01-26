@@ -10,16 +10,16 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import com.mjaruijs.fischersplayground.util.Logger
 
 class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team) -> Unit) {
 
     private lateinit var dialog: Dialog
-    private lateinit var knightButton: UIButton
-    private lateinit var bishopButton: UIButton
-    private lateinit var rookButton: UIButton
-    private lateinit var queenButton: UIButton
+    private lateinit var knightButton: UIButton2
+    private lateinit var bishopButton: UIButton2
+    private lateinit var rookButton: UIButton2
+    private lateinit var queenButton: UIButton2
 
     fun create(context: Activity) {
         dialog = Dialog(context)
@@ -41,80 +41,88 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
         if (team == Team.WHITE) {
             knightButton = dialog.findViewById(R.id.knight_button)
             knightButton
-                .setTexturedDrawable(R.drawable.white_knight)
-                .setColor(Color.rgb(235, 186, 145))
-                .setCornerRadius(20f)
-                .setOnClick {
+                .setIcon(R.drawable.white_knight)
+                .setColorResource(R.color.accent_color)
+                .setCornerRadius(CORNER_RADIUS)
+                .setIconPadding(ICON_PADDING, ICON_PADDING, ICON_PADDING, ICON_PADDING)
+                .setOnClickListener {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.KNIGHT, team)
                 }
 
             bishopButton = dialog.findViewById(R.id.bishop_button)
             bishopButton
-                .setTexturedDrawable(R.drawable.white_bishop)
-                .setColor(Color.rgb(235, 186, 145))
-                .setCornerRadius(20f)
-                .setOnClick {
+                .setIcon(R.drawable.white_bishop)
+                .setColorResource(R.color.accent_color)
+                .setCornerRadius(CORNER_RADIUS)
+                .setIconPadding(ICON_PADDING, ICON_PADDING, ICON_PADDING, ICON_PADDING)
+                .setOnClickListener {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.BISHOP, team)
                 }
 
             rookButton = dialog.findViewById(R.id.rook_button)
             rookButton
-                .setTexturedDrawable(R.drawable.white_rook)
-                .setColor(Color.rgb(235, 186, 145))
-                .setCornerRadius(20f)
-                .setOnClick {
+                .setIcon(R.drawable.white_rook)
+                .setColorResource(R.color.accent_color)
+                .setCornerRadius(CORNER_RADIUS)
+                .setIconPadding(ICON_PADDING, ICON_PADDING, ICON_PADDING, ICON_PADDING)
+                .setOnClickListener {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.ROOK, team)
                 }
 
             queenButton = dialog.findViewById(R.id.queen_button)
             queenButton
-                .setTexturedDrawable(R.drawable.white_queen)
-                .setColor(Color.rgb(235, 186, 145))
-                .setCornerRadius(20f)
-                .setOnClick {
+                .setIcon(R.drawable.white_queen)
+                .setColorResource(R.color.accent_color)
+                .setCornerRadius(CORNER_RADIUS)
+                .setIconPadding(ICON_PADDING, ICON_PADDING, ICON_PADDING, ICON_PADDING)
+                .setOnClickListener {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
         } else {
             knightButton = dialog.findViewById(R.id.knight_button)
             knightButton
-                .setTexturedDrawable(R.drawable.black_knight)
+                .setIcon(R.drawable.black_knight)
                 .setColor(Color.rgb(235, 186, 145))
-                .setCornerRadius(20f)
-                .setOnClick {
+                .setCornerRadius(CORNER_RADIUS)
+                .setIconPadding(ICON_PADDING, ICON_PADDING, ICON_PADDING, ICON_PADDING)
+                .setOnClickListener {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.KNIGHT, team)
                 }
 
             bishopButton = dialog.findViewById(R.id.bishop_button)
             bishopButton
-                .setTexturedDrawable(R.drawable.black_bishop)
-                .setColor(Color.rgb(235, 186, 145))
-                .setCornerRadius(20f)
-                .setOnClick {
+                .setIcon(R.drawable.black_bishop)
+                .setColorResource(R.color.accent_color)
+                .setCornerRadius(CORNER_RADIUS)
+                .setIconPadding(ICON_PADDING, ICON_PADDING, ICON_PADDING, ICON_PADDING)
+                .setOnClickListener {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.BISHOP, team)
                 }
 
             rookButton = dialog.findViewById(R.id.rook_button)
             rookButton
-                .setTexturedDrawable(R.drawable.black_rook)
-                .setColor(Color.rgb(235, 186, 145))
-                .setCornerRadius(20f)
-                .setOnClick {
+                .setIcon(R.drawable.black_rook)
+                .setColorResource(R.color.accent_color)
+                .setCornerRadius(CORNER_RADIUS)
+                .setIconPadding(ICON_PADDING, ICON_PADDING, ICON_PADDING, ICON_PADDING)
+                .setOnClickListener {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.ROOK, team)
                 }
 
             queenButton = dialog.findViewById(R.id.queen_button)
             queenButton
-                .setTexturedDrawable(R.drawable.black_queen)
-                .setColor(Color.rgb(235, 186, 145))
-                .setCornerRadius(20f)
-                .setOnClick {
+                .setIcon(R.drawable.black_queen)
+                .setColorResource(R.color.accent_color)
+                .setCornerRadius(CORNER_RADIUS)
+                .setIconPadding(ICON_PADDING, ICON_PADDING, ICON_PADDING, ICON_PADDING)
+                .setOnClickListener {
                     dialog.dismiss()
                     onPieceSelected(square, PieceType.QUEEN, team)
                 }
@@ -127,29 +135,11 @@ class PieceChooserDialog(private val onPieceSelected: (Vector2, PieceType, Team)
         dialog.dismiss()
     }
 
-    fun destroy() {
-        dismiss()
-
-        if (this::knightButton.isInitialized) {
-            knightButton.destroy()
-        }
-
-        if (this::bishopButton.isInitialized) {
-            bishopButton.destroy()
-        }
-
-        if (this::rookButton.isInitialized) {
-            rookButton.destroy()
-        }
-
-        if (this::queenButton.isInitialized) {
-            queenButton.destroy()
-        }
-    }
-
     companion object {
 
         private const val TAG = "PieceChooserDialog"
+        private const val CORNER_RADIUS = 45f
+        private const val ICON_PADDING = 16
 
     }
 

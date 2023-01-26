@@ -111,9 +111,10 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
             initChatBox()
 
-            if (contextCreated) {
-                showLatestMove()
-            }
+//            if (contextCreated) {
+//                Logger.debug(activityName, "Redoing move in onResume")
+//                showLatestMove()
+//            }
 
             undoRequestConfirmationDialog = SingleButtonDialog(this, true, "Undo Requested", "You will be notified when $opponentName responds", R.drawable.check_mark_icon)
             confirmResignationDialog = DoubleButtonDialog(this, true, "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", ::onResignConfirmed)
@@ -132,7 +133,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
             keyboardHeightProvider.observer = this
         } catch (e: Exception) {
-
 //            FileManager.append(this,  "mp_game_activity_on_resume_crash.txt", e.stackTraceToString())
             throw e
         }
@@ -151,7 +151,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onContextCreated() {
         super.onContextCreated()
-
         showLatestMove()
 
         contextCreated = true
@@ -160,17 +159,14 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private fun showLatestMove() {
         runOnUiThread {
             if ((game as MultiPlayerGame).newsUpdates.none { news -> news.newsType == NewsType.OPPONENT_MOVED }) {
-                Logger.debug(activityName, "REDOING MOVE ON CONTEXT CREATION")
                 redoLastMove()
             }
 
-            Logger.debug(activityName, "PROCESSING NEWS")
             processNews()
         }
     }
 
     private fun redoLastMove() {
-        Logger.debug(activityName, "Redoing move")
         if (!(game as MultiPlayerGame).hasNews(NewsType.OPPONENT_MOVED)) {
             game.showPreviousMove(true)
             game.showNextMove(false)
@@ -215,6 +211,10 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
                 for (takenPiece in game.takenPieces) {
                     onPieceTaken(takenPiece)
+                }
+
+                if (contextCreated) {
+                    showLatestMove()
                 }
             }
         }.start()
@@ -508,10 +508,11 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onChatMessageReceived(output: Parcelable) {
-        val message= output as ChatMessage
+        val message = output as ChatMessage
 
         if (message.gameId == this.gameId) {
             getChatFragment()!!.addReceivedMessage(message)
+            (game as MultiPlayerGame).clearNews(NewsType.CHAT_MESSAGE)
             if (!chatOpened) {
                 findViewById<ImageView>(R.id.chat_update_icon).visibility = View.VISIBLE
             }
@@ -591,7 +592,6 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     private fun saveGame() {
         dataManager.setGame(gameId, game as MultiPlayerGame, applicationContext)
-
 //        sendToDataManager(DataManagerService.Request.SET_GAME, Pair("game_id", gameId), Pair("game", game))
     }
 

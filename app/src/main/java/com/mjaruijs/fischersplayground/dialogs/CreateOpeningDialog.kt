@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.ScaleType
 import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
 class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
 
@@ -19,9 +20,9 @@ class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
 
     private lateinit var dialog: Dialog
 
-    private lateinit var whiteButton: UIButton
-    private lateinit var blackButton: UIButton
-    private lateinit var createOpeningButton: UIButton
+    private lateinit var whiteButton: UIButton2
+    private lateinit var blackButton: UIButton2
+    private lateinit var createOpeningButton: UIButton2
 
     private lateinit var openingNameInput: EditText
 
@@ -36,10 +37,11 @@ class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
 
         whiteButton = dialog.findViewById(R.id.opening_white_button)
         whiteButton
-            .setTexturedDrawable(R.drawable.white_king)
+            .setIcon(R.drawable.white_king)
             .setCornerRadius(20.0f)
+            .setIconPadding(8, 8, 8, 8)
             .setColor(grayColor)
-            .setOnClick {
+            .setOnClickListener {
                 selectedTeam = Team.WHITE
                 whiteButton.setColor(accentColor)
                 blackButton.setColor(grayColor)
@@ -53,10 +55,12 @@ class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
 
         blackButton = dialog.findViewById(R.id.opening_black_button)
         blackButton
-            .setTexturedDrawable(R.drawable.black_king)
+            .setIcon(R.drawable.black_king)
             .setCornerRadius(20.0f)
+            .setIconPadding(8, 8, 8, 8)
+
             .setColor(grayColor)
-            .setOnClick {
+            .setOnClickListener {
                 selectedTeam = Team.BLACK
 
                 blackButton.setColor(accentColor)
@@ -71,12 +75,11 @@ class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
 
         createOpeningButton = dialog.findViewById(R.id.create_opening_button)
         createOpeningButton
-            .setTexturedDrawable(R.drawable.check_mark_icon)
+            .setIcon(R.drawable.check_mark_icon)
             .setColor(Color.GRAY)
-            .disable()
-            .setIconScaleType(ScaleType.SQUARE)
+            .disable(false)
             .setCornerRadius(45.0f)
-            .setOnClick {
+            .setOnClickListener {
                 if (selectedTeam != null) {
                     onTeamSelected(openingNameInput.text.toString().trim(), selectedTeam!!)
                 }
@@ -94,7 +97,7 @@ class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
                 }
 
                 if (editText.isEmpty()) {
-                    createOpeningButton.disable()
+                    createOpeningButton.disable(false)
                     createOpeningButton.setColor(grayColor)
                 } else {
                     if (selectedTeam != null) {
@@ -117,14 +120,6 @@ class CreateOpeningDialog(private val onTeamSelected: (String, Team) -> Unit) {
 
     fun destroy() {
         dismiss()
-
-        if (this::whiteButton.isInitialized) {
-            whiteButton.destroy()
-        }
-
-        if (this::blackButton.isInitialized) {
-            blackButton.destroy()
-        }
     }
 
 }

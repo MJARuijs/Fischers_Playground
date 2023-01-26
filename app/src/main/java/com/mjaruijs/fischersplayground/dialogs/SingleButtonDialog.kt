@@ -39,7 +39,7 @@ class SingleButtonDialog(parent: Activity, cancelable: Boolean, title: String, m
         messageView.minWidth = (parent.resources.displayMetrics.widthPixels * 0.5f).roundToInt()
         messageView.text = message
         titleView.text = title
-        button.setColor(235, 186, 145)
+        button.setColorResource(R.color.accent_color)
             .setCornerRadius(20.0f)
             .setOnClickListener {
                 onButtonClick()

@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.chess.game
 
-import android.os.Parcelable
 import com.mjaruijs.fischersplayground.chess.Board
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
@@ -34,18 +33,24 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     var enableBackButton: () -> Unit = {}
     var enableForwardButton: () -> Unit = {}
     var disableBackButton: () -> Unit = {}
-    var onPieceTaken: (PieceType, Team) -> Unit = { _, _ -> }
-    var onPieceRegained: (PieceType, Team) -> Unit = { _, _ -> }
-    var onCheckMate: (Team) -> Unit = {}
+    var onPieceTaken: (PieceType, Team) -> Unit = { _, _ ->
+        Logger.warn(TAG, "Tried to call onPieceTaken(), but function is not set yet..")
+    }
+    var onPieceRegained: (PieceType, Team) -> Unit = { _, _ ->
+        Logger.warn(TAG, "Tried to call onPieceRegained(), but function is not set yet..")
+    }
+    var onCheckMate: (Team) -> Unit = {
+        Logger.warn(TAG, "Tried to call onCheckMate(), but function is not set yet..")
+    }
     var onAnimationStarted: () -> Unit = {}
     var onAnimationFinished: (Int) -> Unit = {}
 
     var queueAnimation: (AnimationData) -> Unit = {
-        Logger.warn(TAG,"Tried to animate move, but function is not set yet")
+        Logger.warn(TAG,"Tried to animate move, but function is not set yet..")
     }
 
     var onMoveMade: (Move) -> Unit = {
-        Logger.warn(TAG, "Tried to make a move, but function is not set yet")
+        Logger.warn(TAG, "Tried to make a move, but function is not set yet..")
     }
 
     init {
@@ -65,6 +70,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
         val selectedSquare = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
+        Logger.debug(TAG, "Selected square: $selectedSquare")
         processOnClick(selectedSquare)
     }
 
@@ -361,6 +367,10 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             state[fromPosition] = null
         }
 
+        if (move.promotedPiece != null) {
+            state[toPosition] = Piece(move.promotedPiece, move.team)
+        }
+
         if (move.pieceTaken != null) {
             val takenPosition = move.getTakenPosition(team)!!
             if (takenPosition != toPosition) {
@@ -407,6 +417,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             }
         }
 
+        Logger.debug(TAG, "Queuing animation")
         queueAnimation(animation)
     }
 

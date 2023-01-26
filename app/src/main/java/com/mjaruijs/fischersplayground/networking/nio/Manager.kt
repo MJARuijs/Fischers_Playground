@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.networking.nio
 
 import android.content.Context
+import com.mjaruijs.fischersplayground.util.Logger
 import java.nio.channels.Selector
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -51,6 +52,7 @@ class Manager(private val name: String) : Runnable {
                             try {
                                 client.onRead(context)
                             } catch (exception: Exception) {
+                                Logger.error(TAG, exception.stackTraceToString())
 //                                if (::onClientDisconnect.isInitialized) {
 //                                    val clientInfo = client.channel.remoteAddress.toString()
 //                                    val startIndex = clientInfo.indexOf("/")
@@ -81,6 +83,10 @@ class Manager(private val name: String) : Runnable {
         selector.close()
         running.set(false)
         registering.set(false)
+    }
+
+    companion object {
+        private const val TAG = "Manager"
     }
 
 }

@@ -173,12 +173,14 @@ class DataManager(context: Context) {
         return openings
     }
 
-    fun removeOpening(name: String, context: Context) {
+    fun deleteOpening(name: String, team: Team, context: Context) {
         obtainOpeningLock()
 
-        savedOpenings.removeIf { opening -> opening.name == name }
+        savedOpenings.removeIf { opening -> opening.name == name && opening.team == team }
 
         unlockOpenings()
+        FileManager.delete("opening_${name}_${team}.txt")
+
         saveOpenings(context)
     }
 

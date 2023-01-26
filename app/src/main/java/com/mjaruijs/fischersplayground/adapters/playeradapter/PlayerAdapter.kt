@@ -8,7 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
-import com.mjaruijs.fischersplayground.userinterface.UIButton
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
 class PlayerAdapter(var id: String, private val onInvite: (String, Long, String, String) -> Unit, private val sendMessage: (NetworkMessage) -> Unit) : RecyclerView.Adapter<PlayerAdapter.PlayerViewHolder>() {
@@ -31,23 +32,26 @@ class PlayerAdapter(var id: String, private val onInvite: (String, Long, String,
 
     override fun onBindViewHolder(holder: PlayerViewHolder, position: Int) {
         val playerCard = players[position]
-        holder.nameButton.buttonText = playerCard.name
-        holder.nameButton.setButtonTextSize(150f)
-        holder.nameButton.setColor(Color.TRANSPARENT)
-        holder.nameButton.setOnClick {
 
-            val inviteId = "${id}_${players[position].id}_${System.nanoTime()}"
-            val timeStamp = Time.getFullTimeStamp()
+        holder.nameButton.setText(playerCard.name)
+            .setTextSize(32f)
+            .setOnClickListener {
+                val inviteId = "${id}_${players[position].id}_${System.nanoTime()}"
+                val timeStamp = Time.getFullTimeStamp()
 
-            onInvite(inviteId, timeStamp, players[position].name, players[position].id)
+                onInvite(inviteId, timeStamp, players[position].name, players[position].id)
 
-            sendMessage(NetworkMessage(Topic.INVITE, "${players[position].id}|$inviteId|$timeStamp"))
-        }
+                sendMessage(NetworkMessage(Topic.INVITE, "${players[position].id}|$inviteId|$timeStamp"))
+            }
     }
 
     override fun getItemCount() = players.size
 
     inner class PlayerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        var nameButton: UIButton = view.findViewById(R.id.player_name)
+        var nameButton: UIButton2 = view.findViewById(R.id.player_name)
+    }
+
+    companion object {
+        private const val TAG = "PlayerAdapter"
     }
 }

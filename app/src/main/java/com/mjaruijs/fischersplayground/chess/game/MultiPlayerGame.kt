@@ -16,6 +16,7 @@ import com.mjaruijs.fischersplayground.util.Logger
 
 class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentName: String, var status: GameStatus, var opponentStatus: String, lastUpdated: Long, isPlayingWhite: Boolean, var moveToBeConfirmed: String = "", private val savedMoves: ArrayList<Move> = ArrayList(), val chatMessages: ArrayList<ChatMessage> = arrayListOf(), val newsUpdates: ArrayList<News> = arrayListOf()) : Game(isPlayingWhite, lastUpdated), Parcelable {
 
+    @Suppress("DEPRECATION")
     constructor(parcel: Parcel) : this(
         parcel.readString()!!,
         parcel.readString()!!,
@@ -34,7 +35,6 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             parcel.readList(savedMoves, Move::class.java.classLoader, Move::class.java)
             parcel.readList(chatMessages, ChatMessage::class.java.classLoader, ChatMessage::class.java)
             parcel.readList(newsUpdates, News::class.java.classLoader, News::class.java)
-
         }
     }
 
@@ -131,7 +131,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     }
 
     private fun restoreMoves() {
-        for (move in savedMoves) {
+        for ((i, move) in savedMoves.withIndex()) {
             restoreMove(move)
         }
     }
@@ -150,7 +150,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val takenPiece = takenPieceData?.first
         val takenPiecePosition = takenPieceData?.second
 
-        if (takenPiece != null && move != savedMoves.last()) {
+        if (takenPiece != null) {
             takenPieces += takenPiece
         }
 
