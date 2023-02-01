@@ -16,6 +16,7 @@ import com.mjaruijs.fischersplayground.activities.game.GameActivity
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.chess.game.Move
+import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.fragments.PracticeProgressFragment
@@ -27,7 +28,8 @@ import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
 import com.mjaruijs.fischersplayground.util.Time
-import java.util.*
+import java.util.LinkedList
+import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 class PracticeActivity : GameActivity() {
@@ -38,11 +40,14 @@ class PracticeActivity : GameActivity() {
 
     private var hintRequested = false
     private var madeMistakes = false
+    private var drawingArrows = false
+
     private var finishedPracticeSession = false
 
     private val lines = LinkedList<OpeningLine>()
     private var currentLine: OpeningLine? = null
     private var nextLine: OpeningLine? = null
+    private var currentMove: Move? = null
     private var currentMoveIndex = 0
 
     private val variationLines = ArrayList<OpeningLine>()
@@ -54,6 +59,9 @@ class PracticeActivity : GameActivity() {
 
     private var resumeSession = false
     private var useShuffle: Boolean? = null
+    private var practiceArrows = false
+    private var arrowStartSquare = Vector2(-1, -1)
+    private var arrows = ArrayList<MoveArrow>()
 
     private lateinit var moveFeedbackIcon: MoveFeedbackIcon
     private lateinit var practiceNavigationButtons: PracticeOpeningNavigationBarFragment
@@ -114,6 +122,7 @@ class PracticeActivity : GameActivity() {
                 }
 
                 useShuffle = intent.getBooleanExtra("use_shuffle", false)
+                practiceArrows = intent.getBooleanExtra("practice_arrows", false)
 
                 totalLineCount = variationLines.size
                 practiceProgress = 0
@@ -180,16 +189,44 @@ class PracticeActivity : GameActivity() {
     override fun onClick(x: Float, y: Float) {
         super.onClick(x, y)
 
-        if (game.board.isASquareSelected()) {
-            boardOverlay.hideArrows()
+        if (drawingArrows) {
+            if (arrowStartSquare.x == -1f) {
+                arrowStartSquare = game.determineSelectedSquare(x, y, displayWidth, displayHeight)
+                glView.highlightSquare(arrowStartSquare)
+            } else {
+                val arrowEndSquare = game.determineSelectedSquare(x, y, displayWidth, displayHeight)
+                onArrowToggled(arrowStartSquare, arrowEndSquare)
+                arrowStartSquare = Vector2(-1, -1)
+                glView.clearHighlightedSquares()
+            }
         } else {
-            boardOverlay.draw()
+            if (game.board.isASquareSelected()) {
+//                boardOverlay.hideArrows()
+            } else {
+//                boardOverlay.draw()
+            }
         }
+    }
+
+    private fun onArrowToggled(startSquare: Vector2, endSquare: Vector2) {
+        val arrow = MoveArrow(startSquare, endSquare)
+        val deletedArrow = boardOverlay.toggleArrow(arrow)
+        if (deletedArrow) {
+            arrows.remove(arrow)
+        } else {
+            arrows += arrow
+        }
+//        if (deletedArrow) {
+//            openingMovesFragment.getCurrentOpeningFragment().deleteArrow(arrow)
+//        } else {
+//            openingMovesFragment.getCurrentOpeningFragment().addArrow(arrow)
+//        }
+
+        boardOverlay.invalidate()
     }
 
     override fun onMoveMade(move: Move) {
         super.onMoveMade(move)
-
     }
 
     private fun onMoveAnimationStarted() {
@@ -205,7 +242,7 @@ class PracticeActivity : GameActivity() {
                 checkMoveCorrectness(move, moveIndex)
             }
         } else {
-            boardOverlay.addArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
+            boardOverlay.drawArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
         }
     }
 
@@ -250,30 +287,59 @@ class PracticeActivity : GameActivity() {
 
     private fun onNextMoveClicked() {
         (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
-        boardOverlay.addArrows(currentLine!!.arrows[currentMoveIndex + currentLine!!.setupMoves.size - 1] ?: ArrayList())
-
+        boardOverlay.drawArrows(currentLine!!.arrows[currentMoveIndex + currentLine!!.setupMoves.size - 1] ?: ArrayList())
         (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
     }
 
-    private fun checkMoveCorrectness(move: Move, moveIndex: Int) {
-        if (move == currentLine!!.lineMoves[currentMoveIndex]) {
-            currentMoveIndex++
-            boardOverlay.addArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
-
-            if (isLastMoveInLine(move)) {
+    private fun onCheckArrowsClicked() {
+        val correctArrows = currentLine!!.arrows[currentMoveIndex + currentLine!!.setupMoves.size - 1] ?: ArrayList()
+        if (correctArrows.containsAll(arrows) && arrows.containsAll(correctArrows)) {
+            if (isLastMoveInLine(currentMove!!)) {
                 progressFragment.incrementCurrent()
-                showMoveFeedback(move.getToPosition(openingTeam), true)
+                showMoveFeedback(currentMove!!.getToPosition(openingTeam), true)
                 processLineFinished()
             } else {
                 if (currentLine!!.arrows.containsKey(game.currentMoveIndex)) {
                     (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextMoveButton()
                 } else {
                     (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
-
                     (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
                 }
             }
             hintRequested = false
+        }
+    }
+
+    private fun processCorrectMove() {
+
+    }
+
+    private fun checkMoveCorrectness(move: Move, moveIndex: Int) {
+        if (move == currentLine!!.lineMoves[currentMoveIndex]) {
+            currentMoveIndex++
+
+            if (!practiceArrows) {
+                currentMove = move
+                boardOverlay.drawArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
+
+                if (isLastMoveInLine(move)) {
+                    progressFragment.incrementCurrent()
+                    showMoveFeedback(move.getToPosition(openingTeam), true)
+                    processLineFinished()
+                } else {
+                    if (currentLine!!.arrows.containsKey(game.currentMoveIndex)) {
+                        (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextMoveButton()
+                    } else {
+                        (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
+                        (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
+                    }
+                }
+                hintRequested = false
+            } else {
+//                boardOverlay.clearArrows()
+                drawingArrows = true
+                (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showCheckArrowButton()
+            }
         } else {
             processLineFailed()
             showMoveFeedback(move.getToPosition(openingTeam), false)
@@ -460,7 +526,7 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun loadPracticeActionButtons() {
-        practiceNavigationButtons = PracticeOpeningNavigationBarFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked, ::onExitClicked, ::onNextMoveClicked)
+        practiceNavigationButtons = PracticeOpeningNavigationBarFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked, ::onExitClicked, ::onNextMoveClicked, ::onCheckArrowsClicked)
         supportFragmentManager.commit {
             setReorderingAllowed(true)
             replace(R.id.action_buttons_fragment, practiceNavigationButtons)

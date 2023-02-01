@@ -15,6 +15,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
     private lateinit var onNextClicked: () -> Unit
     private lateinit var onExitClicked: () -> Unit
     private lateinit var onNextMoveClicked: () -> Unit
+    private lateinit var onCheckArrowsClicked: () -> Unit
 
     private lateinit var hintButton: UIButton2
     private lateinit var solutionButton: UIButton2
@@ -22,6 +23,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
     private lateinit var nextButton: UIButton2
     private lateinit var exitButton: UIButton2
     private lateinit var nextMoveButton: UIButton2
+    private lateinit var checkArrowsButton: UIButton2
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -94,12 +96,24 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
                 onNextMoveClicked()
             }
 
+        checkArrowsButton = UIButton2(requireContext())
+        checkArrowsButton
+            .setText("Check Arrows")
+            .setTextSize(TEXT_SIZE)
+            .setIconPadding(0, 4, 0, 0)
+            .setIcon(R.drawable.check_circled_icon)
+            .setColor(BACKGROUND_COLOR)
+            .setOnClickListener {
+                onCheckArrowsClicked()
+            }
+
         addButton(hintButton)
         addButton(solutionButton)
         addButton(retryButton)
         addButton(nextButton)
         addButton(exitButton)
         addButton(nextMoveButton)
+        addButton(checkArrowsButton)
 
         hintButton.show()
         solutionButton.hide()
@@ -107,6 +121,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         nextButton.hide()
         exitButton.hide()
         nextMoveButton.hide()
+        checkArrowsButton.hide()
 
         backButton.hide()
         forwardButton.hide()
@@ -118,6 +133,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         nextButton.hide()
         hintButton.show()
         nextMoveButton.hide()
+        checkArrowsButton.hide()
     }
 
     fun showSolutionButton() {
@@ -126,6 +142,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         nextButton.hide()
         hintButton.hide()
         nextMoveButton.hide()
+        checkArrowsButton.hide()
     }
 
     fun showRetryButton() {
@@ -134,6 +151,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         hintButton.hide()
         nextButton.hide()
         nextMoveButton.hide()
+        checkArrowsButton.hide()
     }
 
     fun showNextButton() {
@@ -141,6 +159,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         solutionButton.hide()
         hintButton.hide()
         nextButton.show()
+        checkArrowsButton.hide()
     }
 
     fun showExitButton() {
@@ -150,6 +169,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         nextButton.hide()
         exitButton.show()
         nextMoveButton.hide()
+        checkArrowsButton.hide()
     }
 
     fun showNextMoveButton() {
@@ -159,11 +179,22 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
         nextButton.hide()
         exitButton.hide()
         nextMoveButton.show()
+        checkArrowsButton.hide()
+    }
+
+    fun showCheckArrowButton() {
+        retryButton.hide()
+        solutionButton.hide()
+        hintButton.hide()
+        nextButton.hide()
+        exitButton.hide()
+        nextMoveButton.hide()
+        checkArrowsButton.show()
     }
 
     companion object {
 
-         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit, onExitClicked: () -> Unit, onNextMoveClicked: () -> Unit): PracticeOpeningNavigationBarFragment {
+         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit, onExitClicked: () -> Unit, onNextMoveClicked: () -> Unit, onCheckArrowsClicked: () -> Unit): PracticeOpeningNavigationBarFragment {
              val fragment = PracticeOpeningNavigationBarFragment()
              fragment.init(game, evaluateNavigationButtons)
              fragment.onHintClicked = onHintClicked
@@ -172,6 +203,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
              fragment.onNextClicked = onNextClicked
              fragment.onExitClicked = onExitClicked
              fragment.onNextMoveClicked = onNextMoveClicked
+             fragment.onCheckArrowsClicked = onCheckArrowsClicked
              return fragment
          }
 

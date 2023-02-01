@@ -20,7 +20,6 @@ import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.userinterface.MoveHeaderView
 import com.mjaruijs.fischersplayground.userinterface.OpeningMovesRowView
-import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
 class OpeningMovesFragment : Fragment() {
@@ -142,18 +141,16 @@ class OpeningMovesFragment : Fragment() {
         moveTable.invalidate()
     }
 
-    fun addArrow(arrow: MoveArrow) {
+    fun toggleArrow(arrow: MoveArrow) {
         if (arrows[currentMoveIndex] == null) {
             arrows[currentMoveIndex] = arrayListOf(arrow)
         } else {
-            if (!arrows[currentMoveIndex]!!.contains(arrow)) {
+            if (arrows[currentMoveIndex]!!.contains(arrow)) {
+                arrows[currentMoveIndex]!!.remove(arrow)
+            } else {
                 arrows[currentMoveIndex]!!.add(arrow)
             }
         }
-    }
-
-    fun deleteArrow(arrow: MoveArrow) {
-        arrows[currentMoveIndex]!!.remove(arrow)
     }
 
     fun addMove(move: Move) {

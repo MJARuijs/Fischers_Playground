@@ -91,7 +91,6 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayer
             val previouslySelectedSquare = board.selectedSquare
 
             if (possibleMoves.contains(clickedSquare)) {
-                Logger.debug(TAG, "A square was already selected, so performing move")
                 Thread {
                     move(teamToMove, previouslySelectedSquare, clickedSquare)
                 }.start()

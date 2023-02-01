@@ -70,7 +70,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     fun onClick(x: Float, y: Float, displayWidth: Int, displayHeight: Int) {
         val selectedSquare = board.determineSelectedSquare(x, y, displayWidth, displayHeight)
-        Logger.debug(TAG, "Selected square: $selectedSquare")
         processOnClick(selectedSquare)
     }
 

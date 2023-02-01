@@ -157,7 +157,7 @@ class VariationMenuActivity : ClientActivity() {
             }
     }
 
-    private fun onStartPracticing(useShuffle: Boolean) {
+    private fun onStartPracticing(useShuffle: Boolean, practiceArrows: Boolean) {
         stayingInApp = true
 
         practiceSettingsDialog.dismiss()
@@ -167,6 +167,7 @@ class VariationMenuActivity : ClientActivity() {
         intent.putExtra("opening_team", openingTeam.toString())
         intent.putExtra("resume_session", false)
         intent.putExtra("use_shuffle", useShuffle)
+        intent.putExtra("practice_arrows", practiceArrows)
         intent.putStringArrayListExtra("variation_name", selectedVariations)
 
         startActivity(intent)

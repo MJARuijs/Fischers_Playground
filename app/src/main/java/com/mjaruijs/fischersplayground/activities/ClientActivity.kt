@@ -28,7 +28,7 @@ abstract class ClientActivity : AppCompatActivity() {
     protected var userId: String = DEFAULT_USER_ID
     protected var userName = DEFAULT_USER_NAME
 
-    protected lateinit var networkManager: NetworkManager
+//    protected lateinit var networkManager: NetworkManager
     protected lateinit var dataManager: DataManager
     protected lateinit var vibrator: Vibrator
 
@@ -107,14 +107,14 @@ abstract class ClientActivity : AppCompatActivity() {
         userId = preferences.getString(USER_ID_KEY, DEFAULT_USER_ID)!!
         userName = preferences.getString(USER_NAME_KEY, DEFAULT_USER_NAME)!!
 
-        networkManager = NetworkManager.getInstance()
+//        networkManager = NetworkManager.getInstance()
         dataManager = DataManager.getInstance(this)
     }
 
     override fun onStart() {
         super.onStart()
-        bindService(Intent(this, MessageReceiverService::class.java), connection, Context.BIND_AUTO_CREATE)
-//        bindService(Intent(this, NetworkService::class.java), networkMessengerConnection, Context.BIND_AUTO_CREATE)
+//        bindService(Intent(this, MessageReceiverService::class.java), connection, Context.BIND_AUTO_CREATE)
+        bindService(Intent(this, NetworkService::class.java), networkMessengerConnection, Context.BIND_AUTO_CREATE)
     }
 
     override fun onResume() {
@@ -145,30 +145,30 @@ abstract class ClientActivity : AppCompatActivity() {
             .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
             .build()
 
-        connectionCallback = ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost)
-        connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
-
-        if (!networkManager.isConnected()) {
-            connectivityManager.requestNetwork(networkRequest, connectionCallback)
-        }
+//        connectionCallback = ConnectivityCallback(::onNetworkAvailable, ::onNetworkLost)
+//        connectivityManager = getSystemService(ConnectivityManager::class.java) as ConnectivityManager
+//
+//        if (!networkManager.isConnected()) {
+//            connectivityManager.requestNetwork(networkRequest, connectionCallback)
+//        }
     }
 
     override fun onStop() {
         super.onStop()
 
         try {
-            connectivityManager.unregisterNetworkCallback(connectionCallback)
+//            connectivityManager.unregisterNetworkCallback(connectionCallback)
         } catch (e: Exception) {
 
         }
-//        unbindService(networkMessengerConnection)
+        unbindService(networkMessengerConnection)
     }
 
     override fun onPause() {
         if (!stayingInApp) {
             leftApp = true
             Logger.debug(activityName, "Not staying in app!")
-            networkManager.stop()
+//            networkManager.stop()
         }
 
         incomingInviteDialog.dismiss()
@@ -186,50 +186,50 @@ abstract class ClientActivity : AppCompatActivity() {
     }
 
     protected fun sendNetworkMessage(networkMessage: NetworkMessage) {
-        networkManager.sendMessage(networkMessage)
+//        networkManager.sendMessage(networkMessage)
 
-//        val message = Message.obtain()
-//
-//        message.what = 1
-//        message.replyTo = networkMessengerClient
-//        message.obj = networkMessage
-//
-//        if (networkServiceMessenger != null) {
-//            Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
-//            networkServiceMessenger!!.send(message)
-//        } else {
-//            Thread {
-//                while (networkServiceMessenger == null) {
-//                    Thread.sleep(10)
-////                    Logger.debug(activityName, "Waiting for networkService to send ${networkMessage.topic}")
-//                }
-//
-//                runOnUiThread {
-//                    Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
-//                    networkServiceMessenger!!.send(message)
-//                }
-//            }.start()
-//        }
+        val message = Message.obtain()
+
+        message.what = 1
+        message.replyTo = networkMessengerClient
+        message.obj = networkMessage
+
+        if (networkServiceMessenger != null) {
+            Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
+            networkServiceMessenger!!.send(message)
+        } else {
+            Thread {
+                while (networkServiceMessenger == null) {
+                    Thread.sleep(10)
+//                    Logger.debug(activityName, "Waiting for networkService to send ${networkMessage.topic}")
+                }
+
+                runOnUiThread {
+                    Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
+                    networkServiceMessenger!!.send(message)
+                }
+            }.start()
+        }
     }
 
     private fun onNetworkAvailable() {
-        Logger.debug(activityName, "Network available ${leftApp} ${networkManager.isRunning()}")
-        if (!leftApp) {
-            if (!networkManager.isRunning()) {
-                networkManager.run(applicationContext)
-                if (userId != DEFAULT_USER_ID) {
-                    networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
-                }
-            }
-        }
+//        Logger.debug(activityName, "Network available ${leftApp} ${networkManager.isRunning()}")
+//        if (!leftApp) {
+//            if (!networkManager.isRunning()) {
+//                networkManager.run(applicationContext)
+//                if (userId != DEFAULT_USER_ID) {
+//                    networkManager.sendMessage(NetworkMessage(Topic.ID_LOGIN, userId))
+//                }
+//            }
+//        }
     }
 
     private fun onNetworkLost() {
-        if (!leftApp) {
-            Logger.warn(activityName, "Network Lost")
-            networkManager.stop()
-            connectivityManager.unregisterNetworkCallback(connectionCallback)
-        }
+//        if (!leftApp) {
+//            Logger.warn(activityName, "Network Lost")
+//            networkManager.stop()
+//            connectivityManager.unregisterNetworkCallback(connectionCallback)
+//        }
     }
 
     open fun sendResumeStatusToServer() {

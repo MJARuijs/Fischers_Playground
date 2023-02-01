@@ -22,6 +22,7 @@ import androidx.core.view.get
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
+import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -35,16 +36,16 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
     private val arrows = ArrayList<MoveArrow>()
 
+    private var arrowCanvas = Canvas()
     private var triangleBitmap: Bitmap? = null
+
+    private var squareHeight = -1f
+
     private lateinit var knightArrowBitmap: Bitmap
     private lateinit var transparentPaint: Paint
     private lateinit var solidPaint: Paint
-    private var squareHeight = -1f
 
     private lateinit var finalBitmap: Bitmap
-    private var arrowCanvas = Canvas()
-
-    private var isPlayingWhite = true
 
     init {
         val triangleDrawable = ResourcesCompat.getDrawable(resources, R.drawable.triangle, null)
@@ -76,16 +77,26 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
             finalBitmap = Bitmap.createBitmap(layout.width, layout.height, Bitmap.Config.ARGB_8888)
             arrowCanvas = Canvas(finalBitmap)
 
+            Logger.debug(TAG, "Arrows: ${arrows.size}")
             if (arrows.isNotEmpty()) {
-                addArrows(arrows)
+                drawArrows(arrows)
             }
         }
 
         setWillNotDraw(false)
     }
 
+    fun checkArrows() {
+        if (arrows.isNotEmpty()) {
+            for (arrow in arrows) {
+                Logger.debug(TAG, "Has arrow from ${arrow.startSquare} to ${arrow.endSquare}")
+            }
+        } else {
+            Logger.debug(TAG, "There are no arrows to be drawn")
+        }
+    }
+
     fun swapCharactersForBlack() {
-        isPlayingWhite = false
         for (child in layout.children) {
             if (child is TextView) {
                 child.text = child.tag.toString()
@@ -128,21 +139,37 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         }
     }
 
-    fun addArrows(arrows: ArrayList<MoveArrow>) {
+    fun drawArrows(arrows: ArrayList<MoveArrow>) {
         if (triangleBitmap == null) {
             this.arrows.addAll(arrows)
             return
         }
 
-        clearArrows()
+        hideArrows()
         for (arrow in arrows) {
-            addArrow(arrow)
+            toggleArrow(arrow)
         }
+        t()
         invalidate()
     }
 
     fun hideArrows() {
         arrowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+        clearArrows()
+        invalidate()
+    }
+
+    fun t() {
+        for (data in straightArrows) {
+            drawStraightArrow(data)
+        }
+
+        for (data in knightArrows) {
+            drawKnightArrow(data)
+        }
+
+        arrowCanvas.save()
+        arrowCanvas.restore()
         invalidate()
     }
 
@@ -150,10 +177,10 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         invalidate()
     }
 
-    private fun clearArrows() {
+    fun clearArrows() {
         straightArrows.clear()
         knightArrows.clear()
-        hideArrows()
+//        hideArrows()
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -170,6 +197,8 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
             return
         }
 
+        Logger.debug(TAG, "Drawing straight arrow from ${arrowData.fromSquare} to ${arrowData.toSquare}")
+
         arrowCanvas.save()
         arrowCanvas.translate(arrowData.translationX, arrowData.translationY)
         arrowCanvas.rotate(arrowData.angle, width / 2f, height / 2f)
@@ -185,9 +214,10 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         arrowCanvas.rotate(arrowData.angle, arrowData.pivotX * squareHeight, arrowData.pivotY * squareHeight)
         arrowCanvas.drawBitmap(knightArrowBitmap, arrowData.matrix, null)
         arrowCanvas.restore()
+        Logger.debug(TAG, "Drawing knight arrow from ${arrowData.fromSquare} to ${arrowData.toSquare}")
     }
 
-    fun addArrow(moveArrow: MoveArrow): Boolean {
+    fun toggleArrow(moveArrow: MoveArrow): Boolean {
         val startSquare = moveArrow.startSquare
         val endSquare = moveArrow.endSquare
 
@@ -196,12 +226,13 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
         if (removedStraightArrow || removedKnightArrow) {
             arrowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-            for (arrow in straightArrows) {
-                drawStraightArrow(arrow)
-            }
-            for (arrow in knightArrows) {
-                drawKnightArrow(arrow)
-            }
+//            for (arrow in straightArrows) {
+//                drawStraightArrow(arrow)
+//            }
+//            for (arrow in knightArrows) {
+//                drawKnightArrow(arrow)
+//            }
+            t()
             return true
         }
 
@@ -270,7 +301,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
             val arrowData = KnightArrowData(startSquare, endSquare, angle, matrix, pivotX, pivotY)
             knightArrows += arrowData
-            drawKnightArrow(arrowData)
+//            drawKnightArrow(arrowData)
         } else {
             val absXDif = abs(xDif)
             val absYDif = abs(yDif)
@@ -331,9 +362,10 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
             val arrowData = ArrowData(startSquare, endSquare, arrowBases, arrowHeadMatrix, angle, translationX * squareHeight, translationY * squareHeight)
             straightArrows += arrowData
-            drawStraightArrow(arrowData)
+//            drawStraightArrow(arrowData)
         }
 
+//        t()
         return false
     }
 

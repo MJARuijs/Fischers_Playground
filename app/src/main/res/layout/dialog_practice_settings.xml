@@ -29,13 +29,27 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="4dp"
         android:text="Shuffle lines"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toTopOf="@+id/practice_arrows_checkbox"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/practice_dialog_title" />
+
+    <CheckBox
+        android:id="@+id/practice_arrows_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="16dp"
+        android:text="Practice arrows"
         android:textColor="@color/white"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/start_practicing_button"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/practice_dialog_title" />
+        app:layout_constraintTop_toBottomOf="@id/practice_dialog_shuffle_checkbox" />
 
     <com.mjaruijs.fischersplayground.userinterface.UIButton2
         android:id="@+id/start_practicing_button"
@@ -47,5 +61,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/practice_dialog_shuffle_checkbox" />
+        app:layout_constraintTop_toBottomOf="@id/practice_arrows_checkbox" />
 </androidx.constraintlayout.widget.ConstraintLayout>

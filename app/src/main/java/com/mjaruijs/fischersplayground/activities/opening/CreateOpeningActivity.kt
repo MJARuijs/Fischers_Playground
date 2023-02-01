@@ -36,6 +36,7 @@ import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
 class CreateOpeningActivity : GameActivity() {
@@ -43,6 +44,7 @@ class CreateOpeningActivity : GameActivity() {
     override var activityName = "create_opening_activity"
 
     override var isSinglePlayer = true
+
     private var hasUnsavedChanges = false
     private var arrowModeEnabled = false
     private var arrowStartSquare = Vector2(-1, -1)
@@ -170,6 +172,7 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     override fun onClick(x: Float, y: Float) {
+        boardOverlay.t()
         if (arrowModeEnabled) {
             if (arrowStartSquare.x == -1f) {
                 arrowStartSquare = game.determineSelectedSquare(x, y, displayWidth, displayHeight)
@@ -186,11 +189,14 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onMoveAnimationStarted() {
+        Logger.debug(activityName, "Move animation started!")
         boardOverlay.hideArrows()
     }
 
     private fun onMoveAnimationFinished(moveIndex: Int) {
-        boardOverlay.addArrows(selectedLine!!.arrows[moveIndex] ?: ArrayList())
+        Logger.debug(activityName, "Move animation finished!")
+        boardOverlay.drawArrows(selectedLine!!.arrows[moveIndex] ?: ArrayList())
+//        boardOverlay.draw()
     }
 
     override fun onMoveMade(move: Move) {
@@ -208,7 +214,7 @@ class CreateOpeningActivity : GameActivity() {
     private fun onLineSelected(line: OpeningLine, selectedMoveIndex: Int) {
         selectedLine = line
         game.swapMoves(line.getAllMoves(), selectedMoveIndex)
-        boardOverlay.addArrows(line.arrows[selectedMoveIndex] ?: ArrayList())
+        boardOverlay.drawArrows(line.arrows[selectedMoveIndex] ?: ArrayList())
 
         evaluateNavigationButtons()
         requestRender()
@@ -260,12 +266,8 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onArrowToggled(startSquare: Vector2, endSquare: Vector2) {
         val arrow = MoveArrow(startSquare, endSquare)
-        val deletedArrow = boardOverlay.addArrow(arrow)
-        if (deletedArrow) {
-            openingMovesFragment.getCurrentOpeningFragment().deleteArrow(arrow)
-        } else {
-            openingMovesFragment.getCurrentOpeningFragment().addArrow(arrow)
-        }
+        boardOverlay.toggleArrow(arrow)
+        openingMovesFragment.getCurrentOpeningFragment().toggleArrow(arrow)
 
         boardOverlay.invalidate()
         hasUnsavedChanges = true
@@ -275,7 +277,7 @@ class CreateOpeningActivity : GameActivity() {
         practiceSettingsDialog.show(applicationContext)
     }
 
-    private fun onStartPracticing(useShuffle: Boolean) {
+    private fun onStartPracticing(useShuffle: Boolean, practiceArrows: Boolean) {
         stayingInApp = true
 
         if (hasUnsavedChanges) {
@@ -289,6 +291,7 @@ class CreateOpeningActivity : GameActivity() {
         intent.putExtra("opening_team", openingTeam.toString())
         intent.putExtra("resume_session", false)
         intent.putExtra("use_shuffle", useShuffle)
+        intent.putExtra("practice_arrows", practiceArrows)
         intent.putStringArrayListExtra("variation_name", arrayListOf(variationName))
 
         startActivity(intent)
