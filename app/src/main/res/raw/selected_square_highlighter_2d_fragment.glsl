@@ -26,7 +26,9 @@ void main() {
         outColor = mix(vec4(1,1,1,1), color, maxDistance);
     } else {
         outColor = color;
+//        outColor.x = translation.x * 0.5 + 0.5;
         outColor.a = 0.5;
+//        outColor.a = 1.0;
     }
 
 }

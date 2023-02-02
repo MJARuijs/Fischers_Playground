@@ -172,7 +172,7 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     override fun onClick(x: Float, y: Float) {
-        boardOverlay.t()
+        boardOverlay.draw()
         if (arrowModeEnabled) {
             if (arrowStartSquare.x == -1f) {
                 arrowStartSquare = game.determineSelectedSquare(x, y, displayWidth, displayHeight)
@@ -190,7 +190,7 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onMoveAnimationStarted() {
         Logger.debug(activityName, "Move animation started!")
-        boardOverlay.hideArrows()
+        boardOverlay.clearArrows()
     }
 
     private fun onMoveAnimationFinished(moveIndex: Int) {
@@ -266,10 +266,14 @@ class CreateOpeningActivity : GameActivity() {
 
     private fun onArrowToggled(startSquare: Vector2, endSquare: Vector2) {
         val arrow = MoveArrow(startSquare, endSquare)
+        if (!arrow.isValidArrow()) {
+            return
+        }
+
         boardOverlay.toggleArrow(arrow)
         openingMovesFragment.getCurrentOpeningFragment().toggleArrow(arrow)
 
-        boardOverlay.invalidate()
+        boardOverlay.draw()
         hasUnsavedChanges = true
     }
 

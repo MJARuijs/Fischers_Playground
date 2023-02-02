@@ -4,6 +4,8 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.util.FloatUtils
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 class MoveArrow(val startSquare: Vector2, val endSquare: Vector2) : Parcelable {
 
@@ -11,6 +13,29 @@ class MoveArrow(val startSquare: Vector2, val endSquare: Vector2) : Parcelable {
         Vector2.fromString(parcel.readString()!!),
         Vector2.fromString(parcel.readString()!!)
     )
+
+    fun isValidArrow(): Boolean {
+        val xDif = (endSquare.x - startSquare.x).roundToInt()
+        val yDif = (endSquare.y - startSquare.y).roundToInt()
+
+        if (xDif == 0 && yDif == 0) {
+            return false
+        }
+
+        if ((abs(xDif) == 1 && abs(yDif) == 2) || (abs(xDif) == 2 && abs(yDif) == 1)) {
+            return true
+        }
+
+        if ((abs(xDif) == abs(yDif))) {
+            return true
+        }
+
+        if ((xDif == 0 && yDif != 0) || (xDif != 0 && yDif == 0)) {
+            return true
+        }
+
+        return false
+    }
 
     override fun equals(other: Any?): Boolean {
         if (other == null) {

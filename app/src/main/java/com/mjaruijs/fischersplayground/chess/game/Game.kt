@@ -17,6 +17,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     var state = GameState(isPlayingWhite)
 
     val board: Board = Board()
+    var pieceMoving = false
 
     val takenPieces = ArrayList<Piece>()
 
@@ -416,7 +417,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             }
         }
 
-        Logger.debug(TAG, "Queuing animation")
+        Logger.debug(TAG, "Queuing animation of ${currentPositionPiece.type} from ${fromPosition} to ${toPosition}")
         queueAnimation(animation)
     }
 
@@ -457,6 +458,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val move = Move(team, actualFromPosition, actualToPosition, currentPositionPiece.type, isCheckMate, isCheck, takenPiece?.type, actualTakenPosition, promotedPiece)
 
         lastUpdated = Time.getFullTimeStamp()
+        pieceMoving = false
 
         if (isShowingCurrentMove()) {
             incrementMoveCounter()

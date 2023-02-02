@@ -20,7 +20,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
     private lateinit var hintButton: UIButton2
     private lateinit var solutionButton: UIButton2
     private lateinit var retryButton: UIButton2
-    private lateinit var nextButton: UIButton2
+    private lateinit var nextLineButton: UIButton2
     private lateinit var exitButton: UIButton2
     private lateinit var nextMoveButton: UIButton2
     private lateinit var checkArrowsButton: UIButton2
@@ -36,7 +36,6 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
             .setColor(BACKGROUND_COLOR)
             .setTextSize(TEXT_SIZE)
             .setOnClickListener {
-                showSolutionButton()
                 onHintClicked()
             }
 
@@ -48,7 +47,7 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
             .setTextSize(TEXT_SIZE)
             .setColor(BACKGROUND_COLOR)
             .setOnClickListener {
-                showHintButton()
+//                showHintButton()
                 onSolutionClicked()
             }
 
@@ -63,8 +62,8 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
                 onRetryClicked()
             }
 
-        nextButton = UIButton2(requireContext())
-        nextButton
+        nextLineButton = UIButton2(requireContext())
+        nextLineButton
             .setText("Next Line")
             .setIcon(R.drawable.next_arrow_circle_icon, Color.rgb(235, 186, 145))
             .setIconPadding(0, 4, 0, 0)
@@ -107,18 +106,18 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
                 onCheckArrowsClicked()
             }
 
-        addButton(hintButton)
-        addButton(solutionButton)
-        addButton(retryButton)
-        addButton(nextButton)
-        addButton(exitButton)
-        addButton(nextMoveButton)
-        addButton(checkArrowsButton)
+        addButton(hintButton, HINT_BUTTON)
+        addButton(solutionButton, SOLUTION_BUTTON)
+        addButton(retryButton, RETRY_BUTTON)
+        addButton(nextLineButton, NEXT_LINE_BUTTON)
+        addButton(exitButton, EXIT_BUTTON)
+        addButton(nextMoveButton, NEXT_MOVE_BUTTON)
+        addButton(checkArrowsButton, CHECK_ARROWS_BUTTON)
 
         hintButton.show()
         solutionButton.hide()
         retryButton.hide()
-        nextButton.hide()
+        nextLineButton.hide()
         exitButton.hide()
         nextMoveButton.hide()
         checkArrowsButton.hide()
@@ -128,85 +127,126 @@ class PracticeOpeningNavigationBarFragment : GameBarFragment() {
     }
 
     fun showHintButton() {
-        solutionButton.hide()
-        retryButton.hide()
-        nextButton.hide()
-        hintButton.show()
-        nextMoveButton.hide()
-        checkArrowsButton.hide()
+        showButton(HINT_BUTTON)
     }
 
     fun showSolutionButton() {
-        solutionButton.show()
-        retryButton.hide()
-        nextButton.hide()
-        hintButton.hide()
-        nextMoveButton.hide()
-        checkArrowsButton.hide()
+        showButton(SOLUTION_BUTTON)
     }
 
     fun showRetryButton() {
-        retryButton.show()
-        solutionButton.hide()
-        hintButton.hide()
-        nextButton.hide()
-        nextMoveButton.hide()
-        checkArrowsButton.hide()
+        showButton(RETRY_BUTTON)
     }
 
-    fun showNextButton() {
-        retryButton.hide()
-        solutionButton.hide()
-        hintButton.hide()
-        nextButton.show()
-        checkArrowsButton.hide()
-    }
-
-    fun showExitButton() {
-        retryButton.hide()
-        solutionButton.hide()
-        hintButton.hide()
-        nextButton.hide()
-        exitButton.show()
-        nextMoveButton.hide()
-        checkArrowsButton.hide()
+    fun showNextLineButton() {
+        showButton(NEXT_LINE_BUTTON)
     }
 
     fun showNextMoveButton() {
-        retryButton.hide()
-        solutionButton.hide()
-        hintButton.hide()
-        nextButton.hide()
-        exitButton.hide()
-        nextMoveButton.show()
-        checkArrowsButton.hide()
+        showButton(NEXT_MOVE_BUTTON)
     }
 
-    fun showCheckArrowButton() {
-        retryButton.hide()
-        solutionButton.hide()
-        hintButton.hide()
-        nextButton.hide()
-        exitButton.hide()
-        nextMoveButton.hide()
-        checkArrowsButton.show()
+    fun showExitButton() {
+        showButton(EXIT_BUTTON)
     }
+
+    fun showCheckArrowsButton() {
+        showButton(CHECK_ARROWS_BUTTON)
+    }
+
+//    fun showHintButton() {
+//        solutionButton.hide()
+//        retryButton.hide()
+//        nextLineButton.hide()
+//        hintButton.show()
+//        nextMoveButton.hide()
+//        checkArrowsButton.hide()
+//    }
+//
+//    fun showSolutionButton() {
+//        solutionButton.show()
+//        retryButton.hide()
+//        nextLineButton.hide()
+//        hintButton.hide()
+//        nextMoveButton.hide()
+//        checkArrowsButton.hide()
+//    }
+//
+//    fun showRetryButton() {
+//        retryButton.show()
+//        solutionButton.hide()
+//        hintButton.hide()
+//        nextLineButton.hide()
+//        nextMoveButton.hide()
+//        checkArrowsButton.hide()
+//    }
+//
+//    fun showNextLineButton() {
+//        retryButton.hide()
+//        solutionButton.hide()
+//        hintButton.hide()
+//        nextLineButton.show()
+//        checkArrowsButton.hide()
+//    }
+//
+//    fun showExitButton() {
+//        retryButton.hide()
+//        solutionButton.hide()
+//        hintButton.hide()
+//        nextLineButton.hide()
+//        exitButton.show()
+//        nextMoveButton.hide()
+//        checkArrowsButton.hide()
+//    }
+//
+//    fun showNextMoveButton() {
+//        retryButton.hide()
+//        solutionButton.hide()
+//        hintButton.hide()
+//        nextLineButton.hide()
+//        exitButton.hide()
+//        nextMoveButton.show()
+//        checkArrowsButton.hide()
+//    }
+//
+//    fun showCheckArrowButton() {
+//        retryButton.hide()
+//        nextLineButton.hide()
+//        exitButton.hide()
+//        nextMoveButton.hide()
+////        solutionButton.show()
+//        solutionButton.hide()
+//        hintButton.show()
+//        checkArrowsButton.show()
+//    }
+
+//    fun showButton(tag: String) {
+//
+//    }
 
     companion object {
 
-         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit, onExitClicked: () -> Unit, onNextMoveClicked: () -> Unit, onCheckArrowsClicked: () -> Unit): PracticeOpeningNavigationBarFragment {
-             val fragment = PracticeOpeningNavigationBarFragment()
-             fragment.init(game, evaluateNavigationButtons)
-             fragment.onHintClicked = onHintClicked
-             fragment.onSolutionClicked = onSolutionClicked
-             fragment.onRetryClicked = onRetryClicked
-             fragment.onNextClicked = onNextClicked
-             fragment.onExitClicked = onExitClicked
-             fragment.onNextMoveClicked = onNextMoveClicked
-             fragment.onCheckArrowsClicked = onCheckArrowsClicked
-             return fragment
-         }
+        const val HINT_BUTTON = "hint_button"
+        const val SOLUTION_BUTTON = "solution_button"
+        const val RETRY_BUTTON = "retry_button"
+        const val NEXT_LINE_BUTTON = "next_line_button"
+        const val NEXT_MOVE_BUTTON = "next_move_button"
+        const val EXIT_BUTTON = "exit_button"
+        const val CHECK_ARROWS_BUTTON = "check_arrows_button"
 
-     }
+        fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onHintClicked: () -> Unit, onSolutionClicked: () -> Unit, onRetryClicked: () -> Unit, onNextClicked: () -> Unit, onExitClicked: () -> Unit, onNextMoveClicked: () -> Unit, onCheckArrowsClicked: () -> Unit): PracticeOpeningNavigationBarFragment {
+            val fragment = PracticeOpeningNavigationBarFragment()
+            fragment.init(game, evaluateNavigationButtons)
+            fragment.onHintClicked = onHintClicked
+            fragment.onSolutionClicked = onSolutionClicked
+            fragment.onRetryClicked = onRetryClicked
+            fragment.onNextClicked = onNextClicked
+            fragment.onExitClicked = onExitClicked
+            fragment.onNextMoveClicked = onNextMoveClicked
+            fragment.onCheckArrowsClicked = onCheckArrowsClicked
+            return fragment
+        }
+
+    }
 
 }

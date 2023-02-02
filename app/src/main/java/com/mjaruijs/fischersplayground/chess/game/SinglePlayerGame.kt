@@ -91,6 +91,7 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayer
             val previouslySelectedSquare = board.selectedSquare
 
             if (possibleMoves.contains(clickedSquare)) {
+                pieceMoving = true
                 Thread {
                     move(teamToMove, previouslySelectedSquare, clickedSquare)
                 }.start()

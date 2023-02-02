@@ -4,8 +4,8 @@ const vec2 SQUARE_SIZE = vec2(1.0 / 8.0, 1.0 / 8.0);
 
 layout (location = 0) in vec2 inPosition;
 
-uniform vec2 translations[3];
-uniform vec4 colors[3];
+uniform vec2 translations[30];
+uniform vec4 colors[30];
 
 out vec2 translation;
 out vec4 color;

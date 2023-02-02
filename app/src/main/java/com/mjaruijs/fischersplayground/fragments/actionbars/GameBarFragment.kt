@@ -57,8 +57,8 @@ open class GameBarFragment : ActionBarFragment() {
                 }
             }
 
-        addButton(backButton)
-        addButton(forwardButton)
+        addButton(backButton, BACK_BUTTON_TAG)
+        addButton(forwardButton, FORWARD_BUTTON_TAG)
     }
 
     fun enableBackButton() {
@@ -118,6 +118,8 @@ open class GameBarFragment : ActionBarFragment() {
     companion object {
 
         private const val TAG = "GameBarFragment"
+        private const val BACK_BUTTON_TAG = "back_button"
+        private const val FORWARD_BUTTON_TAG = "forward_button"
 
         fun getInstance(game: Game, evaluateNavigationButtons: () -> Unit, onBackClicked: () -> Unit = {}, onForwardClicked: () -> Unit = {}): GameBarFragment {
             val fragment = GameBarFragment()

@@ -75,17 +75,18 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     private var takenPieceData: TakenPieceData? = null
 
-    private val animationThread: Thread
+//    private val animationThread: Thread
 
     var pieceScale = Vector3(1f, 1f, 1f)
 
     init {
-        animationThread = Thread {
+        Thread {
             var currentAnimation: AnimationData? = null
             while (runAnimationThread.get()) {
-                while (animationRunning.get()) {
-                    Thread.sleep(1)
-                }
+//                while (animationRunning.get()) {
+//                    Logger.debug(TAG, "Animation Running")
+//                    Thread.sleep(1)
+//                }
 
                 if (currentAnimation?.nextAnimation != null) {
                     currentAnimation = currentAnimation.nextAnimation!!
@@ -93,12 +94,13 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 } else {
                     if (animationQueue.isNotEmpty()) {
                         currentAnimation = animationQueue.poll()
+                        Logger.debug(TAG, "Polling new animation!")
                         startAnimation(currentAnimation)
                     }
                 }
             }
-        }
-        animationThread.start()
+        }.start()
+//        animationThread.start()
     }
 
     private fun startAnimation(currentAnimation: AnimationData?) {
@@ -117,7 +119,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
             animator.addOnFinishCall(
                 {
-                    animationRunning.set(false)
+//                    animationRunning.set(false)
                     Logger.debug(TAG, "Finished animating ${requestGame().state[currentAnimation.piecePosition]?.type}")
                 },
                 {

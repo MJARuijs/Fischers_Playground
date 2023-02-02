@@ -129,6 +129,7 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
         if (this::pieceRenderer.isInitialized) {
             pieceRenderer.queueAnimation(animationData)
         } else {
+            Logger.debug(TAG, "ADDED ANIMATION TO QUEUE")
             animationQueue += animationData
         }
     }

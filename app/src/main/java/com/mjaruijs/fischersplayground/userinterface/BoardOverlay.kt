@@ -71,8 +71,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
             triangleBitmap = triangleDrawable!!.toBitmap(squareHeight.toInt() / 2, squareHeight.toInt() / 2, Bitmap.Config.ARGB_8888)
 
             val knightArrowDrawable = ResourcesCompat.getDrawable(resources, R.drawable.knight_arrow_2, null)
-            val knightBitmapTopLeft = knightArrowDrawable!!.toBitmap((squareHeight * 3).toInt(), (squareHeight * 2).toInt(), Bitmap.Config.ARGB_8888)
-            knightArrowBitmap = knightBitmapTopLeft
+            knightArrowBitmap = knightArrowDrawable!!.toBitmap((squareHeight * 3).toInt(), (squareHeight * 2).toInt(), Bitmap.Config.ARGB_8888)
 
             finalBitmap = Bitmap.createBitmap(layout.width, layout.height, Bitmap.Config.ARGB_8888)
             arrowCanvas = Canvas(finalBitmap)
@@ -145,42 +144,38 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
             return
         }
 
-        hideArrows()
+        clearArrows()
         for (arrow in arrows) {
             toggleArrow(arrow)
         }
-        t()
-        invalidate()
+
+        draw()
     }
 
     fun hideArrows() {
         arrowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-        clearArrows()
-        invalidate()
-    }
-
-    fun t() {
-        for (data in straightArrows) {
-            drawStraightArrow(data)
-        }
-
-        for (data in knightArrows) {
-            drawKnightArrow(data)
-        }
-
-        arrowCanvas.save()
-        arrowCanvas.restore()
-        invalidate()
-    }
-
-    fun draw() {
         invalidate()
     }
 
     fun clearArrows() {
+        arrowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
         straightArrows.clear()
         knightArrows.clear()
-//        hideArrows()
+        invalidate()
+    }
+
+    fun draw() {
+        for (data in straightArrows) {
+            drawStraightArrowToBitmap(data)
+        }
+
+        for (data in knightArrows) {
+            drawKnightArrowToBitmap(data)
+        }
+
+        arrowCanvas.drawPoint(0f, 0f, transparentPaint)
+
+        invalidate()
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -192,7 +187,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         canvas.drawBitmap(finalBitmap, 0f, 0f, transparentPaint)
     }
 
-    private fun drawStraightArrow(arrowData: ArrowData) {
+    private fun drawStraightArrowToBitmap(arrowData: ArrowData) {
         if (triangleBitmap == null) {
             return
         }
@@ -209,7 +204,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
         arrowCanvas.restore()
     }
 
-    private fun drawKnightArrow(arrowData: KnightArrowData) {
+    private fun drawKnightArrowToBitmap(arrowData: KnightArrowData) {
         arrowCanvas.save()
         arrowCanvas.rotate(arrowData.angle, arrowData.pivotX * squareHeight, arrowData.pivotY * squareHeight)
         arrowCanvas.drawBitmap(knightArrowBitmap, arrowData.matrix, null)
@@ -232,7 +227,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 //            for (arrow in knightArrows) {
 //                drawKnightArrow(arrow)
 //            }
-            t()
+            draw()
             return true
         }
 
@@ -301,6 +296,7 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
             val arrowData = KnightArrowData(startSquare, endSquare, angle, matrix, pivotX, pivotY)
             knightArrows += arrowData
+
 //            drawKnightArrow(arrowData)
         } else {
             val absXDif = abs(xDif)
@@ -365,7 +361,6 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 //            drawStraightArrow(arrowData)
         }
 
-//        t()
         return false
     }
 

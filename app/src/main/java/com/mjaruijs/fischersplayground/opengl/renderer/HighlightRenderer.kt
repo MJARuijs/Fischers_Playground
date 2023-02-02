@@ -51,6 +51,7 @@ class HighlightRenderer(resources: Resources) {
     }
 
     fun clearHighlightedSquares() {
+        Logger.debug(TAG, "Clearing highlighted squares")
         highlightedSquares.clear()
     }
 
@@ -117,22 +118,14 @@ class HighlightRenderer(resources: Resources) {
         selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
         selectedSquare2DProgram.set("hasGradient", false)
 
-//        val instances = if (game.board.longClickSelectedSquare.x != -1.0f) {
-//            Logger.debug(TAG, "Not Rendering highlights")
-//
-//            selectedSquare2DProgram.set("translations[0]", (game.board.longClickSelectedSquare / 8.0f) * 2.0f - 1.0f)
-//            selectedSquare2DProgram.set("colors[0]", Color(235f / 255f, 186f / 255f, 145f / 255f))
-//            1
-//        } else {
         var instances = 0
 
         val color = Color(251f / 255f, 159f / 255f, 110f / 255f)
 
         if (highlightedSquares.isNotEmpty()) {
             for ((i, square) in highlightedSquares.withIndex()) {
-                selectedSquare2DProgram.set("translations[${instances + i}]", (square / 8.0f) * 2.0f - 1.0f)
-                selectedSquare2DProgram.set("colors[${instances + i}]", color)
-//                selectedSquare2DProgram.set("colors[${instances + i}]", Color(235f / 255f, 186f / 255f, 145f / 255f))
+                selectedSquare2DProgram.set("translations[${i}]", (square / 8.0f) * 2.0f - 1.0f)
+                selectedSquare2DProgram.set("colors[${i}]", color)
                 instances++
             }
         } else {
@@ -151,16 +144,7 @@ class HighlightRenderer(resources: Resources) {
             }
         }
 
-
-
-
-
-//        }
-
-//        val instances = highlightedSquares.size + .
-
         quad.drawInstanced(instances)
-
         selectedSquare2DProgram.stop()
     }
 

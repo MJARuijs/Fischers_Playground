@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.FragmentContainerView
@@ -27,6 +28,7 @@ import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
+import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 import java.util.LinkedList
 import kotlin.collections.ArrayList
@@ -62,6 +64,7 @@ class PracticeActivity : GameActivity() {
     private var practiceArrows = false
     private var arrowStartSquare = Vector2(-1, -1)
     private var arrows = ArrayList<MoveArrow>()
+    private var hintedSquares = ArrayList<Vector2>()
 
     private lateinit var moveFeedbackIcon: MoveFeedbackIcon
     private lateinit var practiceNavigationButtons: PracticeOpeningNavigationBarFragment
@@ -91,6 +94,8 @@ class PracticeActivity : GameActivity() {
         if (resumeSession) {
             try {
                 session = dataManager.getPracticeSession(openingName, openingTeam) ?: throw IllegalArgumentException("Tried to resume session with name: $openingName and team $openingTeam, but could not find it..")
+                practiceArrows = session.practiceArrows
+
                 if (session.currentLine != null) {
                     lines += session.currentLine!!
                 }
@@ -198,31 +203,35 @@ class PracticeActivity : GameActivity() {
                 onArrowToggled(arrowStartSquare, arrowEndSquare)
                 arrowStartSquare = Vector2(-1, -1)
                 glView.clearHighlightedSquares()
+                for (square in hintedSquares) {
+                    glView.highlightSquare(square)
+                }
+                glView.requestRender()
             }
         } else {
             if (game.board.isASquareSelected()) {
-//                boardOverlay.hideArrows()
-            } else {
-//                boardOverlay.draw()
+                boardOverlay.hideArrows()
+            } else if (!game.pieceMoving) {
+                boardOverlay.draw()
             }
         }
     }
 
     private fun onArrowToggled(startSquare: Vector2, endSquare: Vector2) {
         val arrow = MoveArrow(startSquare, endSquare)
+        if (!arrow.isValidArrow()) {
+            return
+        }
+
         val deletedArrow = boardOverlay.toggleArrow(arrow)
+
         if (deletedArrow) {
             arrows.remove(arrow)
         } else {
             arrows += arrow
         }
-//        if (deletedArrow) {
-//            openingMovesFragment.getCurrentOpeningFragment().deleteArrow(arrow)
-//        } else {
-//            openingMovesFragment.getCurrentOpeningFragment().addArrow(arrow)
-//        }
 
-        boardOverlay.invalidate()
+        boardOverlay.draw()
     }
 
     override fun onMoveMade(move: Move) {
@@ -230,7 +239,7 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun onMoveAnimationStarted() {
-        boardOverlay.hideArrows()
+        boardOverlay.clearArrows()
     }
 
     private fun onMoveAnimationFinished(moveIndex: Int) {
@@ -260,9 +269,22 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun onSolutionClicked() {
-        glView.clearHighlightedSquares()
-        (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex])
-        hintRequested = false
+        if (drawingArrows) {
+            val correctArrows = currentLine!!.arrows[currentMoveIndex + currentLine!!.setupMoves.size - 1] ?: ArrayList()
+            boardOverlay.drawArrows(correctArrows)
+            drawingArrows = false
+
+            if (isLastMoveInLine(currentMove!!)) {
+                (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextLineButton()
+            } else {
+                (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextMoveButton()
+            }
+            processLineFailed()
+        } else {
+            glView.clearHighlightedSquares()
+            (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex])
+            hintRequested = false
+        }
     }
 
     private fun onRetryClicked() {
@@ -294,32 +316,35 @@ class PracticeActivity : GameActivity() {
     private fun onCheckArrowsClicked() {
         val correctArrows = currentLine!!.arrows[currentMoveIndex + currentLine!!.setupMoves.size - 1] ?: ArrayList()
         if (correctArrows.containsAll(arrows) && arrows.containsAll(correctArrows)) {
+            drawingArrows = false
+
             if (isLastMoveInLine(currentMove!!)) {
                 progressFragment.incrementCurrent()
                 showMoveFeedback(currentMove!!.getToPosition(openingTeam), true)
                 processLineFinished()
             } else {
                 if (currentLine!!.arrows.containsKey(game.currentMoveIndex)) {
-                    (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextMoveButton()
+                    onNextMoveClicked()
                 } else {
                     (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
                     (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
                 }
             }
             hintRequested = false
+        } else {
+            processLineFailed()
+            Toast.makeText(applicationContext, "Try again!", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun processCorrectMove() {
-
-    }
-
     private fun checkMoveCorrectness(move: Move, moveIndex: Int) {
+        currentMove = move
+
         if (move == currentLine!!.lineMoves[currentMoveIndex]) {
             currentMoveIndex++
+            arrows.clear()
 
             if (!practiceArrows) {
-                currentMove = move
                 boardOverlay.drawArrows(currentLine!!.arrows[moveIndex] ?: ArrayList())
 
                 if (isLastMoveInLine(move)) {
@@ -336,9 +361,25 @@ class PracticeActivity : GameActivity() {
                 }
                 hintRequested = false
             } else {
-//                boardOverlay.clearArrows()
-                drawingArrows = true
-                (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showCheckArrowButton()
+                if (currentLine!!.arrows[moveIndex] != null && currentLine!!.arrows[moveIndex]!!.isNotEmpty()) {
+                    drawingArrows = true
+//                    glView.clearHighlightedSquares()
+                    (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showButton(PracticeOpeningNavigationBarFragment.CHECK_ARROWS_BUTTON, PracticeOpeningNavigationBarFragment.HINT_BUTTON)
+                } else {
+                    if (isLastMoveInLine(move)) {
+                        progressFragment.incrementCurrent()
+                        showMoveFeedback(move.getToPosition(openingTeam), true)
+                        processLineFinished()
+                    } else {
+                        if (currentLine!!.arrows.containsKey(game.currentMoveIndex)) {
+                            (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextMoveButton()
+                        } else {
+                            (game as SinglePlayerGame).move(currentLine!!.lineMoves[currentMoveIndex++])
+                            (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showHintButton()
+                        }
+                    }
+                    hintRequested = false
+                }
             }
         } else {
             processLineFailed()
@@ -361,7 +402,7 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun processLineFinished() {
-        (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextButton()
+        (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextLineButton()
         val isFinished = getNextLine()
         if (isFinished) {
             finishedPracticeSession = true
@@ -376,13 +417,39 @@ class PracticeActivity : GameActivity() {
             return
         }
 
-        val currentMove = currentLine!!.lineMoves[currentMoveIndex]
-        val startSquare = currentMove.getFromPosition(openingTeam)
-
         processLineFailed()
 
-        glView.highlightSquare(startSquare)
-        glView.requestRender()
+        if (drawingArrows) {
+            val correctArrows = currentLine!!.arrows[currentMoveIndex + currentLine!!.setupMoves.size - 1] ?: ArrayList()
+
+            for (arrow in correctArrows) {
+                if (!arrows.contains(arrow)) {
+                    if (!hintedSquares.contains(arrow.startSquare)) {
+                        glView.highlightSquare(arrow.startSquare)
+                        hintedSquares += arrow.startSquare
+                    }
+                }
+            }
+
+            (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showButton(PracticeOpeningNavigationBarFragment.CHECK_ARROWS_BUTTON, PracticeOpeningNavigationBarFragment.SOLUTION_BUTTON)
+            for (arrow in arrows) {
+                if (!correctArrows.contains(arrow)) {
+                    if (!hintedSquares.contains(arrow.startSquare)) {
+                        glView.highlightSquare(arrow.startSquare)
+                        hintedSquares += arrow.startSquare
+                    }
+                }
+            }
+            glView.requestRender()
+        } else {
+            (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showSolutionButton()
+
+            val currentMove = currentLine!!.lineMoves[currentMoveIndex]
+            val startSquare = currentMove.getFromPosition(openingTeam)
+
+            glView.highlightSquare(startSquare)
+            glView.requestRender()
+        }
     }
 
     private fun showMoveFeedback(square: Vector2, correctMove: Boolean) {
@@ -541,7 +608,7 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun saveSession() {
-        val practiceSession = PracticeSession(openingName, openingTeam, progressFragment.currentValue, progressFragment.maxValue, currentLine, nextLine, lines)
+        val practiceSession = PracticeSession(openingName, openingTeam, practiceArrows, progressFragment.currentValue, progressFragment.maxValue, currentLine, nextLine, lines)
         dataManager.setPracticeSession(openingName, practiceSession, applicationContext)
         sendNetworkMessage(NetworkMessage(Topic.NEW_PRACTICE_SESSION, "$userId|$openingName|$openingTeam|$practiceSession"))
     }

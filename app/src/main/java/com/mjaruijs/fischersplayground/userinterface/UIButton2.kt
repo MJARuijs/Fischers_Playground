@@ -89,6 +89,11 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
         return this
     }
 
+    fun setTag(tag: String): UIButton2 {
+        this.tag = tag
+        return this
+    }
+
     fun setRepeatOnHold(): UIButton2 {
         isLongClickable = true
         shouldRepeatOnHold = true
@@ -266,7 +271,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
     inner class RepetitiveClicker : Runnable {
         override fun run() {
             if (holding.get()) {
-                Logger.debug(TAG, "RepetitveClicker")
+                Logger.debug(TAG, "RepetitiveClicker")
                 callOnClick()
                 handler.postDelayed(RepetitiveClicker(), Game.FAST_ANIMATION_SPEED)
             }
