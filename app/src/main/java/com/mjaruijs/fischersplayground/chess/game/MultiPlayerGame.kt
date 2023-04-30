@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.chess.news.News
 import com.mjaruijs.fischersplayground.chess.news.NewsType
+import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import com.mjaruijs.fischersplayground.util.Logger
 
@@ -39,22 +40,30 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
     }
 
     init {
-        status = if (savedMoves.isEmpty()) {
-            if (isPlayingWhite) {
-                GameStatus.PLAYER_MOVE
+        try {
+            status = if (savedMoves.isEmpty()) {
+                if (isPlayingWhite) {
+                    GameStatus.PLAYER_MOVE
+                } else {
+                    GameStatus.OPPONENT_MOVE
+                }
             } else {
-                GameStatus.OPPONENT_MOVE
+                val lastMove = savedMoves.last()
+                if (lastMove.team == team) {
+                    GameStatus.OPPONENT_MOVE
+                } else {
+                    GameStatus.PLAYER_MOVE
+                }
             }
-        } else {
-            val lastMove = savedMoves.last()
-            if (lastMove.team == team) {
-                GameStatus.OPPONENT_MOVE
-            } else {
-                GameStatus.PLAYER_MOVE
-            }
-        }
 
-        restoreMoves()
+            restoreMoves()
+
+            if (moveToBeConfirmed.isNotBlank()) {
+                status = GameStatus.PLAYER_MOVE
+            }
+        } catch (e: Exception) {
+            Logger.error(TAG, e.stackTraceToString())
+        }
     }
 
     fun isFinished(): Boolean {
@@ -143,7 +152,7 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         val fromPosition = move.getFromPosition(team)
         val toPosition = move.getToPosition(team)
 
-        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
+        val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition while restoring move: ${move.toChessNotation()}")
 
         val takenPieceData = take(currentPositionPiece, fromPosition, toPosition)
 
@@ -201,7 +210,6 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         }
 
         moves += move
-        status = GameStatus.PLAYER_MOVE
         onMoveMade(move)
 
         if (!isShowingCurrentMove()) {
@@ -239,6 +247,8 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
 
         if (animation.nextAnimation == null) {
             animation.onFinishCalls += {
+                status = GameStatus.PLAYER_MOVE
+
                 val isCheck = isPlayerChecked(state, team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
 
@@ -246,6 +256,8 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
             }
         } else {
             animation.nextAnimation!!.onFinishCalls += {
+                status = GameStatus.PLAYER_MOVE
+
                 val isCheck = isPlayerChecked(state, team)
                 val isCheckMate = if (isCheck) isPlayerCheckMate(state, team) else false
 
@@ -262,6 +274,10 @@ class MultiPlayerGame(val gameId: String, val opponentId: String, val opponentNa
         }
 
         move(team, fromPosition, toPosition)
+    }
+
+    override fun onAnimationFinished(team: Team, currentPositionPiece: Piece, fromPosition: Vector2, toPosition: Vector2, takenPiecePosition: Vector2?, takenPiece: Piece?) {
+        super.onAnimationFinished(team, currentPositionPiece, fromPosition, toPosition, takenPiecePosition, takenPiece)
         status = GameStatus.OPPONENT_MOVE
     }
 

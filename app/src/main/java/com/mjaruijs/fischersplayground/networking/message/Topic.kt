@@ -45,6 +45,7 @@ enum class Topic(val dataType: Parcelable.Creator<*>? = null) {
     COMPARE_DATA(ParcelableString),
     RESTORE_DATA(ParcelableNull),
     DELETE,
+    SERVER_IP_CHANGED,
     DEBUG,
     RESEND_MESSAGE;
 

@@ -274,6 +274,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             animation.nextAnimation?.invokeOnStartCalls()
             animation.nextAnimation?.invokeOnFinishCalls()
         } else {
+            Logger.debug(TAG, "Queuing animation of ${move.movedPiece} from $fromPosition to $toPosition")
             queueAnimation(animation)
         }
     }
@@ -417,11 +418,11 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             }
         }
 
-        Logger.debug(TAG, "Queuing animation of ${currentPositionPiece.type} from ${fromPosition} to ${toPosition}")
+        Logger.debug(TAG, "Queuing animation of ${currentPositionPiece.type} from $fromPosition to $toPosition")
         queueAnimation(animation)
     }
 
-    private fun onAnimationFinished(team: Team, currentPositionPiece: Piece, fromPosition: Vector2, toPosition: Vector2, takenPiecePosition: Vector2?, takenPiece: Piece?) {
+    open fun onAnimationFinished(team: Team, currentPositionPiece: Piece, fromPosition: Vector2, toPosition: Vector2, takenPiecePosition: Vector2?, takenPiece: Piece?) {
         var promotedPiece: PieceType? = null
 
         if (takenPiece != null) {
@@ -653,9 +654,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     }
 
     companion object {
-        const val TAG = "Game"
-        const val DEFAULT_ANIMATION_SPEED = 500L
-        const val FAST_ANIMATION_SPEED = 100L
+        const val TAG = "GameObject"
+        const val DEFAULT_ANIMATION_SPEED = 200L
+        const val FAST_ANIMATION_SPEED = 50L
     }
 
 }

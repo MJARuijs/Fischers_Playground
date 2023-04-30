@@ -42,6 +42,16 @@ class HighlightRenderer(resources: Resources) {
 
     private val highlightedSquares = ArrayList<Vector2>()
 
+    private var highlightLastMove = true
+
+    fun enableLastMoveHighlights() {
+        highlightLastMove = true
+    }
+
+    fun disableLastMoveHighlights() {
+        highlightLastMove = false
+    }
+
     fun addHighlightedSquare(square: Vector2) {
         highlightedSquares += square
     }
@@ -124,11 +134,12 @@ class HighlightRenderer(resources: Resources) {
 
         if (highlightedSquares.isNotEmpty()) {
             for ((i, square) in highlightedSquares.withIndex()) {
+                Logger.debug(TAG, "Drawing highlight: $square")
                 selectedSquare2DProgram.set("translations[${i}]", (square / 8.0f) * 2.0f - 1.0f)
                 selectedSquare2DProgram.set("colors[${i}]", color)
                 instances++
             }
-        } else {
+        } else if (highlightLastMove) {
             val lastMove = game.getCurrentMove()
 
             if (lastMove != null) {

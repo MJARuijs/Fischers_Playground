@@ -11,6 +11,7 @@ import android.os.Build.VERSION_CODES.TIRAMISU
 import android.widget.Toast
 import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.DEFAULT_USER_ID
+import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.FIRE_BASE_TOKEN_KEY
 import com.mjaruijs.fischersplayground.activities.ClientActivity.Companion.USER_ID_KEY
 import com.mjaruijs.fischersplayground.networking.ConnectivityCallback
 import com.mjaruijs.fischersplayground.networking.client.SecureClient
@@ -20,7 +21,6 @@ import com.mjaruijs.fischersplayground.networking.nio.Manager
 import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.MyTimerTask
-import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
@@ -30,14 +30,20 @@ class NetworkService : Service() {
     companion object {
         private const val TAG = "NetworkService"
 
-        private const val PUBLIC_SERVER_IP = "80.114.20.54"
+        const val SERVER_PREFERENCE_FILE = "server_data"
+        const val SERVER_IP_KEY = "ip"
+
+//        private const val PUBLIC_SERVER_IP = "80.114.20.54"
 //        private const val PUBLIC_SERVER_IP = "145.89.4.144"
         private const val LOCAL_SERVER_IP = "192.168.178.103"
 //        private const val LOCAL_SERVER_IP = "10.248.59.63"
 
+//        private const val SERVER_PORT = 4502
         private const val SERVER_PORT = 4500
 
         private var instance: NetworkService? = null
+
+
 
         fun sendCrashReport(fileName: String, crashLog: String, context: Context?) {
             Logger.error("ERROR_HANDLER", crashLog)
@@ -74,6 +80,9 @@ class NetworkService : Service() {
     private lateinit var connectivityCallback: ConnectivityCallback
 
     private var userId = DEFAULT_USER_ID
+    private var fireBaseToken = ""
+
+    private var publicServerIp = "217.121.224.74"
 
     private val messageLock = AtomicBoolean(false)
 
@@ -101,6 +110,8 @@ class NetworkService : Service() {
         Logger.debug(TAG, "Creating NetworkService")
 
         userId = getSharedPreferences(ClientActivity.USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, DEFAULT_USER_ID)!!
+        fireBaseToken = getSharedPreferences(ClientActivity.FIRE_BASE_PREFERENCE_FILE, MODE_PRIVATE).getString(FIRE_BASE_TOKEN_KEY, "")!!
+//        publicServerIp = getSharedPreferences(SERVER_PREFERENCE_FILE, MODE_PRIVATE).getString(SERVER_IP_KEY, "")!!
 
         val networkRequest = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -147,7 +158,7 @@ class NetworkService : Service() {
             run()
 
             if (userId != DEFAULT_USER_ID) {
-                sendMessageToServer(NetworkMessage(Topic.ID_LOGIN, userId))
+                sendMessageToServer(NetworkMessage(Topic.ID_LOGIN, "$userId|$fireBaseToken"))
             }
         }
     }
@@ -198,7 +209,7 @@ class NetworkService : Service() {
 
             try {
                 clientConnecting.set(true)
-                client = SecureClient(PUBLIC_SERVER_IP, SERVER_PORT, ::onRead)
+                client = SecureClient(publicServerIp, SERVER_PORT, ::onRead)
                 clientConnected.set(true)
                 Logger.warn(TAG, "Connected to server..")
             } catch (e: Exception) {
@@ -225,7 +236,7 @@ class NetworkService : Service() {
     }
 
     private fun sendMessageToServer(message: NetworkMessage) {
-        while (clientConnecting.get() || sendingMessage.get()) {
+        while (sendingMessage.get()) {
             Thread.sleep(1)
         }
 
@@ -282,11 +293,8 @@ class NetworkService : Service() {
         val dataManager = DataManager.getInstance(applicationContext)
 
         if (!dataManager.isMessageHandled(message.id)) {
-            dataManager.setMessageHandled(message.id, applicationContext)
-            dataManager.saveHandledMessages(applicationContext)
-
             Logger.debug(TAG, "Got message from server: ${message.topic}")
-
+            dataManager.setMessageHandled(message.id, applicationContext)
             sendMessageToSystem(message)
         }
     }

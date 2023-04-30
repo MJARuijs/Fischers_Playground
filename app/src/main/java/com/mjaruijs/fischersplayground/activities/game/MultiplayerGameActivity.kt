@@ -32,6 +32,8 @@ import com.mjaruijs.fischersplayground.parcelable.ParcelableInt
 import com.mjaruijs.fischersplayground.parcelable.ParcelablePair
 import com.mjaruijs.fischersplayground.parcelable.ParcelableString
 import com.mjaruijs.fischersplayground.services.NetworkService
+import com.mjaruijs.fischersplayground.userinterface.PopupBar
+import com.mjaruijs.fischersplayground.userinterface.UIButton2
 import com.mjaruijs.fischersplayground.util.Logger
 
 class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
@@ -65,6 +67,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     private lateinit var confirmResignationDialog: DoubleButtonDialog
     private lateinit var offerDrawDialog: DoubleButtonDialog
 
+    private lateinit var confirmMovesPopupBar: PopupBar
+
     private lateinit var keyboardHeightProvider: KeyboardHeightProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,6 +92,31 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
             constraints.applyTo(gameLayout)
             keyboardHeightProvider = KeyboardHeightProvider(this)
+
+            confirmMovesPopupBar = findViewById(R.id.extra_buttons_popup_bar)
+
+            val confirmMoveButton = UIButton2(applicationContext)
+            confirmMoveButton.setIcon(R.drawable.check_mark_icon)
+                .setIconScale(0.5f)
+                .setColorResource(R.color.accent_color)
+                .setOnClickListener {
+                    confirmMovesPopupBar.hide()
+                    confirmMove((game as MultiPlayerGame).moveToBeConfirmed)
+                }
+
+            val cancelMoveButton = UIButton2(applicationContext)
+            cancelMoveButton.setIcon(R.drawable.close_icon)
+                .setIconScale(0.5f)
+                .setColorResource(R.color.background_color)
+                .setOnClickListener {
+                    confirmMovesPopupBar.hide()
+                    cancelMove()
+                }
+
+            confirmMovesPopupBar.addButton(cancelMoveButton)
+            confirmMovesPopupBar.addButton(confirmMoveButton)
+            confirmMovesPopupBar.attachToLayout(gameLayout)
+
             findViewById<View>(R.id.game_layout).post {
                 Runnable {
                     keyboardHeightProvider.start()
@@ -100,42 +129,32 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onResume() {
         super.onResume()
-        try {
-            game = dataManager.getGame(gameId)!!
-            opponentName = (game as MultiPlayerGame).opponentName
-            isPlayingWhite = game.isPlayingWhite
+        game = dataManager.getGame(gameId)!!
+        opponentName = (game as MultiPlayerGame).opponentName
+        isPlayingWhite = game.isPlayingWhite
 
-            initializeFragments()
-            setGameCallbacks()
-            setGameForRenderer()
+        initializeFragments()
+        setGameCallbacks()
+        setGameForRenderer()
 
-            initChatBox()
+        initChatBox()
 
-//            if (contextCreated) {
-//                Logger.debug(activityName, "Redoing move in onResume")
-//                showLatestMove()
-//            }
+        undoRequestConfirmationDialog = SingleButtonDialog(this, true, "Undo Requested", "You will be notified when $opponentName responds", R.drawable.check_mark_icon)
+        confirmResignationDialog = DoubleButtonDialog(this, true, "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", ::onResignConfirmed)
+        offerDrawDialog = DoubleButtonDialog(this, true, "Offer Draw", "Are you sure you want to offer a draw?", "Cancel", "Yes", ::onOfferDraw)
 
-            undoRequestConfirmationDialog = SingleButtonDialog(this, true, "Undo Requested", "You will be notified when $opponentName responds", R.drawable.check_mark_icon)
-            confirmResignationDialog = DoubleButtonDialog(this, true, "No Way Back", "Are you sure you want to resign?", "Cancel", "Yes", ::onResignConfirmed)
-            offerDrawDialog = DoubleButtonDialog(this, true, "Offer Draw", "Are you sure you want to offer a draw?", "Cancel", "Yes", ::onOfferDraw)
+        resignDialog = DoubleButtonDialog(this, true, "$opponentName won!", "You lost by resignation", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsLoss)
+        drawAcceptedDialog = DoubleButtonDialog(this, true, "It's A Draw!", "You accepted $opponentName's draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
+        undoRequestedDialog = DoubleButtonDialog(this, false, "Undo Requested", "$opponentName is requesting to undo their last move!", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest)
+        undoAcceptedDialog = SingleButtonDialog(this, false, "Move Reversed", "Your undo request has been accepted!", "Continue")
+        undoRejectedDialog = SingleButtonDialog(this, false, "Undo Rejected", "Your undo request was rejected!", "Continue")
 
-            resignDialog = DoubleButtonDialog(this, true, "$opponentName won!", "You lost by resignation", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsLoss)
-            drawAcceptedDialog = DoubleButtonDialog(this, true, "It's A Draw!", "You accepted $opponentName's draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
-            undoRequestedDialog = DoubleButtonDialog(this, false, "Undo Requested", "$opponentName is requesting to undo their last move!", "Reject", ::rejectUndoRequest, "Accept", ::acceptUndoRequest)
-            undoAcceptedDialog = SingleButtonDialog(this, false, "Move Reversed", "Your undo request has been accepted!", "Continue")
-            undoRejectedDialog = SingleButtonDialog(this, false, "Undo Rejected", "Your undo request was rejected!", "Continue")
+        opponentAcceptedDrawDialog = DoubleButtonDialog(this, false, "It's A Draw!", "$opponentName has accepted your draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
+        opponentRejectedDrawDialog = SingleButtonDialog(this, false, "Game Must Go On", "$opponentName has rejected your draw offer", "Play on")
+        opponentOfferedDrawDialog = DoubleButtonDialog(this, false, "Draw Offered", "$opponentName has offered a draw!", "Decline", ::rejectDrawOffer, "Accept", ::acceptDrawOffer)
+        opponentResignedDialog = DoubleButtonDialog(this, false, "You Won!", "$opponentName has resigned!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin)
 
-            opponentAcceptedDrawDialog = DoubleButtonDialog(this, false, "It's A Draw!", "$opponentName has accepted your draw offer", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsDraw)
-            opponentRejectedDrawDialog = SingleButtonDialog(this, false, "Game Must Go On", "$opponentName has rejected your draw offer", "Play on")
-            opponentOfferedDrawDialog = DoubleButtonDialog(this, false, "Draw Offered", "$opponentName has offered a draw!", "Decline", ::rejectDrawOffer, "Accept", ::acceptDrawOffer)
-            opponentResignedDialog = DoubleButtonDialog(this, false, "You Won!", "$opponentName has resigned!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin)
-
-            keyboardHeightProvider.observer = this
-        } catch (e: Exception) {
-//            FileManager.append(this,  "mp_game_activity_on_resume_crash.txt", e.stackTraceToString())
-            throw e
-        }
+        keyboardHeightProvider.observer = this
     }
 
     override fun onPause() {
@@ -151,7 +170,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
 
     override fun onContextCreated() {
         super.onContextCreated()
-        showLatestMove()
+//        Logger.debug("test", "ContextCreated")
+//        showLatestMove()
 
         contextCreated = true
     }
@@ -167,6 +187,7 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     private fun redoLastMove() {
+        Logger.debug("test", "Redoing last move")
         if (!(game as MultiPlayerGame).hasNews(NewsType.OPPONENT_MOVED)) {
             game.showPreviousMove(true)
             game.showNextMove(false)
@@ -210,12 +231,14 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 getOpponentFragment()!!.removeAllPieces()
 
                 for (takenPiece in game.takenPieces) {
+                    Logger.debug(activityName, "Adding back taken piece: ${takenPiece.team} ${takenPiece.type}")
                     onPieceTaken(takenPiece)
                 }
 
-                if (contextCreated) {
+//                if (contextCreated) {
+//                    Logger.debug("test", "InitializeFragments()")
                     showLatestMove()
-                }
+//                }
             }
         }.start()
     }
@@ -279,7 +302,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         val showPopup = getPreference(GAME_PREFERENCES_KEY).getBoolean(SettingsActivity.CONFIRM_MOVES_KEY, false)
         if (showPopup) {
             runOnUiThread {
-                (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons(moveNotation)
+                confirmMovesPopupBar.show()
+//                (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons(moveNotation)
             }
         } else {
             confirmMove(moveNotation)
@@ -291,10 +315,10 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         if (move.team == game.getCurrentTeam()) {
             val positionUpdateMessage = move.toChessNotation()
             (game as MultiPlayerGame).moveToBeConfirmed = positionUpdateMessage
+
             sendMoveData(positionUpdateMessage)
         }
 
-        saveGame()
 //        dataManager.setGame(gameId, game as MultiPlayerGame)
 //        dataManager.saveData(applicationContext)
     }
@@ -315,6 +339,11 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
     }
 
     override fun onClick(x: Float, y: Float) {
+//        if (confirmMovesPopupBar.isShowing) {
+//            confirmMovesPopupBar.hide()
+//        } else {
+//            confirmMovesPopupBar.show()
+//        }
         if (isChatOpened()) {
             return
         }
@@ -622,12 +651,13 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
                 }
 
                 runOnUiThread {
-                    val buttonHeight = getActionBarFragment()!!.requireView().measuredHeight
-                    (getActionBarFragment() as MultiplayerActionButtonsFragment).initializeAnimator(buttonHeight)
+//                    val buttonHeight = getActionBarFragment()!!.requireView().measuredHeight
+//                    (getActionBarFragment() as MultiplayerActionButtonsFragment).initializeAnimator(buttonHeight)
 
                     if ((game as MultiPlayerGame).hasPendingMove()) {
                         runOnUiThread {
-                            (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons((game as MultiPlayerGame).moveToBeConfirmed, 0L)
+                            confirmMovesPopupBar.show()
+//                            (getActionBarFragment() as MultiplayerActionButtonsFragment).showExtraButtons((game as MultiPlayerGame).moveToBeConfirmed, 0L)
                         }
                     }
                 }
@@ -655,8 +685,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
         val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", (chatButtonWidth + chatBoxWidth).toFloat())
         val chatButtonAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.open_chat_button), "x", chatBoxWidth.toFloat())
 
-        chatBoxAnimator.duration = 500L
-        chatButtonAnimator.duration = 500L
+        chatBoxAnimator.duration = 250L
+        chatButtonAnimator.duration = 250L
 
         chatBoxAnimator.start()
         chatButtonAnimator.start()
@@ -677,8 +707,8 @@ class MultiplayerGameActivity : GameActivity(), KeyboardHeightObserver {
             val chatBoxAnimator = ObjectAnimator.ofFloat(findViewById<FragmentContainerView>(R.id.chat_container), "x", chatBoxEndX.toFloat())
             val chatButtonAnimator = ObjectAnimator.ofFloat(it, "x", chatButtonEndX.toFloat())
 
-            chatBoxAnimator.duration = 500L
-            chatButtonAnimator.duration = 500L
+            chatBoxAnimator.duration = 250L
+            chatButtonAnimator.duration = 250L
 
             chatBoxAnimator.start()
             chatButtonAnimator.start()

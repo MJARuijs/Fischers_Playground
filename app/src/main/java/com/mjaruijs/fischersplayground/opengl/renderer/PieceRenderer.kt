@@ -16,7 +16,7 @@ import com.mjaruijs.fischersplayground.opengl.light.AmbientLight
 import com.mjaruijs.fischersplayground.opengl.light.DirectionalLight
 import com.mjaruijs.fischersplayground.opengl.model.Material
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.AnimationData
-import com.mjaruijs.fischersplayground.opengl.renderer.animation.PieceAnimator
+import com.mjaruijs.fischersplayground.opengl.renderer.animation.MyPieceAnimator
 import com.mjaruijs.fischersplayground.opengl.renderer.animation.TakenPieceData
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderLoader
 import com.mjaruijs.fischersplayground.opengl.shaders.ShaderProgram
@@ -25,6 +25,7 @@ import com.mjaruijs.fischersplayground.opengl.texture.Sampler
 import com.mjaruijs.fischersplayground.util.Logger
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.ArrayList
 import kotlin.math.PI
 import kotlin.math.roundToInt
 
@@ -69,6 +70,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     private val whiteKnightRotation = if (isPlayerWhite) ROTATION_MATRIX else Matrix4()
     private val blackKnightRotation = if (isPlayerWhite) Matrix4() else ROTATION_MATRIX
 
+    private val animator = MyPieceAnimator(requestRender)
     private val animationQueue = LinkedList<AnimationData>()
     private val animationRunning = AtomicBoolean(false)
     private val runAnimationThread = AtomicBoolean(true)
@@ -83,10 +85,10 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         Thread {
             var currentAnimation: AnimationData? = null
             while (runAnimationThread.get()) {
-//                while (animationRunning.get()) {
+                while (animationRunning.get()) {
 //                    Logger.debug(TAG, "Animation Running")
-//                    Thread.sleep(1)
-//                }
+                    Thread.sleep(1)
+                }
 
                 if (currentAnimation?.nextAnimation != null) {
                     currentAnimation = currentAnimation.nextAnimation!!
@@ -116,17 +118,24 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         }
 
         try {
-            val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
-            animator.addOnFinishCall(
-                {
+//            val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
+            val onFinishCalls = ArrayList<() -> Unit>()
+            onFinishCalls.addAll(currentAnimation.onFinishCalls)
+            onFinishCalls += {
+                animationRunning.set(false)
+                takenPieceData = null
+                requestRender()
+            }
+//            animator.addOnFinishCall(
+//                {
 //                    animationRunning.set(false)
-                    Logger.debug(TAG, "Finished animating ${requestGame().state[currentAnimation.piecePosition]?.type}")
-                },
-                {
-                    takenPieceData = null
-                    requestRender()
-                }
-            )
+//                    Logger.debug(TAG, "Finished animating ${requestGame().state[currentAnimation.piecePosition]?.type}")
+//                },
+//                {
+//                    takenPieceData = null
+//                    requestRender()
+//                }
+//            )
 
             runOnUiThread {
                 val piece = requestGame().state[currentAnimation.piecePosition]
@@ -136,11 +145,16 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 }
 
                 Logger.debug(TAG, "Playing animation: moving ${piece.type} from ${vectorToChessSquares(currentAnimation.piecePosition)} to ${vectorToChessSquares(currentAnimation.translation + currentAnimation.piecePosition)}")
-                animator.start()
+                animator.startAnimation(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, currentAnimation.onStartCalls, onFinishCalls, currentAnimation.animationSpeed)
+//                animator.start()
             }
         } catch (e: Exception) {
             onExceptionThrown("crash_piece_renderer_start_animation.txt", e)
         }
+    }
+
+    fun update(deltaTime: Float) {
+        animator.update(deltaTime)
     }
 
     private fun vectorToChessSquares(position: Vector2): String {
@@ -163,6 +177,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     }
 
     fun queueAnimation(animationData: AnimationData) {
+        Logger.debug(TAG, "Queued animation: ${animationData.piecePosition}")
         animationQueue.add(animationData)
     }
 

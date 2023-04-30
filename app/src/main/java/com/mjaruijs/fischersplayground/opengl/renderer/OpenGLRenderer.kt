@@ -85,8 +85,20 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
         onContextCreated()
     }
 
+    fun update(deltaTime: Float) {
+        pieceRenderer.update(deltaTime)
+    }
+
     private fun requestRenderPieces() {
         requestRender()
+    }
+
+    fun enableLastMoveHighlights() {
+        highlightRenderer.enableLastMoveHighlights()
+    }
+
+    fun disableLastMoveHighlights() {
+        highlightRenderer.disableLastMoveHighlights()
     }
 
     fun set3D(is3D: Boolean) {

@@ -93,7 +93,7 @@ class MainActivity : ClientActivity() {
 //        TODO uncomment these 2 lines
 //        sendToDataManager<ArrayList<MultiPlayerGame>>(DataManagerService.Request.GET_SAVED_GAMES, ::restoreSavedGames)
 //        sendToDataManager<ArrayList<InviteData>>(DataManagerService.Request.GET_SAVED_INVITES, ::restoreSavedInvites)
-
+//
 //        getData(DataManagerWorker.Request.GET_SAVED_GAMES, {
 //            restoreSavedGames(it)
 //        })

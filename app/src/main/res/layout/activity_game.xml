@@ -60,6 +60,14 @@
         tools:layout="@layout/action_bar_fragment" />
 
 
+    <com.mjaruijs.fischersplayground.userinterface.PopupBar
+        android:id="@+id/extra_buttons_popup_bar"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
         android:id="@+id/opengl_view"
         android:layout_width="0dp"

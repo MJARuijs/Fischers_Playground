@@ -273,7 +273,9 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
             if (holding.get()) {
                 Logger.debug(TAG, "RepetitiveClicker")
                 callOnClick()
-                handler.postDelayed(RepetitiveClicker(), Game.FAST_ANIMATION_SPEED)
+                if (handler != null) {
+                    handler?.postDelayed(RepetitiveClicker(), Game.FAST_ANIMATION_SPEED)
+                }
             }
         }
     }

@@ -49,6 +49,7 @@ class FirebaseService : FirebaseMessagingService() {
                 Logger.debug(TAG, "Got message about $topic but was already handled!")
                 return
             }
+            dataManager.setMessageHandled(messageId, applicationContext)
 
             Logger.debug(TAG, "Got message about $topic")
 

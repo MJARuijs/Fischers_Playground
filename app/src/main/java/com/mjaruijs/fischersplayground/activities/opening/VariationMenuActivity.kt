@@ -23,7 +23,6 @@ import com.mjaruijs.fischersplayground.dialogs.PracticeSettingsDialog
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment
 import com.mjaruijs.fischersplayground.userinterface.PopupBar
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.Logger
 
 class VariationMenuActivity : ClientActivity() {
 
@@ -205,10 +204,12 @@ class VariationMenuActivity : ClientActivity() {
                 createVariationDialog.show()
             }
 
-        popupBar = findViewById(R.id.popup_bar)
-        popupBar
+
+        val resumeSessionButton = UIButton2(applicationContext)
+        resumeSessionButton
             .setText("Resume practice session")
-            .attachToLayout(variationsLayout)
+            .setTextSize(24f)
+            .setColorResource(R.color.accent_color)
             .setOnClickListener {
                 stayingInApp = true
 
@@ -222,5 +223,15 @@ class VariationMenuActivity : ClientActivity() {
 
                 popupBar.hide()
             }
+
+        popupBar = findViewById(R.id.extra_buttons_popup_bar)
+        popupBar.addButton(resumeSessionButton)
+        popupBar.attachToLayout(variationsLayout)
+//        popupBar
+//            .setText()
+//            .attachToLayout(variationsLayout)
+//            .setOnClickListener {
+//
+//            }
     }
 }

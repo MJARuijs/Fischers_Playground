@@ -1,13 +1,11 @@
 package com.mjaruijs.fischersplayground.adapters.openingadapter
 
-import android.annotation.SuppressLint
 import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Parcel
 import android.os.Parcelable
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.util.Logger
 
 class OpeningLine(val setupMoves: ArrayList<Move> = arrayListOf(), val lineMoves: ArrayList<Move> = arrayListOf(), val arrows: HashMap<Int, ArrayList<MoveArrow>> = HashMap()) : Parcelable {
 
@@ -199,7 +197,6 @@ class OpeningLine(val setupMoves: ArrayList<Move> = arrayListOf(), val lineMoves
                     val arrowMap = HashMap<Int, ArrayList<MoveArrow>>()
 
                     if (secondSeparatorIndex != -1) {
-
                         val arrowString = content.substring(secondSeparatorIndex + 1)
                         var currentIndex = 0
                         while (true) {
@@ -219,13 +216,15 @@ class OpeningLine(val setupMoves: ArrayList<Move> = arrayListOf(), val lineMoves
                                 val startY = floats[1]
                                 val endX = floats[2]
                                 val endY = floats[3]
-                                moveArrows += MoveArrow(Vector2(startX, startY), Vector2(endX, endY))
+                                val moveArrow = MoveArrow(Vector2(startX, startY), Vector2(endX, endY))
+                                if (moveArrow.isValidArrow()) {
+                                    moveArrows += moveArrow
+                                }
                             }
 
                             arrowMap[moveIndex] = moveArrows
                             currentIndex = listEndIndex + 2
                         }
-
                     }
 
                     return OpeningLine(startingMoves, moves, arrowMap)

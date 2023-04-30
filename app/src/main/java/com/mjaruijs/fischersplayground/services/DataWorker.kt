@@ -2,6 +2,7 @@ package com.mjaruijs.fischersplayground.services
 
 import android.app.Service
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
@@ -62,6 +63,7 @@ class DataWorker(val applicationContext: Context, val data: Bundle, val onResult
             Topic.USER_STATUS_CHANGED -> onUserStatusChanged(content)
             Topic.COMPARE_DATA -> onCompareData(content)
             Topic.RESTORE_DATA -> onRestoreData(content)
+            Topic.SERVER_IP_CHANGED -> onServerIpChanged(content)
             Topic.DEBUG -> {}
             else -> throw IllegalArgumentException("Could not parse content with unknown topic: $topic")
         }
@@ -83,6 +85,7 @@ class DataWorker(val applicationContext: Context, val data: Bundle, val onResult
 
         try {
             val game = dataManager.getGame(gameId) ?: throw IllegalArgumentException("Could not find game with id: $gameId")
+            game.status = GameStatus.OPPONENT_MOVE
             game.addNews(News(NewsType.OPPONENT_MOVED, moveData))
             game.lastUpdated = timeStamp
             dataManager.setGame(gameId, game, applicationContext)
@@ -340,6 +343,11 @@ class DataWorker(val applicationContext: Context, val data: Bundle, val onResult
         }
 
         dataManager.loadData(applicationContext)
+    }
+
+    private fun onServerIpChanged(data: Array<String>) {
+        val newIp = data[0]
+        applicationContext.getSharedPreferences(NetworkService.SERVER_PREFERENCE_FILE, MODE_PRIVATE).edit().putString(NetworkService.SERVER_IP_KEY, newIp).apply()
     }
 
     private fun parseServerFiles(serverData: String): List<String> {

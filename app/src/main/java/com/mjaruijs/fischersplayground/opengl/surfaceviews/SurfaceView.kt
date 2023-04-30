@@ -11,6 +11,7 @@ import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity.Comp
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.opengl.renderer.OpenGLRenderer
+import com.mjaruijs.fischersplayground.util.FixedRateThread
 import com.mjaruijs.fischersplayground.util.Logger
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -18,7 +19,7 @@ import kotlin.math.roundToInt
 
 class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView(context, attributeSet) {
 
-    private val renderer: OpenGLRenderer
+    private lateinit var renderer: OpenGLRenderer
     private lateinit var onSurfaceCreated: () -> Unit
     private lateinit var onClick: (Float, Float) -> Unit
     private lateinit var onLongClick: (Float, Float) -> Unit
@@ -28,13 +29,18 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     private val holding = AtomicBoolean(false)
     private val holdingX = AtomicInteger(-1)
     private val holdingY = AtomicInteger(-1)
+    private val timerThread = FixedRateThread(10f, ::update)
+
+    private var is3D = false
+
+    private var previousTime = 0L
 
     init {
         setEGLContextClientVersion(3)
         setEGLConfigChooser(ConfigChooser(context))
 
         val preferences = context.getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
-        val is3D = preferences.getBoolean(GRAPHICS_3D_KEY, false)
+        is3D = preferences.getBoolean(GRAPHICS_3D_KEY, is3D)
 
         renderer = OpenGLRenderer(context, resources, ::onContextCreated, ::requestRender, is3D)
         setRenderer(renderer)
@@ -51,11 +57,28 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
         renderer.isPlayerWhite = isPlayerWhite
         renderer.onExceptionThrown = onExceptionThrown
+
+        Thread {
+            while (display == null) {
+                Thread.sleep(1)
+            }
+
+            timerThread.setTps(display.refreshRate)
+        }.start()
+    }
+
+    private fun update() {
+        val currentTime = System.nanoTime()
+        val diff = currentTime - previousTime
+        previousTime = currentTime
+        renderer.update(diff.toFloat() / 1000000000f)
+        Logger.debug(TAG, "Update: ${(diff.toFloat() / 1000000000f)}")
     }
 
     fun getRenderer() = renderer
 
     private fun onContextCreated() {
+        timerThread.run()
         onSurfaceCreated()
     }
 
@@ -73,6 +96,15 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
     fun clearHighlightedSquares() {
         renderer.clearHighlightedSquares()
+    }
+
+    fun enableLastMoveHighlights() {
+        renderer.enableLastMoveHighlights()
+    }
+
+    fun disableLastMoveHighlights() {
+        renderer.disableLastMoveHighlights()
+        requestRender()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -122,6 +154,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     }
 
     fun destroy() {
+        timerThread.stop()
         renderer.destroy()
     }
 

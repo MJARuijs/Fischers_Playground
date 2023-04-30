@@ -130,8 +130,8 @@ abstract class GameActivity : ClientActivity() {
     open fun onMoveMade(move: Move) {
         Thread {
             while (getActionBarFragment() == null) {
-                Thread.sleep(1000)
                 Logger.debug(activityName, "onMoveMade() waiting for actionBarFragment")
+                Thread.sleep(1000)
             }
 
             runOnUiThread {

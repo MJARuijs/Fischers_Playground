@@ -34,6 +34,7 @@ class MoveArrow(val startSquare: Vector2, val endSquare: Vector2) : Parcelable {
             return true
         }
 
+//        return true
         return false
     }
 

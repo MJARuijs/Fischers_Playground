@@ -19,13 +19,13 @@
         android:layout_width="60dp"
         android:layout_height="60dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/popup_bar"
+        app:layout_constraintBottom_toTopOf="@id/extra_buttons_popup_bar"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         app:layout_constraintDimensionRatio="w,1:1" />
 
     <com.mjaruijs.fischersplayground.userinterface.PopupBar
-        android:id="@+id/popup_bar"
+        android:id="@+id/extra_buttons_popup_bar"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

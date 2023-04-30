@@ -126,6 +126,7 @@ class ChatFragment : Fragment() {
     }
 
     private fun toggle() {
+        Logger.debug(TAG, "Toggling")
         val offset = if (keyboardHeight <= 0) 32 else keyboardHeight + 32 + keyboardOffset
         val constraints = ConstraintSet()
         constraints.clone(chatLayout)

@@ -5,6 +5,7 @@ import android.graphics.Point
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
+import android.view.WindowMetrics
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -274,6 +275,11 @@ class PracticeActivity : GameActivity() {
             boardOverlay.drawArrows(correctArrows)
             drawingArrows = false
 
+            hintedSquares.clear()
+            arrows.clear()
+            glView.clearHighlightedSquares()
+            glView.enableLastMoveHighlights()
+
             if (isLastMoveInLine(currentMove!!)) {
                 (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showNextLineButton()
             } else {
@@ -298,7 +304,7 @@ class PracticeActivity : GameActivity() {
         }
     }
 
-    private fun onNextClicked() {
+    private fun onNextLineClicked() {
         setUpLineState()
     }
 
@@ -317,6 +323,10 @@ class PracticeActivity : GameActivity() {
         val correctArrows = currentLine!!.arrows[currentMoveIndex + currentLine!!.setupMoves.size - 1] ?: ArrayList()
         if (correctArrows.containsAll(arrows) && arrows.containsAll(correctArrows)) {
             drawingArrows = false
+            arrows.clear()
+            hintedSquares.clear()
+            glView.clearHighlightedSquares()
+            glView.enableLastMoveHighlights()
 
             if (isLastMoveInLine(currentMove!!)) {
                 progressFragment.incrementCurrent()
@@ -363,6 +373,8 @@ class PracticeActivity : GameActivity() {
             } else {
                 if (currentLine!!.arrows[moveIndex] != null && currentLine!!.arrows[moveIndex]!!.isNotEmpty()) {
                     drawingArrows = true
+                    glView.disableLastMoveHighlights()
+//                    glView.clearHighlightedSquares()
 //                    glView.clearHighlightedSquares()
                     (getActionBarFragment() as PracticeOpeningNavigationBarFragment).showButton(PracticeOpeningNavigationBarFragment.CHECK_ARROWS_BUTTON, PracticeOpeningNavigationBarFragment.HINT_BUTTON)
                 } else {
@@ -427,6 +439,7 @@ class PracticeActivity : GameActivity() {
                     if (!hintedSquares.contains(arrow.startSquare)) {
                         glView.highlightSquare(arrow.startSquare)
                         hintedSquares += arrow.startSquare
+                        Logger.debug(activityName, "Hinting ${arrow.startSquare} -> ${arrow.endSquare}")
                     }
                 }
             }
@@ -593,7 +606,7 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun loadPracticeActionButtons() {
-        practiceNavigationButtons = PracticeOpeningNavigationBarFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextClicked, ::onExitClicked, ::onNextMoveClicked, ::onCheckArrowsClicked)
+        practiceNavigationButtons = PracticeOpeningNavigationBarFragment.getInstance(game, ::evaluateNavigationButtons, ::onHintClicked, ::onSolutionClicked, ::onRetryClicked, ::onNextLineClicked, ::onExitClicked, ::onNextMoveClicked, ::onCheckArrowsClicked)
         supportFragmentManager.commit {
             setReorderingAllowed(true)
             replace(R.id.action_buttons_fragment, practiceNavigationButtons)
@@ -602,9 +615,7 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun getWindowWidth(): Int {
-        val screenSize = Point()
-        windowManager.defaultDisplay.getSize(screenSize)
-        return screenSize.x
+        return windowManager.currentWindowMetrics.bounds.width()
     }
 
     private fun saveSession() {

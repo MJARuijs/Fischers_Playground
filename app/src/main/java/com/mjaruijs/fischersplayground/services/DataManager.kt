@@ -472,7 +472,6 @@ class DataManager(context: Context) {
 //                    if (newsUpdates.any { news -> news.newsType == NewsType.OPPONENT_MOVED }) {
 //                        newGame.status =
 //                    }
-                    newGame.status = gameStatus
                     savedGames += newGame
                 }
             } catch (e: Exception) {
@@ -683,6 +682,9 @@ class DataManager(context: Context) {
                     newsContent += "]"
 
                     val gameContent = "${game.gameId}|${game.opponentId}|${game.opponentName}|${game.status}|${game.opponentStatus}|${game.lastUpdated}|${game.isPlayingWhite}|${game.moveToBeConfirmed}|$moveData|$chatData|$newsContent\n"
+
+                    Logger.debug(TAG, "Saving game: $gameContent")
+
                     content += gameContent
                 }
 

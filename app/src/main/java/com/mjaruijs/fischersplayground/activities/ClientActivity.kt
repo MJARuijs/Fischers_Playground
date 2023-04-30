@@ -12,7 +12,6 @@ import com.mjaruijs.fischersplayground.adapters.gameadapter.GameCardItem
 import com.mjaruijs.fischersplayground.chess.game.MoveData
 import com.mjaruijs.fischersplayground.dialogs.DoubleButtonDialog
 import com.mjaruijs.fischersplayground.networking.ConnectivityCallback
-import com.mjaruijs.fischersplayground.networking.NetworkManager
 import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
 import com.mjaruijs.fischersplayground.networking.message.Topic
 import com.mjaruijs.fischersplayground.notification.NotificationBuilder
@@ -195,7 +194,7 @@ abstract class ClientActivity : AppCompatActivity() {
         message.obj = networkMessage
 
         if (networkServiceMessenger != null) {
-            Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
+            Logger.debug(activityName, "Sending to networkService while ServiceMessenger is not null: ${networkMessage.topic}")
             networkServiceMessenger!!.send(message)
         } else {
             Thread {
@@ -205,7 +204,7 @@ abstract class ClientActivity : AppCompatActivity() {
                 }
 
                 runOnUiThread {
-                    Logger.debug(activityName, "Sending to networkService: ${networkMessage.topic}")
+                    Logger.debug(activityName, "Sending to networkService while ServiceMessenger is null: ${networkMessage.topic}")
                     networkServiceMessenger!!.send(message)
                 }
             }.start()
@@ -367,6 +366,8 @@ abstract class ClientActivity : AppCompatActivity() {
         const val USER_ID_KEY = "user_id"
         const val USER_EMAIL_KEY = "user_email"
         const val USER_NAME_KEY = "user_name"
+
+        const val FIRE_BASE_TOKEN_KEY = "token"
 
         const val DEFAULT_USER_ID = "default_user_id"
         const val DEFAULT_USER_NAME = "default_user_name"
