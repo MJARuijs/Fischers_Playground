@@ -45,7 +45,7 @@ class HighlightRenderer(resources: Resources) {
     private var highlightLastMove = true
 
     fun enableLastMoveHighlights() {
-        highlightLastMove = true
+//        highlightLastMove = true
     }
 
     fun disableLastMoveHighlights() {

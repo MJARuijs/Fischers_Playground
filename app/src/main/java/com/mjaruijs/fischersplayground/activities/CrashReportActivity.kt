@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.activities
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
@@ -12,7 +13,7 @@ import com.mjaruijs.fischersplayground.dialogs.CrashReportDialog
 import com.mjaruijs.fischersplayground.util.FileManager
 import java.io.File
 
-class CrashReportActivity : ClientActivity() {
+class CrashReportActivity : AppCompatActivity() {
 
     private lateinit var crashReportRecycler: RecyclerView
     private lateinit var crashReportAdapter: CrashReportAdapter

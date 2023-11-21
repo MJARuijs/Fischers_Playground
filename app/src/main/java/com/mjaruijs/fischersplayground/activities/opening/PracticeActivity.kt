@@ -25,8 +25,7 @@ import com.mjaruijs.fischersplayground.fragments.PracticeProgressFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.PracticeOpeningNavigationBarFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
-import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.userinterface.MoveFeedbackIcon
 import com.mjaruijs.fischersplayground.util.Logger
@@ -71,12 +70,14 @@ class PracticeActivity : GameActivity() {
     private lateinit var practiceNavigationButtons: PracticeOpeningNavigationBarFragment
     private lateinit var progressFragment: PracticeProgressFragment
     private lateinit var boardOverlay: BoardOverlay
+    private lateinit var dataManager: DataManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
         findViewById<FragmentContainerView>(R.id.upper_fragment_container).visibility = View.GONE
         boardOverlay = findViewById(R.id.board_overlay)
+        dataManager = DataManager.getInstance(this)
 
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
@@ -165,16 +166,16 @@ class PracticeActivity : GameActivity() {
 
     override fun onContextCreated() {
         super.onContextCreated()
-        runOnUiThread {
-            val constraints = ConstraintSet()
-            constraints.clone(gameLayout)
-            constraints.clear(R.id.opengl_view, ConstraintSet.TOP)
-            constraints.clear(R.id.opengl_view, ConstraintSet.BOTTOM)
-            constraints.clear(R.id.lower_fragment_container, ConstraintSet.TOP)
-            constraints.constrainHeight(R.id.lower_fragment_container, -2)
-            constraints.applyTo(gameLayout)
-            gameLayout.invalidate()
-        }
+//        runOnUiThread {
+//            val constraints = ConstraintSet()
+//            constraints.clone(gameLayout)
+//            constraints.clear(R.id.opengl_view, ConstraintSet.TOP)
+//            constraints.clear(R.id.opengl_view, ConstraintSet.BOTTOM)
+//            constraints.clear(R.id.lower_fragment_container, ConstraintSet.TOP)
+//            constraints.constrainHeight(R.id.lower_fragment_container, -2)
+//            constraints.applyTo(gameLayout)
+//            gameLayout.invalidate()
+//        }
 
         setGameCallbacks()
         setGameForRenderer()
@@ -309,7 +310,6 @@ class PracticeActivity : GameActivity() {
     }
 
     private fun onExitClicked() {
-        stayingInApp = true
         finish()
     }
 
@@ -602,7 +602,6 @@ class PracticeActivity : GameActivity() {
         practiceNavigationButtons.showExitButton()
 
         dataManager.removePracticeSession(openingName, openingTeam, applicationContext)
-        sendNetworkMessage(NetworkMessage(Topic.DELETE_PRACTICE_SESSION, "$userId|$openingName|$openingTeam"))
     }
 
     private fun loadPracticeActionButtons() {
@@ -621,6 +620,5 @@ class PracticeActivity : GameActivity() {
     private fun saveSession() {
         val practiceSession = PracticeSession(openingName, openingTeam, practiceArrows, progressFragment.currentValue, progressFragment.maxValue, currentLine, nextLine, lines)
         dataManager.setPracticeSession(openingName, practiceSession, applicationContext)
-        sendNetworkMessage(NetworkMessage(Topic.NEW_PRACTICE_SESSION, "$userId|$openingName|$openingTeam|$practiceSession"))
     }
 }

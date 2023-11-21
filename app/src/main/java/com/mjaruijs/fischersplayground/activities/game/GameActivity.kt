@@ -1,15 +1,18 @@
 package com.mjaruijs.fischersplayground.activities.game
 
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
-import com.mjaruijs.fischersplayground.adapters.gameadapter.GameStatus
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
@@ -21,16 +24,17 @@ import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
-import com.mjaruijs.fischersplayground.util.FileManager
 import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
-abstract class GameActivity : ClientActivity() {
+abstract class GameActivity : AppCompatActivity() {
 
-    private lateinit var checkMateDialog: DoubleButtonDialog
+    open var activityName: String = "Game_Activity"
+
     lateinit var glView: SurfaceView
 
-    protected lateinit var gameLayout: ConstraintLayout
+//    protected lateinit var gameLayout: ConstraintLayout
+    protected lateinit var vibrator: Vibrator
 
     private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
@@ -41,17 +45,14 @@ abstract class GameActivity : ClientActivity() {
 
     protected var isPlayingWhite = true
 
-    lateinit var gameId: String
-    lateinit var opponentName: String
-
     open lateinit var game: Game
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_game)
+//        setContentView(R.layout.activity_game)
 
         try {
-            gameLayout = findViewById(R.id.game_layout)
+//            gameLayout = findViewById(R.id.game_layout)
 
             val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
             val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
@@ -60,29 +61,29 @@ abstract class GameActivity : ClientActivity() {
 
             pieceChooserDialog.create(this)
 
-            userId = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_ID_KEY, "")!!
-            userName = getSharedPreferences(USER_PREFERENCE_FILE, MODE_PRIVATE).getString(USER_NAME_KEY, "")!!
-
             glView = findViewById(R.id.opengl_view)
-            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onLongClick, ::onDisplaySizeChanged, isPlayingWhite, ::onExceptionThrown)
+            glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite, ::onExceptionThrown)
         } catch (e: Exception) {
-
+            throw e
         }
     }
 
     override fun onResume() {
         super.onResume()
-
-        checkMateDialog = DoubleButtonDialog(this, true, "Checkmate!", "View Board", ::viewBoardAfterFinish, "Exit", ::closeAndSaveGameAsWin, 0.7f)
-        stayingInApp = false
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
 
         pieceChooserDialog.setLayout()
     }
 
     override fun onStop() {
         super.onStop()
-
-        checkMateDialog.dismiss()
+        Logger.debug(activityName, "Stopping activity")
         pieceChooserDialog.dismiss()
     }
 
@@ -130,7 +131,7 @@ abstract class GameActivity : ClientActivity() {
     open fun onMoveMade(move: Move) {
         Thread {
             while (getActionBarFragment() == null) {
-                Logger.debug(activityName, "onMoveMade() waiting for actionBarFragment")
+                Logger.warn(activityName, "Move made, but thread is looping because actionBarFragment is null..")
                 Thread.sleep(1000)
             }
 
@@ -184,10 +185,10 @@ abstract class GameActivity : ClientActivity() {
 //            networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString(), applicationContext)
         }
     }
-
-    open fun onLongClick(x: Float, y: Float) {
-
-    }
+//
+//    open fun onLongClick(x: Float, y: Float) {
+//
+//    }
 
     private fun vibrate() {
         vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
@@ -195,49 +196,6 @@ abstract class GameActivity : ClientActivity() {
 
     protected fun requestRender() {
         glView.requestRender()
-    }
-
-    open fun onCheckMate(team: Team) {
-        runOnUiThread {
-            if ((team == Team.WHITE && isPlayingWhite) || (team == Team.BLACK && !isPlayingWhite)) {
-                checkMateDialog.setMessage("You won!")
-                    .setRightOnClick { closeAndSaveGameAsWin() }
-                    .show()
-            } else {
-                checkMateDialog.setMessage("$opponentName has won!")
-                    .setRightOnClick { closeAndSaveGameAsLoss() }
-                    .show()
-            }
-        }
-    }
-
-    protected fun getPlayerFragment(): PlayerCardFragment? {
-        return (supportFragmentManager.fragments.find { fragment -> fragment is PlayerCardFragment && fragment.tag == "player" } as PlayerCardFragment?)
-    }
-
-    protected fun getOpponentFragment(): PlayerCardFragment? {
-        return (supportFragmentManager.fragments.find { fragment -> fragment is PlayerCardFragment && fragment.tag == "opponent" } as PlayerCardFragment?)
-    }
-
-    open fun finishActivity(status: GameStatus) {
-        stayingInApp = true
-        finish()
-    }
-
-    open fun viewBoardAfterFinish() {
-        checkMateDialog.dismiss()
-    }
-
-    open fun closeAndSaveGameAsWin() {
-        finishActivity(GameStatus.GAME_WON)
-    }
-
-    open fun closeAndSaveGameAsDraw() {
-        finishActivity(GameStatus.GAME_DRAW)
-    }
-
-    open fun closeAndSaveGameAsLoss() {
-        finishActivity(GameStatus.GAME_LOST)
     }
 
     private fun hideActivityDecorations(isFullscreen: Boolean) {
@@ -253,11 +211,17 @@ abstract class GameActivity : ClientActivity() {
         }
     }
 
+    private fun runOnUIThread(runnable: () -> Unit) {
+        runOnUiThread {
+            runnable()
+        }
+    }
+
     private fun onPromotePawn(square: Vector2, team: Team): PieceType {
         runOnUiThread {
             pieceChooserDialog.show(square, team)
         }
-        return PieceType.KNIGHT
+        return PieceType.QUEEN
     }
 
     protected fun dpToPx(@Suppress("SameParameterValue") dp: Int): Int {

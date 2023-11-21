@@ -9,6 +9,7 @@ import android.transition.ChangeBounds
 import android.transition.TransitionManager
 import android.view.View
 import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -17,7 +18,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.GameSettingsSurface
@@ -26,7 +26,7 @@ import com.mjaruijs.fischersplayground.util.Time
 import kotlin.math.roundToInt
 
 @Suppress("SameParameterValue")
-class SettingsActivity : ClientActivity() {
+class SettingsActivity : AppCompatActivity() {
 
     private lateinit var game: SinglePlayerGame
 
@@ -431,6 +431,12 @@ class SettingsActivity : ClientActivity() {
         with(preferences.edit()) {
             putBoolean(key, value)
             apply()
+        }
+    }
+
+    private fun runOnUIThread(runnable: () -> Unit) {
+        runOnUiThread {
+            runnable()
         }
     }
 

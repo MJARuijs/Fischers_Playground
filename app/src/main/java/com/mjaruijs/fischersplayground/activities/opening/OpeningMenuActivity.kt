@@ -2,28 +2,29 @@ package com.mjaruijs.fischersplayground.activities.opening
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.addCallback
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningAdapter
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.CreateOpeningDialog
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
-import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
-import com.mjaruijs.fischersplayground.util.FileManager
+import com.mjaruijs.fischersplayground.util.Logger
 
-class OpeningMenuActivity : ClientActivity() {
+class OpeningMenuActivity : AppCompatActivity() {
 
-    override var activityName = "opening_menu_activity"
+    var activityName = "opening_menu_activity"
 
     private lateinit var openingAdapter: OpeningAdapter
+    private lateinit var dataManager: DataManager
 
     private val createOpeningDialog = CreateOpeningDialog(::onTeamSelected)
 
@@ -32,25 +33,13 @@ class OpeningMenuActivity : ClientActivity() {
         setContentView(R.layout.activity_opening_menu)
 
         createOpeningDialog.create(this)
-
+        dataManager = DataManager.getInstance(this)
         initUIComponents()
     }
 
     override fun onResume() {
         super.onResume()
         hideActivityDecorations()
-
-//        Thread {
-//            while (dataManager.isLocked()) {
-//                Thread.sleep(1)
-//            }
-//            runOnUiThread {
-//                restoreSavedOpenings(dataManager.getSavedOpenings())
-//            }
-//        }.start()
-
-        restoreSavedOpenings(dataManager.getSavedOpenings())
-
     }
 
     override fun onDestroy() {
@@ -65,7 +54,6 @@ class OpeningMenuActivity : ClientActivity() {
 
         createOpeningDialog.dismiss()
 
-        stayingInApp = true
         val intent = Intent(this, VariationMenuActivity::class.java)
             .putExtra("opening_team", team.toString())
             .putExtra("opening_name", openingName)
@@ -104,14 +92,12 @@ class OpeningMenuActivity : ClientActivity() {
 
         createOpeningDialog.dismiss()
 
-        stayingInApp = true
         startActivity(intent)
     }
 
     private fun onDeleteOpening(opening: Opening) {
         dataManager.deleteOpening(opening.name, opening.team, applicationContext)
         openingAdapter.deleteOpening(opening)
-        sendNetworkMessage(NetworkMessage(Topic.DELETE_OPENING, "$userId|${opening.name}|${opening.team}"))
     }
 
     private fun initUIComponents() {
@@ -127,7 +113,6 @@ class OpeningMenuActivity : ClientActivity() {
             .setTextSize(28f)
             .setCornerRadius(45.0f)
             .setOnClickListener {
-                stayingInApp = true
                 createOpeningDialog.show()
             }
     }

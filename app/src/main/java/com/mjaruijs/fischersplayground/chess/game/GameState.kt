@@ -4,7 +4,6 @@ import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.services.NetworkService
 import kotlin.math.roundToInt
 
 class GameState(private val isPlayingWhite: Boolean, private val state: ArrayList<ArrayList<Piece?>> = ArrayList()) {
@@ -65,7 +64,6 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
             state[i][j]
         } catch (e: IndexOutOfBoundsException) {
 //            ErrorHandler.reportCrash(e)
-            NetworkService.sendCrashReport("crash_game_state_int_get_oob.txt", e.stackTraceToString(), null)
             return null
         }
     }
@@ -76,8 +74,6 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
         return try {
             state[vector2.x.roundToInt()][vector2.y.roundToInt()]
         } catch (e: ArrayIndexOutOfBoundsException) {
-            NetworkService.sendCrashReport("crash_game_state_vec_get_oob.txt", e.stackTraceToString(), null)
-
             null
         }
     }
@@ -86,8 +82,6 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
        try {
            state[vector2.x.roundToInt()][vector2.y.roundToInt()] = piece
        } catch (e: IndexOutOfBoundsException) {
-           NetworkService.sendCrashReport("crash_game_state_set_oob.txt", e.stackTraceToString(), null)
-
 //           ErrorHandler.reportCrash(e)
        }
     }

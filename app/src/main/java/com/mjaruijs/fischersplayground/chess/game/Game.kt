@@ -627,7 +627,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     protected fun updateCheckData(team: Team, isCheck: Boolean, isCheckMate: Boolean) {
         when {
             isCheckMate -> {
-                onCheckMate(team)
+//                onCheckMate(team)
             }
             isCheck -> {
                 isChecked = true

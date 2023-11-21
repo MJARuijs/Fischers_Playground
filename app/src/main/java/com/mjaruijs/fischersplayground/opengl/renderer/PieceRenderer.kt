@@ -86,8 +86,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             var currentAnimation: AnimationData? = null
             while (runAnimationThread.get()) {
                 while (animationRunning.get()) {
-//                    Logger.debug(TAG, "Animation Running")
-                    Thread.sleep(1)
+                    Logger.debug(TAG, "Animation Running")
+                    Thread.sleep(100)
                 }
 
                 if (currentAnimation?.nextAnimation != null) {
@@ -110,6 +110,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             Logger.warn(TAG, "Tried to play animation but was null..")
             return
         }
+
+        Logger.debug(TAG, "Preparing new animation..")
 
         animationRunning.set(true)
         if (currentAnimation.takenPiece != null) {
@@ -137,18 +139,30 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 //                }
 //            )
 
-            runOnUiThread {
+            Logger.debug(TAG, "Calling runOnUiThread to start animation..")
+//            runOnUiThread {
+                Logger.debug(TAG, "Starting animation on UiThread")
+
                 val piece = requestGame().state[currentAnimation.piecePosition]
                 if (piece == null) {
                     Logger.error(TAG, "Tried to animate piece from ${currentAnimation.piecePosition} to ${currentAnimation.piecePosition + currentAnimation.translation}, but no piece was found at the starting square..")
-                    return@runOnUiThread
+                    return
                 }
 
                 Logger.debug(TAG, "Playing animation: moving ${piece.type} from ${vectorToChessSquares(currentAnimation.piecePosition)} to ${vectorToChessSquares(currentAnimation.translation + currentAnimation.piecePosition)}")
-                animator.startAnimation(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, currentAnimation.onStartCalls, onFinishCalls, currentAnimation.animationSpeed)
+                for (call in currentAnimation.onStartCalls) {
+                    call()
+                }
+                for (call in onFinishCalls) {
+                    call()
+                }
+//                animator.startAnimation(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, currentAnimation.onStartCalls, onFinishCalls, currentAnimation.animationSpeed)
 //                animator.start()
-            }
+//            }
+            Logger.debug(TAG, "Finished calling runOnUiThread")
+
         } catch (e: Exception) {
+            Logger.error(TAG, "Failed to animate move.. " + e.message)
             onExceptionThrown("crash_piece_renderer_start_animation.txt", e)
         }
     }
@@ -178,7 +192,9 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
     fun queueAnimation(animationData: AnimationData) {
         Logger.debug(TAG, "Queued animation: ${animationData.piecePosition}")
-        animationQueue.add(animationData)
+//        animationQueue.add(animationData)
+        animationData.invokeOnStartCalls()
+        animationData.invokeOnFinishCalls()
     }
 
     private fun getPieceTexture2d(piece: Piece, pieceTextures: PieceTextures): Int {

@@ -2,7 +2,6 @@ package com.mjaruijs.fischersplayground.math.vectors
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.mjaruijs.fischersplayground.services.NetworkService
 import com.mjaruijs.fischersplayground.util.FloatUtils
 import kotlin.math.abs
 
@@ -134,7 +133,6 @@ data class Vector2(var x: Float = 0.0f, var y: Float = 0.0f): Vector<Vector2> {
                 val y = content.substring(separatorIndex + 2, endIndex).toFloat()
                 return Vector2(x, y)
             } catch (e: Exception) {
-                NetworkService.sendCrashReport("crash_vec_from_string.txt", e.stackTraceToString(), null)
                 throw IllegalArgumentException("Failed to parse the following string into a Vector2: $content")
             }
 

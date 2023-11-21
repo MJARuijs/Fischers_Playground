@@ -1,7 +1,6 @@
 package com.mjaruijs.fischersplayground.util
 
 import android.content.Context
-import com.mjaruijs.fischersplayground.services.NetworkService
 import java.io.*
 
 object FileManager {
@@ -24,7 +23,6 @@ object FileManager {
             val newContent = "$currentContent$content"
             return write(context, fileName, newContent)
         } catch (e: Exception) {
-            NetworkService.sendCrashReport("crash_file_manager_append.txt", e.stackTraceToString(), context)
             Logger.error(TAG, e.stackTraceToString())
             false
         }
@@ -34,7 +32,7 @@ object FileManager {
         val path = if (dir.isBlank()) filesPath else "$filesPath/$dir"
 
         val file = File(path)
-        val files = file.listFiles()!!
+        val files = file.listFiles() ?: return arrayListOf()
         val fileList = ArrayList<String>()
         for (f in files) {
             fileList += f.name
@@ -73,8 +71,6 @@ object FileManager {
             true
         } catch (e: IOException) {
             Logger.error(TAG, e.stackTraceToString())
-
-            NetworkService.sendCrashReport("crash_file_manager_write.txt", e.stackTraceToString(), context)
             return false
         }
     }

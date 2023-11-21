@@ -9,41 +9,54 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.activities.game.GameActivity
+import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.adapters.openingadapter.OpeningLine
 import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
+import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.game.SinglePlayerGame
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.chess.game.MoveArrow
+import com.mjaruijs.fischersplayground.chess.pieces.PieceType
 import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.CreateVariationDialog
+import com.mjaruijs.fischersplayground.dialogs.PieceChooserDialog
 import com.mjaruijs.fischersplayground.dialogs.PracticeSettingsDialog
 import com.mjaruijs.fischersplayground.fragments.OpeningMovePagerFragment
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment.Companion.BACKGROUND_COLOR
 import com.mjaruijs.fischersplayground.fragments.actionbars.CreateOpeningActionButtonsFragment
+import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.networking.message.NetworkMessage
-import com.mjaruijs.fischersplayground.networking.message.Topic
+import com.mjaruijs.fischersplayground.math.vectors.Vector3
+import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
+import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
-class CreateOpeningActivity : GameActivity() {
+class CreateOpeningActivity : AppCompatActivity() {
 
-    override var activityName = "create_opening_activity"
+     var activityName = "create_opening_activity"
 
-    override var isSinglePlayer = true
+     var isSinglePlayer = true
 
     private var hasUnsavedChanges = false
     private var arrowModeEnabled = false
@@ -66,11 +79,38 @@ class CreateOpeningActivity : GameActivity() {
 
     private lateinit var renameVariationDialog: CreateVariationDialog
 
+    private lateinit var dataManager: DataManager
+
+
+    lateinit var glView: SurfaceView
+
+    //    protected lateinit var gameLayout: ConstraintLayout
+    protected lateinit var vibrator: Vibrator
+
+    private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
+
+    protected var displayWidth = 0
+    protected var displayHeight = 0
+
+    protected var isPlayingWhite = true
+
+    open lateinit var game: Game
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
-        findViewById<FragmentContainerView>(R.id.upper_fragment_container).visibility = View.GONE
+        setContentView(R.layout.activity_create_opening)
+        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+        val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
+
+        hideActivityDecorations(fullScreen)
+
+        pieceChooserDialog.create(this)
+
+        glView = findViewById(R.id.opengl_view)
+        glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite, ::onExceptionThrown)
+
         boardOverlay = findViewById(R.id.board_overlay)
+
+        dataManager = DataManager.getInstance(this)
 
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
 
@@ -107,6 +147,49 @@ class CreateOpeningActivity : GameActivity() {
         supportActionBar?.setBackgroundDrawable(ColorDrawable(BACKGROUND_COLOR))
     }
 
+    private fun restorePreferences() {
+        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
+
+        val cameraRotation = preferences.getString(SettingsActivity.CAMERA_ROTATION_KEY, "") ?: ""
+        val fov = preferences.getInt(SettingsActivity.FOV_KEY, 45)
+        val pieceScale = preferences.getFloat(SettingsActivity.PIECE_SCALE_KEY, 1.0f)
+
+        if (cameraRotation.isNotBlank()) {
+            glView.getRenderer().setCameraRotation(Vector3.fromString(cameraRotation))
+        }
+
+        glView.getRenderer().setFoV(fov)
+        glView.getRenderer().setPieceScale(pieceScale)
+    }
+
+    override fun onDestroy() {
+        glView.destroy()
+        super.onDestroy()
+    }
+
+    inline fun <reified T>findFragment(): T? {
+        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: return null
+        return fragment as T
+    }
+
+    protected fun requestRender() {
+        glView.requestRender()
+    }
+
+    private fun onPawnUpgraded(square: Vector2, pieceType: PieceType, team: Team) {
+        game.upgradePawn(square, pieceType, team)
+        Thread {
+            Thread.sleep(10)
+            glView.invalidate()
+            requestRender()
+        }.start()
+    }
+
+    override fun onBackPressed() {
+        Logger.debug(activityName, "BACK CLICKED")
+        super.onBackPressed()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.create_opening_menu, menu)
         if (menu != null) {
@@ -141,25 +224,39 @@ class CreateOpeningActivity : GameActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    override fun onContextCreated() {
-        super.onContextCreated()
-        runOnUiThread {
-            val constraints = ConstraintSet()
-            constraints.clone(gameLayout)
-            constraints.clear(R.id.opengl_view, ConstraintSet.TOP)
-            constraints.clear(R.id.opengl_view, ConstraintSet.BOTTOM)
+    fun onContextCreated() {
+        restorePreferences()
 
-            constraints.applyTo(gameLayout)
-            gameLayout.invalidate()
-        }
+//        super.onContextCreated()
+//        runOnUiThread {
+//            val constraints = ConstraintSet()
+//            constraints.clone(gameLayout)
+//            constraints.clear(R.id.opengl_view, ConstraintSet.TOP)
+//            constraints.clear(R.id.opengl_view, ConstraintSet.BOTTOM)
+//
+//            constraints.applyTo(gameLayout)
+//            gameLayout.invalidate()
+//        }
         boardOverlay.invalidate()
 
         setGameCallbacks()
         setGameForRenderer()
     }
+    fun setGameForRenderer() {
+        glView.setGame(game)
+    }
 
-    override fun setGameCallbacks() {
-        super.setGameCallbacks()
+    private fun onPromotePawn(square: Vector2, team: Team): PieceType {
+        runOnUiThread {
+            pieceChooserDialog.show(square, team)
+        }
+        return PieceType.QUEEN
+    }
+
+    fun setGameCallbacks() {
+        game.onPawnPromoted = ::onPromotePawn
+        game.onMoveMade = ::onMoveMade
+//        super.setGameCallbacks()
         game.onAnimationStarted = ::onMoveAnimationStarted
         game.onAnimationFinished = ::onMoveAnimationFinished
     }
@@ -171,7 +268,7 @@ class CreateOpeningActivity : GameActivity() {
         super.onPause()
     }
 
-    override fun onClick(x: Float, y: Float) {
+    fun onClick(x: Float, y: Float) {
         boardOverlay.draw()
         if (arrowModeEnabled) {
             if (arrowStartSquare.x == -1f) {
@@ -184,8 +281,20 @@ class CreateOpeningActivity : GameActivity() {
                 glView.clearHighlightedSquares()
             }
         } else {
-            super.onClick(x, y)
+            try {
+                val vibrateOnClick = getSharedPreferences(SettingsActivity.GAME_PREFERENCES_KEY, MODE_PRIVATE).getBoolean(SettingsActivity.VIBRATE_KEY, false)
+                if (vibrateOnClick) {
+                    vibrate()
+                }
+                game.onClick(x, y, displayWidth, displayHeight)
+            } catch (e: Exception) {
+//            networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString(), applicationContext)
+            }
         }
+    }
+
+    private fun vibrate() {
+        vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
     private fun onMoveAnimationStarted() {
@@ -199,8 +308,36 @@ class CreateOpeningActivity : GameActivity() {
 //        boardOverlay.draw()
     }
 
-    override fun onMoveMade(move: Move) {
-        super.onMoveMade(move)
+    fun getActionBarFragment() = findFragment<GameBarFragment>()
+
+    fun evaluateNavigationButtons() {
+        if (game.moves.isNotEmpty()) {
+            if (game.getMoveIndex() != -1) {
+                (getActionBarFragment() as GameBarFragment).enableBackButton()
+            } else {
+                (getActionBarFragment() as GameBarFragment).disableBackButton()
+            }
+            if (!game.isShowingCurrentMove()) {
+                (getActionBarFragment() as GameBarFragment).enableForwardButton()
+            } else {
+                (getActionBarFragment() as GameBarFragment).disableForwardButton()
+            }
+        }
+        requestRender()
+    }
+
+    fun onMoveMade(move: Move) {
+//        super.onMoveMade(move)
+        Thread {
+            while (getActionBarFragment() == null) {
+                Logger.warn(activityName, "Move made, but thread is looping because actionBarFragment is null..")
+                Thread.sleep(1000)
+            }
+
+            runOnUiThread {
+                evaluateNavigationButtons()
+            }
+        }.start()
 
         glView.clearHighlightedSquares()
 
@@ -282,8 +419,6 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun onStartPracticing(useShuffle: Boolean, practiceArrows: Boolean) {
-        stayingInApp = true
-
         if (hasUnsavedChanges) {
             saveOpening()
         }
@@ -342,6 +477,7 @@ class CreateOpeningActivity : GameActivity() {
     }
 
     private fun saveOpening() {
+        Logger.debug(activityName, "Startin Save Opening()")
         opening.getVariation(variationName)!!.clear()
 
         val openingFragments = openingMovesFragment.getFragments()
@@ -351,10 +487,40 @@ class CreateOpeningActivity : GameActivity() {
             opening.getVariation(variationName)!!.addLine(line)
         }
 
-        sendNetworkMessage(NetworkMessage(Topic.NEW_OPENING, "$userId|$openingName|$openingTeam|$opening"))
         dataManager.setOpening(openingName, openingTeam, opening, applicationContext)
         dataManager.saveOpenings(applicationContext)
         hasUnsavedChanges = false
+        Logger.debug(activityName, "finished Save Opening()")
+    }
+
+    private fun hideActivityDecorations(isFullscreen: Boolean) {
+        supportActionBar?.hide()
+
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+
+        if (isFullscreen) {
+            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    private fun runOnUIThread(runnable: () -> Unit) {
+        runOnUiThread {
+            Logger.debug(activityName, "Running on ui thread")
+            runnable()
+            Logger.debug(activityName, "Finished running on ui thread")
+        }
+    }
+
+    open fun onDisplaySizeChanged(width: Int, height: Int) {
+        displayWidth = width
+        displayHeight = height
+    }
+
+    private fun onExceptionThrown(fileName: String, e: Exception) {
+//        networkManager.sendCrashReport(fileName, e.stackTraceToString(), applicationContext)
     }
 
 }

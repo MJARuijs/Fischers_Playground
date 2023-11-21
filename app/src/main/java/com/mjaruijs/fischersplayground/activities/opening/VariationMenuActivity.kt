@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -12,7 +13,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mjaruijs.fischersplayground.R
-import com.mjaruijs.fischersplayground.activities.ClientActivity
 import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.adapters.openingadapter.Opening
 import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
@@ -21,12 +21,13 @@ import com.mjaruijs.fischersplayground.chess.pieces.Team
 import com.mjaruijs.fischersplayground.dialogs.CreateVariationDialog
 import com.mjaruijs.fischersplayground.dialogs.PracticeSettingsDialog
 import com.mjaruijs.fischersplayground.fragments.actionbars.ActionBarFragment
+import com.mjaruijs.fischersplayground.services.DataManager
 import com.mjaruijs.fischersplayground.userinterface.PopupBar
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
 
-class VariationMenuActivity : ClientActivity() {
+class VariationMenuActivity : AppCompatActivity() {
 
-    override var activityName = "variation_menu_activity"
+    private var activityName = "variation_menu_activity"
 
     private lateinit var createVariationDialog: CreateVariationDialog
     private lateinit var variationAdapter: VariationAdapter
@@ -43,10 +44,14 @@ class VariationMenuActivity : ClientActivity() {
 
     private lateinit var variationsLayout: ConstraintLayout
 
+    private lateinit var dataManager: DataManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_variation_menu)
+
+        dataManager = DataManager.getInstance(this)
 
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
@@ -101,7 +106,6 @@ class VariationMenuActivity : ClientActivity() {
     }
 
     private fun onVariationCreated(variationName: String) {
-        stayingInApp = true
         opening.addVariation(Variation(variationName))
         dataManager.setOpening(openingName, openingTeam, opening, applicationContext)
 
@@ -116,8 +120,6 @@ class VariationMenuActivity : ClientActivity() {
     }
 
     private fun onVariationClicked(variationName: String) {
-        stayingInApp = true
-
         val intent = Intent(this, CreateOpeningActivity::class.java)
             .putExtra("opening_team", openingTeam.toString())
             .putExtra("opening_name", openingName)
@@ -157,8 +159,6 @@ class VariationMenuActivity : ClientActivity() {
     }
 
     private fun onStartPracticing(useShuffle: Boolean, practiceArrows: Boolean) {
-        stayingInApp = true
-
         practiceSettingsDialog.dismiss()
 
         val intent = Intent(this, PracticeActivity::class.java)
@@ -211,8 +211,6 @@ class VariationMenuActivity : ClientActivity() {
             .setTextSize(24f)
             .setColorResource(R.color.accent_color)
             .setOnClickListener {
-                stayingInApp = true
-
                 val intent = Intent(this, PracticeActivity::class.java)
 
                 intent.putExtra("opening_name", openingName)

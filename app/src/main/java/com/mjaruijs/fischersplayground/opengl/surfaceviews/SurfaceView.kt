@@ -22,7 +22,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     private lateinit var renderer: OpenGLRenderer
     private lateinit var onSurfaceCreated: () -> Unit
     private lateinit var onClick: (Float, Float) -> Unit
-    private lateinit var onLongClick: (Float, Float) -> Unit
+//    private lateinit var onLongClick: (Float, Float) -> Unit
     private lateinit var runOnUiThread: (() -> Unit) -> Unit
 
     private var startClickTimer = -1L
@@ -47,11 +47,11 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         renderMode = RENDERMODE_WHEN_DIRTY
     }
 
-    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onLongClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean, onExceptionThrown: (String, Exception) -> Unit) {
+    fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean, onExceptionThrown: (String, Exception) -> Unit) {
         this.runOnUiThread = runOnUiThread
         this.onSurfaceCreated = onSurfaceCreated
         this.onClick = onClick
-        this.onLongClick = onLongClick
+//        this.onLongClick = onLongClick
 
         renderer.runOnUiThread = runOnUiThread
         renderer.onDisplaySizeChanged = onDisplaySizeChanged
@@ -72,7 +72,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         val diff = currentTime - previousTime
         previousTime = currentTime
         renderer.update(diff.toFloat() / 1000000000f)
-        Logger.debug(TAG, "Update: ${(diff.toFloat() / 1000000000f)}")
+//        Logger.debug(TAG, "Update: ${(diff.toFloat() / 1000000000f)}")
     }
 
     fun getRenderer() = renderer
@@ -115,22 +115,21 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
         if (event.action == MotionEvent.ACTION_DOWN) {
             startClickTimer = System.currentTimeMillis()
-            holdingX.set(event.x.roundToInt())
-            holdingY.set(event.y.roundToInt())
+//            holdingX.set(event.x.roundToInt())
+//            holdingY.set(event.y.roundToInt())
 
-            Thread {
-                holding.set(true)
-                while (holding.get()) {
-                    if (System.currentTimeMillis() - startClickTimer >= LONG_CLICK_DURATION) {
-                        holding.set(false)
-                        startClickTimer = -1
-                        runOnUiThread {
-                            onLongClick(holdingX.get().toFloat(), holdingY.get().toFloat())
-                            requestRender()
-                        }
-                    }
-                }
-            }.start()
+//            Thread {
+//                holding.set(true)
+//                while (holding.get()) {
+//                    if (System.currentTimeMillis() - startClickTimer >= LONG_CLICK_DURATION) {
+//                        holding.set(false)
+//                        startClickTimer = -1
+//                        runOnUiThread {
+//                            requestRender()
+//                        }
+//                    }
+//                }
+//            }.start()
         }
 
         if (event.action == MotionEvent.ACTION_CANCEL) {
@@ -138,14 +137,14 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         }
 
         if (event.action == MotionEvent.ACTION_UP) {
-            if (holding.get()) {
-                holding.set(false)
-                if (System.currentTimeMillis() - startClickTimer < MAX_CLICK_DURATION) {
+//            if (holding.get()) {
+//                holding.set(false)
+//                if (System.currentTimeMillis() - startClickTimer < MAX_CLICK_DURATION) {
                     onClick(event.x, event.y)
-                }
-
-                startClickTimer = -1
-            }
+//                }
+//
+//                startClickTimer = -1
+//            }
 
             requestRender()
         }
