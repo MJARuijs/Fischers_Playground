@@ -3,6 +3,7 @@ package com.mjaruijs.fischersplayground.chess.pieces
 import com.mjaruijs.fischersplayground.chess.game.GameState
 import com.mjaruijs.fischersplayground.chess.game.Move
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
+import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -16,6 +17,8 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
     KING(900, 'K', 5);
 
     companion object {
+
+        private const val TAG = "PieceType"
 
         fun fromString(content: String): PieceType {
             for (value in values()) {
@@ -221,20 +224,28 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                     }
 
                     if (gameState[x, y] == null || gameState[x, y]?.team != piece.team) {
-                        possibleMoves += square + Vector2(i, j)
+                        val possibleSquare = square + Vector2(i, j)
+                        possibleMoves += possibleSquare
+                        Logger.debug(TAG, "Adding $possibleSquare to list of possible squares for ${piece.type} at $square")
                     }
                 }
             }
 
             if (!lookingForCheck) {
-                if (canShortCastle(piece.team, perspectiveOfTeam, moves, isSinglePlayer, gameState)) {
+                if (canShortCastle(piece.team, square, perspectiveOfTeam, moves, isSinglePlayer, gameState)) {
                     val direction = if (perspectiveOfTeam == Team.WHITE) 1 else -1
-                    possibleMoves += square + Vector2(direction * 2, 0)
+                    val possibleSquare = square + Vector2(direction * 2, 0)
+                    possibleMoves += possibleSquare
+
+                    Logger.debug(TAG, "Adding $possibleSquare [SHORT CASTLE] to list of possible squares for ${piece.type} at $square")
                 }
 
-                if (canLongCastle(piece.team, perspectiveOfTeam, moves, isSinglePlayer, gameState)) {
+                if (canLongCastle(piece.team, square, perspectiveOfTeam, moves, isSinglePlayer, gameState)) {
                     val direction = if (perspectiveOfTeam == Team.WHITE) -1 else 1
-                    possibleMoves += square + Vector2(direction * 2 , 0)
+                    val possibleSquare = square + Vector2(direction * 2 , 0)
+                    possibleMoves += possibleSquare
+                    Logger.debug(TAG, "Adding $possibleSquare [LONG CASTLE] to list of possible squares for ${piece.type} at $square")
+
                 }
             }
 
@@ -383,7 +394,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return possibleMoves
         }
 
-        private fun canShortCastle(pieceTeam: Team, perspectiveOfTeam: Team, moves: List<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
+        private fun canShortCastle(pieceTeam: Team, square: Vector2, perspectiveOfTeam: Team, moves: List<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             val kingX = if (isSinglePlayer) {
                 if (perspectiveOfTeam == Team.WHITE) 4 else 3
             } else {
@@ -396,13 +407,37 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                 0
             }
 
+//            if (perspectiveOfTeam == Team.WHITE) {
+//                if (square.x.roundToInt() != kingX) {
+//                    return false
+//                }
+//                if (pieceTeam == Team.WHITE && square.y.roundToInt() != 0) {
+//                    return false
+//                }
+//                if (pieceTeam == Team.BLACK && square.y.roundToInt() != 7) {
+//                    return false
+//                }
+//            } else {
+                if (square.x.roundToInt() != kingX) {
+                    return false
+                }
+                if (square.y.roundToInt() != kingY) {
+                    return false
+                }
+//                if (pieceTeam == Team.WHITE && square.y.roundToInt() != 0) {
+//                    return false
+//                }
+//                if (pieceTeam == Team.BLACK && square.y.roundToInt() != 0) {
+//                    return false
+//                }
+//            }
+
             var kingMoved = false
             var rookMoved = false
 
             for (move in moves) {
                 if (move.team == pieceTeam) {
                     if (move.movedPiece == KING) {
-
                         kingMoved = true
                     }
 
@@ -447,7 +482,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
             return true
         }
 
-        private fun canLongCastle(pieceTeam: Team, perspectiveOfTeam: Team, moves: List<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
+        private fun canLongCastle(pieceTeam: Team, square: Vector2, perspectiveOfTeam: Team, moves: List<Move>, isSinglePlayer: Boolean, state: GameState): Boolean {
             val kingX = if (isSinglePlayer) {
                 if (perspectiveOfTeam == Team.WHITE) 4 else 3
             } else {
@@ -458,6 +493,13 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                 if (perspectiveOfTeam == pieceTeam) 0 else 7
             } else {
                 0
+            }
+
+            if (square.x.roundToInt() != kingX) {
+                return false
+            }
+            if (square.y.roundToInt() != kingY) {
+                return false
             }
 
             var kingMoved = false

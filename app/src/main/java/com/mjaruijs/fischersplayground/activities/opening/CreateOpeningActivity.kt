@@ -148,6 +148,11 @@ class CreateOpeningActivity : AppCompatActivity() {
         supportActionBar?.setBackgroundDrawable(ColorDrawable(BACKGROUND_COLOR))
     }
 
+    override fun onResume() {
+        super.onResume()
+        dataManager.loadData(applicationContext)
+    }
+
     private fun restorePreferences() {
         val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
 

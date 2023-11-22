@@ -107,22 +107,24 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
     }
 
     override fun toString(): String {
-        var string = "$isPlayingWhite|"
+        var string = "\n"
 
-        for (x in 0 until 8) {
-            for (y in 0 until 8) {
-                string += if (state[x][y] == null) {
-                    "($x,$y): null"
+        for (rank in 0 until 8) {
+            for (file in 0 until 8) {
+                string += if (state[file][7 - rank] == null) {
+                    "_;_"
                 } else {
-                    val type = state[x][y]!!.type
-                    val team = state[x][y]!!.team
-                    "($x,$y): $type;$team"
+                    val type = state[file][7 - rank]!!.type
+                    val team = state[file][7 - rank]!!.team
+                    "${type.sign};${team.toString()[0]}"
                 }
 
-                if (x != 7 || y != 7) {
-                    string += ","
-                }
+//                if (rank != 7 || file != 7) {
+                    string += " "
+//                }
+
             }
+            string += "\n"
         }
 
         return string

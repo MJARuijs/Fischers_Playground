@@ -29,8 +29,6 @@ class MainActivity : AppCompatActivity() {
 
     private var activityName = "main_activity"
 
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES)
 
