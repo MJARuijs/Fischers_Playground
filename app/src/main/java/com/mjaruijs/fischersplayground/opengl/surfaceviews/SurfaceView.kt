@@ -44,7 +44,8 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
 
         renderer = OpenGLRenderer(context, resources, ::onContextCreated, ::requestRender, is3D)
         setRenderer(renderer)
-        renderMode = RENDERMODE_WHEN_DIRTY
+//        renderMode = RENDERMODE_WHEN_DIRTY
+        renderMode = RENDERMODE_CONTINUOUSLY
     }
 
     fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean, onExceptionThrown: (String, Exception) -> Unit) {

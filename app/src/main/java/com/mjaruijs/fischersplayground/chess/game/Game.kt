@@ -655,8 +655,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     companion object {
         const val TAG = "GameObject"
-        const val DEFAULT_ANIMATION_SPEED = 200L
-        const val FAST_ANIMATION_SPEED = 50L
+        const val DEFAULT_ANIMATION_SPEED = 1000L
+        const val FAST_ANIMATION_SPEED = 1000L
     }
 
 }

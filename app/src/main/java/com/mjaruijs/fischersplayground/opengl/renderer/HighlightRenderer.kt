@@ -124,6 +124,7 @@ class HighlightRenderer(resources: Resources) {
     }
 
     fun renderHighlightedSquares(game: Game, displayWidth: Int, displayHeight: Int) {
+        val startTime = System.nanoTime()
         selectedSquare2DProgram.start()
         selectedSquare2DProgram.set("viewPort", Vector2(displayWidth, displayHeight))
         selectedSquare2DProgram.set("hasGradient", false)
@@ -157,6 +158,8 @@ class HighlightRenderer(resources: Resources) {
 
         quad.drawInstanced(instances)
         selectedSquare2DProgram.stop()
+        val endTime = System.nanoTime()
+//        Logger.debug(TAG, "Time to render selected squares: ${(endTime - startTime)}")
     }
 
     fun renderPossibleSquares3D(board: Board, camera: Camera) {

@@ -95,6 +95,7 @@ class CreateOpeningActivity : AppCompatActivity() {
     protected var isPlayingWhite = true
 
     open lateinit var game: Game
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_opening)
@@ -339,7 +340,7 @@ class CreateOpeningActivity : AppCompatActivity() {
             }
         }.start()
 
-        glView.clearHighlightedSquares()
+//        glView.clearHighlightedSquares()
 
         runOnUiThread {
             openingMovesFragment.getCurrentOpeningFragment().addMove(move)

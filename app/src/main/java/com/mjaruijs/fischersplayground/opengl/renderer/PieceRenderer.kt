@@ -1,6 +1,10 @@
 package com.mjaruijs.fischersplayground.opengl.renderer
 
+import android.animation.ValueAnimator
 import android.content.res.Resources
+import android.util.Log
+import androidx.core.animation.doOnEnd
+import androidx.core.animation.doOnStart
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -28,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
 import kotlin.math.PI
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val requestRender: () -> Unit, private val runOnUiThread: (() -> Unit) -> Unit, private val requestGame: () -> Game, private val onExceptionThrown: (String, Exception) -> Unit) {
 
@@ -82,93 +87,130 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     var pieceScale = Vector3(1f, 1f, 1f)
 
     init {
+        runOnUiThread {
+//            ValueAnimator.setFrameDelay(1000L)
+        }
         Thread {
             var currentAnimation: AnimationData? = null
             while (runAnimationThread.get()) {
                 while (animationRunning.get()) {
-                    Logger.debug(TAG, "Animation Running")
-                    Thread.sleep(100)
+//                    Logger.debug(TAG, "Animation Running")
+                    Thread.sleep(10)
                 }
 
-                if (currentAnimation?.nextAnimation != null) {
-                    currentAnimation = currentAnimation.nextAnimation!!
-                    startAnimation(currentAnimation)
-                } else {
+//                if (currentAnimation?.nextAnimation != null) {
+//                    currentAnimation = currentAnimation.nextAnimation!!
+//                    startAnimation(currentAnimation)
+//                } else {
                     if (animationQueue.isNotEmpty()) {
                         currentAnimation = animationQueue.poll()
                         Logger.debug(TAG, "Polling new animation!")
                         startAnimation(currentAnimation)
                     }
-                }
+//                }
             }
         }.start()
 //        animationThread.start()
     }
 
-    private fun startAnimation(currentAnimation: AnimationData?) {
-        if (currentAnimation == null) {
-            Logger.warn(TAG, "Tried to play animation but was null..")
-            return
+    private fun startAnimation(animationData: AnimationData) {
+        val piece = requestGame().state[animationData.piecePosition] ?: throw IllegalArgumentException("No piece was found at square: ${animationData.piecePosition}.. Failed to animate..\n${requestGame().state}\n")
+
+        val translation = animationData.translation
+        if (animationData.takenPiece != null) {
+            val alpha = if (animationData.isReversed) 0.0f else 1.0f
+            takenPieceData = TakenPieceData(animationData.takenPiece, animationData.takenPiecePosition!!, alpha)
         }
 
-        Logger.debug(TAG, "Preparing new animation..")
-
-        animationRunning.set(true)
-        if (currentAnimation.takenPiece != null) {
-            val alpha = if (currentAnimation.isReversed) 0.0f else 1.0f
-            takenPieceData = TakenPieceData(currentAnimation.takenPiece, currentAnimation.takenPiecePosition!!, alpha)
+        val pieceAnimator = ValueAnimator.ofFloat(1.0f, 0.0f)
+        pieceAnimator.addUpdateListener {
+            val progress = it.animatedValue as Float
+            piece.translation = translation * progress
         }
+        pieceAnimator.doOnStart {
+            Logger.debug(TAG, "Animation OnStart() ${piece.type}")
 
-        try {
-//            val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
-            val onFinishCalls = ArrayList<() -> Unit>()
-            onFinishCalls.addAll(currentAnimation.onFinishCalls)
-            onFinishCalls += {
-                animationRunning.set(false)
-                takenPieceData = null
-                requestRender()
+            animationRunning.set(true)
+            animationData.invokeOnStartCalls()
+        }
+        pieceAnimator.doOnEnd {
+            Logger.debug(TAG, "Animation OnEnd() ${piece.type}")
+            animationData.invokeOnFinishCalls()
+            animationRunning.set(false)
+
+            if (animationData.nextAnimation != null) {
+
+                queueAnimation(animationData.nextAnimation!!)
+//                startAnimation(animationData.nextAnimation!!)
+//            } else {
+//                animationRunning.set(false)
             }
-//            animator.addOnFinishCall(
-//                {
-//                    animationRunning.set(false)
-//                    Logger.debug(TAG, "Finished animating ${requestGame().state[currentAnimation.piecePosition]?.type}")
-//                },
-//                {
-//                    takenPieceData = null
-//                    requestRender()
-//                }
-//            )
+        }
+        pieceAnimator.duration = animationData.animationSpeed
 
-            Logger.debug(TAG, "Calling runOnUiThread to start animation..")
-//            runOnUiThread {
-                Logger.debug(TAG, "Starting animation on UiThread")
-
-                val piece = requestGame().state[currentAnimation.piecePosition]
-                if (piece == null) {
-                    Logger.error(TAG, "Tried to animate piece from ${currentAnimation.piecePosition} to ${currentAnimation.piecePosition + currentAnimation.translation}, but no piece was found at the starting square..")
-                    return
-                }
-
-                Logger.debug(TAG, "Playing animation: moving ${piece.type} from ${vectorToChessSquares(currentAnimation.piecePosition)} to ${vectorToChessSquares(currentAnimation.translation + currentAnimation.piecePosition)}")
-                for (call in currentAnimation.onStartCalls) {
-                    call()
-                }
-                for (call in onFinishCalls) {
-                    call()
-                }
-//                animator.startAnimation(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, currentAnimation.onStartCalls, onFinishCalls, currentAnimation.animationSpeed)
-//                animator.start()
-//            }
-            Logger.debug(TAG, "Finished calling runOnUiThread")
-
-        } catch (e: Exception) {
-            Logger.error(TAG, "Failed to animate move.. " + e.message)
-            onExceptionThrown("crash_piece_renderer_start_animation.txt", e)
+        runOnUiThread {
+            pieceAnimator.start()
         }
     }
 
+//    private fun startAnimation(currentAnimation: AnimationData?) {
+//        if (currentAnimation == null) {
+//            Logger.warn(TAG, "Tried to play animation but was null..")
+//            return
+//        }
+//
+//        Logger.debug(TAG, "Preparing new animation..")
+//
+//        animationRunning.set(true)
+//        if (currentAnimation.takenPiece != null) {
+//            val alpha = if (currentAnimation.isReversed) 0.0f else 1.0f
+//            takenPieceData = TakenPieceData(currentAnimation.takenPiece, currentAnimation.takenPiecePosition!!, alpha)
+//        }
+//
+//        try {
+////            val animator = PieceAnimator(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, requestRender, currentAnimation.onStartCalls, currentAnimation.onFinishCalls, currentAnimation.animationSpeed)
+//            val onFinishCalls = ArrayList<() -> Unit>()
+//            onFinishCalls.addAll(currentAnimation.onFinishCalls)
+//            onFinishCalls += {
+//                animationRunning.set(false)
+//                takenPieceData = null
+//                requestRender()
+//            }
+//
+//            Logger.debug(TAG, "Calling runOnUiThread to start animation..")
+////            runOnUiThread {
+//                Logger.debug(TAG, "Starting animation on UiThread")
+//
+//                val piece = requestGame().state[currentAnimation.piecePosition]
+//                if (piece == null) {
+//                    Logger.error(TAG, "Tried to animate piece from ${currentAnimation.piecePosition} to ${currentAnimation.piecePosition + currentAnimation.translation}, but no piece was found at the starting square..")
+//                    return
+//                }
+//
+//                Logger.debug(TAG, "Playing animation: moving ${piece.type} from ${vectorToChessSquares(currentAnimation.piecePosition)} to ${vectorToChessSquares(currentAnimation.translation + currentAnimation.piecePosition)}")
+//
+//                animator.startAnimation(requestGame().state, currentAnimation.piecePosition, currentAnimation.translation, currentAnimation.onStartCalls, onFinishCalls, currentAnimation.animationSpeed)
+////            }
+//            Logger.debug(TAG, "Finished calling runOnUiThread")
+//
+//        } catch (e: Exception) {
+//            Logger.error(TAG, "Failed to animate move.. " + e.message)
+//            onExceptionThrown("crash_piece_renderer_start_animation.txt", e)
+//        }
+//    }
+
     fun update(deltaTime: Float) {
         animator.update(deltaTime)
+    }
+
+    fun queueAnimation(animationData: AnimationData) {
+        val piece = requestGame().state[animationData.piecePosition]
+        Logger.debug(TAG, "Queued animation: ${piece?.type} at ${animationData.piecePosition}")
+        animationQueue.add(animationData)
+//        animationData.invokeOnStartCalls()
+//        animationData.invokeOnFinishCalls()
+
+
     }
 
     private fun vectorToChessSquares(position: Vector2): String {
@@ -188,13 +230,6 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
         square += position.y.roundToInt() + 1
         return square
-    }
-
-    fun queueAnimation(animationData: AnimationData) {
-        Logger.debug(TAG, "Queued animation: ${animationData.piecePosition}")
-//        animationQueue.add(animationData)
-        animationData.invokeOnStartCalls()
-        animationData.invokeOnFinishCalls()
     }
 
     private fun getPieceTexture2d(piece: Piece, pieceTextures: PieceTextures): Int {
@@ -224,18 +259,19 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
         sampler.bind(pieceTextures.get2DTextureArray())
 
-        if (takenPieceData != null) run {
-            val piece = takenPieceData?.piece ?: return@run
-            val piecePosition = takenPieceData?.position ?: return@run
-
-            val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
-
-            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
-            piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
-            piece2DProgram.set("translation", translation)
-
-            quad.draw()
-        }
+        // TODO: LOW PRIORITY: Use this code (or rewrite it) to fade out pieces that are taken (or fade them back in when a capturing move is undone)
+//        if (takenPieceData != null) run {
+//            val piece = takenPieceData?.piece ?: return@run
+//            val piecePosition = takenPieceData?.position ?: return@run
+//
+//            val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
+//
+//            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
+//            piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
+//            piece2DProgram.set("translation", translation)
+//
+////            quad.draw()
+//        }
 
         for (x in 0 until 8) {
             for (y in 0 until 8) {

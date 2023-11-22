@@ -172,7 +172,7 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
                 boardRenderer.render3D(board, camera, displayWidth, displayHeight)
                 highlightRenderer.renderSelectedSquares3D(board, camera)
 
-                pieceRenderer.render3D(game, camera, pieceTextures, aspectRatio)
+//                pieceRenderer.render3D(game, camera, pieceTextures, aspectRatio)
                 highlightRenderer.renderPossibleSquares3D(board, camera)
             } else {
                 glClear(GL_COLOR_BUFFER_BIT)
@@ -185,6 +185,7 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
                 highlightRenderer.renderHighlightedSquares(game, displayWidth, displayHeight)
 
                 pieceRenderer.render2D(game, pieceTextures, aspectRatio)
+
                 highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
             }
 
@@ -194,8 +195,9 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
                 onPixelsRead = {}
             }
         } catch (e: Exception) {
+            throw e
 //            e.printStackTrace()
-            onExceptionThrown("crash_opengl_renderer_draw.txt", e)
+//            onExceptionThrown("crash_opengl_renderer_draw.txt", e)
         }
 
     }

@@ -1,6 +1,5 @@
 package com.mjaruijs.fischersplayground.opengl.renderer.animation
 
-import androidx.annotation.NonNull
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.math.vectors.Vector2

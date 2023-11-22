@@ -112,11 +112,11 @@ class GameState(private val isPlayingWhite: Boolean, private val state: ArrayLis
         for (x in 0 until 8) {
             for (y in 0 until 8) {
                 string += if (state[x][y] == null) {
-                    "null"
+                    "($x,$y): null"
                 } else {
                     val type = state[x][y]!!.type
                     val team = state[x][y]!!.team
-                    "$type;$team"
+                    "($x,$y): $type;$team"
                 }
 
                 if (x != 7 || y != 7) {

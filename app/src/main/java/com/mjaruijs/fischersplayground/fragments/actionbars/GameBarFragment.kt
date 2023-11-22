@@ -5,6 +5,7 @@ import android.view.View
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.Logger
 
 open class GameBarFragment : ActionBarFragment() {
 
@@ -108,6 +109,8 @@ open class GameBarFragment : ActionBarFragment() {
         } else {
             Game.DEFAULT_ANIMATION_SPEED
         }
+
+        Logger.debug(TAG, "onForwardClicked! isHeld: $isHeld")
 
         game.showNextMove(false, animationSpeed)
         game.clearBoardData()
