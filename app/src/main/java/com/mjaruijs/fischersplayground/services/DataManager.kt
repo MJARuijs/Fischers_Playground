@@ -193,9 +193,12 @@ class DataManager(context: Context) {
                 savedOpenings.clear()
                 val files = FileManager.listFilesInDirectory()
 
+                Logger.debug(TAG, "${files.size}")
+
                 val openingFiles = files.filter { fileName -> fileName.startsWith("opening_") }
 
                 for (openingFileName in openingFiles) {
+                    Logger.debug(TAG, "Found openingFile: $openingFileName")
                     val fileContent = FileManager.readText(context, openingFileName) ?: continue
 
                     val openingInfo = openingFileName.removePrefix("opening_").removeSuffix(".txt").split("_")
@@ -205,6 +208,7 @@ class DataManager(context: Context) {
                     opening.addFromString(fileContent)
 
                     savedOpenings += opening
+                    Logger.debug(TAG, "Restoring savedOpening: $openingName")
                 }
             } catch (e: Exception) {
 //                NetworkManager.getInstance().sendCrashReport("crash_loading_opening.txt", e.stackTraceToString(), context)

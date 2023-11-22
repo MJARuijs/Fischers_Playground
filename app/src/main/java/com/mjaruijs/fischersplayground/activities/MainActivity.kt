@@ -23,16 +23,21 @@ import com.mjaruijs.fischersplayground.activities.settings.SettingsActivity
 import com.mjaruijs.fischersplayground.services.LoadResourcesWorker
 import com.mjaruijs.fischersplayground.userinterface.RippleEffect
 import com.mjaruijs.fischersplayground.userinterface.UIButton2
+import com.mjaruijs.fischersplayground.util.FileManager
 
 class MainActivity : AppCompatActivity() {
 
     private var activityName = "main_activity"
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES)
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        FileManager.init(applicationContext)
+
         loadResources()
 
         initUIComponents()

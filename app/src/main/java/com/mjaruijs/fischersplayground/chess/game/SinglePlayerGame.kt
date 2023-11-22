@@ -15,21 +15,21 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayer
 
     override fun getPieceMoves(piece: Piece, square: Vector2, state: GameState, lookingForCheck: Boolean) = PieceType.getPossibleMoves(if (isPlayingWhite) Team.WHITE else Team.BLACK, piece, square, true, state, moves.subList(0, currentMoveIndex + 1), lookingForCheck)
 
-    override fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long) {
+    override fun showPreviousMove(runInBackground: Boolean, animationSpeed: Int) {
         if (currentMoveIndex != -1) {
             teamToMove = !teamToMove
         }
         super.showPreviousMove(runInBackground, animationSpeed)
     }
 
-    override fun showNextMove(runInBackground: Boolean, animationSpeed: Long){
+    override fun showNextMove(runInBackground: Boolean, animationSpeed: Int){
         if (!isShowingCurrentMove()) {
             teamToMove = !teamToMove
         }
         super.showNextMove(runInBackground, animationSpeed)
     }
 
-    fun move(move: Move, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    fun move(move: Move, animationSpeed: Int = DEFAULT_ANIMATION_SPEED) {
         move(move.team, move.getFromPosition(team), move.getToPosition(team), animationSpeed)
     }
 
@@ -58,7 +58,7 @@ class SinglePlayerGame(isPlayingWhite: Boolean, lastUpdated: Long, val canPlayer
         undoMove(moves.removeLast(), false)
     }
 
-    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long) {
+    override fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Int) {
         if (!isShowingCurrentMove()) {
             Logger.debug(TAG, "Game is not showing current move..")
             val moveCount = moves.size

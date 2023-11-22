@@ -105,6 +105,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                     if (animationQueue.isNotEmpty()) {
                         currentAnimation = animationQueue.poll()
                         Logger.debug(TAG, "Polling new animation!")
+                        animationRunning.set(true)
                         startAnimation(currentAnimation)
                     }
 //                }
@@ -128,25 +129,24 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
             piece.translation = translation * progress
         }
         pieceAnimator.doOnStart {
-            Logger.debug(TAG, "Animation OnStart() ${piece.type}")
-
             animationRunning.set(true)
             animationData.invokeOnStartCalls()
         }
         pieceAnimator.doOnEnd {
             Logger.debug(TAG, "Animation OnEnd() ${piece.type}")
             animationData.invokeOnFinishCalls()
-            animationRunning.set(false)
+//            animationRunning.set(false)
 
             if (animationData.nextAnimation != null) {
 
-                queueAnimation(animationData.nextAnimation!!)
-//                startAnimation(animationData.nextAnimation!!)
-//            } else {
-//                animationRunning.set(false)
+//                queueAnimation(animationData.nextAnimation!!)
+                startAnimation(animationData.nextAnimation!!)
+            } else {
+                animationRunning.set(false)
             }
         }
-        pieceAnimator.duration = animationData.animationSpeed
+//        pieceAnimator.duration = 50L
+        pieceAnimator.duration = animationData.animationSpeed.toLong()
 
         runOnUiThread {
             pieceAnimator.start()

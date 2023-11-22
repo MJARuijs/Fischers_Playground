@@ -35,7 +35,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
     private var mirroredY = false
 
     private var holding = AtomicBoolean(false)
-    private var shouldRepeatOnHold = false
+//    private var shouldRepeatOnHold = false
 
     private var rippleEffect = RippleEffect.RECTANGLE
 
@@ -58,16 +58,16 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
                 return@setOnLongClickListener true
             }
 
-            if (shouldRepeatOnHold) {
-                holding.set(true)
-                handler.post(RepetitiveClicker())
-            }
+//            if (shouldRepeatOnHold) {
+//                holding.set(true)
+//                handler.post(RepetitiveClicker())
+//            }
 
             return@setOnLongClickListener true
         }
         buttonCard.setOnTouchListener { _, event ->
             if (!buttonEnabled) {
-
+                holding.set(false)
                 return@setOnTouchListener false
             }
 
@@ -96,7 +96,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
 
     fun setRepeatOnHold(): UIButton2 {
         isLongClickable = true
-        shouldRepeatOnHold = true
+//        shouldRepeatOnHold = true
 
         buttonCard.setOnLongClickListener {
             if (isLongClickable) {
@@ -274,7 +274,7 @@ class UIButton2(context: Context, attributes: AttributeSet? = null) : LinearLayo
                 Logger.debug(TAG, "RepetitiveClicker")
                 callOnClick()
                 if (handler != null) {
-                    handler?.postDelayed(RepetitiveClicker(), Game.FAST_ANIMATION_SPEED)
+                    handler?.postDelayed(RepetitiveClicker(), Game.FAST_ANIMATION_SPEED.toLong())
                 }
             }
         }

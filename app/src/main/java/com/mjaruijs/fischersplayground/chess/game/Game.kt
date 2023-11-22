@@ -132,7 +132,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         while (currentMoveIndex != selectedMoveIndex) {
-            showNextMove(true, 0L)
+            showNextMove(true, 0)
         }
     }
 
@@ -142,7 +142,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         val moveIndex = moves.indexOf(move)
-        val animationSpeed = 0L
+        val animationSpeed = 0
 
         if (moveIndex < currentMoveIndex) {
             while (currentMoveIndex != moveIndex) {
@@ -157,7 +157,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         clearBoardData()
     }
 
-    open fun showPreviousMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    open fun showPreviousMove(runInBackground: Boolean, animationSpeed: Int = DEFAULT_ANIMATION_SPEED) {
         if (currentMoveIndex == -1) {
             return
         }
@@ -166,7 +166,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         undoMove(currentMove, runInBackground, animationSpeed)
     }
 
-    open fun showNextMove(runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    open fun showNextMove(runInBackground: Boolean, animationSpeed: Int = DEFAULT_ANIMATION_SPEED) {
         if (currentMoveIndex >= moves.size - 1) {
             return
         }
@@ -196,7 +196,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         promotionLock.set(false)
     }
 
-    protected fun createAnimation(animationSpeed: Long, fromPosition: Vector2, toPosition: Vector2, isReversed: Boolean, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null, onStart: () -> Unit = {}, onFinish: () -> Unit = {}): AnimationData {
+    protected fun createAnimation(animationSpeed: Int, fromPosition: Vector2, toPosition: Vector2, isReversed: Boolean, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null, onStart: () -> Unit = {}, onFinish: () -> Unit = {}): AnimationData {
         val translation = toPosition - fromPosition
         return AnimationData(animationSpeed, System.nanoTime(), fromPosition, translation, takenPiece, takenPiecePosition, isReversed, {
             state[toPosition] = state[fromPosition]
@@ -221,7 +221,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    private fun redoMove(move: Move, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    private fun redoMove(move: Move, runInBackground: Boolean, animationSpeed: Int = DEFAULT_ANIMATION_SPEED) {
         val fromPosition = move.getFromPosition(team)
         val toPosition = move.getToPosition(team)
 
@@ -297,7 +297,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
     }
 
-    fun undoMove(move: Move, runInBackground: Boolean, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    fun undoMove(move: Move, runInBackground: Boolean, animationSpeed: Int = DEFAULT_ANIMATION_SPEED) {
         val toPosition = move.getToPosition(team)
         val fromPosition = move.getFromPosition(team)
 
@@ -357,7 +357,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val toPosition = move.getToPosition(team)
 
         if (move.movedPiece == PieceType.KING && abs(fromPosition.x - toPosition.x) == 2.0f) {
-            val animation = performCastle(move.team, fromPosition, toPosition, 0L)
+            val animation = performCastle(move.team, fromPosition, toPosition, 0)
             animation.invokeOnStartCalls()
             animation.invokeOnFinishCalls()
 
@@ -384,7 +384,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     }
 
-    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long = DEFAULT_ANIMATION_SPEED) {
+    open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Int = DEFAULT_ANIMATION_SPEED) {
         possibleMoves.clear()
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
@@ -591,7 +591,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return false
     }
 
-    private fun undoCastle(fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long): AnimationData {
+    private fun undoCastle(fromPosition: Vector2, toPosition: Vector2, animationSpeed: Int): AnimationData {
         val direction = if (fromPosition.x < toPosition.x) -1 else 1
         val newX = if (fromPosition.x < toPosition.x) 7 else 0
 
@@ -606,7 +606,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         return kingAnimation
     }
 
-    protected fun performCastle(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Long): AnimationData {
+    protected fun performCastle(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Int): AnimationData {
         val rookDirection = if (toPosition.x < fromPosition.x) 1 else -1
 
         val oldRookPosition = if (toPosition.x > fromPosition.x) {
@@ -655,8 +655,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     companion object {
         const val TAG = "GameObject"
-        const val DEFAULT_ANIMATION_SPEED = 1000L
-        const val FAST_ANIMATION_SPEED = 1000L
+        const val DEFAULT_ANIMATION_SPEED = 1000
+        const val FAST_ANIMATION_SPEED = 150
     }
 
 }

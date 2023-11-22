@@ -82,8 +82,8 @@ open class GameBarFragment : ActionBarFragment() {
 
     fun disableForwardButton() {
         forwardButton.disable()
-        layout.invalidate()
-        layout.requestLayout()
+//        layout.invalidate()
+//        layout.requestLayout()
     }
 
     fun disableBackButton() {
@@ -96,6 +96,7 @@ open class GameBarFragment : ActionBarFragment() {
         } else {
             Game.DEFAULT_ANIMATION_SPEED
         }
+
 
         game.showPreviousMove(false, animationSpeed)
         game.clearBoardData()
@@ -110,7 +111,7 @@ open class GameBarFragment : ActionBarFragment() {
             Game.DEFAULT_ANIMATION_SPEED
         }
 
-        Logger.debug(TAG, "onForwardClicked! isHeld: $isHeld")
+        Logger.debug(TAG, "onForwardClicked! isHeld: $isHeld, so animationSpeed is $animationSpeed")
 
         game.showNextMove(false, animationSpeed)
         game.clearBoardData()

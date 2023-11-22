@@ -31,6 +31,7 @@ object FileManager {
     fun listFilesInDirectory(dir: String = ""): ArrayList<String> {
         val path = if (dir.isBlank()) filesPath else "$filesPath/$dir"
 
+        Logger.debug(TAG, "FilePath: $path")
         val file = File(path)
         val files = file.listFiles() ?: return arrayListOf()
         val fileList = ArrayList<String>()

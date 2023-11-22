@@ -40,6 +40,7 @@ class OpeningMenuActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         hideActivityDecorations()
+        restoreSavedOpenings(dataManager.getSavedOpenings())
     }
 
     override fun onDestroy() {
@@ -65,6 +66,7 @@ class OpeningMenuActivity : AppCompatActivity() {
         for (opening in openings) {
             if (!openingAdapter.contains(opening)) {
                 openingAdapter += opening
+                Logger.debug(activityName, "Added opening to recycler: ${opening.name}")
             }
         }
     }
