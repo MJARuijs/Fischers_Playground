@@ -226,7 +226,7 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                     if (gameState[x, y] == null || gameState[x, y]?.team != piece.team) {
                         val possibleSquare = square + Vector2(i, j)
                         possibleMoves += possibleSquare
-                        Logger.debug(TAG, "Adding $possibleSquare to list of possible squares for ${piece.type} at $square")
+//                        Logger.debug(TAG, "Adding $possibleSquare to list of possible squares for ${piece.type} at $square")
                     }
                 }
             }
@@ -237,14 +237,14 @@ enum class PieceType(val value: Int, val sign: Char, val sortingValue: Int) {
                     val possibleSquare = square + Vector2(direction * 2, 0)
                     possibleMoves += possibleSquare
 
-                    Logger.debug(TAG, "Adding $possibleSquare [SHORT CASTLE] to list of possible squares for ${piece.type} at $square")
+//                    Logger.debug(TAG, "Adding $possibleSquare [SHORT CASTLE] to list of possible squares for ${piece.type} at $square")
                 }
 
                 if (canLongCastle(piece.team, square, perspectiveOfTeam, moves, isSinglePlayer, gameState)) {
                     val direction = if (perspectiveOfTeam == Team.WHITE) -1 else 1
                     val possibleSquare = square + Vector2(direction * 2 , 0)
                     possibleMoves += possibleSquare
-                    Logger.debug(TAG, "Adding $possibleSquare [LONG CASTLE] to list of possible squares for ${piece.type} at $square")
+//                    Logger.debug(TAG, "Adding $possibleSquare [LONG CASTLE] to list of possible squares for ${piece.type} at $square")
 
                 }
             }

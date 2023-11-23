@@ -33,10 +33,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".activities.game.SinglePlayerGameActivity"
-            android:parentActivityName=".activities.MainActivity"
-            android:windowSoftInputMode="adjustNothing" />
         <activity android:name=".activities.CrashReportActivity" />
         <activity android:name=".activities.opening.OpeningMenuActivity" />
         <activity android:name=".activities.opening.CreateOpeningActivity" />

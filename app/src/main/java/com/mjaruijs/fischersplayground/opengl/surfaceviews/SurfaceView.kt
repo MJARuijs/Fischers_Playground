@@ -29,23 +29,23 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     private val holding = AtomicBoolean(false)
     private val holdingX = AtomicInteger(-1)
     private val holdingY = AtomicInteger(-1)
-    private val timerThread = FixedRateThread(10f, ::update)
+//    private val timerThread = FixedRateThread(10f, ::update)
 
     private var is3D = false
 
-    private var previousTime = 0L
+//    private var previousTime = 0L
 
     init {
         setEGLContextClientVersion(3)
-        setEGLConfigChooser(ConfigChooser(context))
+//        setEGLConfigChooser(ConfigChooser(context))
 
         val preferences = context.getSharedPreferences(SettingsActivity.GRAPHICS_PREFERENCES_KEY, MODE_PRIVATE)
         is3D = preferences.getBoolean(GRAPHICS_3D_KEY, is3D)
 
         renderer = OpenGLRenderer(context, resources, ::onContextCreated, ::requestRender, is3D)
         setRenderer(renderer)
-//        renderMode = RENDERMODE_WHEN_DIRTY
-        renderMode = RENDERMODE_CONTINUOUSLY
+        renderMode = RENDERMODE_WHEN_DIRTY
+//        renderMode = RENDERMODE_CONTINUOUSLY
     }
 
     fun init(runOnUiThread: (() -> Unit) -> Unit, onSurfaceCreated: () -> Unit, onClick: (Float, Float) -> Unit, onDisplaySizeChanged: (Int, Int) -> Unit, isPlayerWhite: Boolean, onExceptionThrown: (String, Exception) -> Unit) {
@@ -59,27 +59,27 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
         renderer.isPlayerWhite = isPlayerWhite
         renderer.onExceptionThrown = onExceptionThrown
 
-        Thread {
-            while (display == null) {
-                Thread.sleep(1)
-            }
-
-            timerThread.setTps(display.refreshRate)
-        }.start()
+//        Thread {
+//            while (display == null) {
+//                Thread.sleep(1)
+//            }
+//
+//            timerThread.setTps(display.refreshRate)
+//        }.start()
     }
 
-    private fun update() {
-        val currentTime = System.nanoTime()
-        val diff = currentTime - previousTime
-        previousTime = currentTime
-        renderer.update(diff.toFloat() / 1000000000f)
+//    private fun update() {
+//        val currentTime = System.nanoTime()
+//        val diff = currentTime - previousTime
+//        previousTime = currentTime
+//        renderer.update(diff.toFloat() / 1000000000f)
 //        Logger.debug(TAG, "Update: ${(diff.toFloat() / 1000000000f)}")
-    }
+//    }
 
     fun getRenderer() = renderer
 
     private fun onContextCreated() {
-        timerThread.run()
+//        timerThread.run()
         onSurfaceCreated()
     }
 
@@ -154,7 +154,7 @@ class SurfaceView(context: Context, attributeSet: AttributeSet?) : GLSurfaceView
     }
 
     fun destroy() {
-        timerThread.stop()
+//        timerThread.stop()
         renderer.destroy()
     }
 

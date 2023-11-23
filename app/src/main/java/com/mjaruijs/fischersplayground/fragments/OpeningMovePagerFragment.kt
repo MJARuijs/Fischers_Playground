@@ -47,11 +47,13 @@ class OpeningMovePagerFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        Logger.debug(TAG, "onCreateView()")
         return inflater.inflate(R.layout.opening_move_pager_fragment, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        Logger.debug(TAG, "onViewCreated() start")
 
         pager = view.findViewById(R.id.move_pager)
         tabIndicator = view.findViewById(R.id.tab_indicator)
@@ -86,6 +88,8 @@ class OpeningMovePagerFragment : Fragment() {
                 onPageChanged(position)
             }
         })
+
+        Logger.debug(TAG, "onViewCreated() end")
     }
 
     private fun onPageChanged(position: Int) {

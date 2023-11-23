@@ -201,14 +201,15 @@ class DataManager(context: Context) {
                     Logger.debug(TAG, "Found openingFile: $openingFileName")
                     val fileContent = FileManager.readText(context, openingFileName) ?: continue
 
-                    val openingInfo = openingFileName.removePrefix("opening_").removeSuffix(".txt").split("_")
-                    val openingName = openingInfo[0]
-                    val openingTeam = Team.fromString(openingInfo[1])
-                    val opening = Opening(openingName, openingTeam)
-                    opening.addFromString(fileContent)
+//                    val openingInfo = openingFileName.removePrefix("opening_").removeSuffix(".txt").split("_")
+//                    val openingName = openingInfo[0]
+//                    val openingTeam = Team.fromString(openingInfo[1])
+//                    val opening = Opening(openingName, openingTeam)
+//                    opening.addFromString(fileContent)
 
+                    val opening = Opening.fromString(fileContent)
                     savedOpenings += opening
-                    Logger.debug(TAG, "Restoring savedOpening: $openingName")
+                    Logger.debug(TAG, "Restoring savedOpening: ${opening.name}")
                 }
             } catch (e: Exception) {
 //                NetworkManager.getInstance().sendCrashReport("crash_loading_opening.txt", e.stackTraceToString(), context)

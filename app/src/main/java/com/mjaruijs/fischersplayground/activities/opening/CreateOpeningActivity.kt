@@ -150,7 +150,9 @@ class CreateOpeningActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        dataManager.loadData(applicationContext)
+        Logger.debug(activityName, "Finished creating activity!")
+
+//        dataManager.loadData(applicationContext)
     }
 
     private fun restorePreferences() {
@@ -243,10 +245,12 @@ class CreateOpeningActivity : AppCompatActivity() {
 //            constraints.applyTo(gameLayout)
 //            gameLayout.invalidate()
 //        }
-        boardOverlay.invalidate()
+//        boardOverlay.invalidate()
 
         setGameCallbacks()
         setGameForRenderer()
+        Logger.debug(activityName, "Finished creating context!")
+
     }
     fun setGameForRenderer() {
         glView.setGame(game)
@@ -319,14 +323,14 @@ class CreateOpeningActivity : AppCompatActivity() {
     fun evaluateNavigationButtons() {
         if (game.moves.isNotEmpty()) {
             if (game.getMoveIndex() != -1) {
-                (getActionBarFragment() as GameBarFragment).enableBackButton()
+                (getActionBarFragment())?.enableBackButton()
             } else {
-                (getActionBarFragment() as GameBarFragment).disableBackButton()
+                (getActionBarFragment())?.disableBackButton()
             }
             if (!game.isShowingCurrentMove()) {
-                (getActionBarFragment() as GameBarFragment).enableForwardButton()
+                (getActionBarFragment())?.enableForwardButton()
             } else {
-                (getActionBarFragment() as GameBarFragment).disableForwardButton()
+                (getActionBarFragment())?.disableForwardButton()
             }
         }
         requestRender()

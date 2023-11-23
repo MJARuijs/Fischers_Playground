@@ -49,7 +49,7 @@ abstract class GameActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        setContentView(R.layout.activity_game)
+        setContentView(R.layout.activity_game)
 
         try {
 //            gameLayout = findViewById(R.id.game_layout)

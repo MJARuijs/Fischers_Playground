@@ -35,7 +35,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     var enableForwardButton: () -> Unit = {}
     var disableBackButton: () -> Unit = {}
     var onPieceTaken: (PieceType, Team) -> Unit = { _, _ ->
-        Logger.warn(TAG, "Tried to call onPieceTaken(), but function is not set yet..")
+//        Logger.warn(TAG, "Tried to call onPieceTaken(), but function is not set yet..")
     }
     var onPieceRegained: (PieceType, Team) -> Unit = { _, _ ->
         Logger.warn(TAG, "Tried to call onPieceRegained(), but function is not set yet..")
@@ -142,7 +142,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         }
 
         val moveIndex = moves.indexOf(move)
-        val animationSpeed = 1
+        val animationSpeed = 0
 
         if (moveIndex < currentMoveIndex) {
             while (currentMoveIndex != moveIndex) {
@@ -325,12 +325,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         if (animation.nextAnimation == null) {
             animation.onStartCalls += {
-                Logger.debug(TAG, "State before move was undone: $state")
                 onAnimationStarted()
             }
             animation.onFinishCalls += {
-                Logger.debug(TAG, "State after move was undone: $state")
-
                 finishMove(move)
                 onAnimationFinished(moveIndex)
             }
@@ -384,7 +381,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
         incrementMoveCounter()
         moves += move
-
     }
 
     open fun move(team: Team, fromPosition: Vector2, toPosition: Vector2, animationSpeed: Int = DEFAULT_ANIMATION_SPEED) {
@@ -538,9 +534,9 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val piece = state[square] ?: return arrayListOf()
         possibleMoves = getPieceMoves(piece, square, state, false)
 
-        for (move in possibleMoves) {
-            Logger.debug(TAG, "Possible move for ${piece.type} at $square: $move")
-        }
+//        for (move in possibleMoves) {
+//            Logger.debug(TAG, "Possible move for ${piece.type} at $square: $move")
+//        }
 
         possibleMoves.removeIf { move -> !isMoveValid(square, move, piece, team) }
 
@@ -552,12 +548,12 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         copiedState[fromPosition] = null
         copiedState[toPosition] = piece
 
-        Logger.debug(TAG, "Checking if move is valid by checking if player is checked when moving piece: ${piece.type} from $fromPosition to $toPosition")
+//        Logger.debug(TAG, "Checking if move is valid by checking if player is checked when moving piece: ${piece.type} from $fromPosition to $toPosition")
         return !isPlayerChecked(copiedState, team)
     }
 
     protected fun isPlayerChecked(state: GameState, team: Team): Boolean {
-        Logger.debug(TAG, "isPlayerCheckedState: $state")
+//        Logger.debug(TAG, "isPlayerCheckedState: $state")
 
         val kingsPosition = findKingPosition(state, team)
         val possibleMovesForOpponent = ArrayList<Vector2>()

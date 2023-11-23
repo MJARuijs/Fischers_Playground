@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.mjaruijs.fischersplayground.adapters.variationadapter.Variation
 import com.mjaruijs.fischersplayground.chess.pieces.Team
+import kotlin.random.Random
 
 class Opening(val name: String, val team: Team, val variations: ArrayList<Variation> = arrayListOf()) : Parcelable {
 
@@ -58,7 +59,7 @@ class Opening(val name: String, val team: Team, val variations: ArrayList<Variat
     }
 
     override fun toString(): String {
-        var content = ""
+        var content = "$name|$team\n"
         for ((i, variation) in variations.withIndex()) {
             content += "$variation"
 
@@ -68,7 +69,6 @@ class Opening(val name: String, val team: Team, val variations: ArrayList<Variat
         }
         return content
     }
-
 
     override fun equals(other: Any?): Boolean {
         if (other == null) {
@@ -102,6 +102,28 @@ class Opening(val name: String, val team: Team, val variations: ArrayList<Variat
     }
 
     companion object CREATOR : Parcelable.Creator<Opening> {
+
+        fun fromString(content: String): Opening {
+            val lines = content.split("\n")
+
+//            val firstLineSeparatorIndex = content.indexOf('\n')
+//            val openingInfo = content.substring(0, firstLineSeparatorIndex).split("|")
+            val openingInfo = lines[0].split("|")
+            val openingName = openingInfo[0]
+            val team = Team.fromString(openingInfo[1])
+//            val variationContent = content.substring(firstLineSeparatorIndex + 1)
+//            val variationContent = content
+            val variationContent = lines.subList(1, lines.size).joinToString("\n")
+            val variationsStrings = variationContent.split("*")
+
+            val variations = ArrayList<Variation>()
+            for (variationString in variationsStrings) {
+                variations += Variation.fromString(variationString)
+            }
+
+            return Opening(openingName, team, variations)
+        }
+
         override fun createFromParcel(parcel: Parcel): Opening {
             return Opening(parcel)
         }

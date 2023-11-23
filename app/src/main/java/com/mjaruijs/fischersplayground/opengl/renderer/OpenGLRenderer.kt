@@ -85,9 +85,9 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
         onContextCreated()
     }
 
-    fun update(deltaTime: Float) {
-        pieceRenderer.update(deltaTime)
-    }
+//    fun update(deltaTime: Float) {
+//        pieceRenderer.update(deltaTime)
+//    }
 
     private fun requestRenderPieces() {
         requestRender()
@@ -289,6 +289,6 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
     }
 
     companion object {
-        private const val TAG = "OpenGLRenderer"
+        private const val TAG = "MyOpenGLRenderer"
     }
 }

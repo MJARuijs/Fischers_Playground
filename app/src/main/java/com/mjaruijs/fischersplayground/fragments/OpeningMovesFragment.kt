@@ -431,26 +431,31 @@ class OpeningMovesFragment : Fragment() {
     }
 
     private fun addSetupMoves() {
-        for (i in 0 until setupMoves.size step 2) {
-            val movesView = OpeningMovesRowView(requireContext())
-            val moveNumber = i / 2 + 1
-            val whiteMove = setupMoves[i]
-            movesView.setTypeFace(typeFace)
-            movesView.setMoveNumber(moveNumber)
-            movesView.setWhiteMove(whiteMove, onMoveClick)
+//        Thread {
 
-            if (moveNumber % 2 == 1) {
-                movesView.setBackgroundColor(Color.rgb(0.3f, 0.3f, 0.3f))
-            } else {
-                movesView.setBackgroundColor(Color.DKGRAY)
+            for (i in 0 until setupMoves.size step 2) {
+                val movesView = OpeningMovesRowView(requireContext())
+                val moveNumber = i / 2 + 1
+                val whiteMove = setupMoves[i]
+                movesView.setTypeFace(typeFace)
+                movesView.setMoveNumber(moveNumber)
+                movesView.setWhiteMove(whiteMove, onMoveClick)
+
+                if (moveNumber % 2 == 1) {
+                    movesView.setBackgroundColor(Color.rgb(0.3f, 0.3f, 0.3f))
+                } else {
+                    movesView.setBackgroundColor(Color.DKGRAY)
+                }
+
+                if (setupMoves.size > i + 1) {
+                    movesView.setBlackMove(setupMoves[i + 1], onMoveClick)
+                }
+
+//                requireActivity().runOnUiThread {
+                    moveTable.addView(movesView)
+//                }
             }
-
-            if (setupMoves.size > i + 1) {
-                movesView.setBlackMove(setupMoves[i + 1], onMoveClick)
-            }
-
-            moveTable.addView(movesView)
-        }
+//        }.start()
 
         currentMoveIndex = setupMoves.size - 1
         deselectAllMoves()

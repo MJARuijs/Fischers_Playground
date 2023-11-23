@@ -53,7 +53,6 @@ class BoardOverlay(context: Context, attributes: AttributeSet?) : LinearLayout(c
 
         layout = findViewById(R.id.character_layout)
         layout.doOnLayout {
-            setCharactersBold(true)
             setTextColor()
 
             transparentPaint = Paint()

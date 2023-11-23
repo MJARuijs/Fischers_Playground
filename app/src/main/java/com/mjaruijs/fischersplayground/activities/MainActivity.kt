@@ -132,13 +132,13 @@ class MainActivity : AppCompatActivity() {
             R.drawable.king_checked,
         )
 
-        val models = arrayOf(
-            R.raw.pawn_bytes,
-            R.raw.knight_bytes,
-            R.raw.bishop_bytes,
-            R.raw.rook_bytes,
-            R.raw.queen_bytes,
-            R.raw.king_bytes
+        val models = intArrayOf(
+//            R.raw.pawn_bytes,
+//            R.raw.knight_bytes,
+//            R.raw.bishop_bytes,
+//            R.raw.rook_bytes,
+//            R.raw.queen_bytes,
+//            R.raw.king_bytes,
         )
 //
 //        val textureLoader = TextureLoader.getInstance()

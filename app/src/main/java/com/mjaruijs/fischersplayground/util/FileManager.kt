@@ -1,6 +1,7 @@
 package com.mjaruijs.fischersplayground.util
 
 import android.content.Context
+import android.net.Uri
 import java.io.*
 
 object FileManager {
@@ -107,7 +108,6 @@ object FileManager {
             val file = File("$filesPath/$fileName")
             if (file.exists()) {
                 val inputStream = context.openFileInput(fileName)
-
                 val inputReader = InputStreamReader(inputStream)
                 val bufferedReader = BufferedReader(inputReader)
                 bufferedReader.readText()
@@ -121,6 +121,16 @@ object FileManager {
             Logger.error(TAG, e.stackTraceToString())
             null
         }
+    }
+
+    fun getContent(context: Context, uri: Uri): String {
+        val file = File(uri.path)
+        Logger.debug(TAG, "${file.path}")
+        val inputStream = context.contentResolver?.openInputStream(uri) ?: return ""
+
+        val content = String(inputStream.readBytes())
+        inputStream.close()
+        return content
     }
 
     fun getFile(fileName: String): File {

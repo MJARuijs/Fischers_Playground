@@ -75,7 +75,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
     private val whiteKnightRotation = if (isPlayerWhite) ROTATION_MATRIX else Matrix4()
     private val blackKnightRotation = if (isPlayerWhite) Matrix4() else ROTATION_MATRIX
 
-    private val animator = MyPieceAnimator(requestRender)
+//    private val animator = MyPieceAnimator(requestRender)
     private val animationQueue = LinkedList<AnimationData>()
     private val animationRunning = AtomicBoolean(false)
     private val runAnimationThread = AtomicBoolean(true)
@@ -93,9 +93,12 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
                 if (animationQueue.isNotEmpty()) {
                     val currentAnimation = animationQueue.poll()
-                    Logger.debug(TAG, "Polling new animation!")
-                    animationRunning.set(true)
-                    startAnimation(currentAnimation)
+                    if (currentAnimation != null) {
+                        animationRunning.set(true)
+                        startAnimation(currentAnimation)
+                    } else {
+                        Logger.warn(TAG, "Polled animation, but AnimationData was null..")
+                    }
                 }
             }
         }.start()
@@ -114,14 +117,13 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         pieceAnimator.addUpdateListener {
             val progress = it.animatedValue as Float
             piece.translation = translation * progress
+            requestRender()
         }
         pieceAnimator.doOnStart {
             animationRunning.set(true)
-            Logger.debug(TAG, "Animation onStart() ${piece.type} from ${animationData.piecePosition} to ${animationData.piecePosition + animationData.translation}. State: ${requestGame().state}")
             animationData.invokeOnStartCalls()
         }
         pieceAnimator.doOnEnd {
-            Logger.debug(TAG, "Animation OnEnd() ${piece.type}. State: ${requestGame().state}")
             animationData.invokeOnFinishCalls()
 
             if (animationData.nextAnimation != null) {
@@ -137,31 +139,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         }
     }
 
-    fun update(deltaTime: Float) {
-        animator.update(deltaTime)
-    }
-
     fun queueAnimation(animationData: AnimationData) {
         animationQueue.add(animationData)
-    }
-
-    private fun vectorToChessSquares(position: Vector2): String {
-        var square = ""
-
-        square += when (position.x.roundToInt()) {
-            0 -> "a"
-            1 -> "b"
-            2 -> "c"
-            3 -> "d"
-            4 -> "e"
-            5 -> "f"
-            6 -> "g"
-            7 -> "h"
-            else -> ""
-        }
-
-        square += position.y.roundToInt() + 1
-        return square
     }
 
     private fun getPieceTexture2d(piece: Piece, pieceTextures: PieceTextures): Int {
