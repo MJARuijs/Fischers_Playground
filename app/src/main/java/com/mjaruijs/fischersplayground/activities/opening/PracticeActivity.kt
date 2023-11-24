@@ -69,15 +69,10 @@ class PracticeActivity : GameActivity() {
     private lateinit var moveFeedbackIcon: MoveFeedbackIcon
     private lateinit var practiceNavigationButtons: PracticeOpeningNavigationBarFragment
     private lateinit var progressFragment: PracticeProgressFragment
-    private lateinit var boardOverlay: BoardOverlay
-    private lateinit var dataManager: DataManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setContentView(R.layout.activity_practice_opening)
         super.onCreate(savedInstanceState)
-        findViewById<ImageView>(R.id.open_chat_button).visibility = View.GONE
-        findViewById<FragmentContainerView>(R.id.upper_fragment_container).visibility = View.GONE
-        boardOverlay = findViewById(R.id.board_overlay)
-        dataManager = DataManager.getInstance(this)
 
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
         openingTeam = Team.fromString(intent.getStringExtra("opening_team") ?: throw IllegalArgumentException("Failed to create $activityName. Missing essential information: opening_team.."))
@@ -111,7 +106,6 @@ class PracticeActivity : GameActivity() {
                 totalLineCount = session.totalLineCount
                 practiceProgress = session.currentLineIndex
             } catch (e: Exception) {
-//                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString(), applicationContext)
                 throw e
             }
         } else {
@@ -134,7 +128,6 @@ class PracticeActivity : GameActivity() {
                 totalLineCount = variationLines.size
                 practiceProgress = 0
             } catch (e: Exception) {
-//                networkManager.sendCrashReport("crash_practice_activity.txt", e.stackTraceToString(), applicationContext)
                 throw e
             }
         }
@@ -145,6 +138,7 @@ class PracticeActivity : GameActivity() {
         moveFeedbackIcon = findViewById(R.id.move_feedback_icon)
         moveFeedbackIcon.setPosition(Vector2())
         moveFeedbackIcon.doOnLayout {
+            Logger.debug(activityName, "MoveFeedBackIcon width: ${it.width}")
             moveFeedbackIcon.scaleToSize((getWindowWidth().toFloat() / 8f / 2f).roundToInt())
             moveFeedbackIcon.hide()
         }
@@ -234,10 +228,6 @@ class PracticeActivity : GameActivity() {
         }
 
         boardOverlay.draw()
-    }
-
-    override fun onMoveMade(move: Move) {
-        super.onMoveMade(move)
     }
 
     private fun onMoveAnimationStarted() {
@@ -515,6 +505,7 @@ class PracticeActivity : GameActivity() {
         if (lines.isNotEmpty()) {
             currentLine = lines.pop()
         } else {
+            Logger.warn(activityName, "Starting new practice session without setting currentLine, because there are no known lines..?")
             return
         }
 

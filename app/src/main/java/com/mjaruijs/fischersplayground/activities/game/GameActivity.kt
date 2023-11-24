@@ -24,6 +24,8 @@ import com.mjaruijs.fischersplayground.fragments.actionbars.GameBarFragment
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
 import com.mjaruijs.fischersplayground.math.vectors.Vector3
 import com.mjaruijs.fischersplayground.opengl.surfaceviews.SurfaceView
+import com.mjaruijs.fischersplayground.services.DataManager
+import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.util.Logger
 import kotlin.math.roundToInt
 
@@ -32,11 +34,12 @@ abstract class GameActivity : AppCompatActivity() {
     open var activityName: String = "Game_Activity"
 
     lateinit var glView: SurfaceView
+    lateinit var boardOverlay: BoardOverlay
 
 //    protected lateinit var gameLayout: ConstraintLayout
     protected lateinit var vibrator: Vibrator
 
-    private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
+    protected val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
 
     protected var displayWidth = 0
     protected var displayHeight = 0
@@ -44,23 +47,23 @@ abstract class GameActivity : AppCompatActivity() {
     abstract var isSinglePlayer: Boolean
 
     protected var isPlayingWhite = true
+    protected lateinit var dataManager: DataManager
 
     open lateinit var game: Game
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_game)
 
         try {
-//            gameLayout = findViewById(R.id.game_layout)
-
             val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
             val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
 
             hideActivityDecorations(fullScreen)
+            dataManager = DataManager.getInstance(this)
 
             pieceChooserDialog.create(this)
 
+            boardOverlay = findViewById(R.id.board_overlay)
             glView = findViewById(R.id.opengl_view)
             glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite, ::onExceptionThrown)
         } catch (e: Exception) {

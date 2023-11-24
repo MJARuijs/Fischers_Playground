@@ -52,11 +52,11 @@ import com.mjaruijs.fischersplayground.userinterface.BoardOverlay
 import com.mjaruijs.fischersplayground.util.Logger
 import com.mjaruijs.fischersplayground.util.Time
 
-class CreateOpeningActivity : AppCompatActivity() {
+class CreateOpeningActivity : GameActivity() {
 
-     var activityName = "create_opening_activity"
+    override var activityName = "create_opening_activity"
 
-     var isSinglePlayer = true
+    override var isSinglePlayer = true
 
     private var hasUnsavedChanges = false
     private var arrowModeEnabled = false
@@ -72,46 +72,13 @@ class CreateOpeningActivity : AppCompatActivity() {
 
     private lateinit var practiceSettingsDialog: PracticeSettingsDialog
     private lateinit var openingMovesFragment: OpeningMovePagerFragment
-
-    private lateinit var boardOverlay: BoardOverlay
+    private lateinit var renameVariationDialog: CreateVariationDialog
 
     private lateinit var arrowMenuItem: MenuItem
 
-    private lateinit var renameVariationDialog: CreateVariationDialog
-
-    private lateinit var dataManager: DataManager
-
-
-    lateinit var glView: SurfaceView
-
-    //    protected lateinit var gameLayout: ConstraintLayout
-    protected lateinit var vibrator: Vibrator
-
-    private val pieceChooserDialog = PieceChooserDialog(::onPawnUpgraded)
-
-    protected var displayWidth = 0
-    protected var displayHeight = 0
-
-    protected var isPlayingWhite = true
-
-    open lateinit var game: Game
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_opening)
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
-        val fullScreen = preferences.getBoolean(SettingsActivity.FULL_SCREEN_KEY, false)
-
-        hideActivityDecorations(fullScreen)
-
-        pieceChooserDialog.create(this)
-
-        glView = findViewById(R.id.opengl_view)
-        glView.init(::runOnUIThread, ::onContextCreated, ::onClick, ::onDisplaySizeChanged, isPlayingWhite, ::onExceptionThrown)
-
-        boardOverlay = findViewById(R.id.board_overlay)
-
-        dataManager = DataManager.getInstance(this)
+        super.onCreate(savedInstanceState)
 
         openingName = intent.getStringExtra("opening_name") ?: "default_opening_name"
 
@@ -148,54 +115,9 @@ class CreateOpeningActivity : AppCompatActivity() {
         supportActionBar?.setBackgroundDrawable(ColorDrawable(BACKGROUND_COLOR))
     }
 
-    override fun onResume() {
-        super.onResume()
-        Logger.debug(activityName, "Finished creating activity!")
-
-//        dataManager.loadData(applicationContext)
-    }
-
-    private fun restorePreferences() {
-        val preferences = getSharedPreferences("graphics_preferences", MODE_PRIVATE)
-
-        val cameraRotation = preferences.getString(SettingsActivity.CAMERA_ROTATION_KEY, "") ?: ""
-        val fov = preferences.getInt(SettingsActivity.FOV_KEY, 45)
-        val pieceScale = preferences.getFloat(SettingsActivity.PIECE_SCALE_KEY, 1.0f)
-
-        if (cameraRotation.isNotBlank()) {
-            glView.getRenderer().setCameraRotation(Vector3.fromString(cameraRotation))
-        }
-
-        glView.getRenderer().setFoV(fov)
-        glView.getRenderer().setPieceScale(pieceScale)
-    }
-
     override fun onDestroy() {
         glView.destroy()
         super.onDestroy()
-    }
-
-    inline fun <reified T>findFragment(): T? {
-        val fragment = supportFragmentManager.fragments.find { fragment -> fragment is T } ?: return null
-        return fragment as T
-    }
-
-    protected fun requestRender() {
-        glView.requestRender()
-    }
-
-    private fun onPawnUpgraded(square: Vector2, pieceType: PieceType, team: Team) {
-        game.upgradePawn(square, pieceType, team)
-        Thread {
-            Thread.sleep(10)
-            glView.invalidate()
-            requestRender()
-        }.start()
-    }
-
-    override fun onBackPressed() {
-        Logger.debug(activityName, "BACK CLICKED")
-        super.onBackPressed()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -232,8 +154,9 @@ class CreateOpeningActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    fun onContextCreated() {
-        restorePreferences()
+    override fun onContextCreated() {
+        super.onContextCreated()
+//        restorePreferences()
 
 //        super.onContextCreated()
 //        runOnUiThread {
@@ -252,21 +175,9 @@ class CreateOpeningActivity : AppCompatActivity() {
         Logger.debug(activityName, "Finished creating context!")
 
     }
-    fun setGameForRenderer() {
-        glView.setGame(game)
-    }
 
-    private fun onPromotePawn(square: Vector2, team: Team): PieceType {
-        runOnUiThread {
-            pieceChooserDialog.show(square, team)
-        }
-        return PieceType.QUEEN
-    }
-
-    fun setGameCallbacks() {
-        game.onPawnPromoted = ::onPromotePawn
-        game.onMoveMade = ::onMoveMade
-//        super.setGameCallbacks()
+    override fun setGameCallbacks() {
+        super.setGameCallbacks()
         game.onAnimationStarted = ::onMoveAnimationStarted
         game.onAnimationFinished = ::onMoveAnimationFinished
     }
@@ -278,7 +189,7 @@ class CreateOpeningActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    fun onClick(x: Float, y: Float) {
+    override fun onClick(x: Float, y: Float) {
         boardOverlay.draw()
         if (arrowModeEnabled) {
             if (arrowStartSquare.x == -1f) {
@@ -291,20 +202,8 @@ class CreateOpeningActivity : AppCompatActivity() {
                 glView.clearHighlightedSquares()
             }
         } else {
-            try {
-                val vibrateOnClick = getSharedPreferences(SettingsActivity.GAME_PREFERENCES_KEY, MODE_PRIVATE).getBoolean(SettingsActivity.VIBRATE_KEY, false)
-                if (vibrateOnClick) {
-                    vibrate()
-                }
-                game.onClick(x, y, displayWidth, displayHeight)
-            } catch (e: Exception) {
-//            networkManager.sendCrashReport("crash_onclick_log.txt", e.stackTraceToString(), applicationContext)
-            }
+            super.onClick(x, y)
         }
-    }
-
-    private fun vibrate() {
-        vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
     private fun onMoveAnimationStarted() {
@@ -315,40 +214,10 @@ class CreateOpeningActivity : AppCompatActivity() {
     private fun onMoveAnimationFinished(moveIndex: Int) {
         Logger.debug(activityName, "Move animation finished!")
         boardOverlay.drawArrows(selectedLine!!.arrows[moveIndex] ?: ArrayList())
-//        boardOverlay.draw()
     }
 
-    fun getActionBarFragment() = findFragment<GameBarFragment>()
-
-    fun evaluateNavigationButtons() {
-        if (game.moves.isNotEmpty()) {
-            if (game.getMoveIndex() != -1) {
-                (getActionBarFragment())?.enableBackButton()
-            } else {
-                (getActionBarFragment())?.disableBackButton()
-            }
-            if (!game.isShowingCurrentMove()) {
-                (getActionBarFragment())?.enableForwardButton()
-            } else {
-                (getActionBarFragment())?.disableForwardButton()
-            }
-        }
-        requestRender()
-    }
-
-    fun onMoveMade(move: Move) {
-//        super.onMoveMade(move)
-        Thread {
-            while (getActionBarFragment() == null) {
-                Logger.warn(activityName, "Move made, but thread is looping because actionBarFragment is null..")
-                Thread.sleep(1000)
-            }
-
-            runOnUiThread {
-                evaluateNavigationButtons()
-            }
-        }.start()
-
+    override fun onMoveMade(move: Move) {
+        super.onMoveMade(move)
 //        glView.clearHighlightedSquares()
 
         runOnUiThread {
@@ -501,36 +370,6 @@ class CreateOpeningActivity : AppCompatActivity() {
         dataManager.saveOpenings(applicationContext)
         hasUnsavedChanges = false
         Logger.debug(activityName, "finished Save Opening()")
-    }
-
-    private fun hideActivityDecorations(isFullscreen: Boolean) {
-        supportActionBar?.hide()
-
-        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-
-        if (isFullscreen) {
-            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
-        } else {
-            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
-        }
-    }
-
-    private fun runOnUIThread(runnable: () -> Unit) {
-        runOnUiThread {
-            Logger.debug(activityName, "Running on ui thread")
-            runnable()
-            Logger.debug(activityName, "Finished running on ui thread")
-        }
-    }
-
-    open fun onDisplaySizeChanged(width: Int, height: Int) {
-        displayWidth = width
-        displayHeight = height
-    }
-
-    private fun onExceptionThrown(fileName: String, e: Exception) {
-//        networkManager.sendCrashReport(fileName, e.stackTraceToString(), applicationContext)
     }
 
 }
