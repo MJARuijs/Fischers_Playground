@@ -200,6 +200,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         val translation = toPosition - fromPosition
         return AnimationData(animationSpeed, System.nanoTime(), fromPosition, translation, takenPiece, takenPiecePosition, isReversed, {
             state[toPosition] = state[fromPosition]
+//            state[toPosition]?.translation = translation
             state[fromPosition] = null
             onStart()
         }, {
@@ -387,7 +388,6 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         possibleMoves.clear()
 
         val currentPositionPiece = state[fromPosition] ?: throw IllegalArgumentException("Could not find a piece at square: $fromPosition")
-
         val takenPieceData = take(currentPositionPiece, fromPosition, toPosition)
 
         val takenPiece = takenPieceData?.first

@@ -6,6 +6,7 @@ in vec2 textureCoordinates;
 
 uniform highp sampler2DArray textureMaps;
 uniform float textureId;
+uniform float alpha;
 
 out vec4 outColor;
 
@@ -16,5 +17,7 @@ void main() {
     //} else {
         outColor = textureColor;
     //}
-
+    if (outColor.a > 0.5) {
+        outColor.a = alpha;
+    }
 }

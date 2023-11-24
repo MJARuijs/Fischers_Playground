@@ -43,6 +43,7 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
     private var displayWidth = 0
     private var displayHeight = 0
     private var aspectRatio = 0f
+    private var firstRenderDrawn = false
 
     private var pixelsRequested = false
 
@@ -149,6 +150,8 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
 
+        firstRenderDrawn = false
+        Logger.debug(TAG, "Surface Changed!")
         displayWidth = width
         displayHeight = height
         aspectRatio = width.toFloat() / height.toFloat()
@@ -164,6 +167,8 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
             return
         }
 
+        firstRenderDrawn = true
+
         try {
             if (is3D) {
                 glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
@@ -177,6 +182,7 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
             } else {
                 glClear(GL_COLOR_BUFFER_BIT)
 
+//                Logger.debug(TAG, "Cleared framebuffer")
 //            backgroundRenderer.render2D(aspectRatio)
 
                 boardRenderer.render2D()
@@ -184,7 +190,10 @@ class OpenGLRenderer(private val context: Context, private val resources: Resour
 //                highlightRenderer.renderLastMoveHighlights(game, displayWidth, displayHeight)
                 highlightRenderer.renderHighlightedSquares(game, displayWidth, displayHeight)
 
-                pieceRenderer.render2D(game, pieceTextures, aspectRatio)
+//                if (pieceRenderer.isAnimating()) {
+                    pieceRenderer.render2D(game, pieceTextures, aspectRatio)
+//                }
+
 
                 highlightRenderer.renderPossibleSquares2D(board, displayWidth, displayHeight, aspectRatio)
             }
