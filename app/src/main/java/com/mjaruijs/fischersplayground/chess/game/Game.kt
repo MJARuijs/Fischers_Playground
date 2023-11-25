@@ -192,16 +192,18 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     }
 
     fun upgradePawn(square: Vector2, pieceType: PieceType, team: Team) {
-        state[square] = Piece(pieceType, team)
+//        state[square] = Piece(pieceType, team, square)
+
+        state[square]?.type = pieceType
         promotionLock.set(false)
     }
 
     protected fun createAnimation(animationSpeed: Int, fromPosition: Vector2, toPosition: Vector2, isReversed: Boolean, takenPiece: Piece? = null, takenPiecePosition: Vector2? = null, onStart: () -> Unit = {}, onFinish: () -> Unit = {}): AnimationData {
         val translation = toPosition - fromPosition
         return AnimationData(animationSpeed, System.nanoTime(), fromPosition, translation, takenPiece, takenPiecePosition, isReversed, {
-            state[toPosition] = state[fromPosition]
-//            state[toPosition]?.translation = translation
-            state[fromPosition] = null
+            state[fromPosition]?.moveTo(toPosition)
+//            state[toPosition] = state[fromPosition]
+//            state[fromPosition] = null
             onStart()
         }, {
             onFinish()
@@ -210,14 +212,18 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     private fun onFinishRedoMove(move: Move, toPosition: Vector2, takenPiecePosition: Vector2?) {
         if (move.promotedPiece != null) {
-            state[toPosition] = Piece(move.promotedPiece, move.team)
+//            state.removeAt(toPosition)
+            state.replaceAt(toPosition, Piece(move.promotedPiece, move.team, toPosition))
+//            state[toPosition] = Piece(move.promotedPiece, move.team)
         }
 
         if (takenPiecePosition != null) {
+            state.removeAt(takenPiecePosition, !move.team)
+
             onPieceTaken(move.pieceTaken!!, !move.team)
 
             if (takenPiecePosition != toPosition) {
-                state[takenPiecePosition] = null
+//                state[takenPiecePosition] = null
             }
         }
     }
@@ -232,7 +238,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             val takenPiece = if (move.pieceTaken == null) {
                 null
             } else {
-                Piece(move.pieceTaken, !move.team)
+                Piece(move.pieceTaken, !move.team, toPosition)
+//                Piece(move.pieceTaken, !move.team)
             }
 
             val takenPiecePosition = move.getTakenPosition(team)
@@ -285,16 +292,19 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             onPieceRegained(move.pieceTaken!!, move.team)
 
             if (takenPiecePosition == toPosition) {
-                state[toPosition] = Piece(move.pieceTaken, !move.team)
+                state += Piece(move.pieceTaken, !move.team, toPosition)
+//                state[toPosition] = Piece(move.pieceTaken, !move.team)
             } else {
-                state[takenPiecePosition] = Piece(move.pieceTaken, !move.team)
+                state += Piece(move.pieceTaken, !move.team, takenPiecePosition)
+//                state[takenPiecePosition] = Piece(move.pieceTaken, !move.team)
             }
         }
     }
 
     private fun onFinishUndoMove(move: Move, fromPosition: Vector2) {
         if (move.promotedPiece != null) {
-            state[fromPosition] = Piece(PieceType.PAWN, move.team)
+            state += Piece(PieceType.PAWN, move.team, fromPosition)
+//            state[fromPosition] = Piece(PieceType.PAWN, move.team)
         }
     }
 
@@ -308,7 +318,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             val takenPiece = if (move.pieceTaken == null) {
                 null
             } else {
-                Piece(move.pieceTaken, !move.team)
+                Piece(move.pieceTaken, !move.team, toPosition)
+//                Piece(move.pieceTaken, !move.team)
             }
 
             val takenPiecePosition = move.getTakenPosition(team)
@@ -365,18 +376,21 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
             animation.nextAnimation?.invokeOnStartCalls()
             animation.nextAnimation?.invokeOnFinishCalls()
         } else {
-            state[toPosition] = state[fromPosition]
-            state[fromPosition] = null
+            state[fromPosition]?.moveTo(toPosition)
+//            state[toPosition] = state[fromPosition]
+//            state[fromPosition] = null
         }
 
         if (move.promotedPiece != null) {
-            state[toPosition] = Piece(move.promotedPiece, move.team)
+            state[toPosition]?.type = move.promotedPiece
+//            state[toPosition] = Piece(move.promotedPiece, move.team)
         }
 
         if (move.pieceTaken != null) {
             val takenPosition = move.getTakenPosition(team)!!
             if (takenPosition != toPosition) {
-                state[takenPosition] = null
+                state.removeAt(takenPosition)
+//                state[takenPosition] = null
             }
         }
 
@@ -425,6 +439,7 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
         var promotedPiece: PieceType? = null
 
         if (takenPiece != null) {
+            state.remove(takenPiece)
             onPieceTaken(takenPiece.type, takenPiece.team)
         }
 
@@ -512,7 +527,8 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
     private fun takeEnPassant(fromPosition: Vector2, direction: Vector2): Piece? {
         val squareOfTakenPiece = fromPosition + Vector2(direction.x, 0.0f)
         val takenPiece = state[squareOfTakenPiece]
-        state[squareOfTakenPiece] = null
+        state.removeAt(squareOfTakenPiece)
+//        state[squareOfTakenPiece] = null
         return takenPiece
     }
 
@@ -545,8 +561,14 @@ abstract class Game(val isPlayingWhite: Boolean, var lastUpdated: Long, var move
 
     private fun isMoveValid(fromPosition: Vector2, toPosition: Vector2, piece: Piece, team: Team): Boolean {
         val copiedState = state.copy()
-        copiedState[fromPosition] = null
-        copiedState[toPosition] = piece
+//        copiedState.removeAt(fromPosition)
+//        piece.square = toPosition
+//        piece.moveTo(toPosition)
+        copiedState.movePieceTo(fromPosition, toPosition)
+//        copiedState += piece
+
+//        copiedState[fromPosition] = null
+//        copiedState[toPosition] = piece
 
 //        Logger.debug(TAG, "Checking if move is valid by checking if player is checked when moving piece: ${piece.type} from $fromPosition to $toPosition")
         return !isPlayerChecked(copiedState, team)

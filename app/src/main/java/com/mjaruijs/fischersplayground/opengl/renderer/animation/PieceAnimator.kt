@@ -6,8 +6,6 @@ import androidx.core.animation.doOnStart
 import com.mjaruijs.fischersplayground.chess.game.GameState
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
 import com.mjaruijs.fischersplayground.math.vectors.Vector2
-import com.mjaruijs.fischersplayground.util.FloatUtils
-import com.mjaruijs.fischersplayground.util.Logger
 import java.util.concurrent.atomic.AtomicBoolean
 
 class PieceAnimator(state: GameState, piecePosition: Vector2, val translation: Vector2, requestRender: () -> Unit, private val onStartCalls: ArrayList<() -> Unit>, private val onFinishCalls: ArrayList<() -> Unit>, animationDuration: Long) {
@@ -27,7 +25,7 @@ class PieceAnimator(state: GameState, piecePosition: Vector2, val translation: V
 //        if (!FloatUtils.compare(translation.x, 0.0f)) {
             xAnimator.duration = animationDuration
             xAnimator.addUpdateListener {
-                piece.translation.x = it.animatedValue as Float
+                piece.translationOffset.x = it.animatedValue as Float
 //                Logger.debug(TAG, "Animating x translation: ${it.animatedValue} $animationDuration")
                 requestRender()
             }
@@ -46,7 +44,7 @@ class PieceAnimator(state: GameState, piecePosition: Vector2, val translation: V
             yAnimator.duration = animationDuration
             yAnimator.addUpdateListener {
 //                Logger.debug(TAG, "Animating y translation: ${it.animatedValue} $animationDuration")
-                piece.translation.y = it.animatedValue as Float
+                piece.translationOffset.y = it.animatedValue as Float
                 requestRender()
             }
             yAnimator.doOnStart {
@@ -68,7 +66,7 @@ class PieceAnimator(state: GameState, piecePosition: Vector2, val translation: V
     private fun onStart() {
         if (!onStartExecuted.get()) {
             onStartExecuted.set(true)
-            piece.translation = translation
+            piece.translationOffset = translation
             for (onStartCall in onStartCalls) {
                 onStartCall()
             }

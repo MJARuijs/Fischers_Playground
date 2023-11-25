@@ -3,7 +3,6 @@ package com.mjaruijs.fischersplayground.opengl.renderer
 import android.animation.ValueAnimator
 import android.content.res.Resources
 import androidx.core.animation.doOnEnd
-import androidx.core.animation.doOnStart
 import com.mjaruijs.fischersplayground.R
 import com.mjaruijs.fischersplayground.chess.game.Game
 import com.mjaruijs.fischersplayground.chess.pieces.Piece
@@ -114,7 +113,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         counter = 0
 
         val translation = animationData.translation
-        piece.translation = translation
+        piece.translationOffset = translation
         animationData.invokeOnStartCalls()
 
         animationRunning.set(true)
@@ -136,7 +135,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         val pieceAnimator = ValueAnimator.ofFloat(1.0f, 0.0f)
         pieceAnimator.addUpdateListener {
             val progress = it.animatedValue as Float
-            piece.translation = translation * progress
+            piece.translationOffset = translation * progress
             requestRender()
 
             takenPieceAlpha = if (animationData.isReversed) {
@@ -200,46 +199,54 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
 
         sampler.bind(pieceTextures.get2DTextureArray())
 
-        // TODO: LOW PRIORITY: Use this code (or rewrite it) to fade out pieces that are taken (or fade them back in when a capturing move is undone)
-        if (takenPieceData != null) run {
-            val piece = takenPieceData?.piece ?: return@run
-            val piecePosition = takenPieceData?.position ?: return@run
-            val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
 
-            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
-            piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
-            piece2DProgram.set("translation", translation)
-            piece2DProgram.set("alpha", takenPieceAlpha)
-
-            quad.draw()
-        }
 
         Logger.debug(TAG, "TakenPieceData: ${takenPieceData?.piece?.type}")
 
-        for (x in 0 until 8) {
-            for (y in 0 until 8) {
-                val piece = game[x, y] ?: continue
+//        for (x in 0 until 8) {
+//            for (y in 0 until 8) {
+//                val piece = game[x, y] ?: continue
 
-                val row = x - piece.translation.x
-                val col = y - piece.translation.y
 
-                val translation = (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
-                if (animatingPiece != null) {
-                    if (piece == animatingPiece) {
-                        if (counter < 2) {
-                            if (animationTranslation == null) {
-                                animationTranslation = piece.translation
-                            } else {
-                                if (animationTranslation != piece.translation) {
-                                    Logger.warn(TAG, "Rendering animating piece at $translation ${piece.translation} row=$row col=$col x=$x y=$y. PreviousTranslation: $animationTranslation")
-                                    Logger.warn(TAG, "Animating piece! GameState: ${requestGame().state}")
-                                    Logger.warn(TAG, "State of Game parameter: ${game.state}")
-                                }
-                            }
-                        }
-                        counter++
-                    }
-                }
+        // TODO: LOW PRIORITY: Use this code (or rewrite it) to fade out pieces that are taken (or fade them back in when a capturing move is undone)
+//        if (takenPieceData != null) run {
+//            val piece = takenPieceData?.piece ?: return@run
+//            val piecePosition = takenPieceData?.position ?: return@run
+//            val translation = (Vector2(piecePosition.x * 2.0f, piecePosition.y * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
+//
+//            piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
+//            piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
+//            piece2DProgram.set("translation", translation)
+//            piece2DProgram.set("alpha", takenPieceAlpha)
+//
+//            quad.draw()
+//        }
+
+        for (piece in game.state.getPieces()) {
+            val x = piece.square.x.roundToInt()
+            val y = piece.square.y.roundToInt()
+            val row = x - piece.translationOffset.x
+            val col = y - piece.translationOffset.y
+            val translation = (Vector2(row * 2.0f, col * 2.0f) / 8.0f) + Vector2(-1f, 1f / 4.0f - 1.0f) + Vector2(HALF_PIECE_SCALE, -HALF_PIECE_SCALE)
+
+            Logger.warn(TAG, "Rendering animating piece at ${piece.translationOffset} row=$row col=$col x=$x y=$y. PreviousTranslation: $animationTranslation")
+
+//                if (animatingPiece != null) {
+//                    if (piece == animatingPiece) {
+//                        if (counter < 2) {
+//                            if (animationTranslation == null) {
+//                                animationTranslation = piece.translation
+//                            } else {
+//                                if (animationTranslation != piece.translation) {
+//                                    Logger.warn(TAG, "Rendering animating piece at $translation ${piece.translation} row=$row col=$col x=$x y=$y. PreviousTranslation: $animationTranslation")
+//                                    Logger.warn(TAG, "Animating piece! GameState: ${requestGame().state}")
+//                                    Logger.warn(TAG, "State of Game parameter: ${game.state}")
+//                                }
+//                            }
+//                        }
+//                        counter++
+//                    }
+//                }
 
                 piece2DProgram.set("scale", Vector2(1.0f, 1.0f) / 4f - Vector2(PIECE_SCALE_OFFSET, PIECE_SCALE_OFFSET))
                 piece2DProgram.set("textureId", getPieceTexture2d(piece, pieceTextures).toFloat())
@@ -262,7 +269,7 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
                 }
 
                 quad.draw()
-            }
+//            }
         }
 
         piece2DProgram.stop()
@@ -285,8 +292,8 @@ class PieceRenderer(resources: Resources, isPlayerWhite: Boolean, private val re
         for (x in 0 until 8) {
             for (y in 0 until 8) {
                 val piece = game[x, y] ?: continue
-                val row = x - piece.translation.x
-                val col = y - piece.translation.y
+                val row = x - piece.translationOffset.x
+                val col = y - piece.translationOffset.y
 
                 if (piece.team == Team.WHITE) {
                     whiteMaterial.applyTo(piece3DProgram)

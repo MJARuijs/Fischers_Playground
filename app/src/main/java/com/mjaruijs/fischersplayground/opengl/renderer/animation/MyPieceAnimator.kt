@@ -33,7 +33,7 @@ class MyPieceAnimator(private val requestRender: () -> Unit) {
         xFinished = translation.x == 0.0f
         yFinished = translation.y == 0.0f
 
-        piece.translation = translation
+        piece.translationOffset = translation
 
         for (onStartCall in onStartCalls) {
             onStartCall()
@@ -55,26 +55,26 @@ class MyPieceAnimator(private val requestRender: () -> Unit) {
 
         if (!xFinished) {
             if (sign(totalX) < 0.0f) {
-                piece.translation.x += abs(totalX) * deltaTime * (1000f / animationDuration.toFloat())
+                piece.translationOffset.x += abs(totalX) * deltaTime * (1000f / animationDuration.toFloat())
             } else {
-                piece.translation.x -= abs(totalX) * deltaTime * (1000f / animationDuration.toFloat())
+                piece.translationOffset.x -= abs(totalX) * deltaTime * (1000f / animationDuration.toFloat())
             }
         }
         if (!yFinished) {
             if (sign(totalY) < 0.0f) {
-                piece.translation.y += abs(totalY) * deltaTime * (1000f / animationDuration.toFloat())
+                piece.translationOffset.y += abs(totalY) * deltaTime * (1000f / animationDuration.toFloat())
             } else {
-                piece.translation.y -= abs(totalY) * deltaTime * (1000f / animationDuration.toFloat())
+                piece.translationOffset.y -= abs(totalY) * deltaTime * (1000f / animationDuration.toFloat())
             }
         }
 
-        if ((totalX > 0.0f && piece.translation.x <= 0.0f) || (totalX < 0.0f && piece.translation.x >= 0.0f)) {
+        if ((totalX > 0.0f && piece.translationOffset.x <= 0.0f) || (totalX < 0.0f && piece.translationOffset.x >= 0.0f)) {
             xFinished = true
-            piece.translation.x = 0.0f
+            piece.translationOffset.x = 0.0f
         }
-        if ((totalY > 0.0f && piece.translation.y <= 0.0f) || (totalY < 0.0f && piece.translation.y >= 0.0f)) {
+        if ((totalY > 0.0f && piece.translationOffset.y <= 0.0f) || (totalY < 0.0f && piece.translationOffset.y >= 0.0f)) {
             yFinished = true
-            piece.translation.y = 0.0f
+            piece.translationOffset.y = 0.0f
         }
 
         if (xFinished && yFinished) {
